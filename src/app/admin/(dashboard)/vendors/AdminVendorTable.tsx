@@ -161,12 +161,12 @@ export function AdminVendorTable({
 
                   {/* Layout & Contact */}
                   <td className="py-3.5 px-4 text-neutral-300">
-                    <Badge variant="secondary" className="text-[10px] uppercase font-bold">
+                    <Badge variant="secondary" className="text-[10px] uppercase font-bold shrink-0 whitespace-nowrap">
                       {vendor.layout || "grid"}
                     </Badge>
                     <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
-                      <MessageCircle className="w-3 h-3" />
-                      {vendor.whatsapp}
+                      <MessageCircle className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{vendor.whatsapp}</span>
                     </p>
                   </td>
 
@@ -180,7 +180,7 @@ export function AdminVendorTable({
                           ? "warning"
                           : "destructive"
                       }
-                      className="text-[10px] px-2"
+                      className="text-[10px] px-2 shrink-0 whitespace-nowrap"
                     >
                       {vendor.status}
                     </Badge>

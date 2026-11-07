@@ -103,20 +103,20 @@ export default function CartPage() {
                   <div>
                     <Link
                       href={`/store/${vendor.slug}`}
-                      className="font-bold text-sm text-neutral-900 hover:text-emerald-700 transition-colors"
+                      className="font-bold text-sm text-neutral-900 hover:text-emerald-700 transition-colors truncate block max-w-[180px] sm:max-w-xs"
                     >
                       {vendor.storeName}
                     </Link>
                     {vendor.campus && (
-                      <p className="text-[11px] text-neutral-500 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-emerald-600" />
-                        {vendor.campus.name}
+                      <p className="text-[11px] text-neutral-500 flex items-center gap-1 truncate max-w-[180px] sm:max-w-xs">
+                        <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span className="truncate">{vendor.campus.name}</span>
                       </p>
                     )}
                   </div>
                 </div>
 
-                <Badge variant="default" className="text-[10px] w-fit">
+                <Badge variant="default" className="text-[10px] w-fit shrink-0 whitespace-nowrap">
                   {group.items.length} {group.items.length === 1 ? "Item" : "Items"}
                 </Badge>
               </div>

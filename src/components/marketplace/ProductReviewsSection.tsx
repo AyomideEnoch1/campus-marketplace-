@@ -490,13 +490,13 @@ export function ProductReviewsSection({
               {/* Review Card Top Header */}
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-neutral-900">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <span className="font-bold text-sm text-neutral-900 truncate max-w-[140px] sm:max-w-none">
                       {r.displayName}
                     </span>
                     {r.isVerifiedPurchase && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                        <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
                         Verified Purchase
                       </span>
                     )}

@@ -21,9 +21,9 @@ export function AnnouncementBar() {
         </div>
 
         {/* Mobile single marquee ticker */}
-        <div className="md:hidden w-full text-center font-medium flex items-center justify-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>🎓 UNILAG, UI & OAU Student Marketplace</span>
+        <div className="md:hidden w-full text-center font-medium flex items-center justify-center gap-1.5 text-[11px] truncate px-2">
+          <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+          <span className="truncate">🎓 UNILAG, UI & OAU Student Marketplace</span>
         </div>
 
         <div className="hidden md:flex items-center gap-4 text-neutral-300">

@@ -33,9 +33,9 @@ export function ShowcaseLayout({ vendor, products }: LayoutProps) {
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-neutral-900 to-neutral-800 text-white p-6 sm:p-10 shadow-xl border border-neutral-800">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5" />
-              Store Featured Spotlight
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-amber-300 text-[11px] sm:text-xs font-bold shrink-0 whitespace-nowrap max-w-full">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Store Featured Spotlight</span>
             </div>
 
             <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">

@@ -77,7 +77,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <Link
               href="/campuses"
-              className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+              className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !selectedSlug || selectedSlug === "all"
                   ? "bg-neutral-900 text-white"
                   : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -91,7 +91,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
                 <Link
                   key={c.id}
                   href={`/campuses?campus=${c.slug}`}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                  className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
                       ? "bg-neutral-900 text-white font-bold"
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -138,7 +138,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-black/20" />
                     <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-neutral-900 font-extrabold text-xs shadow-md">
+                      <span className="px-2.5 sm:px-3 py-1 rounded-full bg-white/95 backdrop-blur-md text-neutral-900 font-extrabold text-[11px] sm:text-xs shadow-md shrink-0 whitespace-nowrap">
                         {meta.acronym}
                       </span>
                     </div>

@@ -190,7 +190,7 @@ export default async function AdminDashboardPage() {
                           ? "warning"
                           : "destructive"
                       }
-                      className="text-[10px] px-2 py-0"
+                      className="text-[10px] px-2 py-0 shrink-0 whitespace-nowrap"
                     >
                       {vendor.status}
                     </Badge>

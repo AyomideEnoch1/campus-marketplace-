@@ -60,11 +60,11 @@ export function AdminUserTable({ initialUsers }: { initialUsers: UserItem[] }) {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case "ADMIN":
-        return <Badge className="bg-purple-950 text-purple-400 border border-purple-800">Admin</Badge>;
+        return <Badge className="bg-purple-950 text-purple-400 border border-purple-800 text-[10px] shrink-0 whitespace-nowrap">Admin</Badge>;
       case "VENDOR":
-        return <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800">Vendor</Badge>;
+        return <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] shrink-0 whitespace-nowrap">Vendor</Badge>;
       default:
-        return <Badge variant="outline">Buyer</Badge>;
+        return <Badge variant="outline" className="text-[10px] shrink-0 whitespace-nowrap">Buyer</Badge>;
     }
   };
 

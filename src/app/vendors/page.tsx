@@ -99,7 +99,7 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
                     />
                   )}
                   <div className="absolute top-3 right-3">
-                    <Badge variant="dark" className="bg-black/60 backdrop-blur-md text-[10px] uppercase font-bold text-white border-0">
+                    <Badge variant="dark" className="bg-black/60 backdrop-blur-md text-[10px] uppercase font-bold text-white border-0 shrink-0 whitespace-nowrap">
                       {v.layout} template
                     </Badge>
                   </div>
@@ -127,17 +127,17 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
                   </div>
 
                   <div>
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="font-bold text-base text-neutral-950 group-hover:text-emerald-700 transition-colors">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h3 className="font-bold text-base text-neutral-950 group-hover:text-emerald-700 transition-colors truncate">
                         {v.storeName}
                       </h3>
                       <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                     </div>
 
-                    <p className="text-xs text-neutral-500 flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>{v.campus?.name}</span>
-                      {v.faculty && <span>&bull; {v.faculty}</span>}
+                    <p className="text-xs text-neutral-500 flex items-center gap-1 mt-0.5 truncate">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span className="truncate">{v.campus?.name}</span>
+                      {v.faculty && <span className="truncate">&bull; {v.faculty}</span>}
                     </p>
                   </div>
 

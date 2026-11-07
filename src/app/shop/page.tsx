@@ -171,7 +171,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Link
               href="/shop"
-              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+              className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !category
                   ? "bg-neutral-900 text-white"
                   : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -179,13 +179,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             >
               All Items ({products.length})
             </Link>
-            {categories.map((cat) => {
+            {categories.map((cat: any) => {
               const isSelected = category === cat.slug;
               return (
                 <Link
                   key={cat.id}
                   href={`/shop?category=${cat.slug}${campus ? `&campus=${campus}` : ""}`}
-                  className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
+                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
                       ? "bg-neutral-900 text-white"
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -551,57 +551,69 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
             {/* Active Filter Chips */}
             {activeFiltersCount > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="text-xs text-neutral-400 font-medium">Active:</span>
                 {campus && (
-                  <Badge variant="campus" className="gap-1 py-1 px-2.5">
-                    Campus: {campuses.find((c) => c.slug === campus)?.name.split(" ")[0]}
+                  <Badge variant="campus" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs shrink-0 max-w-full">
+                    <span className="truncate">Campus: {campuses.find((c) => c.slug === campus)?.name.split(" ")[0]}</span>
                     <Link
                       href={`/shop?${new URLSearchParams({
                         ...(category ? { category } : {}),
                         ...(condition ? { condition } : {}),
                         ...(vendor ? { vendor } : {}),
                       }).toString()}`}
+                      className="shrink-0"
                     >
                       <X className="w-3 h-3 hover:text-rose-600" />
                     </Link>
                   </Badge>
                 )}
                 {vendor && (
-                  <Badge variant="secondary" className="gap-1 py-1 px-2.5 font-bold">
-                    Vendor: {vendors.find((v) => v.slug === vendor)?.storeName || vendor}
+                  <Badge variant="secondary" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs font-bold shrink-0 max-w-full">
+                    <span className="truncate max-w-[150px] sm:max-w-[200px]">Vendor: {vendors.find((v) => v.slug === vendor)?.storeName || vendor}</span>
                     <Link
                       href={`/shop?${new URLSearchParams({
                         ...(campus ? { campus } : {}),
                         ...(category ? { category } : {}),
                         ...(condition ? { condition } : {}),
                       }).toString()}`}
+                      className="shrink-0"
                     >
                       <X className="w-3 h-3 hover:text-rose-600" />
                     </Link>
                   </Badge>
                 )}
                 {category && (
-                  <Badge variant="secondary" className="gap-1 py-1 px-2.5">
-                    Category: {categories.find((c) => c.slug === category)?.name}
+                  <Badge variant="secondary" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs shrink-0 max-w-full">
+                    <span className="truncate max-w-[150px] sm:max-w-[200px]">
+                      Category: {
+                        categories.find((c: any) => c.slug === category)?.name ||
+                        categories.flatMap((c: any) => c.children || []).find((sub: any) => sub.slug === category)?.name ||
+                        category
+                      }
+                    </span>
                     <Link
                       href={`/shop?${new URLSearchParams({
                         ...(campus ? { campus } : {}),
                         ...(condition ? { condition } : {}),
+                        ...(vendor ? { vendor } : {}),
                       }).toString()}`}
+                      className="shrink-0"
                     >
                       <X className="w-3 h-3 hover:text-rose-600" />
                     </Link>
                   </Badge>
                 )}
                 {condition && (
-                  <Badge variant="secondary" className="gap-1 py-1 px-2.5">
-                    Condition: {condition}
+                  <Badge variant="secondary" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs shrink-0 max-w-full">
+                    <span className="truncate">Condition: {condition}</span>
                     <Link
                       href={`/shop?${new URLSearchParams({
                         ...(campus ? { campus } : {}),
                         ...(category ? { category } : {}),
+                        ...(vendor ? { vendor } : {}),
                       }).toString()}`}
+                      className="shrink-0"
                     >
                       <X className="w-3 h-3 hover:text-rose-600" />
                     </Link>

@@ -140,14 +140,14 @@ export function SavedItemsClient() {
 
                 {/* Details */}
                 <div className="p-4 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-neutral-500">
-                    <span className="font-semibold text-emerald-700">
+                  <div className="flex items-center justify-between text-[11px] text-neutral-500 gap-2">
+                    <span className="font-semibold text-emerald-700 truncate min-w-0">
                       {item.categoryName || "Campus Drop"}
                     </span>
                     {item.vendorCampus && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-emerald-600" />
-                        {item.vendorCampus}
+                      <span className="flex items-center gap-1 shrink-0 truncate max-w-[120px]">
+                        <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                        <span className="truncate">{item.vendorCampus.split(" ")[0]}</span>
                       </span>
                     )}
                   </div>

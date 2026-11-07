@@ -222,7 +222,7 @@ export function ReviewFormModal({
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                      className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold border transition-all whitespace-nowrap shrink-0 ${
                         selected
                           ? isNegative
                             ? "bg-rose-50 border-rose-400 text-rose-700"

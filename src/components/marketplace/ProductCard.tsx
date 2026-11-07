@@ -64,14 +64,14 @@ export function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         {/* Top Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+        <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
           {discountPercent && (
-            <Badge variant="accent" className="text-[10px] font-bold px-2 py-0.5 shadow-sm">
+            <Badge variant="accent" className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
               -{discountPercent}%
             </Badge>
           )}
           {product.isFeatured && (
-            <Badge variant="dark" className="text-[10px] font-bold px-2 py-0.5">
+            <Badge variant="dark" className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap">
               Hot Drop
             </Badge>
           )}
@@ -194,7 +194,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {product.condition && (
-            <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-md">
+            <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap">
               {conditionLabels[product.condition] || product.condition}
             </span>
           )}

@@ -57,8 +57,8 @@ export function LookbookLayout({ vendor, products }: LayoutProps) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
                 {/* Top Badge */}
-                <div className="absolute top-4 left-4 z-10">
-                  <Badge className="bg-white/90 backdrop-blur-md text-neutral-900 font-bold text-xs uppercase tracking-wider">
+                <div className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 z-10">
+                  <Badge className="bg-white/90 backdrop-blur-md text-neutral-900 font-bold text-[10px] sm:text-xs uppercase tracking-wider shrink-0 whitespace-nowrap">
                     Look #{idx + 1}
                   </Badge>
                 </div>

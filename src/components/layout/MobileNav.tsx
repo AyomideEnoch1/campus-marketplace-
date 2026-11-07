@@ -59,8 +59,8 @@ export function MobileNav() {
               <div className="relative">
                 <Icon className="w-5 h-5" />
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute -top-1 -right-2 px-1 text-[9px] font-bold bg-emerald-600 text-white rounded-full min-w-[15px] h-[15px] flex items-center justify-center ring-2 ring-white">
-                    {item.badge}
+                  <span className="absolute -top-1 -right-2 px-1 text-[8px] sm:text-[9px] font-bold bg-emerald-600 text-white rounded-full min-w-[16px] h-[16px] flex items-center justify-center ring-2 ring-white leading-none shrink-0 whitespace-nowrap">
+                    {item.badge > 99 ? "99+" : item.badge}
                   </span>
                 )}
               </div>

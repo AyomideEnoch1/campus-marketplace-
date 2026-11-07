@@ -83,15 +83,15 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: OrderData[]
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "PENDING":
-        return <Badge className="bg-amber-950 text-amber-400 border border-amber-800">Pending</Badge>;
+        return <Badge className="bg-amber-950 text-amber-400 border border-amber-800 text-[10px] shrink-0 whitespace-nowrap">Pending</Badge>;
       case "CONFIRMED":
-        return <Badge className="bg-blue-950 text-blue-400 border border-blue-800">Confirmed</Badge>;
+        return <Badge className="bg-blue-950 text-blue-400 border border-blue-800 text-[10px] shrink-0 whitespace-nowrap">Confirmed</Badge>;
       case "DELIVERED":
-        return <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800">Delivered</Badge>;
+        return <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] shrink-0 whitespace-nowrap">Delivered</Badge>;
       case "CANCELLED":
-        return <Badge className="bg-red-950 text-red-400 border border-red-800">Cancelled</Badge>;
+        return <Badge className="bg-red-950 text-red-400 border border-red-800 text-[10px] shrink-0 whitespace-nowrap">Cancelled</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-[10px] shrink-0 whitespace-nowrap">{status}</Badge>;
     }
   };
 

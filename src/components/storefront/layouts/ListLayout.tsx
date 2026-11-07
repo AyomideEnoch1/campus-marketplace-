@@ -51,11 +51,11 @@ export function ListLayout({ vendor, products }: LayoutProps) {
                 </div>
 
                 <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-[10px] font-bold">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <Badge variant="secondary" className="text-[10px] font-bold shrink-0 max-w-[130px] sm:max-w-none truncate">
                       {p.category?.name || "General"}
                     </Badge>
-                    <span className="text-[11px] text-neutral-500">
+                    <span className="text-[10px] sm:text-[11px] text-neutral-500 shrink-0 whitespace-nowrap">
                       Condition: <strong className="text-neutral-700">{p.condition}</strong>
                     </span>
                   </div>

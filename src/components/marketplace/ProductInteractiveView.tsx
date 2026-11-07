@@ -198,13 +198,13 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
           )}
 
           {/* Badges Overlay */}
-          <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10">
+          <div className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 flex flex-col items-start gap-1.5 z-10 max-w-[70%]">
             {discountPercent && (
-              <Badge variant="accent" className="font-extrabold text-xs px-2.5 py-1 shadow-md">
+              <Badge variant="accent" className="font-extrabold text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-md shrink-0 whitespace-nowrap">
                 Save {discountPercent}%
               </Badge>
             )}
-            <Badge variant="dark" className="bg-black/75 backdrop-blur-md text-white text-xs">
+            <Badge variant="dark" className="bg-black/75 backdrop-blur-md text-white text-[10px] sm:text-xs shrink-0 whitespace-nowrap">
               {conditionLabels[product.condition] || product.condition}
             </Badge>
           </div>
@@ -290,13 +290,13 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
               </p>
             </div>
 
-            <div className="text-right">
+            <div className="text-right shrink-0">
               {product.stock > 0 ? (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
-                  <Check className="w-3 h-3" /> In Stock ({product.stock})
+                <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+                  <Check className="w-3 h-3 shrink-0" /> In Stock ({product.stock})
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 bg-rose-100 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-rose-700 bg-rose-100 px-2.5 py-1 rounded-full whitespace-nowrap">
                   Sold Out
                 </span>
               )}
@@ -319,7 +319,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
               {product.tags.split(",").map((t, i) => (
                 <span
                   key={i}
-                  className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 text-neutral-600"
+                  className="px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-medium bg-neutral-100 text-neutral-600 max-w-full truncate"
                 >
                   #{t.trim()}
                 </span>

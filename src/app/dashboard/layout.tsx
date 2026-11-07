@@ -83,7 +83,7 @@ export default async function VendorDashboardLayout({
                       ? "warning"
                       : "destructive"
                   }
-                  className="text-[10px] px-1.5 py-0"
+                  className="text-[10px] px-1.5 py-0 shrink-0 whitespace-nowrap"
                 >
                   {vendor.status}
                 </Badge>

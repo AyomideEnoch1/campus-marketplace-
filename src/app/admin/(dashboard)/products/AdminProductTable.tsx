@@ -111,13 +111,13 @@ export function AdminProductTable({ initialProducts }: { initialProducts: Produc
   const statusBadge = (status: string) => {
     switch (status) {
       case "PUBLISHED":
-        return <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800">Published</Badge>;
+        return <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] shrink-0 whitespace-nowrap">Published</Badge>;
       case "HIDDEN":
-        return <Badge className="bg-neutral-800 text-neutral-300 border border-neutral-700">Hidden</Badge>;
+        return <Badge className="bg-neutral-800 text-neutral-300 border border-neutral-700 text-[10px] shrink-0 whitespace-nowrap">Hidden</Badge>;
       case "FLAGGED":
-        return <Badge className="bg-red-950 text-red-400 border border-red-800">Flagged</Badge>;
+        return <Badge className="bg-red-950 text-red-400 border border-red-800 text-[10px] shrink-0 whitespace-nowrap">Flagged</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="text-[10px] shrink-0 whitespace-nowrap">{status}</Badge>;
     }
   };
 
