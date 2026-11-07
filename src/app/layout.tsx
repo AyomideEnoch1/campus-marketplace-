@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { Footer } from "@/components/layout/Footer";
 import { getSession } from "@/lib/auth";
 import { CartProvider } from "@/lib/cart";
+import { WishlistProvider } from "@/lib/wishlist";
 
 export const metadata: Metadata = {
   title: "CampusTrade | Multi-Vendor Marketplace for Nigerian University Students",
@@ -32,11 +33,13 @@ export default async function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className="min-h-screen flex flex-col bg-white text-neutral-900 font-sans antialiased">
         <CartProvider>
-          <AnnouncementBar />
-          <Navbar initialUser={sessionUser} />
-          <main className="flex-grow">{children}</main>
-          <MobileNav />
-          <Footer />
+          <WishlistProvider>
+            <AnnouncementBar />
+            <Navbar initialUser={sessionUser} />
+            <main className="flex-grow">{children}</main>
+            <MobileNav />
+            <Footer />
+          </WishlistProvider>
         </CartProvider>
       </body>
     </html>

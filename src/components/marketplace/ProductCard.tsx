@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Heart, ShoppingBag, MapPin, CheckCircle2, MessageCircle } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useWishlist } from "@/lib/wishlist";
 
 interface ProductCardProps {
   product: {
@@ -28,7 +29,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const [isFavorite, setIsFavorite] = React.useState(false);
+  const { toggleSave, isSaved } = useWishlist();
+  const isFavorite = isSaved(product.id);
   const primaryImage =
     product.images?.[0]?.url ||
     "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80";
@@ -77,7 +79,19 @@ export function ProductCard({ product }: ProductCardProps) {
         <button
           onClick={(e) => {
             e.preventDefault();
-            setIsFavorite(!isFavorite);
+            e.stopPropagation();
+            toggleSave({
+              id: product.id,
+              title: product.title,
+              slug: product.slug,
+              price: product.price,
+              comparePrice: product.comparePrice,
+              image: primaryImage,
+              condition: product.condition,
+              categoryName: product.category?.name,
+              vendorName: product.vendor?.storeName,
+              vendorCampus: product.vendor?.campus?.name,
+            });
           }}
           className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 ${
             isFavorite

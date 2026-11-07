@@ -17,11 +17,14 @@ import {
   RotateCcw,
   Sparkles,
   ExternalLink,
+  X,
+  ArrowRight,
 } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 
 interface ProductInteractiveViewProps {
   product: {
@@ -54,11 +57,22 @@ interface ProductInteractiveViewProps {
 
 export function ProductInteractiveView({ product }: ProductInteractiveViewProps) {
   const { addItem } = useCart();
+  const { toggleSave, isSaved } = useWishlist();
+  const isFavorite = isSaved(product.id);
+
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
   const [viewMode, setViewMode] = React.useState<"photo" | "3d">("photo");
   const [quantity, setQuantity] = React.useState(1);
-  const [isFavorite, setIsFavorite] = React.useState(false);
+  const [showBagModal, setShowBagModal] = React.useState(false);
   const [addedSuccess, setAddedSuccess] = React.useState(false);
+
+  const maxStock = Math.max(1, product.stock);
+
+  const handleQuantityChange = (val: number) => {
+    if (isNaN(val)) return;
+    const clamped = Math.max(1, Math.min(maxStock, val));
+    setQuantity(clamped);
+  };
 
   const images = product.images.length > 0
     ? product.images.map((img) => img.url)
@@ -97,7 +111,23 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
     });
 
     setAddedSuccess(true);
-    setTimeout(() => setAddedSuccess(false), 2500);
+    setShowBagModal(true);
+    setTimeout(() => setAddedSuccess(false), 3000);
+  };
+
+  const handleToggleWishlist = () => {
+    toggleSave({
+      id: product.id,
+      title: product.title,
+      slug: product.slug,
+      price: product.price,
+      comparePrice: product.comparePrice,
+      image: currentImage,
+      condition: conditionLabels[product.condition] || product.condition,
+      categoryName: product.category.name,
+      vendorName: product.vendor.storeName,
+      vendorCampus: product.vendor.campus?.name,
+    });
   };
 
   const handleShare = () => {
@@ -181,15 +211,16 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
 
           {/* Wishlist Button */}
           <button
-            onClick={() => setIsFavorite(!isFavorite)}
+            type="button"
+            onClick={handleToggleWishlist}
             className={`absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all z-10 ${
               isFavorite
-                ? "bg-rose-50 text-rose-500 shadow-md"
+                ? "bg-rose-50 text-rose-500 shadow-md ring-2 ring-rose-500/20"
                 : "bg-white/90 backdrop-blur-md text-neutral-700 hover:text-rose-500 hover:bg-white shadow-xs"
             }`}
             aria-label="Save to wishlist"
           >
-            <Heart className={`w-5 h-5 ${isFavorite ? "fill-rose-500" : ""}`} />
+            <Heart className={`w-5 h-5 transition-transform active:scale-125 ${isFavorite ? "fill-rose-500" : ""}`} />
           </button>
         </div>
 
@@ -296,27 +327,48 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
             </div>
           )}
 
-          {/* Quantity Selector */}
-          <div className="pt-2 flex items-center gap-4">
-            <span className="text-xs font-bold text-neutral-700">Quantity:</span>
-            <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-xs">
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="w-9 h-9 flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-l-xl transition-colors font-bold text-sm"
-              >
-                -
-              </button>
-              <span className="w-10 text-center font-bold text-sm text-neutral-900">
-                {quantity}
+          {/* Quantity Selector with Numeric Input & Steppers */}
+          <div className="pt-2 space-y-1.5">
+            <div className="flex items-center gap-4">
+              <span className="text-xs font-bold text-neutral-700">Quantity:</span>
+              <div className="flex items-center border border-neutral-200 rounded-xl bg-white shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                  disabled={quantity <= 1}
+                  className="w-10 h-10 flex items-center justify-center text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors font-bold text-base"
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  max={maxStock}
+                  value={quantity}
+                  onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                  className="w-14 h-10 text-center font-bold text-sm text-neutral-900 border-x border-neutral-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  aria-label="Item quantity"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  disabled={quantity >= maxStock}
+                  className="w-10 h-10 flex items-center justify-center text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 disabled:hover:bg-transparent transition-colors font-bold text-base"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+              <span className="text-xs text-neutral-500">
+                {product.stock > 0 ? (
+                  <span>
+                    ({product.stock} available in stock)
+                  </span>
+                ) : (
+                  <span className="text-rose-500 font-semibold">Out of stock</span>
+                )}
               </span>
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                className="w-9 h-9 flex items-center justify-center text-neutral-600 hover:bg-neutral-100 rounded-r-xl transition-colors font-bold text-sm"
-              >
-                +
-              </button>
             </div>
           </div>
 
@@ -401,6 +453,73 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
           </div>
         </div>
       </div>
+
+      {/* Added to Bag Interactive Modal */}
+      {showBagModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-50">
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-start justify-between border-b border-neutral-100 pb-3">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <Check className="w-4 h-4 text-emerald-700" />
+                </div>
+                <h3 className="font-extrabold text-base text-neutral-900">
+                  Added to Order Bag
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBagModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 flex items-center justify-center transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Item Preview */}
+            <div className="flex gap-4 p-3 rounded-2xl bg-neutral-50 border border-neutral-100">
+              <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-neutral-200 shrink-0">
+                <Image
+                  src={currentImage}
+                  alt={product.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-xs text-neutral-900 line-clamp-1">
+                  {product.title}
+                </h4>
+                <p className="text-[11px] text-neutral-500 mt-0.5">
+                  Quantity: <span className="font-bold text-neutral-800">{quantity}</span> × {formatNGN(product.price)}
+                </p>
+                <p className="text-xs font-black text-emerald-700 mt-1">
+                  Subtotal: {formatNGN(product.price * quantity)}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2 pt-1">
+              <Link href="/cart" className="block">
+                <Button className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>View Order Bag & Checkout</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowBagModal(false)}
+                className="w-full py-2.5 text-xs font-bold text-neutral-600 hover:text-neutral-900 text-center transition-colors"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

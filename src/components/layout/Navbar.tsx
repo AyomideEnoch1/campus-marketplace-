@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart";
+import { useWishlist } from "@/lib/wishlist";
 
 interface NavbarProps {
   initialUser?: any;
@@ -28,6 +29,7 @@ export function Navbar({ initialUser }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { totalCount } = useCart();
+  const { savedCount } = useWishlist();
   const [user, setUser] = React.useState(initialUser);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
@@ -135,14 +137,21 @@ export function Navbar({ initialUser }: NavbarProps) {
             <Search className="w-5 h-5" />
           </Link>
 
-          {/* Wishlist */}
+          {/* Wishlist / Saved Items */}
           <Link
-            href="/wishlist"
+            href="/saved"
             className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
             title="Saved Items"
           >
             <Heart className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+            {savedCount > 0 && (
+              <Badge
+                variant="accent"
+                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 text-white animate-in zoom-in-75"
+              >
+                {savedCount}
+              </Badge>
+            )}
           </Link>
 
           {/* Cart Icon */}

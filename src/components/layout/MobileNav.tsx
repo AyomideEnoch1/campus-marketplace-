@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, PlusCircle, Heart, User } from "lucide-react";
+import { Home, Compass, PlusCircle, Heart, User, ShoppingBag } from "lucide-react";
+import { useWishlist } from "@/lib/wishlist";
+import { useCart } from "@/lib/cart";
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { savedCount } = useWishlist();
+  const { totalCount } = useCart();
 
   // Don't show public bottom nav inside admin dashboard
   if (pathname.startsWith("/admin")) {
@@ -16,8 +20,8 @@ export function MobileNav() {
     { label: "Home", href: "/", icon: Home },
     { label: "Shop", href: "/shop", icon: Compass },
     { label: "Sell", href: "/vendor/register", icon: PlusCircle, highlight: true },
-    { label: "Saved", href: "/wishlist", icon: Heart },
-    { label: "Account", href: "/auth/login", icon: User },
+    { label: "Saved", href: "/saved", icon: Heart, badge: savedCount },
+    { label: "Bag", href: "/cart", icon: ShoppingBag, badge: totalCount },
   ];
 
   return (
@@ -48,11 +52,18 @@ export function MobileNav() {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex flex-col items-center py-1 px-2 transition-colors ${
+              className={`flex flex-col items-center py-1 px-2 transition-colors relative ${
                 isActive ? "text-emerald-600 font-bold" : "text-neutral-500 hover:text-neutral-900"
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <div className="relative">
+                <Icon className="w-5 h-5" />
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-2 px-1 text-[9px] font-bold bg-emerald-600 text-white rounded-full min-w-[15px] h-[15px] flex items-center justify-center ring-2 ring-white">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] mt-0.5">{item.label}</span>
             </Link>
           );
