@@ -88,11 +88,6 @@ export function Footer() {
                   Seller Code of Conduct
                 </Link>
               </li>
-              <li>
-                <Link href="/admin/login" className="hover:text-white transition-colors">
-                  Admin CMS Portal
-                </Link>
-              </li>
             </ul>
           </div>
 

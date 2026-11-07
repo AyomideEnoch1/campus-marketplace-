@@ -13,6 +13,8 @@ export function formatNGN(amount: number): string {
   }).format(amount);
 }
 
+export const formatPrice = formatNGN;
+
 export function slugify(text: string): string {
   return text
     .toString()

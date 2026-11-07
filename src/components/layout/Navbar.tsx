@@ -293,14 +293,6 @@ export function Navbar({ initialUser }: NavbarProps) {
               </span>
               <span>&rarr;</span>
             </Link>
-
-            <Link
-              href="/admin/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-center py-2 text-xs font-medium text-neutral-500 hover:text-neutral-800"
-            >
-              Admin CMS Login
-            </Link>
           </div>
         </div>
       )}

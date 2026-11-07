@@ -30,10 +30,6 @@ export function AnnouncementBar() {
           <Link href="/vendor/register" className="hover:text-white transition-colors text-emerald-400 font-semibold">
             Become a Seller &rarr;
           </Link>
-          <span className="text-neutral-600">|</span>
-          <Link href="/admin/login" className="hover:text-white transition-colors text-neutral-400 hover:text-neutral-200">
-            Admin CMS
-          </Link>
         </div>
       </div>
     </div>
