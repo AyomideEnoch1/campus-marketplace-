@@ -193,50 +193,51 @@ export default async function HomePage() {
 
             {/* Right Column: Hero Visual with Floating Product Cards (NovaTrend Style) */}
             <div className="lg:col-span-6 relative flex justify-center">
-              <div className="relative w-full max-w-[480px] aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-tr from-emerald-100 to-amber-50 border-4 border-white">
+              <div className="relative w-full max-w-[540px] aspect-[4/3] sm:aspect-[16/11] rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-tr from-emerald-100 to-amber-50 border-4 border-white group">
                 <Image
-                  src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=900&q=80"
-                  alt="Student campus lifestyle"
+                  src="/images/hero-campus-marketplace.png"
+                  alt="Nigerian university campus students shopping and browsing stalls at CampusTrade marketplace"
                   fill
                   priority
-                  className="object-cover object-top"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 540px"
+                  className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                 />
 
                 {/* Floating Card 1: Top Right (Sneaker / Fashion) */}
-                <div className="absolute top-6 -right-2 sm:right-4 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-3 animate-bounce [animation-duration:4s]">
+                <div className="absolute top-4 right-2 sm:top-5 sm:right-4 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-2.5 animate-bounce [animation-duration:4s]">
                   <img
                     src="https://images.unsplash.com/photo-1552346154-21d32810aba3?w=120&q=80"
                     alt="Jordan 1"
-                    className="w-11 h-11 rounded-xl object-cover"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover"
                   />
                   <div>
-                    <p className="text-[11px] font-bold text-neutral-900">Air Jordan 1 Retro</p>
+                    <p className="text-[10px] sm:text-[11px] font-bold text-neutral-900">Air Jordan 1 Retro</p>
                     <p className="text-xs font-extrabold text-emerald-600">₦38,500</p>
                   </div>
                 </div>
 
                 {/* Floating Card 2: Mid Left (Gadget / Electronics) */}
-                <div className="absolute top-1/2 -left-3 sm:left-4 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-3 animate-bounce [animation-duration:5s]">
+                <div className="absolute top-1/2 -left-2 sm:left-3 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-2.5 animate-bounce [animation-duration:5s]">
                   <img
                     src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120&q=80"
                     alt="Headphones"
-                    className="w-11 h-11 rounded-xl object-cover"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover"
                   />
                   <div>
-                    <p className="text-[11px] font-bold text-neutral-900">Sony WH-1000XM4</p>
+                    <p className="text-[10px] sm:text-[11px] font-bold text-neutral-900">Sony WH-1000XM4</p>
                     <p className="text-xs font-extrabold text-emerald-600">₦165,000</p>
                   </div>
                 </div>
 
-                {/* Floating Card 3: Bottom Right (Hostel Fan / Living) */}
-                <div className="absolute bottom-6 right-4 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-3 animate-bounce [animation-duration:4.5s]">
+                {/* Floating Card 3: Bottom Right (Live Student Drops Badge) */}
+                <div className="absolute bottom-4 right-2 sm:bottom-5 sm:right-4 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-2.5 animate-bounce [animation-duration:4.5s]">
                   <img
                     src="https://images.unsplash.com/photo-1618941716939-553df3c6c278?w=120&q=80"
                     alt="Rechargeable Fan"
-                    className="w-11 h-11 rounded-xl object-cover"
+                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover"
                   />
                   <div>
-                    <p className="text-[11px] font-bold text-neutral-900">16&quot; Mist Stand Fan</p>
+                    <p className="text-[10px] sm:text-[11px] font-bold text-neutral-900">16&quot; Mist Stand Fan</p>
                     <p className="text-xs font-extrabold text-emerald-600">₦48,000</p>
                   </div>
                 </div>
