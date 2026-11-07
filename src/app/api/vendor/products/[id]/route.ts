@@ -17,7 +17,7 @@ const updateSchema = z.object({
   tags: z.string().optional().nullable(),
   model3dUrl: z.string().optional().nullable(),
   videoUrl: z.string().optional().nullable(),
-  images: z.array(z.string().url()).optional(),
+  images: z.array(z.string().min(1, "Image path cannot be empty")).optional(),
 });
 
 export async function GET(

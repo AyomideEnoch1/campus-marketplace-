@@ -7,6 +7,7 @@ export type StoreLayout = "grid" | "list" | "showcase" | "lookbook";
 
 export interface SessionUser {
   id: string;
+  userId: string;
   email: string;
   fullName: string;
   role: Role;

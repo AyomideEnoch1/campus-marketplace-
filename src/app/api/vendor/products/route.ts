@@ -18,7 +18,7 @@ const productSchema = z.object({
   tags: z.string().optional().nullable(),
   model3dUrl: z.string().optional().nullable(),
   videoUrl: z.string().optional().nullable(),
-  images: z.array(z.string().url()).min(1, "Please provide at least one product image"),
+  images: z.array(z.string().min(1, "Image path cannot be empty")).min(1, "Please provide at least one product image"),
   variants: z
     .array(
       z.object({
@@ -49,7 +49,7 @@ export async function GET() {
         images: { orderBy: { position: "asc" } },
         category: true,
         variants: true,
-        _count: { select: { orderItems: true, reviews: true } },
+        _count: { select: { orderItems: true, productReviews: true } },
       },
     });
 

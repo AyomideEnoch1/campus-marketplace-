@@ -17,7 +17,7 @@ export default async function AdminUsersPage() {
       _count: {
         select: {
           orders: true,
-          reviews: true,
+          productReviews: true,
         },
       },
     },

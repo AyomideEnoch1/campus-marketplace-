@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface ProductFormProps {
   initialData?: any;
@@ -47,25 +48,13 @@ export function ProductForm({
 
   // Images list
   const [images, setImages] = React.useState<string[]>(
-    initialData?.images?.map((img: any) => img.url) || [
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
-    ]
+    initialData?.images?.map((img: any) => img.url) || []
   );
-  const [newImageUrl, setNewImageUrl] = React.useState("");
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState(false);
 
-  const handleAddImage = () => {
-    if (!newImageUrl.trim()) return;
-    setImages([...images, newImageUrl.trim()]);
-    setNewImageUrl("");
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,51 +204,15 @@ export function ProductForm({
           </div>
 
           {/* Images Section */}
-          <div className="p-6 rounded-2xl bg-white border border-neutral-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
-              <h3 className="font-bold text-sm text-neutral-900">Product Images</h3>
-              <span className="text-xs text-neutral-500">Max 5MB per photo</span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {images.map((imgUrl, idx) => (
-                <div
-                  key={idx}
-                  className="relative aspect-square rounded-xl overflow-hidden border border-neutral-200 bg-neutral-100 group"
-                >
-                  <img src={imgUrl} alt="" className="w-full h-full object-cover" />
-                  <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                    {idx === 0 ? "Cover" : `#${idx + 1}`}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(idx)}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-md bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <Input
-                placeholder="Paste image URL (e.g. from Unsplash or Supabase Storage)..."
-                value={newImageUrl}
-                onChange={(e) => setNewImageUrl(e.target.value)}
-                className="text-xs"
-              />
-              <Button
-                type="button"
-                onClick={handleAddImage}
-                variant="secondary"
-                size="sm"
-                className="shrink-0 text-xs font-bold"
-              >
-                <ImagePlus className="w-4 h-4 mr-1 text-emerald-600" />
-                Add Photo
-              </Button>
-            </div>
+          <div className="p-6 rounded-2xl bg-white border border-neutral-200/80 shadow-xs">
+            <ImageUpload
+              value={images}
+              onChange={setImages}
+              maxFiles={8}
+              folder="products"
+              title="Product Photos"
+              description="Upload up to 8 photos from your device or phone. First photo serves as the main cover image."
+            />
           </div>
 
           {/* Media: 3D Model & Video (Section 4.2) */}

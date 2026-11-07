@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SingleImageUpload } from "@/components/ui/single-image-upload";
 import { StorefrontRenderer } from "@/components/storefront/StorefrontRenderer";
 
 interface StoreCustomizerClientProps {
@@ -313,31 +314,23 @@ export function StoreCustomizerClient({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-neutral-700">Logo Image URL</label>
-                <Input
-                  placeholder="https://example.com/logo.jpg"
-                  value={logo}
-                  onChange={(e) => setLogo(e.target.value)}
-                  className="text-xs"
-                />
-                <p className="text-[11px] text-neutral-400">
-                  Recommended: 400x400px square format
-                </p>
-              </div>
+              <SingleImageUpload
+                value={logo}
+                onChange={setLogo}
+                aspectRatio="square"
+                folder="stores"
+                label="Store Logo / Profile Avatar"
+                hint="400x400px square format"
+              />
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-neutral-700">Banner Image URL</label>
-                <Input
-                  placeholder="https://example.com/banner.jpg"
-                  value={banner}
-                  onChange={(e) => setBanner(e.target.value)}
-                  className="text-xs"
-                />
-                <p className="text-[11px] text-neutral-400">
-                  Recommended: 1200x400px wide landscape format
-                </p>
-              </div>
+              <SingleImageUpload
+                value={banner}
+                onChange={setBanner}
+                aspectRatio="banner"
+                folder="stores"
+                label="Store Header Banner"
+                hint="1200x400px wide landscape format"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-3">
