@@ -23,6 +23,14 @@ export async function PATCH(
       },
     });
 
+    // When approving a vendor, automatically activate their drafted products
+    if (status === "APPROVED") {
+      await prisma.product.updateMany({
+        where: { vendorId: params.id, status: "DRAFT" },
+        data: { status: "PUBLISHED" },
+      });
+    }
+
     // Log admin activity
     await prisma.activityLog.create({
       data: {

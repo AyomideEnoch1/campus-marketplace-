@@ -29,9 +29,20 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   };
 
   if (category) {
-    where.category = {
-      slug: category,
-    };
+    const matchedCategory = await prisma.category.findUnique({
+      where: { slug: category },
+      include: { children: true },
+    });
+
+    if (matchedCategory && matchedCategory.children?.length > 0) {
+      where.category = {
+        slug: { in: [matchedCategory.slug, ...matchedCategory.children.map((c) => c.slug)] },
+      };
+    } else {
+      where.category = {
+        slug: category,
+      };
+    }
   }
 
   if (campus) {
@@ -94,9 +105,22 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     prisma.category.findMany({
       where: { parentId: null, isActive: true },
       include: {
-        children: true,
-        _count: { select: { products: true } },
+        children: {
+          include: {
+            _count: {
+              select: {
+                products: { where: { status: "PUBLISHED" } },
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            products: { where: { status: "PUBLISHED" } },
+          },
+        },
       },
+      orderBy: { sortOrder: "asc" },
     }),
     prisma.campus.findMany({
       where: { isActive: true },
@@ -117,6 +141,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const activeFiltersCount = [campus, category, condition, minPrice, maxPrice, q, vendor].filter(
     Boolean
   ).length;
+
+  const getCategoryCount = (cat: any) =>
+    (cat._count?.products || 0) +
+    (cat.children?.reduce((acc: number, ch: any) => acc + (ch._count?.products || 0), 0) || 0);
 
   return (
     <div className="bg-white min-h-screen">
@@ -163,7 +191,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
                   }`}
                 >
-                  {cat.name} ({cat._count.products})
+                  {cat.name} ({getCategoryCount(cat)})
                 </Link>
               );
             })}
@@ -303,28 +331,61 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   Categories
                 </label>
                 <div className="space-y-1 max-h-48 overflow-y-auto text-xs">
-                  {categories.map((c) => {
-                    const isSelected = category === c.slug;
+                  {categories.map((c: any) => {
+                    const isSelected =
+                      category === c.slug || c.children?.some((ch: any) => ch.slug === category);
                     return (
-                      <Link
-                        key={c.id}
-                        href={`/shop?${new URLSearchParams({
-                          category: c.slug,
-                          ...(campus ? { campus } : {}),
-                          ...(vendor ? { vendor } : {}),
-                          ...(condition ? { condition } : {}),
-                        }).toString()}`}
-                        className={`flex items-center justify-between p-2 rounded-xl transition-colors ${
-                          isSelected
-                            ? "bg-emerald-50 text-emerald-800 font-bold"
-                            : "text-neutral-600 hover:bg-neutral-100"
-                        }`}
-                      >
-                        <span>{c.name}</span>
-                        <span className="text-[10px] text-neutral-400">
-                          {c._count.products}
-                        </span>
-                      </Link>
+                      <div key={c.id} className="space-y-0.5">
+                        <Link
+                          href={`/shop?${new URLSearchParams({
+                            category: c.slug,
+                            ...(campus ? { campus } : {}),
+                            ...(vendor ? { vendor } : {}),
+                            ...(condition ? { condition } : {}),
+                          }).toString()}`}
+                          className={`flex items-center justify-between p-2 rounded-xl transition-colors ${
+                            category === c.slug
+                              ? "bg-emerald-50 text-emerald-800 font-bold"
+                              : isSelected
+                              ? "text-emerald-800 font-semibold bg-emerald-50/50"
+                              : "text-neutral-600 hover:bg-neutral-100"
+                          }`}
+                        >
+                          <span>{c.name}</span>
+                          <span className="text-[10px] text-neutral-400">
+                            {getCategoryCount(c)}
+                          </span>
+                        </Link>
+
+                        {isSelected && c.children && c.children.length > 0 && (
+                          <div className="pl-3 ml-2 border-l-2 border-emerald-500/30 space-y-0.5 py-1">
+                            {c.children.map((sub: any) => {
+                              const isSubSelected = category === sub.slug;
+                              return (
+                                <Link
+                                  key={sub.id}
+                                  href={`/shop?${new URLSearchParams({
+                                    category: sub.slug,
+                                    ...(campus ? { campus } : {}),
+                                    ...(vendor ? { vendor } : {}),
+                                    ...(condition ? { condition } : {}),
+                                  }).toString()}`}
+                                  className={`flex items-center justify-between px-2 py-1 rounded-lg text-[11px] transition-colors ${
+                                    isSubSelected
+                                      ? "bg-emerald-100/70 text-emerald-900 font-bold"
+                                      : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
+                                  }`}
+                                >
+                                  <span>{sub.name}</span>
+                                  <span className="text-[9px] text-neutral-400">
+                                    {sub._count?.products || 0}
+                                  </span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>

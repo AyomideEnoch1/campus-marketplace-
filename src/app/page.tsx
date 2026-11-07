@@ -23,10 +23,24 @@ async function getHomepageData() {
     const [categories, campuses, newArrivals, featuredProducts, vendors] = await Promise.all([
       prisma.category.findMany({
         where: { parentId: null, isActive: true },
-        take: 6,
+        take: 8,
         include: {
-          _count: { select: { products: true } },
+          children: {
+            include: {
+              _count: {
+                select: {
+                  products: { where: { status: "PUBLISHED" } },
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              products: { where: { status: "PUBLISHED" } },
+            },
+          },
         },
+        orderBy: { sortOrder: "asc" },
       }),
       prisma.campus.findMany({
         where: { isActive: true },
@@ -90,6 +104,8 @@ export default async function HomePage() {
     "books-academics": "https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=600&q=80",
     "beauty-care": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80",
     "food-groceries": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80",
+    "sports-fitness": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&q=80",
+    services: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&q=80",
   };
 
   return (
@@ -254,39 +270,45 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/shop?category=${cat.slug}`}
-                className="group relative rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 hover:shadow-lg transition-all duration-300"
-              >
-                <div className="aspect-[4/5] relative w-full overflow-hidden">
-                  <Image
-                    src={
-                      categoryImages[cat.slug] ||
-                      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"
-                    }
-                    alt={cat.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                    className="object-cover group-hover:scale-108 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-neutral-950/20 to-transparent"></div>
-                  <div className="absolute bottom-3 left-3 right-3 text-white">
-                    <h3 className="font-bold text-sm sm:text-base leading-snug line-clamp-1">
-                      {cat.name}
-                    </h3>
-                    <p className="text-[11px] text-neutral-300 flex items-center justify-between mt-0.5">
-                      <span>{cat._count.products} Products</span>
-                      <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform">
-                        &rarr;
-                      </span>
-                    </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3.5">
+            {categories.map((cat: any) => {
+              const totalProducts =
+                (cat._count?.products || 0) +
+                (cat.children?.reduce((acc: number, c: any) => acc + (c._count?.products || 0), 0) || 0);
+
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/shop?category=${cat.slug}`}
+                  className="group relative rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 hover:shadow-lg transition-all duration-300"
+                >
+                  <div className="aspect-[4/5] relative w-full overflow-hidden">
+                    <Image
+                      src={
+                        categoryImages[cat.slug] ||
+                        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"
+                      }
+                      alt={cat.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12vw"
+                      className="object-cover group-hover:scale-108 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/30 to-transparent"></div>
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
+                      <h3 className="font-bold text-xs sm:text-sm leading-snug line-clamp-1">
+                        {cat.name}
+                      </h3>
+                      <p className="text-[10px] text-neutral-300 flex items-center justify-between mt-0.5">
+                        <span>{totalProducts} Items</span>
+                        <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform">
+                          &rarr;
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
