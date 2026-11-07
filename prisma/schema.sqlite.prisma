@@ -19,12 +19,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  vendorProfile VendorProfile?
-  orders        Order[]
-  reviews       Review[]
-  favorites     Favorite[]
-  reports       Report[]
-  activityLogs  ActivityLog[]
+  vendorProfile  VendorProfile?
+  orders         Order[]
+  favorites      Favorite[]
+  reports        Report[]
+  activityLogs   ActivityLog[]
+  productReviews ProductReview[]     @relation("BuyerProductReviews")
+  sellerRatings  SellerRating[]      @relation("BuyerSellerRatings")
+  helpfulVotes   ReviewHelpfulVote[]
+  reviewReports  ReviewReport[]
 
   @@index([role])
   @@index([email])
@@ -50,11 +53,19 @@ model VendorProfile {
   status           String   @default("PENDING") // PENDING | APPROVED | REJECTED | SUSPENDED
   rejectionReason  String?
   adminNotes       String?
+  sellerAvgRating  Float    @default(0.0)
+  sellerReviewCount Int     @default(0)
+  communicationAvg Float    @default(0.0)
+  punctualityAvg   Float    @default(0.0)
+  behaviorAvg      Float    @default(0.0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  products Product[]
-  orders   Order[]
+  products               Product[]
+  orders                 Order[]
+  receivedProductReviews ProductReview[] @relation("SellerProductReviews")
+  receivedSellerRatings  SellerRating[]  @relation("SellerRatingsReceived")
+  reviewReplies          ReviewReply[]
 
   @@index([slug])
   @@index([campusId])
@@ -99,33 +110,36 @@ model Category {
 }
 
 model Product {
-  id           String   @id @default(cuid())
-  vendorId     String
-  vendor       VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  categoryId   String
-  category     Category @relation(fields: [categoryId], references: [id])
-  title        String
-  slug         String   @unique
-  description  String
-  price        Float
-  comparePrice Float?
-  stock        Int      @default(1)
-  condition    String   @default("NEW") // NEW | USED_LIKE_NEW | USED_GOOD | USED_FAIR
-  status       String   @default("DRAFT") // DRAFT | PUBLISHED | HIDDEN | FLAGGED
-  model3dUrl   String?
-  videoUrl     String?
-  tags         String?
-  viewsCount   Int      @default(0)
-  isFeatured   Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(cuid())
+  vendorId        String
+  vendor          VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id])
+  title           String
+  slug            String   @unique
+  description     String
+  price           Float
+  comparePrice    Float?
+  stock           Int      @default(1)
+  condition       String   @default("NEW") // NEW | USED_LIKE_NEW | USED_GOOD | USED_FAIR
+  status          String   @default("DRAFT") // DRAFT | PUBLISHED | HIDDEN | FLAGGED
+  model3dUrl      String?
+  videoUrl        String?
+  tags            String?
+  viewsCount      Int      @default(0)
+  isFeatured      Boolean  @default(false)
+  reviewCount     Int      @default(0)
+  avgRating       Float    @default(0.0)
+  ratingBreakdown String?  // JSON string e.g. {"5":0,"4":0,"3":0,"2":0,"1":0}
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  images     ProductImage[]
-  variants   ProductVariant[]
-  orderItems OrderItem[]
-  reviews    Review[]
-  favorites  Favorite[]
-  reports    Report[]
+  images         ProductImage[]
+  variants       ProductVariant[]
+  orderItems     OrderItem[]
+  productReviews ProductReview[]
+  favorites      Favorite[]
+  reports        Report[]
 
   @@index([slug])
   @@index([vendorId])
@@ -179,7 +193,8 @@ model Order {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  items OrderItem[]
+  items         OrderItem[]
+  sellerRatings SellerRating[]
 
   @@index([orderNumber])
   @@index([vendorId])
@@ -198,24 +213,96 @@ model OrderItem {
   variantDetails String?
   createdAt      DateTime @default(now())
 
+  review ProductReview?
+
   @@index([orderId])
   @@index([productId])
 }
 
-model Review {
-  id                 String   @id @default(cuid())
-  productId          String
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rating             Int      @default(5)
-  comment            String
-  isVerifiedPurchase Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+model ProductReview {
+  id           String   @id @default(cuid())
+  orderItemId  String   @unique
+  orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerId      String
+  buyer        User     @relation("BuyerProductReviews", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId     String
+  seller       VendorProfile @relation("SellerProductReviews", fields: [sellerId], references: [id], onDelete: Cascade)
+  rating       Int      @default(5) // 1-5
+  comment      String?
+  tags         String?  // JSON string array e.g. ["As described","Good quality"]
+  photoPaths   String?  // JSON string array of up to 3 URLs
+  status       String   @default("PUBLISHED") // PUBLISHED | HIDDEN | FLAGGED
+  helpfulCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  helpfulVotes ReviewHelpfulVote[]
+  reply        ReviewReply?
+  reports      ReviewReport[]
 
   @@index([productId])
-  @@index([userId])
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SellerRating {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  buyerId       String
+  buyer         User     @relation("BuyerSellerRatings", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId      String
+  seller        VendorProfile @relation("SellerRatingsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
+  communication Int      @default(5) // 1-5
+  punctuality   Int      @default(5) // 1-5
+  behavior      Int      @default(5) // 1-5
+  createdAt     DateTime @default(now())
+
+  @@unique([orderId, buyerId])
+  @@index([sellerId])
+}
+
+model ReviewHelpfulVote {
+  reviewId  String
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@id([reviewId, userId])
+  @@index([reviewId])
+}
+
+model ReviewReply {
+  id        String        @id @default(cuid())
+  reviewId  String        @unique
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  sellerId  String
+  seller    VendorProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([reviewId])
+}
+
+model ReviewReport {
+  id        String        @id @default(cuid())
+  reviewId  String
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter  User          @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason    String        // SPAM | ABUSIVE_LANGUAGE | FAKE_REVIEW | IRRELEVANT
+  details   String?
+  status    String        @default("PENDING") // PENDING | RESOLVED | DISMISSED
+  createdAt DateTime      @default(now())
+
+  @@index([reviewId])
+  @@index([status])
 }
 
 model Favorite {

@@ -1,12 +1,25 @@
 import * as React from "react";
 import Image from "next/image";
-import { MapPin, MessageCircle, ShieldCheck, Share2, Sparkles } from "lucide-react";
+import Link from "next/link";
+import {
+  MapPin,
+  MessageCircle,
+  ShieldCheck,
+  Share2,
+  Sparkles,
+  Star,
+  CheckCircle2,
+  MessageSquare,
+  Clock,
+  Smile,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GridLayout } from "./layouts/GridLayout";
 import { ListLayout } from "./layouts/ListLayout";
 import { ShowcaseLayout } from "./layouts/ShowcaseLayout";
 import { LookbookLayout } from "./layouts/LookbookLayout";
+import { formatDate } from "@/lib/utils";
 
 interface StorefrontRendererProps {
   vendor: {
@@ -23,14 +36,22 @@ interface StorefrontRendererProps {
     department?: string | null;
     status: string;
     campus?: { name: string; slug: string; city: string };
+    sellerAvgRating?: number;
+    sellerReviewCount?: number;
+    completedOrdersCount?: number;
+    communicationAvg?: number;
+    punctualityAvg?: number;
+    behaviorAvg?: number;
   };
   products: any[];
+  recentReviews?: any[];
   isPreview?: boolean;
 }
 
 export function StorefrontRenderer({
   vendor,
   products,
+  recentReviews = [],
   isPreview = false,
 }: StorefrontRendererProps) {
   const brandColor = vendor.brandColor || "#059669";
@@ -101,6 +122,27 @@ export function StorefrontRenderer({
                 </p>
               )}
 
+              {/* Trust & Orders Badge Strip */}
+              <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
+                {vendor.sellerAvgRating && vendor.sellerAvgRating > 0 ? (
+                  <span className="flex items-center gap-1 font-bold text-amber-500 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-lg">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>{vendor.sellerAvgRating.toFixed(1)}</span>
+                    <span className="text-neutral-500 font-normal">
+                      ({vendor.sellerReviewCount || 0} reviews)
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg text-[11px]">
+                    ★ 5.0 New Seller
+                  </span>
+                )}
+
+                <span className="text-neutral-500 font-medium bg-neutral-100 px-2 py-0.5 rounded-lg">
+                  {vendor.completedOrdersCount || 0} completed campus orders
+                </span>
+              </div>
+
               {vendor.storeDescription && (
                 <p className="text-xs sm:text-sm text-neutral-500 max-w-2xl leading-relaxed pt-1">
                   {vendor.storeDescription}
@@ -147,6 +189,68 @@ export function StorefrontRenderer({
         {layout === "showcase" && <ShowcaseLayout vendor={vendor} products={products} />}
         {layout === "lookbook" && <LookbookLayout vendor={vendor} products={products} />}
       </div>
+
+      {/* 4. RECENT CUSTOMER REVIEWS ACROSS SELLER'S PRODUCTS */}
+      {recentReviews.length > 0 && (
+        <section className="bg-neutral-50/70 border-t border-neutral-200/80 py-12 mt-12">
+          <div className="container mx-auto px-4 max-w-6xl space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg sm:text-xl font-black text-neutral-950">
+                  Recent Verified Reviews for {vendor.storeName}
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Verified campus student feedback from completed product orders.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {recentReviews.map((r) => (
+                <div
+                  key={r.id}
+                  className="bg-white rounded-2xl border border-neutral-200/80 p-4 space-y-2.5 shadow-xs flex flex-col justify-between"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-neutral-900">{r.displayName}</span>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3 h-3 ${
+                              s <= r.rating
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-neutral-200"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/product/${r.productSlug}`}
+                      className="text-[11px] font-semibold text-emerald-700 hover:underline line-clamp-1 block"
+                    >
+                      {r.productTitle}
+                    </Link>
+
+                    {r.comment && (
+                      <p className="text-xs text-neutral-600 line-clamp-3 leading-relaxed">
+                        &ldquo;{r.comment}&rdquo;
+                      </p>
+                    )}
+                  </div>
+
+                  <span className="text-[10px] text-neutral-400 block pt-1 border-t border-neutral-100">
+                    {formatDate(r.createdAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

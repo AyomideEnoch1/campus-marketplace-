@@ -42,6 +42,18 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+  FLAGGED
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -54,42 +66,53 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  vendorProfile VendorProfile?
-  orders        Order[]
-  reviews       Review[]
-  favorites     Favorite[]
-  reports       Report[]
-  activityLogs  ActivityLog[]
+  vendorProfile  VendorProfile?
+  orders         Order[]
+  favorites      Favorite[]
+  reports        Report[]
+  activityLogs   ActivityLog[]
+  productReviews ProductReview[]     @relation("BuyerProductReviews")
+  sellerRatings  SellerRating[]      @relation("BuyerSellerRatings")
+  helpfulVotes   ReviewHelpfulVote[]
+  reviewReports  ReviewReport[]
 
   @@index([role])
   @@index([email])
 }
 
 model VendorProfile {
-  id              String       @id @default(cuid())
-  userId          String       @unique
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  campusId        String
-  campus          Campus       @relation(fields: [campusId], references: [id])
-  storeName       String
-  slug            String       @unique
+  id               String       @id @default(cuid())
+  userId           String       @unique
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campusId         String
+  campus           Campus       @relation(fields: [campusId], references: [id])
+  storeName        String
+  slug             String       @unique
   storeDescription String?
-  logo            String?
-  banner          String?
-  layout          String       @default("grid") // grid | list | showcase | lookbook
-  brandColor      String       @default("#0F172A")
-  whatsapp        String
-  faculty         String?
-  department      String?
-  studentIdUrl    String?
-  status          VendorStatus @default(PENDING)
-  rejectionReason String?
-  adminNotes      String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  logo             String?
+  banner           String?
+  layout           String       @default("grid")
+  brandColor       String       @default("#0F172A")
+  whatsapp         String
+  faculty          String?
+  department       String?
+  studentIdUrl     String?
+  status           VendorStatus @default(PENDING)
+  rejectionReason  String?
+  adminNotes       String?
+  sellerAvgRating  Float        @default(0.0)
+  sellerReviewCount Int         @default(0)
+  communicationAvg Float        @default(0.0)
+  punctualityAvg   Float        @default(0.0)
+  behaviorAvg      Float        @default(0.0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  products Product[]
-  orders   Order[]
+  products               Product[]
+  orders                 Order[]
+  receivedProductReviews ProductReview[] @relation("SellerProductReviews")
+  receivedSellerRatings  SellerRating[]  @relation("SellerRatingsReceived")
+  reviewReplies          ReviewReply[]
 
   @@index([slug])
   @@index([campusId])
@@ -134,33 +157,36 @@ model Category {
 }
 
 model Product {
-  id           String           @id @default(cuid())
-  vendorId     String
-  vendor       VendorProfile    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  categoryId   String
-  category     Category         @relation(fields: [categoryId], references: [id])
-  title        String
-  slug         String           @unique
-  description  String
-  price        Float
-  comparePrice Float?
-  stock        Int              @default(1)
-  condition    ProductCondition @default(NEW)
-  status       ProductStatus    @default(DRAFT)
-  model3dUrl   String?
-  videoUrl     String?
-  tags         String?          // Comma-separated tags
-  viewsCount   Int              @default(0)
-  isFeatured   Boolean          @default(false)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  vendorId        String
+  vendor          VendorProfile    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  categoryId      String
+  category        Category         @relation(fields: [categoryId], references: [id])
+  title           String
+  slug            String           @unique
+  description     String
+  price           Float
+  comparePrice    Float?
+  stock           Int              @default(1)
+  condition       ProductCondition @default(NEW)
+  status          ProductStatus    @default(DRAFT)
+  model3dUrl      String?
+  videoUrl        String?
+  tags            String?
+  viewsCount      Int              @default(0)
+  isFeatured      Boolean          @default(false)
+  reviewCount     Int              @default(0)
+  avgRating       Float            @default(0.0)
+  ratingBreakdown String?          // JSON string e.g. {"5":0,"4":0,"3":0,"2":0,"1":0}
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  images     ProductImage[]
-  variants   ProductVariant[]
-  orderItems OrderItem[]
-  reviews    Review[]
-  favorites  Favorite[]
-  reports    Report[]
+  images         ProductImage[]
+  variants       ProductVariant[]
+  orderItems     OrderItem[]
+  productReviews ProductReview[]
+  favorites      Favorite[]
+  reports        Report[]
 
   @@index([slug])
   @@index([vendorId])
@@ -186,8 +212,8 @@ model ProductVariant {
   id              String   @id @default(cuid())
   productId       String
   product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name            String   // e.g. Size, Color
-  value           String   // e.g. XL, Red
+  name            String
+  value           String
   priceAdjustment Float    @default(0)
   stock           Int      @default(0)
   sku             String?
@@ -205,7 +231,7 @@ model Order {
   buyerEmail      String
   buyerPhone      String
   deliveryAddress String
-  deliveryMethod  String      @default("PICKUP") // PICKUP | CAMPUS_DELIVERY
+  deliveryMethod  String      @default("PICKUP")
   vendorId        String
   vendor          VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   status          OrderStatus @default(PENDING)
@@ -214,7 +240,8 @@ model Order {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  items OrderItem[]
+  items         OrderItem[]
+  sellerRatings SellerRating[]
 
   @@index([orderNumber])
   @@index([vendorId])
@@ -233,24 +260,96 @@ model OrderItem {
   variantDetails String?
   createdAt      DateTime @default(now())
 
+  review ProductReview?
+
   @@index([orderId])
   @@index([productId])
 }
 
-model Review {
-  id                 String   @id @default(cuid())
-  productId          String
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rating             Int      @default(5)
-  comment            String
-  isVerifiedPurchase Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+model ProductReview {
+  id           String       @id @default(cuid())
+  orderItemId  String       @unique
+  orderItem    OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerId      String
+  buyer        User         @relation("BuyerProductReviews", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId     String
+  seller       VendorProfile @relation("SellerProductReviews", fields: [sellerId], references: [id], onDelete: Cascade)
+  rating       Int          @default(5)
+  comment      String?
+  tags         String?
+  photoPaths   String?
+  status       ReviewStatus @default(PUBLISHED)
+  helpfulCount Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  helpfulVotes ReviewHelpfulVote[]
+  reply        ReviewReply?
+  reports      ReviewReport[]
 
   @@index([productId])
-  @@index([userId])
+  @@index([sellerId])
+  @@index([buyerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SellerRating {
+  id            String        @id @default(cuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  buyerId       String
+  buyer         User          @relation("BuyerSellerRatings", fields: [buyerId], references: [id], onDelete: Cascade)
+  sellerId      String
+  seller        VendorProfile @relation("SellerRatingsReceived", fields: [sellerId], references: [id], onDelete: Cascade)
+  communication Int           @default(5)
+  punctuality   Int           @default(5)
+  behavior      Int           @default(5)
+  createdAt     DateTime      @default(now())
+
+  @@unique([orderId, buyerId])
+  @@index([sellerId])
+}
+
+model ReviewHelpfulVote {
+  reviewId  String
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@id([reviewId, userId])
+  @@index([reviewId])
+}
+
+model ReviewReply {
+  id        String        @id @default(cuid())
+  reviewId  String        @unique
+  review    ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  sellerId  String
+  seller    VendorProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([reviewId])
+}
+
+model ReviewReport {
+  id         String        @id @default(cuid())
+  reviewId   String
+  review     ProductReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reporterId String
+  reporter   User          @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason     String
+  details    String?
+  status     ReportStatus  @default(PENDING)
+  createdAt  DateTime      @default(now())
+
+  @@index([reviewId])
+  @@index([status])
 }
 
 model Favorite {
@@ -266,16 +365,16 @@ model Favorite {
 }
 
 model Report {
-  id                String   @id @default(cuid())
-  reportedByUserId  String?
-  reportedBy        User?    @relation(fields: [reportedByUserId], references: [id], onDelete: SetNull)
-  productId         String?
-  product           Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  reason            String
-  details           String?
-  status            String   @default("PENDING") // PENDING | RESOLVED | DISMISSED
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  reportedByUserId String?
+  reportedBy       User?    @relation(fields: [reportedByUserId], references: [id], onDelete: SetNull)
+  productId        String?
+  product          Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reason           String
+  details          String?
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([productId])
   @@index([status])
@@ -285,7 +384,7 @@ model Page {
   id              String   @id @default(cuid())
   title           String
   slug            String   @unique
-  content         String   // Rich-text or Markdown content
+  content         String
   isPublished     Boolean  @default(true)
   metaTitle       String?
   metaDescription String?
@@ -314,10 +413,10 @@ model Banner {
 
 model HomepageSection {
   id          String   @id @default(cuid())
-  sectionKey  String   @unique // hero, featured_vendors, categories, new_arrivals
+  sectionKey  String   @unique
   title       String?
   subtitle    String?
-  contentJson String?  // JSON string for modular section configurations
+  contentJson String?
   sortOrder   Int      @default(0)
   isVisible   Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -341,8 +440,8 @@ model ActivityLog {
   id           String   @id @default(cuid())
   userId       String?
   user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action       String   // e.g. VENDOR_APPROVED, PRODUCT_DELETED
-  entityType   String   // User, VendorProfile, Product, Order
+  action       String
+  entityType   String
   entityId     String?
   metadataJson String?
   ipAddress    String?

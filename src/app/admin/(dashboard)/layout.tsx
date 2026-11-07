@@ -13,6 +13,7 @@ import {
   LogOut,
   ExternalLink,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ export default async function AdminLayout({
     { label: "Categories", href: "/admin/categories", icon: Layers },
     { label: "Campuses", href: "/admin/campuses", icon: MapPin },
     { label: "Orders Overview", href: "/admin/orders", icon: ShoppingBag },
+    { label: "Review Moderation", href: "/admin/reviews", icon: Star },
     { label: "Users & Roles", href: "/admin/users", icon: ShieldCheck },
     { label: "CMS Homepage", href: "/admin/cms/homepage", icon: FileText },
     { label: "Static Pages", href: "/admin/cms/pages", icon: FileText },

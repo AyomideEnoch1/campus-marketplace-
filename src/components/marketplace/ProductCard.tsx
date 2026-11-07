@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ShoppingBag, MapPin, CheckCircle2, MessageCircle } from "lucide-react";
+import { Heart, ShoppingBag, MapPin, CheckCircle2, MessageCircle, Star } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useWishlist } from "@/lib/wishlist";
@@ -17,6 +17,8 @@ interface ProductCardProps {
     comparePrice?: number | null;
     condition?: string;
     isFeatured?: boolean;
+    reviewCount?: number;
+    avgRating?: number;
     images: { url: string; altText?: string | null }[];
     category?: { name: string; slug: string };
     vendor?: {
@@ -159,6 +161,23 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.title}
             </h3>
           </Link>
+
+          {/* Rating or New Badge (Section Requirement) */}
+          <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+            {product.reviewCount && product.reviewCount >= 3 ? (
+              <>
+                <div className="flex items-center gap-0.5 text-amber-500 font-bold">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span>{product.avgRating ? product.avgRating.toFixed(1) : "5.0"}</span>
+                </div>
+                <span className="text-neutral-400">({product.reviewCount})</span>
+              </>
+            ) : (
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.2 rounded-md">
+                New
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Pricing & Condition */}

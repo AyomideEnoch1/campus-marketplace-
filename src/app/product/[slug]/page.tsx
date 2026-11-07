@@ -4,8 +4,10 @@ import type { Metadata } from "next";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { ProductInteractiveView } from "@/components/marketplace/ProductInteractiveView";
+import { ProductReviewsSection } from "@/components/marketplace/ProductReviewsSection";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { TrustBar } from "@/components/marketplace/TrustBar";
+import { getSession } from "@/lib/auth";
 
 interface ProductPageProps {
   params: { slug: string };
@@ -38,6 +40,7 @@ export async function generateMetadata({
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const session = await getSession();
   const product = await prisma.product.findUnique({
     where: { slug: params.slug },
     include: {
@@ -115,8 +118,18 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       </div>
 
       {/* Main Interactive Product View */}
-      <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12 space-y-12">
         <ProductInteractiveView product={product as any} />
+        
+        {/* Customer Reviews Section */}
+        <ProductReviewsSection
+          productId={product.id}
+          productTitle={product.title}
+          productImage={product.images[0]?.url}
+          sellerId={product.vendor.id}
+          sellerStoreName={product.vendor.storeName}
+          isSeller={Boolean(session && session.userId === product.vendor.userId)}
+        />
       </div>
 
       {/* Related Products Carousel / Grid */}

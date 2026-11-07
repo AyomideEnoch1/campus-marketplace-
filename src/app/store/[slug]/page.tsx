@@ -45,9 +45,57 @@ export default async function StorePage({ params }: StorePageProps) {
 
   if (!vendor) notFound();
 
+  // Fetch completed orders count & recent customer reviews
+  const [completedOrdersCount, recentReviews] = await Promise.all([
+    prisma.order.count({
+      where: {
+        vendorId: vendor.id,
+        status: { in: ["CONFIRMED", "DELIVERED"] },
+      },
+    }),
+    prisma.productReview.findMany({
+      where: {
+        sellerId: vendor.id,
+        status: "PUBLISHED",
+      },
+      take: 4,
+      orderBy: { createdAt: "desc" },
+      include: {
+        product: { select: { title: true, slug: true } },
+        buyer: { select: { fullName: true } },
+      },
+    }),
+  ]);
+
+  const formattedReviews = recentReviews.map((r) => {
+    let displayName = "Student Buyer";
+    if (r.buyer?.fullName) {
+      const parts = r.buyer.fullName.trim().split(" ");
+      displayName = parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : parts[0];
+    }
+    return {
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      displayName,
+      productTitle: r.product.title,
+      productSlug: r.product.slug,
+    };
+  });
+
   return (
     <div>
-      <StorefrontRenderer vendor={vendor as any} products={vendor.products} />
+      <StorefrontRenderer
+        vendor={
+          {
+            ...vendor,
+            completedOrdersCount,
+          } as any
+        }
+        products={vendor.products}
+        recentReviews={formattedReviews}
+      />
     </div>
   );
 }
