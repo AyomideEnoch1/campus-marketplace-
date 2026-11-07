@@ -1,0 +1,354 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  VENDOR
+  BUYER
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ProductCondition {
+  NEW
+  USED_LIKE_NEW
+  USED_GOOD
+  USED_FAIR
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+  FLAGGED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  role          Role      @default(BUYER)
+  fullName      String
+  phone         String?
+  avatarUrl     String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  vendorProfile VendorProfile?
+  orders        Order[]
+  reviews       Review[]
+  favorites     Favorite[]
+  reports       Report[]
+  activityLogs  ActivityLog[]
+
+  @@index([role])
+  @@index([email])
+}
+
+model VendorProfile {
+  id              String       @id @default(cuid())
+  userId          String       @unique
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campusId        String
+  campus          Campus       @relation(fields: [campusId], references: [id])
+  storeName       String
+  slug            String       @unique
+  storeDescription String?
+  logo            String?
+  banner          String?
+  layout          String       @default("grid") // grid | list | showcase | lookbook
+  brandColor      String       @default("#0F172A")
+  whatsapp        String
+  faculty         String?
+  department      String?
+  studentIdUrl    String?
+  status          VendorStatus @default(PENDING)
+  rejectionReason String?
+  adminNotes      String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  products Product[]
+  orders   Order[]
+
+  @@index([slug])
+  @@index([campusId])
+  @@index([status])
+}
+
+model Campus {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  city      String
+  state     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendors VendorProfile[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  icon        String?
+  image       String?
+  parentId    String?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[] @relation("CategoryHierarchy")
+  sortOrder   Int        @default(0)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  products Product[]
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+model Product {
+  id           String           @id @default(cuid())
+  vendorId     String
+  vendor       VendorProfile    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  categoryId   String
+  category     Category         @relation(fields: [categoryId], references: [id])
+  title        String
+  slug         String           @unique
+  description  String
+  price        Float
+  comparePrice Float?
+  stock        Int              @default(1)
+  condition    ProductCondition @default(NEW)
+  status       ProductStatus    @default(DRAFT)
+  model3dUrl   String?
+  videoUrl     String?
+  tags         String?          // Comma-separated tags
+  viewsCount   Int              @default(0)
+  isFeatured   Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  images     ProductImage[]
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+  reviews    Review[]
+  favorites  Favorite[]
+  reports    Report[]
+
+  @@index([slug])
+  @@index([vendorId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([price])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  position  Int      @default(0)
+  altText   String?
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([position])
+}
+
+model ProductVariant {
+  id              String   @id @default(cuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name            String   // e.g. Size, Color
+  value           String   // e.g. XL, Red
+  priceAdjustment Float    @default(0)
+  stock           Int      @default(0)
+  sku             String?
+  createdAt       DateTime @default(now())
+
+  @@index([productId])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  buyerId         String?
+  buyer           User?       @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+  buyerName       String
+  buyerEmail      String
+  buyerPhone      String
+  deliveryAddress String
+  deliveryMethod  String      @default("PICKUP") // PICKUP | CAMPUS_DELIVERY
+  vendorId        String
+  vendor          VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  status          OrderStatus @default(PENDING)
+  totalAmount     Float
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items OrderItem[]
+
+  @@index([orderNumber])
+  @@index([vendorId])
+  @@index([buyerId])
+  @@index([status])
+}
+
+model OrderItem {
+  id             String   @id @default(cuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity       Int      @default(1)
+  unitPrice      Float
+  variantDetails String?
+  createdAt      DateTime @default(now())
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Review {
+  id                 String   @id @default(cuid())
+  productId          String
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating             Int      @default(5)
+  comment            String
+  isVerifiedPurchase Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([productId])
+  @@index([userId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model Report {
+  id                String   @id @default(cuid())
+  reportedByUserId  String?
+  reportedBy        User?    @relation(fields: [reportedByUserId], references: [id], onDelete: SetNull)
+  productId         String?
+  product           Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reason            String
+  details           String?
+  status            String   @default("PENDING") // PENDING | RESOLVED | DISMISSED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([productId])
+  @@index([status])
+}
+
+model Page {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  content         String   // Rich-text or Markdown content
+  isPublished     Boolean  @default(true)
+  metaTitle       String?
+  metaDescription String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([slug])
+}
+
+model Banner {
+  id        String    @id @default(cuid())
+  title     String
+  subtitle  String?
+  imageUrl  String?
+  linkUrl   String?
+  position  String    @default("HOMEPAGE_HERO")
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([position])
+  @@index([isActive])
+}
+
+model HomepageSection {
+  id          String   @id @default(cuid())
+  sectionKey  String   @unique // hero, featured_vendors, categories, new_arrivals
+  title       String?
+  subtitle    String?
+  contentJson String?  // JSON string for modular section configurations
+  sortOrder   Int      @default(0)
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([sectionKey])
+  @@index([sortOrder])
+}
+
+model SiteSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@index([key])
+}
+
+model ActivityLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action       String   // e.g. VENDOR_APPROVED, PRODUCT_DELETED
+  entityType   String   // User, VendorProfile, Product, Order
+  entityId     String?
+  metadataJson String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
