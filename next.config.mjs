@@ -10,6 +10,9 @@ const nextConfig = {
     ],
   },
   experimental: {
+    outputFileTracingIncludes: {
+      '/**': ['./prisma/**'],
+    },
     serverActions: {
       allowedOrigins: ['localhost:3000'],
     },
