@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Menu,
   X,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -224,12 +225,30 @@ export function Navbar({ initialUser }: NavbarProps) {
                   )}
 
                   <Link
-                    href="/profile"
+                    href="/account"
                     onClick={() => setUserDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
                   >
                     <User className="w-4 h-4 text-neutral-400" />
-                    My Account & Orders
+                    My Account
+                  </Link>
+
+                  <Link
+                    href="/orders"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  >
+                    <Package className="w-4 h-4 text-neutral-400" />
+                    My Orders
+                  </Link>
+
+                  <Link
+                    href="/saved"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
+                  >
+                    <Heart className="w-4 h-4 text-neutral-400" />
+                    Saved Items
                   </Link>
 
                   <div className="border-t border-neutral-100 my-1"></div>
