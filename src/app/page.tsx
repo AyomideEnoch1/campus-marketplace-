@@ -193,14 +193,14 @@ export default async function HomePage() {
 
             {/* Right Column: Hero Visual with Floating Product Cards (NovaTrend Style) */}
             <div className="lg:col-span-6 relative flex justify-center">
-              <div className="relative w-full max-w-[540px] aspect-[4/3] sm:aspect-[16/11] rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-tr from-emerald-100 to-amber-50 border-4 border-white group">
+              <div className="relative w-full max-w-[540px] aspect-[4/3] sm:aspect-[16/11] rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-tr from-emerald-50 via-white to-amber-50/60 border-4 border-white group flex items-center justify-center">
                 <Image
                   src="/images/hero-campus-marketplace.png"
-                  alt="Nigerian university campus students shopping and browsing stalls at CampusTrade marketplace"
+                  alt="Campus Marketplace shopping cart filled with fresh goods, groceries, and student essentials"
                   fill
                   priority
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 540px"
-                  className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  className="object-contain p-4 group-hover:scale-105 transition-transform duration-700"
                 />
 
                 {/* Floating Card 1: Top Right (Sneaker / Fashion) */}
