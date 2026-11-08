@@ -8,6 +8,23 @@ export async function GET() {
     const campuses = await prisma.campus.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
+      include: {
+        settings: true,
+        safeMeetupPoints: {
+          where: { active: true },
+          orderBy: { name: "asc" },
+        },
+        _count: {
+          select: {
+            vendors: {
+              where: {
+                sellerType: "guest",
+                status: "APPROVED",
+              },
+            },
+          },
+        },
+      },
     });
     return NextResponse.json({ campuses });
   } catch (error: any) {

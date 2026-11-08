@@ -82,6 +82,59 @@ export async function POST(request: Request) {
 
     const data = parsed.data;
 
+    // GUEST VENDOR SAFEGUARD: Tier 1 guest vendors capped at max 3 listings
+    if (vendor.sellerType === "guest" && (vendor.verificationTier || 1) < 2) {
+      const activeListingsCount = await prisma.product.count({
+        where: { vendorId: vendor.id },
+      });
+      if (activeListingsCount >= 3) {
+        return NextResponse.json(
+          {
+            error:
+              "Tier 1 Guest Vendors are limited to 3 listings. Please upload your Government ID and selfie for Tier 2 verification to unlock unlimited campus listings.",
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // RESTRICTED CATEGORIES SAFEGUARD FOR GUESTS
+    // (Food, Cosmetics/Beauty, Electronics require extra details)
+    if (vendor.sellerType === "guest") {
+      const category = await prisma.category.findUnique({
+        where: { id: data.categoryId },
+      });
+      const catSlug = category?.slug || "";
+      const isRestricted =
+        catSlug.includes("food") ||
+        catSlug.includes("grocer") ||
+        catSlug.includes("beauty") ||
+        catSlug.includes("personal-care") ||
+        catSlug.includes("electronic");
+
+      if (isRestricted) {
+        const textContent = `${data.description} ${data.tags || ""}`.toLowerCase();
+        // Check for required details (serial number, warranty, NAFDAC, or batch expiry)
+        const hasExtraDetails =
+          textContent.includes("nafdac") ||
+          textContent.includes("serial") ||
+          textContent.includes("batch") ||
+          textContent.includes("expir") ||
+          textContent.includes("warranty") ||
+          textContent.includes("original") ||
+          textContent.includes("spec");
+
+        if (!hasExtraDetails) {
+          return NextResponse.json(
+            {
+              error: `Guest listings in "${category?.name || "restricted category"}" require extra regulatory details (e.g. NAFDAC number for packaged food/cosmetics, or serial number / warranty / authenticity details for electronics). Please include these in your description.`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
     // Enforce approval rule: pending vendors cannot publish publicly until approved
     let productStatus = data.status;
     if (vendor.status !== "APPROVED" && productStatus === "PUBLISHED") {

@@ -11,7 +11,8 @@ const orderSchema = z.object({
   buyerPhone: z.string().min(8, "Please enter a valid phone/WhatsApp number"),
   campusId: z.string().optional(),
   deliveryAddress: z.string().min(3, "Please specify your pickup spot or hostel address"),
-  deliveryMethod: z.enum(["PICKUP", "CAMPUS_DELIVERY"]).default("PICKUP"),
+  deliveryMethod: z.enum(["PICKUP", "CAMPUS_DELIVERY", "SAFE_MEETUP_POINT"]).default("PICKUP"),
+  meetupPointId: z.string().optional().nullable(),
   vendorId: z.string().min(1, "Vendor ID is required"),
   notes: z.string().optional().nullable(),
   items: z.array(
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
       buyerPhone,
       deliveryAddress,
       deliveryMethod,
+      meetupPointId,
       vendorId,
       notes,
       items,
@@ -56,14 +58,55 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
     }
 
-    // Optional user session if logged in
-    const session = await getSession();
-
     // Compute total amount
     const totalAmount = items.reduce(
       (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
+
+    // GUEST VENDOR SAFEGUARDS:
+    // 1. Enforce Tier 1 order cap of ₦10,000
+    if (vendor.sellerType === "guest" && (vendor.verificationTier || 1) < 2 && totalAmount > 10000) {
+      return NextResponse.json(
+        {
+          error:
+            "Orders from unverified Tier 1 Guest Vendors are capped at ₦10,000. Please reduce quantity or order from a verified Tier 2+ seller.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // 2. Enforce Safe Meetup Point for guest vendors
+    let finalMeetupPointId = meetupPointId || null;
+    let finalDeliveryAddress = deliveryAddress;
+
+    if (vendor.sellerType === "guest") {
+      if (!finalMeetupPointId) {
+        // Find default or first active safe meetup point on this campus
+        const firstPoint = await prisma.safeMeetupPoint.findFirst({
+          where: { campusId: vendor.campusId, active: true },
+        });
+        if (firstPoint) {
+          finalMeetupPointId = firstPoint.id;
+          finalDeliveryAddress = `${firstPoint.name} - ${firstPoint.description || ""}`.trim();
+        } else {
+          return NextResponse.json(
+            { error: "Safe campus meetup point selection is required for orders from guest vendors." },
+            { status: 400 }
+          );
+        }
+      } else {
+        const point = await prisma.safeMeetupPoint.findUnique({
+          where: { id: finalMeetupPointId },
+        });
+        if (point) {
+          finalDeliveryAddress = `${point.name} - ${point.description || ""}`.trim();
+        }
+      }
+    }
+
+    // Optional user session if logged in
+    const session = await getSession();
 
     // Generate unique human-readable order number e.g. ORD-202611-7391
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
@@ -78,8 +121,9 @@ export async function POST(request: Request) {
           buyerName,
           buyerEmail,
           buyerPhone,
-          deliveryAddress,
+          deliveryAddress: finalDeliveryAddress,
           deliveryMethod,
+          meetupPointId: finalMeetupPointId,
           vendorId,
           totalAmount,
           notes: notes || null,

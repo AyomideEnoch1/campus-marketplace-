@@ -62,6 +62,57 @@ async function main() {
       create: c,
     });
     campuses.push(campus);
+
+    // Seed campus settings
+    await prisma.campusSetting.upsert({
+      where: { campusId: campus.id },
+      update: { guestVendorsEnabled: true, guestVendorCap: 50 },
+      create: {
+        campusId: campus.id,
+        guestVendorsEnabled: true,
+        guestVendorCap: 50,
+      },
+    });
+  }
+
+  // Seed Safe Meetup Points
+  console.log('Seeding safe meetup points...');
+  const safePointsMap = {
+    unilag: [
+      { name: 'UNILAG Main Library Quad & Foyer', description: 'High-traffic daytime public zone directly in front of Main Library' },
+      { name: 'Student Union Building (SUB) Concourse', description: 'Central student hub with security personnel present' },
+      { name: 'Campus Main Gate Security Hub', description: 'Designated visitor and off-campus exchange bay at University Road' },
+      { name: 'Faculty of Arts Covered Car Park Walkway', description: 'Visible well-lit pedestrian walkway during daytime hours' },
+    ],
+    ui: [
+      { name: 'Kenneth Dike Library Front Steps', description: 'Central open-air meeting plaza in front of the University Library' },
+      { name: 'UI SUB Amphitheatre / Food Court', description: 'Bustling student social center with ample seating and daylight visibility' },
+      { name: 'UI Main Gate Visitor Security Post', description: 'Designated safe pickup post beside the primary entrance gate' },
+    ],
+    oau: [
+      { name: 'Hezekiah Oluwasanmi Library Steps', description: 'Iconic central campus meeting landmark with high foot traffic' },
+      { name: 'Ken Saro-Wiwa (SUB) Building Frontage', description: 'Student Union building forecourt with active campus surveillance' },
+      { name: 'OAU Campus Main Gate Pavilion', description: 'Safe transfer area located at the university main access gates' },
+    ],
+  };
+
+  for (const campus of campuses) {
+    const points = safePointsMap[campus.slug] || [];
+    for (const p of points) {
+      const existingPoint = await prisma.safeMeetupPoint.findFirst({
+        where: { campusId: campus.id, name: p.name },
+      });
+      if (!existingPoint) {
+        await prisma.safeMeetupPoint.create({
+          data: {
+            campusId: campus.id,
+            name: p.name,
+            description: p.description,
+            active: true,
+          },
+        });
+      }
+    }
   }
 
   // 4. Seed Categories (8 Categories with subcategories)

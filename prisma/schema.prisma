@@ -75,6 +75,7 @@ model User {
   sellerRatings  SellerRating[]      @relation("BuyerSellerRatings")
   helpfulVotes   ReviewHelpfulVote[]
   reviewReports  ReviewReport[]
+  vouchesGiven   Vouch[]             @relation("UserVouches")
 
   @@index([role])
   @@index([email])
@@ -97,6 +98,29 @@ model VendorProfile {
   faculty          String?
   department       String?
   studentIdUrl     String?
+  sellerType       String       @default("student") // student | guest
+  verificationTier Int          @default(1) // 1: instant OTP, 2: manual ID review, 3: bank, 4: earned trust
+  businessName     String?
+  businessCategory String?
+  businessAddress  String?
+  businessPhotoPath String?
+  cacNumber        String?
+  cacDocumentPath  String?
+  isRegisteredBusiness Boolean   @default(false)
+  governmentIdType String?      // voters_card, drivers_license, international_passport, school_work_id
+  governmentIdHash String?      // SHA-256 hash for duplicate check
+  idDocumentPath   String?
+  selfieDocumentPath String?
+  vouchedBy        String?      // User/Vendor ID who vouched
+  isTrustedSeller  Boolean      @default(false)
+  payoutDelayHours Int          @default(48) // 48h for students, 72h for new guests
+  bankAccountName  String?
+  bankAccountNumber String?
+  bankCode         String?
+  bankName         String?
+  bankResolvedName String?
+  bankVerified     Boolean      @default(false)
+  strikesCount     Int          @default(0)
   status           VendorStatus @default(PENDING)
   rejectionReason  String?
   adminNotes       String?
@@ -113,10 +137,13 @@ model VendorProfile {
   receivedProductReviews ProductReview[] @relation("SellerProductReviews")
   receivedSellerRatings  SellerRating[]  @relation("SellerRatingsReceived")
   reviewReplies          ReviewReply[]
+  vouchesReceived        Vouch[]         @relation("GuestVouches")
 
   @@index([slug])
   @@index([campusId])
   @@index([status])
+  @@index([sellerType])
+  @@index([governmentIdHash])
 }
 
 model Campus {
@@ -129,7 +156,9 @@ model Campus {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  vendors VendorProfile[]
+  vendors          VendorProfile[]
+  settings         CampusSetting?
+  safeMeetupPoints SafeMeetupPoint[]
 
   @@index([slug])
   @@index([isActive])
@@ -237,6 +266,8 @@ model Order {
   status          OrderStatus @default(PENDING)
   totalAmount     Float
   notes           String?
+  meetupPointId   String?
+  meetupPoint     SafeMeetupPoint? @relation(fields: [meetupPointId], references: [id], onDelete: SetNull)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -450,4 +481,47 @@ model ActivityLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+model CampusSetting {
+  id                  String   @id @default(cuid())
+  campusId            String   @unique
+  campus              Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  guestVendorsEnabled Boolean  @default(true)
+  guestVendorCap      Int      @default(50)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([campusId])
+}
+
+model SafeMeetupPoint {
+  id          String   @id @default(cuid())
+  campusId    String
+  campus      Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orders      Order[]
+
+  @@index([campusId])
+  @@index([active])
+}
+
+model Vouch {
+  id        String   @id @default(cuid())
+  voucherId String
+  voucher   User     @relation("UserVouches", fields: [voucherId], references: [id], onDelete: Cascade)
+  guestId   String
+  guest     VendorProfile @relation("GuestVouches", fields: [guestId], references: [id], onDelete: Cascade)
+  status    String   @default("ACCEPTED") // PENDING | ACCEPTED | REVOKED
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([voucherId])
+  @@index([guestId])
 }

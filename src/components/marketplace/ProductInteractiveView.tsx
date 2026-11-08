@@ -46,6 +46,10 @@ interface ProductInteractiveViewProps {
       id: string;
       storeName: string;
       slug: string;
+      sellerType?: string;
+      isRegisteredBusiness?: boolean;
+      isTrustedSeller?: boolean;
+      verificationTier?: number;
       brandColor?: string | null;
       whatsapp?: string | null;
       logo?: string | null;
@@ -107,6 +111,10 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
         slug: product.vendor.slug,
         whatsapp: product.vendor.whatsapp || undefined,
         campus: product.vendor.campus || undefined,
+        sellerType: product.vendor.sellerType,
+        verificationTier: product.vendor.verificationTier,
+        isTrustedSeller: product.vendor.isTrustedSeller,
+        isRegisteredBusiness: product.vendor.isRegisteredBusiness,
       },
     });
 
@@ -426,12 +434,35 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
                 )}
               </div>
               <div>
-                <h4 className="font-bold text-sm text-neutral-900">
-                  {product.vendor.storeName}
-                </h4>
-                <p className="text-xs text-neutral-500 flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <h4 className="font-bold text-sm text-neutral-900">
+                    {product.vendor.storeName}
+                  </h4>
+                  {product.vendor.sellerType === "guest" ? (
+                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] font-bold">
+                      Guest Vendor
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
+                      Student Vendor
+                    </Badge>
+                  )}
+                  {product.vendor.isRegisteredBusiness && (
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
+                      Registered Business
+                    </Badge>
+                  )}
+                  {product.vendor.isTrustedSeller && (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
+                      ★ Trusted Seller
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-neutral-500 flex items-center gap-1 mt-0.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  Verified Student Vendor
+                  {product.vendor.sellerType === "guest"
+                    ? "Verified Off-Campus Merchant &bull; Safe Meetup Point Fulfillment"
+                    : "Verified University Student Vendor"}
                 </p>
               </div>
             </div>

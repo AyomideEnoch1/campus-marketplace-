@@ -11,7 +11,17 @@ export async function PATCH(
   try {
     const admin = await requireAdmin();
     const body = await request.json();
-    const { name, slug, city, state, isActive } = body;
+    const {
+      name,
+      slug,
+      city,
+      state,
+      isActive,
+      guestVendorsEnabled,
+      guestVendorCap,
+      suspendGuestVendors,
+      reactivateGuestVendors,
+    } = body;
 
     const updated = await prisma.campus.update({
       where: { id: params.id },
@@ -23,6 +33,52 @@ export async function PATCH(
         ...(isActive !== undefined ? { isActive: Boolean(isActive) } : {}),
       },
     });
+
+    // Update or upsert campus guest vendor settings
+    if (guestVendorsEnabled !== undefined || guestVendorCap !== undefined) {
+      await prisma.campusSetting.upsert({
+        where: { campusId: params.id },
+        update: {
+          ...(guestVendorsEnabled !== undefined
+            ? { guestVendorsEnabled: Boolean(guestVendorsEnabled) }
+            : {}),
+          ...(guestVendorCap !== undefined ? { guestVendorCap: Number(guestVendorCap) } : {}),
+        },
+        create: {
+          campusId: params.id,
+          guestVendorsEnabled:
+            guestVendorsEnabled !== undefined ? Boolean(guestVendorsEnabled) : true,
+          guestVendorCap: guestVendorCap !== undefined ? Number(guestVendorCap) : 25,
+        },
+      });
+    }
+
+    // Suspend only guest vendors on this campus without affecting student vendors
+    if (suspendGuestVendors) {
+      await prisma.vendorProfile.updateMany({
+        where: {
+          campusId: params.id,
+          sellerType: "guest",
+          status: "APPROVED",
+        },
+        data: {
+          status: "SUSPENDED",
+          adminNotes: "Campus-wide guest vendor pause initiated by administration",
+        },
+      });
+    } else if (reactivateGuestVendors) {
+      await prisma.vendorProfile.updateMany({
+        where: {
+          campusId: params.id,
+          sellerType: "guest",
+          status: "SUSPENDED",
+        },
+        data: {
+          status: "APPROVED",
+          adminNotes: "Campus-wide guest vendor access restored",
+        },
+      });
+    }
 
     await prisma.activityLog.create({
       data: {

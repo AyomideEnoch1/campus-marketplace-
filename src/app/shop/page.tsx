@@ -17,11 +17,12 @@ interface ShopPageProps {
     sort?: string;
     q?: string;
     vendor?: string;
+    sellerType?: string;
   };
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const { campus, category, condition, minPrice, maxPrice, sort, q, vendor } = searchParams;
+  const { campus, category, condition, minPrice, maxPrice, sort, q, vendor, sellerType } = searchParams;
 
   // Build Prisma where filter
   const where: any = {
@@ -57,6 +58,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     where.vendor = {
       ...(where.vendor || {}),
       slug: vendor,
+    };
+  }
+
+  if (sellerType && (sellerType === "student" || sellerType === "guest")) {
+    where.vendor = {
+      ...(where.vendor || {}),
+      sellerType,
     };
   }
 
@@ -97,6 +105,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             storeName: true,
             slug: true,
             whatsapp: true,
+            sellerType: true,
+            isRegisteredBusiness: true,
+            isTrustedSeller: true,
             campus: { select: { name: true, slug: true } },
           },
         },
@@ -138,7 +149,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     }),
   ]);
 
-  const activeFiltersCount = [campus, category, condition, minPrice, maxPrice, q, vendor].filter(
+  const activeFiltersCount = [campus, category, condition, minPrice, maxPrice, q, vendor, sellerType].filter(
     Boolean
   ).length;
 
@@ -386,6 +397,43 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                           </div>
                         )}
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Seller Type Filter */}
+              <div className="space-y-2 pt-2 border-t border-neutral-200/60">
+                <label className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
+                  Seller Type
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: "All Sellers", value: "" },
+                    { label: "Student Vendors", value: "student" },
+                    { label: "Guest Vendors", value: "guest" },
+                  ].map((st) => {
+                    const isSelected = (sellerType || "") === st.value;
+                    return (
+                      <Link
+                        key={st.value}
+                        href={`/shop?${new URLSearchParams({
+                          ...(campus ? { campus } : {}),
+                          ...(category ? { category } : {}),
+                          ...(condition ? { condition } : {}),
+                          ...(sort ? { sort } : {}),
+                          ...(q ? { q } : {}),
+                          ...(vendor ? { vendor } : {}),
+                          ...(st.value ? { sellerType: st.value } : {}),
+                        }).toString()}`}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                          isSelected
+                            ? "bg-neutral-900 text-white font-bold"
+                            : "bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
+                        }`}
+                      >
+                        {st.label}
+                      </Link>
                     );
                   })}
                 </div>

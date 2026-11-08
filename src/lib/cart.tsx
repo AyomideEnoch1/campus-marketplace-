@@ -15,7 +15,11 @@ export interface CartItem {
     storeName: string;
     slug: string;
     whatsapp?: string;
-    campus?: { name: string; slug: string };
+    campus?: { id?: string; name: string; slug: string; city?: string };
+    sellerType?: "student" | "guest" | string;
+    verificationTier?: number;
+    isTrustedSeller?: boolean;
+    isRegisteredBusiness?: boolean;
   };
 }
 

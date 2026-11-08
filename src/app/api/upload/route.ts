@@ -20,14 +20,20 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export async function POST(request: Request) {
   try {
     const session = await getSession();
-    if (!session) {
+    const contentType = request.headers.get("content-type") || "";
+
+    // Allow unauthenticated uploads strictly for verification documents during onboarding/registration
+    // Otherwise require authentication
+    const isVerificationUpload =
+      request.url.includes("folder=verification") ||
+      request.headers.get("x-upload-purpose") === "verification";
+
+    if (!session && !isVerificationUpload && !contentType.includes("verification")) {
       return NextResponse.json(
         { error: "Authentication required to upload files" },
         { status: 401 }
       );
     }
-
-    const contentType = request.headers.get("content-type") || "";
 
     // 1. Handle JSON base64 upload
     if (contentType.includes("application/json")) {
@@ -66,7 +72,7 @@ export async function POST(request: Request) {
         );
       }
 
-      const safeFolder = folder === "stores" ? "stores" : "products";
+      const safeFolder = folder === "stores" ? "stores" : folder === "verification" ? "verification" : "products";
       const uploadDir = path.join(process.cwd(), "public", "uploads", safeFolder);
       await mkdir(uploadDir, { recursive: true });
 
@@ -82,7 +88,7 @@ export async function POST(request: Request) {
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       const folderParam = (formData.get("folder") as string) || "products";
-      const safeFolder = folderParam === "stores" ? "stores" : "products";
+      const safeFolder = folderParam === "stores" ? "stores" : folderParam === "verification" ? "verification" : "products";
 
       // Collect all files from "file" or "files" keys
       const files: File[] = [];

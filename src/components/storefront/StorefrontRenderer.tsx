@@ -12,6 +12,8 @@ import {
   MessageSquare,
   Clock,
   Smile,
+  GraduationCap,
+  Building2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,10 @@ interface StorefrontRendererProps {
     whatsapp?: string | null;
     faculty?: string | null;
     department?: string | null;
+    sellerType?: string;
+    isRegisteredBusiness?: boolean;
+    isTrustedSeller?: boolean;
+    businessAddress?: string | null;
     status: string;
     campus?: { name: string; slug: string; city: string };
     sellerAvgRating?: number;
@@ -107,10 +113,27 @@ export function StorefrontRenderer({
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight">
                   {vendor.storeName}
                 </h1>
-                {vendor.status === "APPROVED" && (
-                  <Badge variant="default" className="text-xs bg-emerald-100 text-emerald-800 gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Verified Campus Seller
+                {vendor.sellerType === "guest" ? (
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs font-bold gap-1">
+                    <Building2 className="w-3.5 h-3.5 text-purple-700" />
+                    Guest Vendor
+                  </Badge>
+                ) : (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold gap-1">
+                    <GraduationCap className="w-3.5 h-3.5 text-emerald-700" />
+                    Student Vendor
+                  </Badge>
+                )}
+                {vendor.isRegisteredBusiness && (
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs font-bold gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                    Registered Business
+                  </Badge>
+                )}
+                {vendor.isTrustedSeller && (
+                  <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs font-bold gap-1">
+                    <Star className="w-3.5 h-3.5 text-amber-600 fill-amber-400" />
+                    Trusted Seller
                   </Badge>
                 )}
               </div>
@@ -118,7 +141,7 @@ export function StorefrontRenderer({
               {vendor.campus && (
                 <p className="text-xs sm:text-sm text-neutral-600 flex items-center gap-1 font-medium">
                   <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                  {vendor.campus.name} {vendor.faculty && `&bull; ${vendor.faculty}`}
+                  {vendor.campus.name} {vendor.businessAddress ? `&bull; ${vendor.businessAddress}` : vendor.faculty ? `&bull; ${vendor.faculty}` : ""}
                 </p>
               )}
 

@@ -51,6 +51,11 @@ interface OrderData {
   status: string;
   deliveryMethod: string;
   deliveryAddress: string;
+  meetupPoint?: {
+    id: string;
+    name: string;
+    description: string | null;
+  } | null;
   notes?: string | null;
   createdAt: string | Date;
   vendor: {
@@ -58,6 +63,9 @@ interface OrderData {
     storeName: string;
     slug: string;
     whatsapp?: string | null;
+    sellerType?: string;
+    isTrustedSeller?: boolean;
+    isRegisteredBusiness?: boolean;
     campus?: {
       name: string;
       city: string;
@@ -303,15 +311,31 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                           <Calendar className="w-3.5 h-3.5 text-neutral-400" />
                           {formatDate(order.createdAt)}
                         </span>
-                        <span>
-                          Vendor:{" "}
-                          <strong className="text-neutral-900">
-                            {order.vendor.storeName}
-                          </strong>
-                          {order.vendor.campus && (
-                            <span className="text-neutral-400 ml-1">
-                              ({order.vendor.campus.name})
-                            </span>
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span>
+                            Vendor:{" "}
+                            <strong className="text-neutral-900">
+                              {order.vendor.storeName}
+                            </strong>
+                            {order.vendor.campus && (
+                              <span className="text-neutral-400 ml-1">
+                                ({order.vendor.campus.name})
+                              </span>
+                            )}
+                          </span>
+                          {order.vendor.sellerType === "guest" ? (
+                            <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] px-1.5 py-0 font-bold">
+                              Guest Vendor
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] px-1.5 py-0 font-bold">
+                              Student Vendor
+                            </Badge>
+                          )}
+                          {order.vendor.isTrustedSeller && (
+                            <Badge className="bg-amber-50 text-amber-800 border-amber-200 text-[10px] px-1.5 py-0 font-bold">
+                              Trusted
+                            </Badge>
                           )}
                         </span>
                       </div>
@@ -423,16 +447,30 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
 
                   {/* Order Footer with Fulfillment Details */}
                   <div className="p-4 sm:p-5 bg-neutral-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2 text-neutral-600">
-                      <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
-                      <span>
-                        Fulfillment: <strong>{order.deliveryMethod}</strong> &mdash;{" "}
-                        <span className="text-neutral-500">{order.deliveryAddress}</span>
-                      </span>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-neutral-600">
+                        <MapPin className="w-4 h-4 text-neutral-400 shrink-0" />
+                        <span>
+                          Fulfillment:{" "}
+                          <strong>
+                            {order.deliveryMethod === "SAFE_MEETUP_POINT"
+                              ? "Campus Safe Meetup Point"
+                              : order.deliveryMethod}
+                          </strong>{" "}
+                          &mdash;{" "}
+                          <span className="text-neutral-500">{order.deliveryAddress}</span>
+                        </span>
+                      </div>
+                      {order.meetupPoint && (
+                        <p className="text-[11px] text-purple-800 font-medium pl-6">
+                          📍 Designated Safe Zone: <strong>{order.meetupPoint.name}</strong>
+                          {order.meetupPoint.description ? ` (${order.meetupPoint.description})` : ""}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3">
-                      <span className="text-neutral-400">Total Paid:</span>
+                      <span className="text-neutral-400">Total:</span>
                       <span className="text-base font-black text-emerald-600">
                         {formatNGN(order.totalAmount)}
                       </span>

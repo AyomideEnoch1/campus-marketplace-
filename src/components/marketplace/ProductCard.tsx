@@ -25,6 +25,9 @@ interface ProductCardProps {
       storeName: string;
       slug: string;
       whatsapp?: string;
+      sellerType?: string;
+      isRegisteredBusiness?: boolean;
+      isTrustedSeller?: boolean;
       campus?: { name: string; slug: string };
     };
   };
@@ -65,6 +68,15 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Top Badges */}
         <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
+          {product.vendor?.sellerType === "guest" ? (
+            <Badge className="bg-purple-950/90 text-purple-200 border border-purple-700/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+              Guest Vendor
+            </Badge>
+          ) : (
+            <Badge className="bg-emerald-950/90 text-emerald-200 border border-emerald-700/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+              Student Vendor
+            </Badge>
+          )}
           {discountPercent && (
             <Badge variant="accent" className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
               -{discountPercent}%

@@ -26,6 +26,13 @@ export default async function OrdersPage() {
     },
     orderBy: { createdAt: "desc" },
     include: {
+      meetupPoint: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      },
       vendor: {
         include: {
           campus: {
@@ -69,6 +76,7 @@ export default async function OrdersPage() {
     status: o.status,
     deliveryMethod: o.deliveryMethod,
     deliveryAddress: o.deliveryAddress,
+    meetupPoint: o.meetupPoint,
     notes: o.notes,
     createdAt: o.createdAt,
     vendor: {
@@ -76,6 +84,9 @@ export default async function OrdersPage() {
       storeName: o.vendor.storeName,
       slug: o.vendor.slug,
       whatsapp: o.vendor.whatsapp,
+      sellerType: o.vendor.sellerType,
+      isTrustedSeller: o.vendor.isTrustedSeller,
+      isRegisteredBusiness: o.vendor.isRegisteredBusiness,
       campus: o.vendor.campus
         ? {
             name: o.vendor.campus.name,
