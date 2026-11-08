@@ -21,6 +21,7 @@ import {
   Camera,
   AlertCircle,
   Award,
+  RefreshCw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,28 @@ export function AdminVendorTable({
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [sellerTypeFilter, setSellerTypeFilter] = React.useState("all");
   const [processingId, setProcessingId] = React.useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const refreshVendors = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch("/api/admin/vendors");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.vendors)) {
+          setVendors(data.vendors);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh vendors:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  React.useEffect(() => {
+    refreshVendors();
+  }, []);
 
   // Inspection modal state
   const [inspectVendor, setInspectVendor] = React.useState<any | null>(null);
@@ -102,6 +125,20 @@ export function AdminVendorTable({
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-neutral-400">
+          Showing <strong>{filteredVendors.length}</strong> of {vendors.length} vendors
+        </p>
+        <button
+          onClick={refreshVendors}
+          disabled={isRefreshing}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold border border-neutral-700 transition-colors cursor-pointer"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`} />
+          {isRefreshing ? "Refreshing..." : "Refresh Live Vendors"}
+        </button>
+      </div>
+
       {/* Search and Filters Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-neutral-900 border border-neutral-800 text-xs">
         <div className="relative">

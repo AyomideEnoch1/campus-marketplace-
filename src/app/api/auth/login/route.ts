@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 
 const loginSchema = z.object({
-  email: z.string().email("Please provide a valid email address"),
+  identifier: z.string().min(2, "Please enter your email or phone number").optional(),
+  email: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -22,10 +23,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const { email, password } = parsed.data;
+    const rawIdentifier = (parsed.data.identifier || parsed.data.email || "").trim();
+    if (!rawIdentifier) {
+      return NextResponse.json(
+        { error: "Email address or phone number is required" },
+        { status: 400 }
+      );
+    }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
+    const { password } = parsed.data;
+    const lowerIdentifier = rawIdentifier.toLowerCase();
+    const digitsOnly = rawIdentifier.replace(/[^0-9]/g, "");
+
+    const possibleQueries: any[] = [{ email: lowerIdentifier }];
+
+    if (digitsOnly.length >= 7) {
+      possibleQueries.push({ phone: rawIdentifier });
+      possibleQueries.push({ phone: `+${digitsOnly}` });
+      if (digitsOnly.startsWith("234") && digitsOnly.length === 13) {
+        possibleQueries.push({ phone: `0${digitsOnly.slice(3)}` });
+      } else if (digitsOnly.startsWith("0") && digitsOnly.length === 11) {
+        possibleQueries.push({ phone: `+234${digitsOnly.slice(1)}` });
+      }
+      possibleQueries.push({ email: `${digitsOnly}@guest.campustrade.ng` });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: possibleQueries,
+      },
       include: {
         vendorProfile: true,
       },
@@ -33,7 +59,7 @@ export async function POST(request: Request) {
 
     if (!user || !user.passwordHash) {
       return NextResponse.json(
-        { error: "Invalid email or password" },
+        { error: "Invalid email/phone or password" },
         { status: 401 }
       );
     }
@@ -41,7 +67,7 @@ export async function POST(request: Request) {
     const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
       return NextResponse.json(
-        { error: "Invalid email or password" },
+        { error: "Invalid email/phone or password" },
         { status: 401 }
       );
     }
@@ -65,6 +91,7 @@ export async function POST(request: Request) {
               storeName: user.vendorProfile.storeName,
               slug: user.vendorProfile.slug,
               status: user.vendorProfile.status,
+              sellerType: user.vendorProfile.sellerType,
             }
           : null,
       },

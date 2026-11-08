@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { AdminVendorTable } from "./AdminVendorTable";
@@ -20,10 +23,10 @@ export default async function AdminVendorsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-800">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Student Vendor Management
+            Vendor Directory & Verification Queue
           </h1>
           <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-            Review onboarding requests, inspect student credentials, and manage seller permissions
+            Review onboarding requests for student vendors and off-campus guest traders, inspect identity documents, and configure trust tiers.
           </p>
         </div>
       </div>

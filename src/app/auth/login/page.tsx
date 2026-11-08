@@ -185,7 +185,7 @@ function LoginForm() {
         </div>
         <div className="relative flex justify-center text-[11px] uppercase">
           <span className="bg-white px-3 text-neutral-400 font-semibold tracking-wider">
-            Or sign in with email
+            Or sign in with email / phone
           </span>
         </div>
       </div>
@@ -201,19 +201,19 @@ function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-neutral-700 block">
-            Email Address
+            Email Address or Phone Number
           </label>
           <div className="relative">
             <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <Input
-              type="email"
+              type="text"
               required
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
                 setSelectedRole(null);
               }}
-              placeholder="e.g. student@campustrade.ng"
+              placeholder="e.g. trader@gmail.com or +234 801 234 5678"
               className="pl-10 h-11 bg-neutral-50/50 border-neutral-200 focus:bg-white rounded-xl text-xs text-neutral-900"
             />
           </div>
