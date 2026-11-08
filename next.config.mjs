@@ -11,7 +11,7 @@ const nextConfig = {
   },
   experimental: {
     outputFileTracingIncludes: {
-      '/**': ['./prisma/**'],
+      '/**': ['./prisma/**', './dev.db'],
     },
     serverActions: {
       allowedOrigins: ['localhost:3000'],
