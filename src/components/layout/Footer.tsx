@@ -10,25 +10,25 @@ export function Footer() {
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/25">
                 <GraduationCap className="w-6 h-6" />
               </div>
               <span className="font-extrabold text-2xl tracking-tight text-white">
-                Campus<span className="text-emerald-500">Trade</span>
+                Campus<span className="text-emerald-400">Trade</span>
               </span>
             </Link>
             <p className="text-sm text-neutral-400 max-w-sm leading-relaxed">
               The premier student-to-student marketplace across Nigerian universities. Buy and sell textbooks, fashion, tech gadgets, and hostel essentials with zero stress.
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-neutral-900 text-emerald-400 border border-neutral-800">
-                <MapPin className="w-3 h-3" /> UNILAG Akoka
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-neutral-900 text-emerald-300 border border-neutral-800">
+                <MapPin className="w-3 h-3 text-emerald-400" /> UNILAG Akoka
               </span>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-neutral-900 text-emerald-400 border border-neutral-800">
-                <MapPin className="w-3 h-3" /> UI Ibadan
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-neutral-900 text-emerald-300 border border-neutral-800">
+                <MapPin className="w-3 h-3 text-emerald-400" /> UI Ibadan
               </span>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-neutral-900 text-emerald-400 border border-neutral-800">
-                <MapPin className="w-3 h-3" /> OAU Ile-Ife
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-neutral-900 text-emerald-300 border border-neutral-800">
+                <MapPin className="w-3 h-3 text-emerald-400" /> OAU Ile-Ife
               </span>
             </div>
           </div>

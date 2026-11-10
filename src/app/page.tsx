@@ -110,52 +110,45 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 1. HERO SECTION (NovaTrend Reference Layout) */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-white pt-8 pb-16 md:pt-14 md:pb-24">
-        {/* Subtle background glow */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-100/60 rounded-full blur-3xl pointer-events-none -z-10"></div>
-        <div className="absolute top-1/3 left-10 w-72 h-72 bg-amber-100/40 rounded-full blur-3xl pointer-events-none -z-10"></div>
-
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Column: Headlines & Call to Actions */}
-            <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
+      {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
+      <section className="relative overflow-hidden bg-white pt-6 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
+        <div className="w-[92%] sm:w-[90%] max-w-[1720px] mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center w-full">
+            {/* Left Column: Hero Text Content - Wide layout & vertically balanced */}
+            <div className="lg:col-span-6 xl:col-span-6 space-y-6 sm:space-y-7 text-center lg:text-left w-full">
               {/* Trending Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold tracking-wide">
-                <Flame className="w-4 h-4 text-emerald-600 fill-emerald-600 animate-pulse" />
-                <span>TRENDING ACROSS NIGERIAN CAMPUSES</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs sm:text-sm font-semibold shadow-xs">
+                <span className="text-sm sm:text-base">🔥</span>
+                <span>Trending Across Nigerian Campuses</span>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-neutral-950 tracking-tight leading-[1.08]">
-                Discover Products <br className="hidden sm:inline" />
-                <span className="text-emerald-600 underline decoration-emerald-200 decoration-wavy decoration-2">
-                  You&apos;ll Love
-                </span>{" "}
-                on Campus.
+              {/* Main Headline - Bold, highly visible typography */}
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[62px] xl:text-[74px] 2xl:text-[82px] font-black text-neutral-950 tracking-tight leading-[1.05] w-full">
+                Discover Campus <br className="hidden sm:inline" />
+                <span className="text-emerald-500">Products</span>
               </h1>
 
-              {/* Subtitle */}
-              <p className="text-base sm:text-lg text-neutral-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                The premier multi-vendor marketplace built for students. Buy and sell textbooks, laptops, hostel gadgets, and thrift streetwear from verified peers at UNILAG, UI & OAU.
+              {/* Subtitle - Spanning wide across the space without squeezing */}
+              <p className="text-base sm:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
+                The premier multi-vendor marketplace; built for students. Buy and sell textbooks, laptops, hostel gadgets, and thrift streetwear from verified peers across all universities and campuses.
               </p>
 
               {/* Call to Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-1">
                 <Link href="/shop" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25">
-                    Shop Now <ArrowRight className="w-4 h-4" />
+                  <Button size="lg" className="w-full sm:w-auto rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 sm:px-9 py-4 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-base">
+                    Shop Now <ArrowRight className="w-5 h-5 ml-1" />
                   </Button>
                 </Link>
                 <Link href="/vendor/register" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto border-neutral-300 text-neutral-900 hover:bg-neutral-50">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-2 border-emerald-500 text-neutral-950 font-bold px-8 sm:px-9 py-4 hover:bg-emerald-50/70 hover:-translate-y-0.5 transition-all text-base">
                     Open Student Store
                   </Button>
                 </Link>
               </div>
 
               {/* Social Proof */}
-              <div className="pt-4 flex items-center justify-center lg:justify-start gap-4">
+              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
                 <div className="flex -space-x-2 overflow-hidden">
                   <img
                     className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
@@ -181,66 +174,27 @@ export default async function HomePage() {
                 <div className="text-left">
                   <div className="flex items-center text-amber-400">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star key={i} className="w-4 h-4 fill-amber-400" />
                     ))}
                   </div>
-                  <p className="text-xs font-semibold text-neutral-800">
+                  <p className="text-xs sm:text-sm font-semibold text-neutral-700 mt-0.5">
                     Loved by 15,000+ verified campus students
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Hero Visual with Floating Product Cards (NovaTrend Style) */}
-            <div className="lg:col-span-6 relative flex justify-center">
-              <div className="relative w-full max-w-[540px] aspect-[4/3] sm:aspect-[16/11] rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-tr from-emerald-50 via-white to-amber-50/60 border-4 border-white group flex items-center justify-center">
+            {/* Right Column: Hero Visual - Horizontally Aligned on the same row */}
+            <div className="lg:col-span-6 xl:col-span-6 relative flex items-center justify-center lg:justify-end w-full">
+              <div className="relative w-full h-[360px] sm:h-[440px] lg:h-[520px] xl:h-[580px] flex items-center justify-center lg:justify-end">
                 <Image
-                  src="/images/hero-campus-marketplace.png"
-                  alt="Campus Marketplace shopping cart filled with fresh goods, groceries, and student essentials"
+                  src="/images/hero-shopping-items-transparent.png"
+                  alt="Curated student shopping items arranged for hero section"
                   fill
                   priority
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 540px"
-                  className="object-contain p-4 group-hover:scale-105 transition-transform duration-700"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 860px"
+                  className="object-contain filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.16)] hover:scale-[1.02] transition-transform duration-500"
                 />
-
-                {/* Floating Card 1: Top Right (Sneaker / Fashion) */}
-                <div className="absolute top-4 right-2 sm:top-5 sm:right-4 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-2.5 animate-bounce [animation-duration:4s]">
-                  <img
-                    src="https://images.unsplash.com/photo-1552346154-21d32810aba3?w=120&q=80"
-                    alt="Jordan 1"
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover"
-                  />
-                  <div>
-                    <p className="text-[10px] sm:text-[11px] font-bold text-neutral-900">Air Jordan 1 Retro</p>
-                    <p className="text-xs font-extrabold text-emerald-600">₦38,500</p>
-                  </div>
-                </div>
-
-                {/* Floating Card 2: Mid Left (Gadget / Electronics) */}
-                <div className="absolute top-1/2 -left-2 sm:left-3 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-2.5 animate-bounce [animation-duration:5s]">
-                  <img
-                    src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=120&q=80"
-                    alt="Headphones"
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover"
-                  />
-                  <div>
-                    <p className="text-[10px] sm:text-[11px] font-bold text-neutral-900">Sony WH-1000XM4</p>
-                    <p className="text-xs font-extrabold text-emerald-600">₦165,000</p>
-                  </div>
-                </div>
-
-                {/* Floating Card 3: Bottom Right (Live Student Drops Badge) */}
-                <div className="absolute bottom-4 right-2 sm:bottom-5 sm:right-4 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl shadow-xl border border-neutral-100 flex items-center gap-2.5 animate-bounce [animation-duration:4.5s]">
-                  <img
-                    src="https://images.unsplash.com/photo-1618941716939-553df3c6c278?w=120&q=80"
-                    alt="Rechargeable Fan"
-                    className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover"
-                  />
-                  <div>
-                    <p className="text-[10px] sm:text-[11px] font-bold text-neutral-900">16&quot; Mist Stand Fan</p>
-                    <p className="text-xs font-extrabold text-emerald-600">₦48,000</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -264,7 +218,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/shop"
-              className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
+              className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 group"
             >
               <span>View All</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -301,7 +255,7 @@ export default async function HomePage() {
                       </h3>
                       <p className="text-[10px] text-neutral-300 flex items-center justify-between mt-0.5">
                         <span>{totalProducts} Items</span>
-                        <span className="text-emerald-400 group-hover:translate-x-0.5 transition-transform">
+                        <span className="text-purple-400 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all">
                           &rarr;
                         </span>
                       </p>
@@ -320,8 +274,8 @@ export default async function HomePage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-emerald-600">
+                <span className="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping"></span>
+                <span className="text-xs uppercase font-extrabold tracking-wider text-purple-700">
                   Live Campus Catalog
                 </span>
               </div>
@@ -331,7 +285,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/shop?sort=newest"
-              className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
+              className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 group"
             >
               <span>View All New Drops</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -410,7 +364,7 @@ export default async function HomePage() {
             {/* Promo 2: Student Entrepreneurship / Seller Spotlight */}
             <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-8 sm:p-10 flex flex-col justify-between min-h-[300px] shadow-xl">
               <div className="relative z-10 space-y-3">
-                <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold">
+                <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
                   Student Seller Community
                 </Badge>
                 <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
@@ -434,7 +388,7 @@ export default async function HomePage() {
 
               <div className="relative z-10 pt-6">
                 <Link href="/vendor/register">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 shadow-md">
+                  <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 shadow-md rounded-full">
                     Register Your Store &rarr;
                   </Button>
                 </Link>
@@ -492,7 +446,7 @@ export default async function HomePage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-r from-emerald-600 to-teal-700"></div>
+                    <div className="w-full h-full bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-700"></div>
                   )}
                 </div>
 
@@ -515,7 +469,7 @@ export default async function HomePage() {
                       </div>
                     </div>
 
-                    <h3 className="font-bold text-neutral-900 text-sm group-hover:text-emerald-700 transition-colors">
+                    <h3 className="font-bold text-neutral-900 text-sm group-hover:text-emerald-600 transition-colors">
                       {v.storeName}
                     </h3>
                     <p className="text-xs text-neutral-500 line-clamp-2 mt-1">
@@ -525,7 +479,7 @@ export default async function HomePage() {
 
                   <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
                     <span className="flex items-center gap-1 font-medium text-emerald-700">
-                      <MapPin className="w-3.5 h-3.5" />
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
                       {v.campus.name.split(" ")[0]}
                     </span>
                     <span className="text-[11px] font-semibold bg-neutral-100 px-2 py-0.5 rounded-full">

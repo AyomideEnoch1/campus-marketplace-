@@ -66,15 +66,15 @@ export function Navbar({ initialUser }: NavbarProps) {
         {/* Brand Logo & Campus Badge */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
               <GraduationCap className="w-5 h-5 md:w-6 md:h-6" />
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-xl md:text-2xl tracking-tight text-neutral-900 leading-none">
-                Campus<span className="text-emerald-600">Trade</span>
+                Campus<span className="text-emerald-500">Trade</span>
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-400">
-                Multi-Vendor
+              <span className="text-[10px] font-semibold text-neutral-400 tracking-tight">
+                Shop &bull; Sell &bull; Connect
               </span>
             </div>
           </Link>
@@ -115,10 +115,10 @@ export function Navbar({ initialUser }: NavbarProps) {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`px-3 py-2 text-sm font-medium rounded-full transition-all ${
+                className={`px-3.5 py-2 text-sm rounded-full transition-all ${
                   isActive
-                    ? "text-emerald-700 bg-emerald-50 font-semibold"
-                    : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50"
+                    ? "text-emerald-800 bg-emerald-50 font-bold"
+                    : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 font-medium"
                 }`}
               >
                 {link.name}
@@ -164,8 +164,7 @@ export function Navbar({ initialUser }: NavbarProps) {
             <ShoppingBag className="w-5 h-5" />
             {totalCount > 0 && (
               <Badge
-                variant="dark"
-                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-emerald-600 text-white animate-in zoom-in-75"
+                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
               >
                 {totalCount}
               </Badge>
@@ -197,7 +196,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                     <p className="text-xs text-neutral-500 truncate">
                       {user.email}
                     </p>
-                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase font-bold">
+                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase font-bold bg-pink-50 text-pink-700 border-pink-200">
                       {user.role}
                     </Badge>
                   </div>
@@ -206,7 +205,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                     <Link
                       href="/admin"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors font-medium"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors font-medium"
                     >
                       <ShieldAlert className="w-4 h-4 text-emerald-600" />
                       Admin CMS Dashboard
@@ -217,7 +216,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                     <Link
                       href="/dashboard"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors font-medium"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors font-medium"
                     >
                       <Store className="w-4 h-4 text-emerald-600" />
                       Vendor Dashboard
@@ -271,7 +270,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="sm" className="text-xs font-semibold px-4 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" className="text-xs font-semibold px-4 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-full">
                   Join Free
                 </Button>
               </Link>
@@ -300,7 +299,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-3 py-2 rounded-xl text-base font-medium ${
                   pathname === link.href
-                    ? "bg-emerald-50 text-emerald-700 font-semibold"
+                    ? "bg-emerald-50 text-emerald-800 font-bold"
                     : "text-neutral-700 hover:bg-neutral-50"
                 }`}
               >
@@ -313,7 +312,7 @@ export function Navbar({ initialUser }: NavbarProps) {
             <Link
               href="/vendor/register"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 text-emerald-900 font-semibold text-sm"
+              className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-50 via-pink-50 to-amber-50 border border-emerald-200 text-emerald-950 font-semibold text-sm"
             >
               <span className="flex items-center gap-2">
                 <Store className="w-4 h-4 text-emerald-600" />

@@ -69,21 +69,21 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Top Badges */}
         <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
           {product.vendor?.sellerType === "guest" ? (
-            <Badge className="bg-purple-950/90 text-purple-200 border border-purple-700/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+            <Badge className="bg-neutral-800 text-neutral-200 border border-neutral-700 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
               Guest Vendor
             </Badge>
           ) : (
-            <Badge className="bg-emerald-950/90 text-emerald-200 border border-emerald-700/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+            <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
               Student Vendor
             </Badge>
           )}
           {discountPercent && (
-            <Badge variant="accent" className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
+            <Badge className="bg-amber-300 text-amber-950 border border-amber-400/60 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
               -{discountPercent}%
             </Badge>
           )}
           {product.isFeatured && (
-            <Badge variant="dark" className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap">
+            <Badge className="bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap shadow-xs">
               Hot Drop
             </Badge>
           )}
@@ -137,7 +137,7 @@ export function ProductCard({ product }: ProductCardProps) {
               )}"%20on%20CampusTrade`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md hover:bg-emerald-700 transition-colors shrink-0"
+              className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md hover:bg-emerald-600 transition-colors shrink-0"
               title="Chat Vendor on WhatsApp"
             >
               <MessageCircle className="w-4 h-4" />
@@ -185,7 +185,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <span className="text-neutral-400">({product.reviewCount})</span>
               </>
             ) : (
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.2 rounded-md">
+              <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 px-1.5 py-0.2 rounded-md">
                 New
               </span>
             )}

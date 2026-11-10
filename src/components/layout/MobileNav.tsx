@@ -38,7 +38,7 @@ export function MobileNav() {
                 href={item.href}
                 className="flex flex-col items-center -mt-5 group"
               >
-                <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
                   <Icon className="w-6 h-6" />
                 </div>
                 <span className="text-[10px] font-bold text-emerald-700 mt-1">
