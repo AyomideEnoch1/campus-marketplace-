@@ -62,6 +62,12 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   const [phone, setPhone] = React.useState("");
   const [whatsapp, setWhatsapp] = React.useState("");
   const [campusId, setCampusId] = React.useState(campuses[0]?.id || "");
+
+  React.useEffect(() => {
+    if (!campusId && campuses.length > 0) {
+      setCampusId(campuses[0].id);
+    }
+  }, [campuses, campusId]);
   const [storeName, setStoreName] = React.useState("");
   const [storeDescription, setStoreDescription] = React.useState("");
 

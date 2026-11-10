@@ -220,7 +220,24 @@ export async function POST(request: Request) {
 
       if (role === "VENDOR") {
         const finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
-        const finalCampusId = campusId || "clunilag001";
+
+        // Validate campusId against database
+        let targetCampus = campusId
+          ? await tx.campus.findUnique({ where: { id: campusId } })
+          : null;
+
+        if (!targetCampus) {
+          targetCampus = await tx.campus.findFirst({
+            where: { isActive: true },
+            orderBy: { name: "asc" },
+          });
+        }
+
+        if (!targetCampus) {
+          throw new Error("No active campus found in the system");
+        }
+
+        const finalCampusId = targetCampus.id;
         const finalWhatsapp = whatsapp?.trim() || contactPhone || "";
 
         if (!finalWhatsapp) {
