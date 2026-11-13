@@ -17,7 +17,8 @@ export default function VendorGuidelinesPage() {
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
           </Link>
-          <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-xs font-bold uppercase tracking-wider mb-2 block w-fit">
+          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider mb-2.5 inline-flex items-center gap-1.5 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
             Seller Guide
           </Badge>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight">

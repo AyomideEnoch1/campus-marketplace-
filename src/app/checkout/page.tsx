@@ -222,8 +222,8 @@ function CheckoutForm() {
                     Guest Vendor Order
                   </Badge>
                 ) : (
-                  <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-xs font-bold flex items-center gap-1">
-                    <GraduationCap className="w-3 h-3" />
+                  <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-xs font-semibold flex items-center gap-1.5 shadow-2xs">
+                    <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
                     Student Vendor Order
                   </Badge>
                 )}

@@ -428,7 +428,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
                 {product.vendor.logo ? (
                   <img src={product.vendor.logo} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg">
+                  <div className="w-full h-full bg-neutral-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
                     {product.vendor.storeName[0]}
                   </div>
                 )}
@@ -439,11 +439,12 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
                     {product.vendor.storeName}
                   </h4>
                   {product.vendor.sellerType === "guest" ? (
-                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] font-bold">
+                    <Badge className="bg-purple-50 text-purple-800 border-purple-200 text-[10px] font-semibold">
                       Guest Vendor
                     </Badge>
                   ) : (
-                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold">
+                    <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-[10px] font-semibold inline-flex items-center gap-1 shadow-2xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                       Student Vendor
                     </Badge>
                   )}
@@ -491,7 +492,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
           <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full p-6 space-y-5 animate-in zoom-in-95">
             <div className="flex items-start justify-between border-b border-neutral-100 pb-3">
               <div className="flex items-center gap-2 text-emerald-700">
-                <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200/60">
                   <Check className="w-4 h-4 text-emerald-700" />
                 </div>
                 <h3 className="font-extrabold text-base text-neutral-900">
