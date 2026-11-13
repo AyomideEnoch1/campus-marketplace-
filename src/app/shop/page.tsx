@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
+import { SearchBar } from "@/components/marketplace/SearchBar";
 
 interface ShopPageProps {
   searchParams: {
@@ -79,11 +80,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     if (maxPrice) where.price.lte = parseFloat(maxPrice);
   }
 
-  if (q) {
+  const rawQ = q?.trim() || "";
+  if (rawQ) {
     where.OR = [
-      { title: { contains: q } },
-      { description: { contains: q } },
-      { tags: { contains: q } },
+      { title: { contains: rawQ } },
+      { description: { contains: rawQ } },
+      { tags: { contains: rawQ } },
+      { category: { name: { contains: rawQ } } },
     ];
   }
 
@@ -174,6 +177,15 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <p className="text-xs sm:text-sm md:text-base text-neutral-600 leading-relaxed">
               Browse textbooks, tech, hostel living gear, and thrift fashion directly from fellow students. Filter by campus or search for what you need.
             </p>
+
+            {/* Search Input Bar */}
+            <div className="pt-1.5 sm:pt-2 max-w-xl">
+              <SearchBar
+                defaultValue={rawQ}
+                placeholder="Search textbooks, smartphones, sneakers..."
+                className="w-full shadow-xs"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -543,7 +555,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900">
-                  {category
+                  {rawQ
+                    ? `Search results for "${rawQ}"`
+                    : category
                     ? categories.find((c) => c.slug === category)?.name || "Category Items"
                     : "All Campus Items"}
                 </h2>
@@ -692,13 +706,17 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-2xl font-bold">
                   🔍
                 </div>
-                <h3 className="text-lg font-bold text-neutral-800">No products match your filters</h3>
+                <h3 className="text-lg font-bold text-neutral-800">
+                  {rawQ ? `No products found matching "${rawQ}"` : "No products match your filters"}
+                </h3>
                 <p className="text-sm text-neutral-500 max-w-md mx-auto">
-                  Try broadening your search, resetting active filters, or switching campus locations.
+                  {rawQ
+                    ? "Try checking your spelling, using more generic keywords (e.g. 'shoes', 'iphone', 'textbook'), or clearing your search."
+                    : "Try broadening your search, resetting active filters, or switching campus locations."}
                 </p>
                 <Link href="/shop">
-                  <Button variant="default" size="sm" className="mt-2">
-                    Reset All Filters
+                  <Button variant="default" size="sm" className="mt-2 rounded-full">
+                    {rawQ ? "Clear Search & View All" : "Reset All Filters"}
                   </Button>
                 </Link>
               </div>

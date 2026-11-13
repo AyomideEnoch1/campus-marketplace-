@@ -50,6 +50,7 @@ export function MobileShopFilters({
   const [activeTab, setActiveTab] = React.useState<"all" | "campus" | "sort" | "price" | "condition">("all");
 
   // Current URL filter states
+  const currentQ = searchParams.get("q") || "";
   const currentCampus = searchParams.get("campus") || "";
   const currentCategory = searchParams.get("category") || "";
   const currentCondition = searchParams.get("condition") || "";
@@ -102,6 +103,7 @@ export function MobileShopFilters({
 
   // Count active filters (excluding category and sort for clearer badge)
   const activeCount = [
+    currentQ,
     currentCampus,
     currentCondition,
     currentMinPrice || currentMaxPrice,
@@ -132,6 +134,7 @@ export function MobileShopFilters({
       sort: draftSort,
       vendor: draftVendor,
       sellerType: draftSellerType,
+      q: currentQ || null,
     });
     setIsOpen(false);
     router.push(nextUrl);
@@ -304,6 +307,20 @@ export function MobileShopFilters({
       {activeCount > 0 && (
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 pb-1">
           <span className="text-[10px] uppercase font-bold text-neutral-400 shrink-0">Active:</span>
+
+          {currentQ && (
+            <span className="inline-flex items-center gap-1 bg-neutral-100 text-neutral-800 border border-neutral-200/90 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 shadow-2xs">
+              <span className="text-[10px] text-neutral-500 font-normal">Search:</span>
+              <span className="truncate max-w-[90px]">&ldquo;{currentQ}&rdquo;</span>
+              <button
+                onClick={() => removeFilter("q")}
+                className="hover:text-neutral-950 p-0.5 text-neutral-400 hover:text-neutral-700"
+                aria-label="Remove search filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
 
           {selectedCampusObj && (
             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">

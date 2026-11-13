@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
+import { SearchBar } from "@/components/marketplace/SearchBar";
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
 
@@ -167,13 +168,9 @@ export default async function HomePage() {
         {/* 1. Mobile Search Bar & Filter (Ref 1 & 2) */}
         <div className="px-4 pt-3">
           <div className="flex items-center gap-2">
-            <Link
-              href="/shop"
-              className="flex-1 flex items-center gap-2.5 bg-white border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs text-neutral-400 shadow-xs hover:border-emerald-500 transition-colors"
-            >
-              <Search className="w-4 h-4 text-neutral-400 shrink-0" />
-              <span className="truncate">What are you looking for?</span>
-            </Link>
+            <div className="flex-1">
+              <SearchBar placeholder="What are you looking for?" />
+            </div>
             <Link
               href="/shop"
               className="w-10 h-10 rounded-2xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shadow-xs hover:border-emerald-500 transition-colors shrink-0"
@@ -447,6 +444,15 @@ export default async function HomePage() {
               <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
                 The premier multi-vendor marketplace; built for students. Buy and sell textbooks, laptops, hostel gadgets, and thrift streetwear from verified peers across all universities and campuses.
               </p>
+
+              {/* Desktop Search Bar */}
+              <div className="pt-1 max-w-xl mx-auto lg:mx-0">
+                <SearchBar
+                  size="lg"
+                  placeholder="Search textbooks, laptops, smartphones, sneakers..."
+                  className="w-full border-neutral-300 shadow-md"
+                />
+              </div>
 
               {/* Call to Action Buttons */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-1 w-full sm:w-auto">
