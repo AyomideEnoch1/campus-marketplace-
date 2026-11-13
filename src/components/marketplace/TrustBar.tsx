@@ -31,7 +31,7 @@ export function TrustBar() {
   return (
     <div className="w-[92%] sm:w-[90%] max-w-[1720px] mx-auto mt-0 sm:mt-2 mb-10 sm:mb-12 relative z-20">
       <div className="bg-white rounded-2xl md:rounded-full border border-neutral-200/80 shadow-xl shadow-neutral-900/5 p-4 sm:p-5 md:py-5 md:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 divide-y sm:divide-y-0 sm:divide-x divide-neutral-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 divide-y sm:divide-y-0 sm:divide-x divide-neutral-100">
           {guarantees.map((item, idx) => {
             const Icon = item.icon;
             return (
@@ -47,10 +47,10 @@ export function TrustBar() {
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight truncate">
+                  <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-tight">
                     {item.title}
                   </h4>
-                  <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5 leading-snug truncate">
+                  <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5 leading-snug">
                     {item.desc}
                   </p>
                 </div>

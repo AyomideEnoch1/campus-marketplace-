@@ -188,7 +188,7 @@ export function Navbar({ initialUser }: NavbarProps) {
               </button>
 
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-neutral-100 py-2 z-50 animate-in fade-in-50 zoom-in-95">
+                <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-neutral-100 py-2 z-50 animate-in fade-in-50 zoom-in-95">
                   <div className="px-4 py-2 border-b border-neutral-100">
                     <p className="text-sm font-bold text-neutral-900 truncate">
                       {user.fullName}
@@ -263,14 +263,14 @@ export function Navbar({ initialUser }: NavbarProps) {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Link href="/auth/login">
                 <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-xs font-semibold">
                   Sign In
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="sm" className="text-xs font-semibold px-4 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-full">
+                <Button size="sm" className="hidden sm:inline-flex text-xs font-semibold px-3 sm:px-4 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-full">
                   Join Free
                 </Button>
               </Link>
@@ -308,7 +308,26 @@ export function Navbar({ initialUser }: NavbarProps) {
             ))}
           </div>
 
-          <div className="pt-3 border-t border-neutral-100 space-y-2">
+          {!user && (
+            <div className="pt-2 border-t border-neutral-100 flex items-center gap-2">
+              <Link
+                href="/auth/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-neutral-200 text-center font-bold text-sm text-neutral-800 hover:bg-neutral-50 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-center font-bold text-sm shadow-sm transition-colors"
+              >
+                Join Free
+              </Link>
+            </div>
+          )}
+
+          <div className="pt-2 border-t border-neutral-100 space-y-2">
             <Link
               href="/vendor/register"
               onClick={() => setMobileMenuOpen(false)}

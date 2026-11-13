@@ -111,70 +111,70 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
-      <section className="relative overflow-hidden bg-white pt-6 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
+      <section className="relative overflow-hidden bg-white pt-5 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
         <div className="w-[92%] sm:w-[90%] max-w-[1720px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 xl:gap-14 items-center w-full">
             {/* Left Column: Hero Text Content - Wide layout & vertically balanced */}
-            <div className="lg:col-span-6 xl:col-span-6 space-y-6 sm:space-y-7 text-center lg:text-left w-full">
+            <div className="lg:col-span-6 xl:col-span-6 space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left w-full">
               {/* Trending Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs sm:text-sm font-semibold shadow-xs">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs sm:text-sm font-semibold shadow-xs">
                 <span className="text-sm sm:text-base">🔥</span>
                 <span>Trending Across Nigerian Campuses</span>
               </div>
 
-              {/* Main Headline - Bold, highly visible typography */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[62px] xl:text-[74px] 2xl:text-[82px] font-black text-neutral-950 tracking-tight leading-[1.05] w-full">
+              {/* Main Headline - Responsive typography */}
+              <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-[62px] xl:text-[74px] 2xl:text-[82px] font-black text-neutral-950 tracking-tight leading-[1.08] sm:leading-[1.05] w-full">
                 Discover Campus <br className="hidden sm:inline" />
                 <span className="text-emerald-500">Products</span>
               </h1>
 
               {/* Subtitle - Spanning wide across the space without squeezing */}
-              <p className="text-base sm:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
+              <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
                 The premier multi-vendor marketplace; built for students. Buy and sell textbooks, laptops, hostel gadgets, and thrift streetwear from verified peers across all universities and campuses.
               </p>
 
               {/* Call to Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-1">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-1 w-full sm:w-auto">
                 <Link href="/shop" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 sm:px-9 py-4 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-base">
-                    Shop Now <ArrowRight className="w-5 h-5 ml-1" />
+                  <Button size="lg" className="w-full sm:w-auto rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 sm:px-9 py-3.5 sm:py-4 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
+                    Shop Now <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
                   </Button>
                 </Link>
                 <Link href="/vendor/register" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-2 border-emerald-500 text-neutral-950 font-bold px-8 sm:px-9 py-4 hover:bg-emerald-50/70 hover:-translate-y-0.5 transition-all text-base">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-2 border-emerald-500 text-neutral-950 font-bold px-6 sm:px-9 py-3.5 sm:py-4 hover:bg-emerald-50/70 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
                     Open Student Store
                   </Button>
                 </Link>
               </div>
 
               {/* Social Proof */}
-              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+              <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
                 <div className="flex -space-x-2 overflow-hidden">
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"
                     alt="Student buyer"
                   />
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
                     alt="Student buyer"
                   />
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
                     alt="Student buyer"
                   />
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80"
                     alt="Student buyer"
                   />
                 </div>
-                <div className="text-left">
-                  <div className="flex items-center text-amber-400">
+                <div className="text-center sm:text-left">
+                  <div className="flex items-center justify-center sm:justify-start text-amber-400">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400" />
+                      <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400" />
                     ))}
                   </div>
                   <p className="text-xs sm:text-sm font-semibold text-neutral-700 mt-0.5">
@@ -186,7 +186,7 @@ export default async function HomePage() {
 
             {/* Right Column: Hero Visual - Horizontally Aligned on the same row */}
             <div className="lg:col-span-6 xl:col-span-6 relative flex items-center justify-center lg:justify-end w-full">
-              <div className="relative w-full h-[360px] sm:h-[440px] lg:h-[520px] xl:h-[580px] flex items-center justify-center lg:justify-end">
+              <div className="relative w-full h-[250px] xs:h-[300px] sm:h-[400px] lg:h-[520px] xl:h-[580px] flex items-center justify-center lg:justify-end">
                 <Image
                   src="/images/hero-shopping-items-transparent.png"
                   alt="Curated student shopping items arranged for hero section"
@@ -305,12 +305,12 @@ export default async function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Promo 1: Flash Sale with Countdown */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-8 sm:p-10 flex flex-col justify-between min-h-[300px] shadow-xl shadow-orange-600/15">
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl shadow-orange-600/15">
               <div className="relative z-10 space-y-3">
                 <Badge variant="dark" className="bg-white/20 backdrop-blur-md text-white border-0 text-xs font-bold">
                   Semester Rush Deals
                 </Badge>
-                <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
                   Up To 50% Off <br />
                   Campus Essentials
                 </h3>
@@ -319,32 +319,32 @@ export default async function HomePage() {
                 </p>
 
                 {/* Countdown Timer Block */}
-                <div className="flex items-center gap-2 pt-2">
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">02</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Days</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 pt-2">
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">02</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Days</span>
                   </div>
                   <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">14</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">14</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
                   </div>
                   <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">38</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">38</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
                   </div>
                   <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">45</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">45</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
                   </div>
                 </div>
               </div>
 
-              <div className="relative z-10 pt-6">
+              <div className="relative z-10 pt-5 sm:pt-6">
                 <Link href="/shop?filter=sale">
-                  <Button className="bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-6 shadow-md">
+                  <Button className="bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-5 sm:px-6 shadow-md text-xs sm:text-sm">
                     Shop Flash Sale Now &rarr;
                   </Button>
                 </Link>
@@ -362,12 +362,12 @@ export default async function HomePage() {
             </div>
 
             {/* Promo 2: Student Entrepreneurship / Seller Spotlight */}
-            <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-8 sm:p-10 flex flex-col justify-between min-h-[300px] shadow-xl">
+            <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl">
               <div className="relative z-10 space-y-3">
                 <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
                   Student Seller Community
                 </Badge>
-                <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
                   Turn Your Drip or Skills <br />
                   Into Campus Income
                 </h3>
