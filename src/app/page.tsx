@@ -13,18 +13,7 @@ import {
   SlidersHorizontal,
   Layers,
   ThumbsUp,
-  ShieldCheck,
-  Zap,
-  Truck,
-  Headphones,
   Store,
-  Shirt,
-  Laptop,
-  Home as HomeIcon,
-  BookOpen,
-  Utensils,
-  Dumbbell,
-  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -219,47 +208,6 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 5. Trust Guarantee Micro-Pills (Mobile) */}
-        <div className="px-4">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">100% Student ID</p>
-                <p className="text-[9px] text-neutral-500 truncate">Verified Vendors</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">Secure Escrow</p>
-                <p className="text-[9px] text-neutral-500 truncate">Safe Payments</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">Campus Pickup</p>
-                <p className="text-[9px] text-neutral-500 truncate">Fast Hand-off</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center shrink-0">
-                <Headphones className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">Direct WhatsApp</p>
-                <p className="text-[9px] text-neutral-500 truncate">Chat Vendor</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* 6. Recommended / Popular Products (Ref 1 & 2) */}
         <div className="px-4 pt-1">
