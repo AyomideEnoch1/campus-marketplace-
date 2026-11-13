@@ -3,9 +3,9 @@ import { Sparkles, Truck, ShieldCheck } from "lucide-react";
 
 export function AnnouncementBar() {
   return (
-    <div className="bg-neutral-900 text-white text-xs py-2 px-4 transition-colors">
+    <div className="hidden md:block bg-neutral-900 text-white text-xs py-2 px-4 transition-colors">
       <div className="container mx-auto flex items-center justify-between">
-        <div className="hidden md:flex items-center gap-6 text-neutral-300">
+        <div className="flex items-center gap-6 text-neutral-300">
           <span className="flex items-center gap-1.5">
             <Truck className="w-3.5 h-3.5 text-neutral-400" />
             <span>Free On-Campus Pickup Points</span>
@@ -20,13 +20,7 @@ export function AnnouncementBar() {
           </span>
         </div>
 
-        {/* Mobile single marquee ticker */}
-        <div className="md:hidden w-full text-center font-medium flex items-center justify-center gap-1.5 text-[11px] truncate px-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-neutral-400 animate-pulse shrink-0"></span>
-          <span className="truncate">🎓 UNILAG, UI & OAU Student Marketplace</span>
-        </div>
-
-        <div className="hidden md:flex items-center gap-4 text-neutral-300">
+        <div className="flex items-center gap-4 text-neutral-300">
           <Link href="/vendor/register" className="hover:text-white transition-colors text-white font-semibold">
             Become a Seller &rarr;
           </Link>
