@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ShoppingBag,
-  Search,
   Heart,
   User,
   GraduationCap,
@@ -127,17 +126,8 @@ export function Navbar({ initialUser }: NavbarProps) {
           })}
         </nav>
 
-        {/* Right Actions: Search, Wishlist, Cart, Profile */}
+        {/* Right Actions: Wishlist, Cart, Profile */}
         <div className="flex items-center gap-1 md:gap-2.5">
-          {/* Search Trigger */}
-          <Link
-            href="/shop"
-            className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-            title="Search Products"
-          >
-            <Search className="w-5 h-5" />
-          </Link>
-
           {/* Wishlist / Saved Items */}
           <Link
             href="/saved"
