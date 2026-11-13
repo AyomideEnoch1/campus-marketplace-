@@ -34,6 +34,7 @@ import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
+import { getCategoryImage } from "@/lib/category-images";
 
 // Fetch dynamic data from database
 async function getHomepageData() {
@@ -111,53 +112,9 @@ async function getHomepageData() {
   }
 }
 
-function getCategoryIcon(slug: string) {
-  switch (slug) {
-    case "fashion":
-      return Shirt;
-    case "electronics":
-      return Laptop;
-    case "hostel-essentials":
-      return HomeIcon;
-    case "books-academics":
-      return BookOpen;
-    case "beauty-care":
-      return Sparkles;
-    case "food-groceries":
-      return Utensils;
-    case "sports-fitness":
-      return Dumbbell;
-    case "services":
-    default:
-      return Briefcase;
-  }
-}
-
-const categoryPastels: Record<string, { bg: string; text: string }> = {
-  fashion: { bg: "bg-emerald-50 border-emerald-100", text: "text-emerald-700" },
-  electronics: { bg: "bg-blue-50 border-blue-100", text: "text-blue-700" },
-  "hostel-essentials": { bg: "bg-amber-50 border-amber-100", text: "text-amber-700" },
-  "books-academics": { bg: "bg-purple-50 border-purple-100", text: "text-purple-700" },
-  "beauty-care": { bg: "bg-pink-50 border-pink-100", text: "text-pink-700" },
-  "food-groceries": { bg: "bg-orange-50 border-orange-100", text: "text-orange-700" },
-  "sports-fitness": { bg: "bg-teal-50 border-teal-100", text: "text-teal-700" },
-  services: { bg: "bg-rose-50 border-rose-100", text: "text-rose-700" },
-};
-
 export default async function HomePage() {
   const { categories, campuses, newArrivals, featuredProducts, vendors } =
     await getHomepageData();
-
-  const categoryImages: Record<string, string> = {
-    fashion: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600&q=80",
-    electronics: "https://images.unsplash.com/photo-1511707171634-5f897ff02560?w=600&q=80",
-    "hostel-essentials": "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=600&q=80",
-    "books-academics": "https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=600&q=80",
-    "beauty-care": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80",
-    "food-groceries": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80",
-    "sports-fitness": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&q=80",
-    services: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&q=80",
-  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -199,15 +156,24 @@ export default async function HomePage() {
               <Link
                 key={cat.id}
                 href={`/shop?category=${cat.slug}`}
-                className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white border border-neutral-200/80 text-neutral-700 hover:border-emerald-500 hover:text-emerald-700 transition-colors shrink-0 shadow-2xs"
+                className="inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 rounded-full text-xs font-semibold bg-white border border-neutral-200/80 text-neutral-700 hover:border-emerald-500 hover:text-emerald-700 transition-colors shrink-0 shadow-2xs"
               >
-                {cat.name}
+                <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-neutral-200/80 flex items-center justify-center">
+                  <Image
+                    src={getCategoryImage(cat.slug)}
+                    alt={cat.name}
+                    fill
+                    sizes="20px"
+                    className="object-cover object-center"
+                  />
+                </div>
+                <span>{cat.name}</span>
               </Link>
             ))}
           </div>
         </div>
 
-        {/* 4. Categories Icon Grid (Ref 1) */}
+        {/* 4. Categories Visual Grid with Real Contextual Images (Well Centralized) */}
         <div className="px-4 pt-1">
           <div className="bg-white rounded-3xl p-4 border border-neutral-100 shadow-xs">
             <div className="flex items-center justify-between mb-3.5">
@@ -224,25 +190,26 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-y-4 gap-x-2">
               {categories.slice(0, 8).map((cat: any) => {
-                const IconComponent = getCategoryIcon(cat.slug);
-                const colors = categoryPastels[cat.slug] || {
-                  bg: "bg-emerald-50 border-emerald-100",
-                  text: "text-emerald-700",
-                };
+                const img = getCategoryImage(cat.slug);
                 return (
                   <Link
                     key={cat.id}
                     href={`/shop?category=${cat.slug}`}
-                    className="flex flex-col items-center group text-center"
+                    className="flex flex-col items-center justify-center group text-center"
                   >
-                    <div
-                      className={`w-12 h-12 rounded-2xl ${colors.bg} border flex items-center justify-center transition-all shadow-2xs group-hover:scale-105`}
-                    >
-                      <IconComponent className={`w-5 h-5 ${colors.text}`} />
+                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl overflow-hidden bg-neutral-100 shadow-2xs border border-neutral-200/80 group-hover:border-emerald-500 group-hover:scale-105 transition-all duration-300 flex items-center justify-center">
+                      <Image
+                        src={img}
+                        alt={cat.name}
+                        fill
+                        sizes="64px"
+                        className="object-cover object-center group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-neutral-950/5 group-hover:bg-transparent transition-colors" />
                     </div>
-                    <span className="text-[11px] font-medium text-neutral-700 group-hover:text-emerald-700 mt-1.5 line-clamp-1">
+                    <span className="text-[11px] font-semibold text-neutral-800 group-hover:text-emerald-700 mt-1.5 leading-tight text-center line-clamp-1 w-full px-1">
                       {cat.name.split(" ")[0]}
                     </span>
                   </Link>
@@ -539,7 +506,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/shop"
-              className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 group"
+              className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
             >
               <span>View All</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -560,14 +527,11 @@ export default async function HomePage() {
                 >
                   <div className="aspect-[4/5] relative w-full overflow-hidden">
                     <Image
-                      src={
-                        categoryImages[cat.slug] ||
-                        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"
-                      }
+                      src={getCategoryImage(cat.slug)}
                       alt={cat.name}
                       fill
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12vw"
-                      className="object-cover group-hover:scale-108 transition-transform duration-500"
+                      className="object-cover object-center group-hover:scale-108 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/30 to-transparent"></div>
                     <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
@@ -576,7 +540,7 @@ export default async function HomePage() {
                       </h3>
                       <p className="text-[10px] text-neutral-300 flex items-center justify-between mt-0.5">
                         <span>{totalProducts} Items</span>
-                        <span className="text-purple-400 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all">
+                        <span className="text-emerald-400 group-hover:text-emerald-300 group-hover:translate-x-0.5 transition-all">
                           &rarr;
                         </span>
                       </p>

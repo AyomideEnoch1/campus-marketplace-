@@ -1,7 +1,9 @@
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { SlidersHorizontal, ArrowUpDown, X, RotateCcw, MapPin, Tag } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCategoryImage } from "@/lib/category-images";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -221,13 +223,25 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <Link
                   key={cat.id}
                   href={`/shop?category=${cat.slug}${campus ? `&campus=${campus}` : ""}`}
-                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
                       ? "bg-emerald-500 text-white shadow-xs"
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
-                  {cat.name} ({getCategoryCount(cat)})
+                  <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/60 flex items-center justify-center">
+                    <Image
+                      src={getCategoryImage(cat.slug)}
+                      alt={cat.name}
+                      fill
+                      sizes="20px"
+                      className="object-cover object-center"
+                    />
+                  </div>
+                  <span>{cat.name}</span>
+                  <span className={`text-[10px] ${isSelected ? "text-emerald-100" : "text-neutral-400"}`}>
+                    ({getCategoryCount(cat)})
+                  </span>
                 </Link>
               );
             })}
@@ -394,8 +408,19 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                               : "text-neutral-600 hover:bg-neutral-100"
                           }`}
                         >
-                          <span>{c.name}</span>
-                          <span className="text-[10px] text-neutral-400">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-5 h-5 rounded-md overflow-hidden relative shrink-0 border border-neutral-200/80 flex items-center justify-center">
+                              <Image
+                                src={getCategoryImage(c.slug)}
+                                alt={c.name}
+                                fill
+                                sizes="20px"
+                                className="object-cover object-center"
+                              />
+                            </div>
+                            <span className="truncate">{c.name}</span>
+                          </div>
+                          <span className="text-[10px] text-neutral-400 shrink-0 ml-1">
                             {getCategoryCount(c)}
                           </span>
                         </Link>
