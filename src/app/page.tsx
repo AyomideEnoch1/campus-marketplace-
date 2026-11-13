@@ -9,6 +9,22 @@ import {
   MapPin,
   Clock,
   CheckCircle,
+  Search,
+  SlidersHorizontal,
+  Layers,
+  ThumbsUp,
+  ShieldCheck,
+  Zap,
+  Truck,
+  Headphones,
+  Store,
+  Shirt,
+  Laptop,
+  Home as HomeIcon,
+  BookOpen,
+  Utensils,
+  Dumbbell,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -93,6 +109,39 @@ async function getHomepageData() {
   }
 }
 
+function getCategoryIcon(slug: string) {
+  switch (slug) {
+    case "fashion":
+      return Shirt;
+    case "electronics":
+      return Laptop;
+    case "hostel-essentials":
+      return HomeIcon;
+    case "books-academics":
+      return BookOpen;
+    case "beauty-care":
+      return Sparkles;
+    case "food-groceries":
+      return Utensils;
+    case "sports-fitness":
+      return Dumbbell;
+    case "services":
+    default:
+      return Briefcase;
+  }
+}
+
+const categoryPastels: Record<string, { bg: string; text: string }> = {
+  fashion: { bg: "bg-emerald-50 border-emerald-100", text: "text-emerald-700" },
+  electronics: { bg: "bg-blue-50 border-blue-100", text: "text-blue-700" },
+  "hostel-essentials": { bg: "bg-amber-50 border-amber-100", text: "text-amber-700" },
+  "books-academics": { bg: "bg-purple-50 border-purple-100", text: "text-purple-700" },
+  "beauty-care": { bg: "bg-pink-50 border-pink-100", text: "text-pink-700" },
+  "food-groceries": { bg: "bg-orange-50 border-orange-100", text: "text-orange-700" },
+  "sports-fitness": { bg: "bg-teal-50 border-teal-100", text: "text-teal-700" },
+  services: { bg: "bg-rose-50 border-rose-100", text: "text-rose-700" },
+};
+
 export default async function HomePage() {
   const { categories, campuses, newArrivals, featuredProducts, vendors } =
     await getHomepageData();
@@ -110,8 +159,274 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
-      <section className="relative overflow-hidden bg-white pt-5 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
+      {/* ========================================================= */}
+      {/* MOBILE / SMALL SCREENS LAYOUT (Inspired by Reference UI)   */}
+      {/* ========================================================= */}
+      <div className="lg:hidden bg-neutral-50/50 pb-10 space-y-4">
+        {/* 1. Mobile Search Bar & Filter (Ref 1 & 2) */}
+        <div className="px-4 pt-3">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/shop"
+              className="flex-1 flex items-center gap-2.5 bg-white border border-neutral-200/80 rounded-2xl px-3.5 py-2.5 text-xs text-neutral-400 shadow-xs hover:border-emerald-500 transition-colors"
+            >
+              <Search className="w-4 h-4 text-neutral-400 shrink-0" />
+              <span className="truncate">What are you looking for?</span>
+            </Link>
+            <Link
+              href="/shop"
+              className="w-10 h-10 rounded-2xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shadow-xs hover:border-emerald-500 transition-colors shrink-0"
+              title="Filters"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-neutral-700" />
+            </Link>
+          </div>
+        </div>
+
+        {/* 2. Mobile Hero Promo Banner Card (Ref 1 & 2) */}
+        <div className="px-4">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-700 p-4 xs:p-5 text-white shadow-lg shadow-emerald-600/20">
+            {/* Background subtle curve */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-xl pointer-events-none" />
+
+            <div className="flex items-center justify-between relative z-10">
+              {/* Left Column Text */}
+              <div className="w-[62%] space-y-2 pr-1">
+                <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-amber-200">
+                  <Flame className="w-3 h-3 text-amber-300" />
+                  Best Seller!
+                </span>
+                <h2 className="text-lg xs:text-xl font-black leading-tight tracking-tight text-white">
+                  Discover Campus <br />
+                  <span className="text-amber-300">Products!</span>
+                </h2>
+                <p className="text-[11px] text-emerald-100 line-clamp-2 leading-relaxed font-normal">
+                  Buy &amp; sell textbooks, drip &amp; gadgets from verified peers.
+                </p>
+                <div className="pt-1">
+                  <Link href="/shop">
+                    <Button size="sm" className="bg-white text-emerald-950 hover:bg-neutral-100 font-bold text-xs px-4 py-1.5 h-8 rounded-full shadow-md active:scale-95 transition-all">
+                      Shop Now!
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right Column 3D Visual */}
+              <div className="w-[38%] h-32 xs:h-36 relative flex items-center justify-center shrink-0">
+                <Image
+                  src="/images/hero-shopping-items-transparent.png"
+                  alt="Student campus shopping items"
+                  fill
+                  priority
+                  sizes="160px"
+                  className="object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.22)]"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Category Filter Chips (Ref 2) */}
+        <div className="px-4">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            <Link
+              href="/shop"
+              className="px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500 text-white shadow-xs shrink-0"
+            >
+              All
+            </Link>
+            {categories.slice(0, 6).map((cat: any) => (
+              <Link
+                key={cat.id}
+                href={`/shop?category=${cat.slug}`}
+                className="px-3.5 py-1.5 rounded-full text-xs font-medium bg-white border border-neutral-200/80 text-neutral-700 hover:border-emerald-500 hover:text-emerald-700 transition-colors shrink-0 shadow-2xs"
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. Categories Icon Grid (Ref 1) */}
+        <div className="px-4 pt-1">
+          <div className="bg-white rounded-3xl p-4 border border-neutral-100 shadow-xs">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-sm text-neutral-900">Categories</h3>
+              </div>
+              <Link
+                href="/shop"
+                className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+              >
+                <span>See All</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3">
+              {categories.slice(0, 8).map((cat: any) => {
+                const IconComponent = getCategoryIcon(cat.slug);
+                const colors = categoryPastels[cat.slug] || {
+                  bg: "bg-emerald-50 border-emerald-100",
+                  text: "text-emerald-700",
+                };
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/shop?category=${cat.slug}`}
+                    className="flex flex-col items-center group text-center"
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-2xl ${colors.bg} border flex items-center justify-center transition-all shadow-2xs group-hover:scale-105`}
+                    >
+                      <IconComponent className={`w-5 h-5 ${colors.text}`} />
+                    </div>
+                    <span className="text-[11px] font-medium text-neutral-700 group-hover:text-emerald-700 mt-1.5 line-clamp-1">
+                      {cat.name.split(" ")[0]}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Trust Guarantee Micro-Pills (Mobile) */}
+        <div className="px-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-neutral-900 truncate">100% Student ID</p>
+                <p className="text-[9px] text-neutral-500 truncate">Verified Vendors</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
+              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-neutral-900 truncate">Secure Escrow</p>
+                <p className="text-[9px] text-neutral-500 truncate">Safe Payments</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                <Truck className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-neutral-900 truncate">Campus Pickup</p>
+                <p className="text-[9px] text-neutral-500 truncate">Fast Hand-off</p>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
+              <div className="w-8 h-8 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center shrink-0">
+                <Headphones className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-neutral-900 truncate">Direct WhatsApp</p>
+                <p className="text-[9px] text-neutral-500 truncate">Chat Vendor</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 6. Recommended / Popular Products (Ref 1 & 2) */}
+        <div className="px-4 pt-1">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <ThumbsUp className="w-4 h-4 text-emerald-600" />
+              <h3 className="font-bold text-sm text-neutral-900">Recommended For You</h3>
+            </div>
+            <Link
+              href="/shop?sort=newest"
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+            >
+              <span>See more</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {newArrivals.slice(0, 6).map((product) => (
+              <ProductCard key={product.id} product={product as any} />
+            ))}
+          </div>
+        </div>
+
+        {/* 7. Secondary Middle Promo Banner (Ref 2) */}
+        <div className="px-4 pt-2">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white p-4 xs:p-5 shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 z-10 max-w-[70%]">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200">
+                  Semester Rush Clearance
+                </span>
+                <h4 className="text-base font-black leading-snug">
+                  Up To 50% Off Campus Essentials
+                </h4>
+                <p className="text-[10px] text-amber-100">
+                  Verified deals from graduating students.
+                </p>
+              </div>
+              <Link
+                href="/shop?filter=sale"
+                className="w-10 h-10 rounded-full bg-white text-neutral-950 flex items-center justify-center font-bold shadow-md hover:scale-105 active:scale-95 transition-transform z-10 shrink-0"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 8. Vendor Spotlight Card (Mobile) */}
+        <div className="px-4 pt-2">
+          <div className="bg-neutral-900 rounded-3xl p-4 text-white space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-sm font-bold">Featured Campus Stores</h4>
+              </div>
+              <Link href="/vendors" className="text-xs text-emerald-400 font-semibold">
+                View All &rarr;
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {vendors.slice(0, 2).map((v) => (
+                <Link
+                  key={v.id}
+                  href={`/store/${v.slug}`}
+                  className="bg-neutral-800/80 rounded-2xl p-3 border border-neutral-700/60 hover:border-emerald-500/50 transition-colors flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
+                      {v.storeName[0]}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold truncate text-white">{v.storeName}</p>
+                      <p className="text-[10px] text-neutral-400 truncate">{v.campus.name.split(" ")[0]}</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-emerald-400 mt-2 font-medium">
+                    {v._count.products} Listings &rarr;
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================= */}
+      {/* DESKTOP / LARGE SCREENS LAYOUT (Preserved Desktop View)    */}
+      {/* ========================================================= */}
+      <div className="hidden lg:block">
+        {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
+        <section className="relative overflow-hidden bg-white pt-5 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
         <div className="w-[92%] sm:w-[90%] max-w-[1720px] mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 xl:gap-14 items-center w-full">
             {/* Left Column: Hero Text Content - Wide layout & vertically balanced */}
@@ -492,6 +807,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }
