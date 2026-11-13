@@ -69,11 +69,12 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Top Badges */}
         <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
           {product.vendor?.sellerType === "guest" ? (
-            <Badge className="bg-neutral-800 text-neutral-200 border border-neutral-700 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+            <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
               Guest Vendor
             </Badge>
           ) : (
-            <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+            <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap inline-flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
               Student Vendor
             </Badge>
           )}

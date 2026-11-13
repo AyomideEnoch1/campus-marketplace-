@@ -53,12 +53,13 @@ export default async function OrderSuccessPage({
     <div className="min-h-screen bg-neutral-50/60 py-16 px-4">
       <div className="container mx-auto max-w-2xl bg-white rounded-3xl border border-neutral-200/80 shadow-lg p-6 sm:p-10 space-y-8 text-center">
         {/* Animated Check */}
-        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center mx-auto shadow-md shadow-emerald-500/15">
           <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12" />
         </div>
 
         <div className="space-y-2">
-          <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-xs font-bold uppercase tracking-wider">
+          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
             Order Request Received
           </Badge>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight">

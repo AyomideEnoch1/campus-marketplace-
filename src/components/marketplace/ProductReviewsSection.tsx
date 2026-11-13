@@ -495,7 +495,7 @@ export function ProductReviewsSection({
                       {r.displayName}
                     </span>
                     {r.isVerifiedPurchase && (
-                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-semibold text-neutral-800 bg-neutral-100 border border-neutral-200/80 px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap shadow-2xs">
                         <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
                         Verified Purchase
                       </span>

@@ -41,8 +41,9 @@ export default function SafetyPage() {
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
           </Link>
-          <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-xs font-bold uppercase tracking-wider mb-2 block w-fit">
-            Buyer & Seller Protection
+          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider mb-2.5 inline-flex items-center gap-1.5 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            Buyer &amp; Seller Protection
           </Badge>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight">
             Campus Safety & Anti-Scam Guide
@@ -60,7 +61,7 @@ export default function SafetyPage() {
                 key={i}
                 className="p-5 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-start gap-4"
               >
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-xl bg-white border border-neutral-200/80 text-emerald-600 shadow-2xs flex items-center justify-center shrink-0 mt-0.5">
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="space-y-1">

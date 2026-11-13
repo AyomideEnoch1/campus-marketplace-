@@ -432,7 +432,7 @@ export default async function HomePage() {
             {/* Left Column: Hero Text Content - Wide layout & vertically balanced */}
             <div className="lg:col-span-6 xl:col-span-6 space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left w-full">
               {/* Trending Pill Badge */}
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs sm:text-sm font-semibold shadow-xs">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-neutral-100 border border-neutral-200/80 text-neutral-800 text-xs sm:text-sm font-semibold shadow-xs">
                 <span className="text-sm sm:text-base">🔥</span>
                 <span>Trending Across Nigerian Campuses</span>
               </div>
