@@ -163,8 +163,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* 1. TOP HERO HEADER */}
-      <section className="bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
+      {/* 1. TOP HERO HEADER (Desktop/Tablet only) */}
+      <section className="hidden md:block bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
         <div className="container mx-auto">
           <div className="max-w-3xl space-y-2.5 sm:space-y-3">
             <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
@@ -189,6 +189,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </div>
         </div>
       </section>
+
+      {/* Mobile Top Search Bar (Compact, visible only on small screens) */}
+      <div className="md:hidden px-4 pt-3 pb-1 bg-white">
+        <SearchBar
+          defaultValue={rawQ}
+          placeholder="Search campus drops & goods..."
+          size="sm"
+          className="w-full shadow-xs"
+        />
+      </div>
 
       {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
       <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-2.5 sm:py-3 shadow-xs">
