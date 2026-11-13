@@ -18,8 +18,8 @@ export function MobileNav() {
 
   const items = [
     { label: "Home", href: "/", icon: Home },
-    { label: "Shop", href: "/shop", icon: Compass },
-    { label: "Sell", href: "/vendor/register", icon: PlusCircle, highlight: true },
+    { label: "Sell", href: "/vendor/register", icon: PlusCircle },
+    { label: "Shop", href: "/shop", icon: Compass, highlight: true },
     { label: "Saved", href: "/saved", icon: Heart, badge: savedCount },
     { label: "Bag", href: "/cart", icon: ShoppingBag, badge: totalCount },
   ];
@@ -38,10 +38,20 @@ export function MobileNav() {
                 href={item.href}
                 className="flex flex-col items-center -mt-5 group"
               >
-                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
+                <div
+                  className={`w-12 h-12 rounded-full ${
+                    isActive
+                      ? "bg-emerald-600 ring-4 ring-emerald-100 shadow-emerald-600/35"
+                      : "bg-emerald-500 shadow-emerald-500/25"
+                  } text-white flex items-center justify-center shadow-lg group-hover:scale-105 active:scale-95 transition-all`}
+                >
                   <Icon className="w-6 h-6" />
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 mt-1">
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    isActive ? "text-emerald-700" : "text-neutral-600"
+                  }`}
+                >
                   {item.label}
                 </span>
               </Link>

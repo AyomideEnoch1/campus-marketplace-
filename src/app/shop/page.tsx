@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/marketplace/ProductCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
+import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 
 interface ShopPageProps {
   searchParams: {
@@ -159,33 +160,35 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* 1. TOP HERO HEADER (From Reference Image 1 "FORMA") */}
-      <section className="bg-neutral-900 text-white py-10 px-4">
+      {/* 1. TOP HERO HEADER */}
+      <section className="bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
         <div className="container mx-auto">
-          <div className="max-w-3xl space-y-3">
-            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+          <div className="max-w-3xl space-y-2.5 sm:space-y-3">
+            <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
               Student Marketplace Catalog
             </Badge>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-              Explore Campus Drops & Goods
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-950">
+              Explore Campus Drops &amp; Goods
             </h1>
-            <p className="text-sm sm:text-base text-neutral-300">
+            <p className="text-xs sm:text-sm md:text-base text-neutral-600 leading-relaxed">
               Browse textbooks, tech, hostel living gear, and thrift fashion directly from fellow students. Filter by campus or search for what you need.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 2. HORIZONTAL CATEGORY PILL SLIDER (Reference Image 1) */}
-      <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-3 shadow-xs">
-        <div className="container mx-auto px-4">
+      {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
+      <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-2.5 sm:py-3 shadow-xs">
+        <div className="container mx-auto px-4 space-y-2">
+          {/* Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Link
               href="/shop"
               className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !category
-                  ? "bg-neutral-900 text-white"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                  ? "bg-emerald-500 text-white shadow-xs"
+                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
               }`}
             >
               All Items ({products.length})
@@ -198,8 +201,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   href={`/shop?category=${cat.slug}${campus ? `&campus=${campus}` : ""}`}
                   className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
-                      ? "bg-neutral-900 text-white"
-                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                      ? "bg-emerald-500 text-white shadow-xs"
+                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
                   {cat.name} ({getCategoryCount(cat)})
@@ -207,6 +210,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               );
             })}
           </div>
+
+          {/* Mobile Quick Filters & Bottom Sheet Trigger (Campuses, Price, Condition, Sort, Vendors) */}
+          <MobileShopFilters
+            campuses={campuses}
+            vendors={vendors}
+            totalProductsCount={products.length}
+          />
         </div>
       </div>
 
@@ -428,7 +438,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         }).toString()}`}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                           isSelected
-                            ? "bg-neutral-900 text-white font-bold"
+                            ? "bg-emerald-500 text-white font-bold shadow-xs"
                             : "bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
                         }`}
                       >
@@ -463,7 +473,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         }).toString()}`}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                           isSelected
-                            ? "bg-neutral-900 text-white font-bold"
+                            ? "bg-emerald-500 text-white font-bold shadow-xs"
                             : "bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
                         }`}
                       >

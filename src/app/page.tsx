@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 import { ProductCard } from "@/components/marketplace/ProductCard";
+import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
 
@@ -94,7 +95,7 @@ async function getHomepageData() {
       }),
       prisma.vendorProfile.findMany({
         where: { status: "APPROVED" },
-        take: 4,
+        take: 6,
         include: {
           campus: true,
           _count: { select: { products: true } },
@@ -183,48 +184,9 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 2. Mobile Hero Promo Banner Card (Ref 1 & 2) */}
+        {/* 2. Mobile Hero Promo Banner Slider (Interactive Carousel with Shopping Cart) */}
         <div className="px-4">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-700 p-4 xs:p-5 text-white shadow-lg shadow-emerald-600/20">
-            {/* Background subtle curve */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/10 blur-xl pointer-events-none" />
-
-            <div className="flex items-center justify-between relative z-10">
-              {/* Left Column Text */}
-              <div className="w-[62%] space-y-2 pr-1">
-                <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold text-amber-200">
-                  <Flame className="w-3 h-3 text-amber-300" />
-                  Best Seller!
-                </span>
-                <h2 className="text-lg xs:text-xl font-black leading-tight tracking-tight text-white">
-                  Discover Campus <br />
-                  <span className="text-amber-300">Products!</span>
-                </h2>
-                <p className="text-[11px] text-emerald-100 line-clamp-2 leading-relaxed font-normal">
-                  Buy &amp; sell textbooks, drip &amp; gadgets from verified peers.
-                </p>
-                <div className="pt-1">
-                  <Link href="/shop">
-                    <Button size="sm" className="bg-white text-emerald-950 hover:bg-neutral-100 font-bold text-xs px-4 py-1.5 h-8 rounded-full shadow-md active:scale-95 transition-all">
-                      Shop Now!
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Right Column 3D Visual */}
-              <div className="w-[38%] h-32 xs:h-36 relative flex items-center justify-center shrink-0">
-                <Image
-                  src="/images/hero-shopping-items-transparent.png"
-                  alt="Student campus shopping items"
-                  fill
-                  priority
-                  sizes="160px"
-                  className="object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.22)]"
-                />
-              </div>
-            </div>
-          </div>
+          <MobileHeroSlider />
         </div>
 
         {/* 3. Category Filter Chips (Ref 2) */}
@@ -383,37 +345,75 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 8. Vendor Spotlight Card (Mobile) */}
-        <div className="px-4 pt-2">
-          <div className="bg-neutral-900 rounded-3xl p-4 text-white space-y-3">
+        {/* 8. Vendor Spotlight Card (Mobile - Bright & Clean Swipeable Layout) */}
+        <div className="px-4 pt-1 pb-2">
+          <div className="bg-white rounded-3xl p-4 border border-neutral-100 shadow-xs space-y-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Store className="w-4 h-4 text-emerald-400" />
-                <h4 className="text-sm font-bold">Featured Campus Stores</h4>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                  <Store className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-neutral-900 leading-tight">Featured Campus Stores</h4>
+                  <p className="text-[10px] text-neutral-500">Verified student sellers</p>
+                </div>
               </div>
-              <Link href="/vendors" className="text-xs text-emerald-400 font-semibold">
-                View All &rarr;
+              <Link
+                href="/vendors"
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 group"
+              >
+                <span>View All</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              {vendors.slice(0, 2).map((v) => (
+
+            {/* Horizontal Scroll of Campus Stores */}
+            <div className="flex items-stretch gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1 pt-0.5">
+              {vendors.map((v) => (
                 <Link
                   key={v.id}
                   href={`/store/${v.slug}`}
-                  className="bg-neutral-800/80 rounded-2xl p-3 border border-neutral-700/60 hover:border-emerald-500/50 transition-colors flex flex-col justify-between"
+                  className="w-[185px] shrink-0 bg-neutral-50/70 hover:bg-emerald-50/30 rounded-2xl p-3 border border-neutral-200/70 hover:border-emerald-300 transition-all flex flex-col justify-between group active:scale-[0.98] shadow-2xs"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
-                      {v.storeName[0]}
+                  <div className="space-y-2.5">
+                    {/* Header: Store Avatar + Verified Badge */}
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-neutral-200/80 overflow-hidden shadow-2xs flex items-center justify-center font-bold text-emerald-700 text-sm shrink-0">
+                        {v.logo ? (
+                          <img src={v.logo} alt={v.storeName} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="bg-gradient-to-br from-emerald-500 to-teal-700 text-white w-full h-full flex items-center justify-center text-xs font-bold">
+                            {v.storeName[0]}
+                          </span>
+                        )}
+                      </div>
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                        <CheckCircle className="w-2.5 h-2.5 text-emerald-600" />
+                        Verified
+                      </span>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold truncate text-white">{v.storeName}</p>
-                      <p className="text-[10px] text-neutral-400 truncate">{v.campus.name.split(" ")[0]}</p>
+
+                    {/* Store Name & Campus */}
+                    <div>
+                      <p className="text-xs font-bold text-neutral-900 group-hover:text-emerald-700 transition-colors line-clamp-1">
+                        {v.storeName}
+                      </p>
+                      <p className="text-[10px] text-neutral-500 flex items-center gap-0.5 line-clamp-1 mt-0.5">
+                        <MapPin className="w-2.5 h-2.5 text-neutral-400 shrink-0" />
+                        {v.campus.name}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-[10px] text-emerald-400 mt-2 font-medium">
-                    {v._count.products} Listings &rarr;
-                  </p>
+
+                  {/* Footer: Listings Count Pill */}
+                  <div className="pt-2.5 mt-2 border-t border-neutral-200/60 flex items-center justify-between text-[10px]">
+                    <span className="font-semibold text-emerald-700">
+                      {v._count.products} {v._count.products === 1 ? "Listing" : "Listings"}
+                    </span>
+                    <span className="text-neutral-400 group-hover:text-emerald-600 transition-colors font-bold">
+                      &rarr;
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
