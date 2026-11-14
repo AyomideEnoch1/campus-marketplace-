@@ -250,10 +250,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
             </span>
           </Link>
           <h1 className="text-2xl sm:text-4xl font-black text-neutral-950 tracking-tight">
-            Vendor Onboarding &amp; Verification
+            Start Selling on CampusTrade
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-lg mx-auto">
-            Sell directly to thousands of Nigerian university students. Choose how you&apos;d like to sell to get started.
+            Sell directly to thousands of Nigerian university students. Choose whether you&apos;re a student or an external business to get started.
           </p>
         </div>
 
@@ -261,10 +261,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-              Select Your Seller Account
+              Who is selling?
             </span>
             <span className="text-[11px] text-neutral-400">
-              Student or External Trader
+              Select your seller account
             </span>
           </div>
           <div className="bg-white rounded-3xl border border-neutral-200/80 p-3 sm:p-4 shadow-sm">
@@ -299,15 +299,15 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                       : "bg-neutral-200 text-neutral-700"
                   }`}
                 >
-                  Student Vendor
+                  Student Seller
                 </Badge>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-extrabold text-neutral-900">
-                  Current Campus Student
+                  I am a Campus Student
                 </p>
                 <p className="text-xs text-neutral-500 leading-relaxed">
-                  Undergraduates & postgraduates selling textbooks, tech, thrift, or hostel services.
+                  Undergraduates &amp; postgraduates selling textbooks, tech, thrift, or hostel services.
                 </p>
               </div>
               <div className="mt-3 pt-2.5 border-t border-emerald-200/60 text-[11px] text-emerald-800 font-semibold flex items-center gap-1.5">
@@ -346,15 +346,15 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                       : "bg-neutral-200 text-neutral-700"
                   }`}
                 >
-                  Guest Vendor
+                  External Seller
                 </Badge>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-extrabold text-neutral-900">
-                  Off-Campus Trader / Business
+                  I am an Off-Campus Seller
                 </p>
                 <p className="text-xs text-neutral-500 leading-relaxed">
-                  Alumni, staff, off-campus store owners & registered campus area businesses.
+                  Alumni, local shops, store owners &amp; businesses serving campus students.
                 </p>
               </div>
               <div className="mt-3 pt-2.5 border-t border-emerald-200/60 text-[11px] text-emerald-800 font-semibold flex items-center gap-1.5">

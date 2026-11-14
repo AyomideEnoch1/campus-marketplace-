@@ -199,7 +199,7 @@ export function AdminVendorTable({
           <table className="w-full text-left text-xs">
             <thead className="bg-neutral-950/70 border-b border-neutral-800 text-neutral-400 uppercase tracking-wider font-semibold">
               <tr>
-                <th className="py-3 px-4">Vendor & Classification</th>
+                <th className="py-3 px-4">Vendor &amp; Account Type</th>
                 <th className="py-3 px-4">Campus & Location</th>
                 <th className="py-3 px-4">Tier & Payout</th>
                 <th className="py-3 px-4">Status & Badges</th>
@@ -220,7 +220,7 @@ export function AdminVendorTable({
 
                   return (
                     <tr key={vendor.id} className="hover:bg-neutral-800/40 transition-colors">
-                      {/* Store & Classification */}
+                      {/* Store & Account Type */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 overflow-hidden shrink-0 flex items-center justify-center font-bold text-emerald-400">
