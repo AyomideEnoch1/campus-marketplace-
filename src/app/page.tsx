@@ -23,7 +23,7 @@ import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
-import { getCategoryImage } from "@/lib/category-images";
+import { getCategoryImage, CATEGORY_IMAGES } from "@/lib/category-images";
 
 // Fetch dynamic data from database
 async function getHomepageData() {
@@ -337,105 +337,271 @@ export default async function HomePage() {
       {/* DESKTOP / LARGE SCREENS LAYOUT (Preserved Desktop View)    */}
       {/* ========================================================= */}
       <div className="hidden lg:block">
-        {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
-        <section className="relative overflow-hidden bg-white pt-5 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
-        <div className="w-[92%] sm:w-[90%] max-w-[1720px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 xl:gap-14 items-center w-full">
-            {/* Left Column: Hero Text Content - Wide layout & vertically balanced */}
-            <div className="lg:col-span-6 xl:col-span-6 space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left w-full">
-              {/* Trending Pill Badge */}
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-neutral-100 border border-neutral-200/80 text-neutral-800 text-xs sm:text-sm font-semibold shadow-xs">
-                <span className="text-sm sm:text-base">🔥</span>
-                <span>Trending Across Nigerian Campuses</span>
-              </div>
+        {/* 1. HERO SECTION (TechVerse & ShopLuxe Inspired Premium Desktop Card) */}
+        <section className="relative overflow-hidden bg-white pt-4 pb-10">
+          <div className="w-[94%] max-w-[1600px] mx-auto">
+            {/* Main Rounded Hero Card */}
+            <div className="relative rounded-[32px] bg-gradient-to-br from-neutral-50 via-neutral-100/70 to-emerald-50/30 border border-neutral-200/80 p-8 sm:p-10 lg:p-12 xl:p-14 overflow-hidden shadow-xs">
+              
+              {/* Decorative background glow / ambient accents */}
+              <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl pointer-events-none -z-0" />
+              <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-teal-100/30 rounded-full blur-3xl pointer-events-none -z-0" />
 
-              {/* Main Headline - Responsive typography */}
-              <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-[62px] xl:text-[74px] 2xl:text-[82px] font-black text-neutral-950 tracking-tight leading-[1.08] sm:leading-[1.05] w-full">
-                Discover Campus <br className="hidden sm:inline" />
-                <span className="text-emerald-500">Products</span>
-              </h1>
-
-              {/* Subtitle - Spanning wide across the space without squeezing */}
-              <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
-                The premier multi-vendor marketplace; built for students. Buy and sell textbooks, laptops, hostel gadgets, and thrift streetwear from verified peers across all universities and campuses.
-              </p>
-
-              {/* Desktop Search Bar */}
-              <div className="pt-1 max-w-xl mx-auto lg:mx-0">
-                <SearchBar
-                  size="lg"
-                  placeholder="Search textbooks, laptops, smartphones, sneakers..."
-                  className="w-full border-neutral-300 shadow-md"
-                />
-              </div>
-
-              {/* Call to Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-1 w-full sm:w-auto">
-                <Link href="/shop" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 sm:px-9 py-3.5 sm:py-4 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
-                    Shop Now <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
-                  </Button>
-                </Link>
-                <Link href="/vendor/register" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-2 border-emerald-500 text-neutral-950 font-bold px-6 sm:px-9 py-3.5 sm:py-4 hover:bg-emerald-50/70 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
-                    Open Student Store
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Social Proof */}
-              <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
-                <div className="flex -space-x-2 overflow-hidden">
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                </div>
-                <div className="text-center sm:text-left">
-                  <div className="flex items-center justify-center sm:justify-start text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400" />
-                    ))}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center relative z-10">
+                
+                {/* Left Column: Eyebrow, High-Contrast Typography, Search, Dual CTAs & Trust Badges */}
+                <div className="lg:col-span-7 xl:col-span-7 space-y-5 lg:space-y-6">
+                  
+                  {/* Eyebrow badge (TechVerse + ShopLuxe) */}
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Discover. Shop. Upgrade.</span>
+                    <span className="text-neutral-400">•</span>
+                    <span className="text-neutral-600 font-medium normal-case">Campus Multi-Vendor</span>
                   </div>
-                  <p className="text-xs sm:text-sm font-semibold text-neutral-700 mt-0.5">
-                    Loved by 15,000+ verified campus students
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Right Column: Hero Visual - Horizontally Aligned on the same row */}
-            <div className="lg:col-span-6 xl:col-span-6 relative flex items-center justify-center lg:justify-end w-full">
-              <div className="relative w-full h-[250px] xs:h-[300px] sm:h-[400px] lg:h-[520px] xl:h-[580px] flex items-center justify-center lg:justify-end">
-                <Image
-                  src="/images/hero-shopping-items-transparent.png"
-                  alt="Curated student shopping items arranged for hero section"
-                  fill
-                  priority
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 860px"
-                  className="object-contain filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.16)] hover:scale-[1.02] transition-transform duration-500"
-                />
+                  {/* Main Headline with high contrast & accent line */}
+                  <div>
+                    <h1 className="text-4xl lg:text-5xl xl:text-6xl 2xl:text-[70px] font-black text-neutral-950 tracking-tight leading-[1.06]">
+                      Latest Campus <br />
+                      <span className="text-emerald-500">Gear &amp; Essentials</span>
+                    </h1>
+                    <p className="font-serif italic text-neutral-500 text-lg sm:text-xl lg:text-2xl mt-1.5 tracking-normal">
+                      Best Quality, Student-Friendly Prices!
+                    </p>
+                  </div>
+
+                  {/* Short Description */}
+                  <p className="text-sm lg:text-base text-neutral-600 leading-relaxed font-normal max-w-xl">
+                    Buy and sell textbooks, laptops, smartphones, hostel appliances, and thrift streetwear directly from verified student vendors across UNILAG, UI, OAU, FUTA, and 50+ Nigerian universities.
+                  </p>
+
+                  {/* Desktop Search Bar with rounded styling */}
+                  <div className="pt-1 max-w-xl">
+                    <SearchBar
+                      size="lg"
+                      placeholder="Search textbooks, laptops, smartphones, sneakers..."
+                      className="w-full border-neutral-300 shadow-sm bg-white"
+                    />
+                  </div>
+
+                  {/* Dual CTA Buttons (TechVerse & ShopLuxe style) */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <Link href="/shop">
+                      <Button size="lg" className="rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-3.5 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
+                        Shop Now <ArrowRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </Link>
+                    <Link href="/shop">
+                      <Button variant="outline" size="lg" className="rounded-full border-2 border-neutral-300 hover:border-neutral-900 text-neutral-900 font-bold px-7 py-3.5 bg-white hover:bg-neutral-50 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
+                        Browse Collection
+                      </Button>
+                    </Link>
+                    <Link href="/vendor/register" className="ml-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-4">
+                      Sell on Campus →
+                    </Link>
+                  </div>
+
+                  {/* Micro-Trust Strip (Flags, Fast Hand-Off, Escrow - TechVerse inspiration) */}
+                  <div className="pt-2 flex flex-wrap items-center gap-2.5 text-xs font-semibold text-neutral-600">
+                    <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-full border border-neutral-200/80 shadow-2xs">
+                      <span>🇳🇬</span> UNILAG • UI • OAU • FUTA
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-full border border-neutral-200/80 shadow-2xs">
+                      <span className="text-emerald-600 font-bold">⚡</span> Fast Campus Hand-Off
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-full border border-neutral-200/80 shadow-2xs">
+                      <span className="text-emerald-600 font-bold">🔒</span> 100% Escrow Protected
+                    </span>
+                  </div>
+
+                  {/* Social Proof (ShopLuxe inspiration) */}
+                  <div className="pt-3 flex items-center gap-3 border-t border-neutral-200/70">
+                    <div className="flex -space-x-2 overflow-hidden">
+                      <img
+                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                        src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"
+                        alt="Student buyer"
+                      />
+                      <img
+                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
+                        alt="Student buyer"
+                      />
+                      <img
+                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                        src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
+                        alt="Student buyer"
+                      />
+                      <img
+                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
+                        src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80"
+                        alt="Student buyer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-neutral-900">4.9/5</span>
+                        <div className="flex items-center text-amber-400">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-[11px] font-medium text-neutral-500">
+                        Loved by 15,000+ verified campus students
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Column: Hero Visual with Circular Spotlight Disc, Floating Badges, and Slider Nav */}
+                <div className="lg:col-span-5 xl:col-span-5 relative flex items-center justify-center">
+                  
+                  {/* Visual Container */}
+                  <div className="relative w-full h-[440px] xl:h-[500px] 2xl:h-[540px] flex items-center justify-center">
+                    
+                    {/* Vibrant Circular Gradient Spotlight Disc (TechVerse signature element) */}
+                    <div className="absolute w-[360px] h-[360px] xl:w-[420px] xl:h-[420px] rounded-full bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-200 opacity-90 shadow-2xl shadow-emerald-500/30 -z-0 transition-transform duration-700 hover:scale-105" />
+                    
+                    {/* Decorative secondary ring */}
+                    <div className="absolute w-[390px] h-[390px] xl:w-[460px] xl:h-[460px] rounded-full border border-emerald-400/30 -z-0 pointer-events-none" />
+
+                    {/* Floating Circular Badge: "UP TO 50% OFF" (ShopLuxe signature element) */}
+                    <div className="absolute top-4 right-2 xl:top-6 xl:right-4 z-20 w-20 h-20 xl:w-22 xl:h-22 rounded-full bg-neutral-950 text-white flex flex-col items-center justify-center shadow-xl border-2 border-white/20 transform rotate-12 hover:rotate-0 hover:scale-110 transition-all cursor-pointer">
+                      <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400">UP TO</span>
+                      <span className="text-base xl:text-lg font-black leading-tight">50%</span>
+                      <span className="text-[8px] font-bold text-neutral-300">OFF</span>
+                    </div>
+
+                    {/* Foreground Product Composition */}
+                    <div className="relative z-10 w-full h-full flex items-center justify-center">
+                      <Image
+                        src="/images/hero-shopping-items-transparent.png"
+                        alt="Curated campus gear: laptop, headphones, backpack, sneakers, and gadgets"
+                        fill
+                        priority
+                        sizes="(max-width: 1024px) 50vw, 650px"
+                        className="object-contain filter drop-shadow-[0_25px_45px_rgba(0,0,0,0.20)] hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+
+                    {/* Floating Pill Card: Fresh Drops (TechVerse style) */}
+                    <div className="absolute bottom-4 left-0 xl:bottom-6 xl:left-2 z-20 bg-white/95 backdrop-blur-md border border-neutral-200/80 rounded-2xl px-3.5 py-2 shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition-transform">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                        ⚡
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-neutral-900 leading-tight">Fresh Campus Drops</p>
+                        <p className="text-[10px] text-neutral-500">Updated hourly by student sellers</p>
+                      </div>
+                    </div>
+
+                    {/* Carousel Navigation Pill Controls (TechVerse & ShopLuxe signature dots & arrows) */}
+                    <div className="absolute bottom-4 right-0 xl:bottom-6 xl:right-2 z-20 flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-neutral-200/80 shadow-md">
+                      <div className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-300" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-neutral-300" />
+                      </div>
+                      <div className="h-3 w-px bg-neutral-200 mx-0.5" />
+                      <button
+                        type="button"
+                        aria-label="Previous slide"
+                        className="w-6 h-6 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center text-xs transition-colors"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Next slide"
+                        className="w-6 h-6 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center text-xs transition-colors"
+                      >
+                        ›
+                      </button>
+                    </div>
+
+                  </div>
+
+                </div>
+
               </div>
+
+              {/* Quick Category Cards Row (TechVerse Signature 6-Column Strip) */}
+              <div className="mt-8 pt-8 border-t border-neutral-200/70 grid grid-cols-6 gap-3.5 relative z-10">
+                {[
+                  {
+                    title: "Campus Audio",
+                    subtitle: "Premium Sound",
+                    image: CATEGORY_IMAGES.electronics,
+                    href: "/shop?category=electronics",
+                  },
+                  {
+                    title: "Smart Devices",
+                    subtitle: "Smarter Living",
+                    image: CATEGORY_IMAGES["phones-tablets"],
+                    href: "/shop?category=electronics",
+                  },
+                  {
+                    title: "Hostel Living",
+                    subtitle: "Room & Kitchen",
+                    image: CATEGORY_IMAGES["hostel-essentials"],
+                    href: "/shop?category=hostel-essentials",
+                  },
+                  {
+                    title: "Campus Fashion",
+                    subtitle: "Thrift & Kicks",
+                    image: CATEGORY_IMAGES.fashion,
+                    href: "/shop?category=fashion",
+                  },
+                  {
+                    title: "Books & Study",
+                    subtitle: "Course Textbooks",
+                    image: CATEGORY_IMAGES["books-academics"],
+                    href: "/shop?category=books-academics",
+                  },
+                  {
+                    title: "Student Deals",
+                    subtitle: "Up to 50% Off",
+                    image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=400&q=80&crop=center",
+                    href: "/shop?deals=true",
+                  },
+                ].map((item, idx) => (
+                  <Link
+                    key={idx}
+                    href={item.href}
+                    className="group bg-white rounded-2xl p-3 border border-neutral-200/80 hover:border-emerald-500 hover:shadow-md transition-all duration-300 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-11 h-11 rounded-xl overflow-hidden relative shrink-0 bg-neutral-100 border border-neutral-100">
+                        <Image
+                          src={item.image}
+                          alt={item.title}
+                          fill
+                          sizes="44px"
+                          className="object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-neutral-900 group-hover:text-emerald-600 transition-colors truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 truncate">
+                          {item.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-neutral-100 group-hover:bg-emerald-500 text-neutral-400 group-hover:text-white flex items-center justify-center text-xs font-bold transition-all shrink-0 ml-1.5">
+                      →
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* 2. TRUST AND VALUE PROPOSITIONS BAR */}
       <TrustBar />
