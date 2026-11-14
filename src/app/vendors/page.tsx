@@ -43,16 +43,17 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-20">
       {/* Header */}
-      <section className="bg-neutral-900 text-white py-14 px-4 border-b border-neutral-800">
+      <section className="bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-10 sm:py-14 px-4 border-b border-neutral-100">
         <div className="container mx-auto max-w-4xl text-center space-y-3">
-          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
             Student Entrepreneurs
           </Badge>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-neutral-950">
             Verified Campus Storefronts
           </h1>
-          <p className="text-sm sm:text-base text-neutral-300 max-w-2xl mx-auto">
-            Discover peer-owned campus stores across UNILAG, UI, and OAU. Chat with student sellers directly on WhatsApp.
+          <p className="text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto">
+            Discover peer-owned campus stores across all universities and campuses. Chat with student sellers directly on WhatsApp.
           </p>
         </div>
       </section>

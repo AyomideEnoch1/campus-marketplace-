@@ -36,8 +36,8 @@ export default async function RootLayout({
           <WishlistProvider>
             <AnnouncementBar />
             <Navbar initialUser={sessionUser} />
-            <main className="flex-grow">{children}</main>
-            <MobileNav />
+            <main className="flex-grow pb-16 md:pb-0">{children}</main>
+            <MobileNav initialUser={sessionUser} />
             <Footer />
           </WishlistProvider>
         </CartProvider>

@@ -57,30 +57,31 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-20">
       {/* Header */}
-      <section className="bg-neutral-900 text-white py-14 px-4 border-b border-neutral-800">
+      <section className="bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-10 sm:py-14 px-4 border-b border-neutral-100">
         <div className="container mx-auto max-w-4xl text-center space-y-3">
-          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
             Supported Campuses
           </Badge>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-neutral-950">
             Find Sellers On Your Campus
           </h1>
-          <p className="text-sm sm:text-base text-neutral-300 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto">
             Trade with verified students in your university halls, faculty quads, and campus pickup points with zero shipping delays.
           </p>
         </div>
       </section>
 
       {/* Campus Filter Bar - Dedicated on the Campuses Page */}
-      <div className="border-b border-neutral-200 bg-white sticky top-16 md:top-20 z-20 py-3 shadow-xs">
+      <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-3 shadow-xs">
         <div className="container mx-auto px-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <Link
               href="/campuses"
               className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !selectedSlug || selectedSlug === "all"
-                  ? "bg-neutral-900 text-white"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                  ? "bg-emerald-500 text-white shadow-xs"
+                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
               }`}
             >
               All Campuses ({allCampuses.length})
@@ -93,8 +94,8 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
                   href={`/campuses?campus=${c.slug}`}
                   className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
-                      ? "bg-neutral-900 text-white font-bold"
-                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                      ? "bg-emerald-500 text-white font-bold shadow-xs"
+                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
                   {c.name.split(" ")[0]}

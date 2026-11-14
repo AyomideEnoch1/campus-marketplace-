@@ -12,6 +12,7 @@ import {
   Store,
   ChevronRight,
   MessageCircle,
+  Lock,
 } from "lucide-react";
 import { useCart, CartItem } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
@@ -20,8 +21,65 @@ import { formatNGN } from "@/lib/utils";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, itemsByVendor } = useCart();
+  const [user, setUser] = React.useState<any>(null);
+  const [authLoading, setAuthLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted) return;
+        if (data?.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setUser(null);
+      })
+      .finally(() => {
+        if (isMounted) setAuthLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const vendorIds = Object.keys(itemsByVendor);
+
+  // Require sign-in before accessing order bag page
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center py-16 px-4 bg-neutral-50/50">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-8 text-center space-y-5">
+          <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-extrabold text-neutral-900">Sign in to View Your Bag</h2>
+            <p className="text-xs text-neutral-500">
+              Please sign in with your student or campus account to view items in your order bag and proceed to checkout.
+            </p>
+          </div>
+          <div className="space-y-2 pt-2">
+            <Link href="/auth/login?redirect=/cart" className="block">
+              <Button size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-md">
+                Sign In to Continue &rarr;
+              </Button>
+            </Link>
+            <Link href="/auth/register" className="block">
+              <Button variant="ghost" size="sm" className="w-full text-xs font-semibold text-neutral-600">
+                New to CampusTrade? Join Free
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

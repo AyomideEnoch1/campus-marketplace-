@@ -1,11 +1,15 @@
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { SlidersHorizontal, ArrowUpDown, X, RotateCcw, MapPin, Tag } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCategoryImage } from "@/lib/category-images";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
+import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
+import { SearchBar } from "@/components/marketplace/SearchBar";
 
 interface ShopPageProps {
   searchParams: {
@@ -78,11 +82,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     if (maxPrice) where.price.lte = parseFloat(maxPrice);
   }
 
-  if (q) {
+  const rawQ = q?.trim() || "";
+  if (rawQ) {
     where.OR = [
-      { title: { contains: q } },
-      { description: { contains: q } },
-      { tags: { contains: q } },
+      { title: { contains: rawQ } },
+      { description: { contains: rawQ } },
+      { tags: { contains: rawQ } },
+      { category: { name: { contains: rawQ } } },
     ];
   }
 
@@ -159,33 +165,54 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* 1. TOP HERO HEADER (From Reference Image 1 "FORMA") */}
-      <section className="bg-neutral-900 text-white py-10 px-4">
+      {/* 1. TOP HERO HEADER (Desktop/Tablet only) */}
+      <section className="hidden md:block bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
         <div className="container mx-auto">
-          <div className="max-w-3xl space-y-3">
-            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-xs font-bold uppercase tracking-wider">
+          <div className="max-w-3xl space-y-2.5 sm:space-y-3">
+            <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
               Student Marketplace Catalog
             </Badge>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-              Explore Campus Drops & Goods
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-950">
+              Explore Campus Drops &amp; Goods
             </h1>
-            <p className="text-sm sm:text-base text-neutral-300">
+            <p className="text-xs sm:text-sm md:text-base text-neutral-600 leading-relaxed">
               Browse textbooks, tech, hostel living gear, and thrift fashion directly from fellow students. Filter by campus or search for what you need.
             </p>
+
+            {/* Search Input Bar */}
+            <div className="pt-1.5 sm:pt-2 max-w-xl">
+              <SearchBar
+                defaultValue={rawQ}
+                placeholder="Search textbooks, smartphones, sneakers..."
+                className="w-full shadow-xs"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. HORIZONTAL CATEGORY PILL SLIDER (Reference Image 1) */}
-      <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-3 shadow-xs">
-        <div className="container mx-auto px-4">
+      {/* Mobile Top Search Bar (Compact, visible only on small screens) */}
+      <div className="md:hidden px-4 pt-3 pb-1 bg-white">
+        <SearchBar
+          defaultValue={rawQ}
+          placeholder="Search campus drops & goods..."
+          size="sm"
+          className="w-full shadow-xs"
+        />
+      </div>
+
+      {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
+      <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-2.5 sm:py-3 shadow-xs">
+        <div className="container mx-auto px-4 space-y-2">
+          {/* Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Link
               href="/shop"
               className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !category
-                  ? "bg-neutral-900 text-white"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                  ? "bg-emerald-500 text-white shadow-xs"
+                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
               }`}
             >
               All Items ({products.length})
@@ -196,17 +223,36 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <Link
                   key={cat.id}
                   href={`/shop?category=${cat.slug}${campus ? `&campus=${campus}` : ""}`}
-                  className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
-                      ? "bg-neutral-900 text-white"
-                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                      ? "bg-emerald-500 text-white shadow-xs"
+                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
-                  {cat.name} ({getCategoryCount(cat)})
+                  <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/60 flex items-center justify-center">
+                    <Image
+                      src={getCategoryImage(cat.slug)}
+                      alt={cat.name}
+                      fill
+                      sizes="20px"
+                      className="object-cover object-center"
+                    />
+                  </div>
+                  <span>{cat.name}</span>
+                  <span className={`text-[10px] ${isSelected ? "text-emerald-100" : "text-neutral-400"}`}>
+                    ({getCategoryCount(cat)})
+                  </span>
                 </Link>
               );
             })}
           </div>
+
+          {/* Mobile Quick Filters & Bottom Sheet Trigger (Campuses, Price, Condition, Sort, Vendors) */}
+          <MobileShopFilters
+            campuses={campuses}
+            vendors={vendors}
+            totalProductsCount={products.length}
+          />
         </div>
       </div>
 
@@ -362,8 +408,19 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                               : "text-neutral-600 hover:bg-neutral-100"
                           }`}
                         >
-                          <span>{c.name}</span>
-                          <span className="text-[10px] text-neutral-400">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-5 h-5 rounded-md overflow-hidden relative shrink-0 border border-neutral-200/80 flex items-center justify-center">
+                              <Image
+                                src={getCategoryImage(c.slug)}
+                                alt={c.name}
+                                fill
+                                sizes="20px"
+                                className="object-cover object-center"
+                              />
+                            </div>
+                            <span className="truncate">{c.name}</span>
+                          </div>
+                          <span className="text-[10px] text-neutral-400 shrink-0 ml-1">
                             {getCategoryCount(c)}
                           </span>
                         </Link>
@@ -428,7 +485,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         }).toString()}`}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                           isSelected
-                            ? "bg-neutral-900 text-white font-bold"
+                            ? "bg-emerald-500 text-white font-bold shadow-xs"
                             : "bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
                         }`}
                       >
@@ -463,7 +520,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         }).toString()}`}
                         className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                           isSelected
-                            ? "bg-neutral-900 text-white font-bold"
+                            ? "bg-emerald-500 text-white font-bold shadow-xs"
                             : "bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
                         }`}
                       >
@@ -533,7 +590,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
               <div>
                 <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900">
-                  {category
+                  {rawQ
+                    ? `Search results for "${rawQ}"`
+                    : category
                     ? categories.find((c) => c.slug === category)?.name || "Category Items"
                     : "All Campus Items"}
                 </h2>
@@ -682,13 +741,17 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-2xl font-bold">
                   🔍
                 </div>
-                <h3 className="text-lg font-bold text-neutral-800">No products match your filters</h3>
+                <h3 className="text-lg font-bold text-neutral-800">
+                  {rawQ ? `No products found matching "${rawQ}"` : "No products match your filters"}
+                </h3>
                 <p className="text-sm text-neutral-500 max-w-md mx-auto">
-                  Try broadening your search, resetting active filters, or switching campus locations.
+                  {rawQ
+                    ? "Try checking your spelling, using more generic keywords (e.g. 'shoes', 'iphone', 'textbook'), or clearing your search."
+                    : "Try broadening your search, resetting active filters, or switching campus locations."}
                 </p>
                 <Link href="/shop">
-                  <Button variant="default" size="sm" className="mt-2">
-                    Reset All Filters
+                  <Button variant="default" size="sm" className="mt-2 rounded-full">
+                    {rawQ ? "Clear Search & View All" : "Reset All Filters"}
                   </Button>
                 </Link>
               </div>

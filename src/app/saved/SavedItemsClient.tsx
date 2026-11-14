@@ -11,6 +11,7 @@ import {
   MapPin,
   ExternalLink,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
@@ -21,6 +22,32 @@ export function SavedItemsClient() {
   const { savedItems, removeItem, clearWishlist } = useWishlist();
   const { addItem } = useCart();
   const [addedId, setAddedId] = React.useState<string | null>(null);
+  const [user, setUser] = React.useState<any>(null);
+  const [authLoading, setAuthLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted) return;
+        if (data?.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setUser(null);
+      })
+      .finally(() => {
+        if (isMounted) setAuthLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleMoveToBag = (item: any) => {
     addItem({
@@ -41,6 +68,39 @@ export function SavedItemsClient() {
     setAddedId(item.id);
     setTimeout(() => setAddedId(null), 2000);
   };
+
+  // Require sign-in before accessing saved items page
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center py-16 px-4 bg-neutral-50/50">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-8 text-center space-y-5">
+          <div className="w-16 h-16 rounded-3xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto shadow-xs">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-extrabold text-neutral-900">
+              Sign in to View Saved Items
+            </h2>
+            <p className="text-xs text-neutral-500 max-w-xs mx-auto">
+              Please sign in to keep track of your favorite campus drops, textbooks, and saved listings.
+            </p>
+          </div>
+          <div className="space-y-2 pt-2">
+            <Link href="/auth/login?redirect=/saved" className="block">
+              <Button size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-md">
+                Sign In to View Saved Items &rarr;
+              </Button>
+            </Link>
+            <Link href="/auth/register" className="block">
+              <Button variant="ghost" size="sm" className="w-full text-xs font-semibold text-neutral-600">
+                Create Free Account
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (savedItems.length === 0) {
     return (

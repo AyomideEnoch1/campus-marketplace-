@@ -22,8 +22,9 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="bg-gradient-to-b from-neutral-50 via-white to-white py-16 px-4 border-b border-neutral-100">
         <div className="container mx-auto max-w-3xl text-center space-y-4">
-          <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-xs font-bold uppercase tracking-wider">
-            Our Mission & Story
+          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            Our Mission &amp; Story
           </Badge>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-neutral-950 tracking-tight leading-tight">
             Empowering Student Commerce Across Nigerian Campuses
@@ -59,7 +60,7 @@ export default function AboutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="p-8 rounded-3xl bg-neutral-50 border border-neutral-100 space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 text-emerald-600 shadow-2xs flex items-center justify-center">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-lg text-neutral-900">100% Student Verified</h3>
@@ -69,7 +70,7 @@ export default function AboutPage() {
           </div>
 
           <div className="p-8 rounded-3xl bg-neutral-50 border border-neutral-100 space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 text-blue-600 shadow-2xs flex items-center justify-center">
               <Truck className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-lg text-neutral-900">Zero Delivery Stress</h3>
@@ -79,7 +80,7 @@ export default function AboutPage() {
           </div>
 
           <div className="p-8 rounded-3xl bg-neutral-50 border border-neutral-100 space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 text-amber-600 shadow-2xs flex items-center justify-center">
               <Store className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-lg text-neutral-900">Student Entrepreneurship</h3>

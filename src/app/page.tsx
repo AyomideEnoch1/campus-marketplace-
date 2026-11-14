@@ -9,13 +9,21 @@ import {
   MapPin,
   Clock,
   CheckCircle,
+  Search,
+  SlidersHorizontal,
+  Layers,
+  ThumbsUp,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 import { ProductCard } from "@/components/marketplace/ProductCard";
+import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
+import { SearchBar } from "@/components/marketplace/SearchBar";
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
+import { getCategoryImage } from "@/lib/category-images";
 
 // Fetch dynamic data from database
 async function getHomepageData() {
@@ -78,7 +86,7 @@ async function getHomepageData() {
       }),
       prisma.vendorProfile.findMany({
         where: { status: "APPROVED" },
-        take: 4,
+        take: 6,
         include: {
           campus: true,
           _count: { select: { products: true } },
@@ -97,84 +105,312 @@ export default async function HomePage() {
   const { categories, campuses, newArrivals, featuredProducts, vendors } =
     await getHomepageData();
 
-  const categoryImages: Record<string, string> = {
-    fashion: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=600&q=80",
-    electronics: "https://images.unsplash.com/photo-1511707171634-5f897ff02560?w=600&q=80",
-    "hostel-essentials": "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=600&q=80",
-    "books-academics": "https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=600&q=80",
-    "beauty-care": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&q=80",
-    "food-groceries": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&q=80",
-    "sports-fitness": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&q=80",
-    services: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=600&q=80",
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
-      <section className="relative overflow-hidden bg-white pt-6 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
+      {/* ========================================================= */}
+      {/* MOBILE / SMALL SCREENS LAYOUT (Inspired by Reference UI)   */}
+      {/* ========================================================= */}
+      <div className="lg:hidden bg-neutral-50/50 pb-10 space-y-4">
+        {/* 1. Mobile Search Bar & Filter (Ref 1 & 2) */}
+        <div className="px-4 pt-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <SearchBar placeholder="What are you looking for?" />
+            </div>
+            <Link
+              href="/shop"
+              className="w-10 h-10 rounded-2xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shadow-xs hover:border-emerald-500 transition-colors shrink-0"
+              title="Filters"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-neutral-700" />
+            </Link>
+          </div>
+        </div>
+
+        {/* 2. Mobile Hero Promo Banner Slider (Interactive Carousel with Shopping Cart) */}
+        <div className="px-4">
+          <MobileHeroSlider />
+        </div>
+
+        {/* 3. Category Filter Chips (Ref 2) */}
+        <div className="px-4">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+            <Link
+              href="/shop"
+              className="px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500 text-white shadow-xs shrink-0"
+            >
+              All
+            </Link>
+            {categories.slice(0, 6).map((cat: any) => (
+              <Link
+                key={cat.id}
+                href={`/shop?category=${cat.slug}`}
+                className="inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 rounded-full text-xs font-semibold bg-white border border-neutral-200/80 text-neutral-700 hover:border-emerald-500 hover:text-emerald-700 transition-colors shrink-0 shadow-2xs"
+              >
+                <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-neutral-200/80 flex items-center justify-center">
+                  <Image
+                    src={getCategoryImage(cat.slug)}
+                    alt={cat.name}
+                    fill
+                    sizes="20px"
+                    className="object-cover object-center"
+                  />
+                </div>
+                <span>{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. Categories Visual Grid with Real Contextual Images (Well Centralized) */}
+        <div className="px-4 pt-1">
+          <div className="bg-white rounded-3xl p-4 border border-neutral-100 shadow-xs">
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-sm text-neutral-900">Categories</h3>
+              </div>
+              <Link
+                href="/shop"
+                className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+              >
+                <span>See All</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+              {categories.slice(0, 8).map((cat: any) => {
+                const img = getCategoryImage(cat.slug);
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/shop?category=${cat.slug}`}
+                    className="flex flex-col items-center justify-center group text-center"
+                  >
+                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl overflow-hidden bg-neutral-100 shadow-2xs border border-neutral-200/80 group-hover:border-emerald-500 group-hover:scale-105 transition-all duration-300 flex items-center justify-center">
+                      <Image
+                        src={img}
+                        alt={cat.name}
+                        fill
+                        sizes="64px"
+                        className="object-cover object-center group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-neutral-950/5 group-hover:bg-transparent transition-colors" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-neutral-800 group-hover:text-emerald-700 mt-1.5 leading-tight text-center line-clamp-1 w-full px-1">
+                      {cat.name.split(" ")[0]}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+
+        {/* 6. Recommended / Popular Products (Ref 1 & 2) */}
+        <div className="px-4 pt-1">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <ThumbsUp className="w-4 h-4 text-emerald-600" />
+              <h3 className="font-bold text-sm text-neutral-900">Recommended For You</h3>
+            </div>
+            <Link
+              href="/shop?sort=newest"
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+            >
+              <span>See more</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {newArrivals.slice(0, 6).map((product) => (
+              <ProductCard key={product.id} product={product as any} />
+            ))}
+          </div>
+        </div>
+
+        {/* 7. Secondary Middle Promo Banner (Ref 2) */}
+        <div className="px-4 pt-2">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white p-4 xs:p-5 shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1 z-10 max-w-[70%]">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200">
+                  Semester Rush Clearance
+                </span>
+                <h4 className="text-base font-black leading-snug">
+                  Up To 50% Off Campus Essentials
+                </h4>
+                <p className="text-[10px] text-amber-100">
+                  Verified deals from graduating students.
+                </p>
+              </div>
+              <Link
+                href="/shop?filter=sale"
+                className="w-10 h-10 rounded-full bg-white text-neutral-950 flex items-center justify-center font-bold shadow-md hover:scale-105 active:scale-95 transition-transform z-10 shrink-0"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 8. Vendor Spotlight Card (Mobile - Bright & Clean Swipeable Layout) */}
+        <div className="px-4 pt-1 pb-2">
+          <div className="bg-white rounded-3xl p-4 border border-neutral-100 shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                  <Store className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-neutral-900 leading-tight">Featured Campus Stores</h4>
+                  <p className="text-[10px] text-neutral-500">Verified student sellers</p>
+                </div>
+              </div>
+              <Link
+                href="/vendors"
+                className="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 group"
+              >
+                <span>View All</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+
+            {/* Horizontal Scroll of Campus Stores */}
+            <div className="flex items-stretch gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1 pt-0.5">
+              {vendors.map((v) => (
+                <Link
+                  key={v.id}
+                  href={`/store/${v.slug}`}
+                  className="w-[185px] shrink-0 bg-neutral-50/70 hover:bg-emerald-50/30 rounded-2xl p-3 border border-neutral-200/70 hover:border-emerald-300 transition-all flex flex-col justify-between group active:scale-[0.98] shadow-2xs"
+                >
+                  <div className="space-y-2.5">
+                    {/* Header: Store Avatar + Verified Badge */}
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-neutral-200/80 overflow-hidden shadow-2xs flex items-center justify-center font-bold text-emerald-700 text-sm shrink-0">
+                        {v.logo ? (
+                          <img src={v.logo} alt={v.storeName} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="bg-gradient-to-br from-emerald-500 to-teal-700 text-white w-full h-full flex items-center justify-center text-xs font-bold">
+                            {v.storeName[0]}
+                          </span>
+                        )}
+                      </div>
+                      <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                        <CheckCircle className="w-2.5 h-2.5 text-emerald-600" />
+                        Verified
+                      </span>
+                    </div>
+
+                    {/* Store Name & Campus */}
+                    <div>
+                      <p className="text-xs font-bold text-neutral-900 group-hover:text-emerald-700 transition-colors line-clamp-1">
+                        {v.storeName}
+                      </p>
+                      <p className="text-[10px] text-neutral-500 flex items-center gap-0.5 line-clamp-1 mt-0.5">
+                        <MapPin className="w-2.5 h-2.5 text-neutral-400 shrink-0" />
+                        {v.campus.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Footer: Listings Count Pill */}
+                  <div className="pt-2.5 mt-2 border-t border-neutral-200/60 flex items-center justify-between text-[10px]">
+                    <span className="font-semibold text-emerald-700">
+                      {v._count.products} {v._count.products === 1 ? "Listing" : "Listings"}
+                    </span>
+                    <span className="text-neutral-400 group-hover:text-emerald-600 transition-colors font-bold">
+                      &rarr;
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================= */}
+      {/* DESKTOP / LARGE SCREENS LAYOUT (Preserved Desktop View)    */}
+      {/* ========================================================= */}
+      <div className="hidden lg:block">
+        {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
+        <section className="relative overflow-hidden bg-white pt-5 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
         <div className="w-[92%] sm:w-[90%] max-w-[1720px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 xl:gap-14 items-center w-full">
             {/* Left Column: Hero Text Content - Wide layout & vertically balanced */}
-            <div className="lg:col-span-6 xl:col-span-6 space-y-6 sm:space-y-7 text-center lg:text-left w-full">
+            <div className="lg:col-span-6 xl:col-span-6 space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left w-full">
               {/* Trending Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-900 text-xs sm:text-sm font-semibold shadow-xs">
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-neutral-100 border border-neutral-200/80 text-neutral-800 text-xs sm:text-sm font-semibold shadow-xs">
                 <span className="text-sm sm:text-base">🔥</span>
                 <span>Trending Across Nigerian Campuses</span>
               </div>
 
-              {/* Main Headline - Bold, highly visible typography */}
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[62px] xl:text-[74px] 2xl:text-[82px] font-black text-neutral-950 tracking-tight leading-[1.05] w-full">
+              {/* Main Headline - Responsive typography */}
+              <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-[62px] xl:text-[74px] 2xl:text-[82px] font-black text-neutral-950 tracking-tight leading-[1.08] sm:leading-[1.05] w-full">
                 Discover Campus <br className="hidden sm:inline" />
                 <span className="text-emerald-500">Products</span>
               </h1>
 
               {/* Subtitle - Spanning wide across the space without squeezing */}
-              <p className="text-base sm:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
+              <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
                 The premier multi-vendor marketplace; built for students. Buy and sell textbooks, laptops, hostel gadgets, and thrift streetwear from verified peers across all universities and campuses.
               </p>
 
+              {/* Desktop Search Bar */}
+              <div className="pt-1 max-w-xl mx-auto lg:mx-0">
+                <SearchBar
+                  size="lg"
+                  placeholder="Search textbooks, laptops, smartphones, sneakers..."
+                  className="w-full border-neutral-300 shadow-md"
+                />
+              </div>
+
               {/* Call to Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-1">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-1 w-full sm:w-auto">
                 <Link href="/shop" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 sm:px-9 py-4 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-base">
-                    Shop Now <ArrowRight className="w-5 h-5 ml-1" />
+                  <Button size="lg" className="w-full sm:w-auto rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 sm:px-9 py-3.5 sm:py-4 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
+                    Shop Now <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
                   </Button>
                 </Link>
                 <Link href="/vendor/register" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-2 border-emerald-500 text-neutral-950 font-bold px-8 sm:px-9 py-4 hover:bg-emerald-50/70 hover:-translate-y-0.5 transition-all text-base">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-2 border-emerald-500 text-neutral-950 font-bold px-6 sm:px-9 py-3.5 sm:py-4 hover:bg-emerald-50/70 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
                     Open Student Store
                   </Button>
                 </Link>
               </div>
 
               {/* Social Proof */}
-              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+              <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
                 <div className="flex -space-x-2 overflow-hidden">
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"
                     alt="Student buyer"
                   />
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
                     alt="Student buyer"
                   />
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
                     alt="Student buyer"
                   />
                   <img
-                    className="inline-block h-9 w-9 rounded-full ring-2 ring-white object-cover"
+                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
                     src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80"
                     alt="Student buyer"
                   />
                 </div>
-                <div className="text-left">
-                  <div className="flex items-center text-amber-400">
+                <div className="text-center sm:text-left">
+                  <div className="flex items-center justify-center sm:justify-start text-amber-400">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400" />
+                      <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400" />
                     ))}
                   </div>
                   <p className="text-xs sm:text-sm font-semibold text-neutral-700 mt-0.5">
@@ -186,7 +422,7 @@ export default async function HomePage() {
 
             {/* Right Column: Hero Visual - Horizontally Aligned on the same row */}
             <div className="lg:col-span-6 xl:col-span-6 relative flex items-center justify-center lg:justify-end w-full">
-              <div className="relative w-full h-[360px] sm:h-[440px] lg:h-[520px] xl:h-[580px] flex items-center justify-center lg:justify-end">
+              <div className="relative w-full h-[250px] xs:h-[300px] sm:h-[400px] lg:h-[520px] xl:h-[580px] flex items-center justify-center lg:justify-end">
                 <Image
                   src="/images/hero-shopping-items-transparent.png"
                   alt="Curated student shopping items arranged for hero section"
@@ -218,7 +454,7 @@ export default async function HomePage() {
             </div>
             <Link
               href="/shop"
-              className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 group"
+              className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
             >
               <span>View All</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -239,14 +475,11 @@ export default async function HomePage() {
                 >
                   <div className="aspect-[4/5] relative w-full overflow-hidden">
                     <Image
-                      src={
-                        categoryImages[cat.slug] ||
-                        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"
-                      }
+                      src={getCategoryImage(cat.slug)}
                       alt={cat.name}
                       fill
                       sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12vw"
-                      className="object-cover group-hover:scale-108 transition-transform duration-500"
+                      className="object-cover object-center group-hover:scale-108 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/30 to-transparent"></div>
                     <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
@@ -255,7 +488,7 @@ export default async function HomePage() {
                       </h3>
                       <p className="text-[10px] text-neutral-300 flex items-center justify-between mt-0.5">
                         <span>{totalProducts} Items</span>
-                        <span className="text-purple-400 group-hover:text-purple-300 group-hover:translate-x-0.5 transition-all">
+                        <span className="text-emerald-400 group-hover:text-emerald-300 group-hover:translate-x-0.5 transition-all">
                           &rarr;
                         </span>
                       </p>
@@ -305,12 +538,12 @@ export default async function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Promo 1: Flash Sale with Countdown */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-8 sm:p-10 flex flex-col justify-between min-h-[300px] shadow-xl shadow-orange-600/15">
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl shadow-orange-600/15">
               <div className="relative z-10 space-y-3">
                 <Badge variant="dark" className="bg-white/20 backdrop-blur-md text-white border-0 text-xs font-bold">
                   Semester Rush Deals
                 </Badge>
-                <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
                   Up To 50% Off <br />
                   Campus Essentials
                 </h3>
@@ -319,32 +552,32 @@ export default async function HomePage() {
                 </p>
 
                 {/* Countdown Timer Block */}
-                <div className="flex items-center gap-2 pt-2">
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">02</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Days</span>
+                <div className="flex items-center gap-1.5 sm:gap-2 pt-2">
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">02</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Days</span>
                   </div>
                   <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">14</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">14</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
                   </div>
                   <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">38</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">38</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
                   </div>
                   <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center">
-                    <span className="font-extrabold text-sm sm:text-base">45</span>
-                    <span className="block text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
+                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
+                    <span className="font-extrabold text-xs sm:text-base">45</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
                   </div>
                 </div>
               </div>
 
-              <div className="relative z-10 pt-6">
+              <div className="relative z-10 pt-5 sm:pt-6">
                 <Link href="/shop?filter=sale">
-                  <Button className="bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-6 shadow-md">
+                  <Button className="bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-5 sm:px-6 shadow-md text-xs sm:text-sm">
                     Shop Flash Sale Now &rarr;
                   </Button>
                 </Link>
@@ -362,12 +595,12 @@ export default async function HomePage() {
             </div>
 
             {/* Promo 2: Student Entrepreneurship / Seller Spotlight */}
-            <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-8 sm:p-10 flex flex-col justify-between min-h-[300px] shadow-xl">
+            <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl">
               <div className="relative z-10 space-y-3">
                 <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
                   Student Seller Community
                 </Badge>
-                <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
                   Turn Your Drip or Skills <br />
                   Into Campus Income
                 </h3>
@@ -492,6 +725,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }

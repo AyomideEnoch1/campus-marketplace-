@@ -1,28 +1,65 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Compass, PlusCircle, Heart, User, ShoppingBag } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
 
-export function MobileNav() {
+interface MobileNavProps {
+  initialUser?: any;
+}
+
+export function MobileNav({ initialUser }: MobileNavProps) {
   const pathname = usePathname();
   const { savedCount } = useWishlist();
   const { totalCount } = useCart();
+  const [user, setUser] = React.useState(initialUser);
+
+  React.useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted) return;
+        if (data?.user) {
+          setUser(data.user);
+        } else if (data === null) {
+          setUser(null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname]);
 
   // Don't show public bottom nav inside admin dashboard
   if (pathname.startsWith("/admin")) {
     return null;
   }
 
-  const items = [
-    { label: "Home", href: "/", icon: Home },
-    { label: "Shop", href: "/shop", icon: Compass },
-    { label: "Sell", href: "/vendor/register", icon: PlusCircle, highlight: true },
-    { label: "Saved", href: "/saved", icon: Heart, badge: savedCount },
-    { label: "Bag", href: "/cart", icon: ShoppingBag, badge: totalCount },
-  ];
+  // When signed in: show Saved and Bag
+  // When signed out: hide Saved and Bag until after sign in
+  const items = user
+    ? [
+        { label: "Home", href: "/", icon: Home },
+        { label: "Sell", href: "/vendor/register", icon: PlusCircle },
+        { label: "Shop", href: "/shop", icon: Compass, highlight: true },
+        { label: "Saved", href: "/saved", icon: Heart, badge: savedCount },
+        { label: "Bag", href: "/cart", icon: ShoppingBag, badge: totalCount },
+      ]
+    : [
+        { label: "Home", href: "/", icon: Home },
+        { label: "Sell", href: "/vendor/register", icon: PlusCircle },
+        { label: "Shop", href: "/shop", icon: Compass, highlight: true },
+        { label: "Sign In", href: "/auth/login", icon: User },
+      ];
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-100 py-1.5 px-3 shadow-lg">
@@ -38,10 +75,20 @@ export function MobileNav() {
                 href={item.href}
                 className="flex flex-col items-center -mt-5 group"
               >
-                <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25 group-hover:scale-105 transition-transform">
+                <div
+                  className={`w-12 h-12 rounded-full ${
+                    isActive
+                      ? "bg-emerald-600 ring-4 ring-emerald-100 shadow-emerald-600/35"
+                      : "bg-emerald-500 shadow-emerald-500/25"
+                  } text-white flex items-center justify-center shadow-lg group-hover:scale-105 active:scale-95 transition-all`}
+                >
                   <Icon className="w-6 h-6" />
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 mt-1">
+                <span
+                  className={`text-[10px] font-bold mt-1 ${
+                    isActive ? "text-emerald-700" : "text-neutral-600"
+                  }`}
+                >
                   {item.label}
                 </span>
               </Link>

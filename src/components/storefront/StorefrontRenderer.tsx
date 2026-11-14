@@ -114,13 +114,13 @@ export function StorefrontRenderer({
                   {vendor.storeName}
                 </h1>
                 {vendor.sellerType === "guest" ? (
-                  <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs font-bold gap-1">
+                  <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-xs font-semibold gap-1.5 shadow-2xs">
                     <Building2 className="w-3.5 h-3.5 text-purple-700" />
                     Guest Vendor
                   </Badge>
                 ) : (
-                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold gap-1">
-                    <GraduationCap className="w-3.5 h-3.5 text-emerald-700" />
+                  <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-xs font-semibold gap-1.5 shadow-2xs">
+                    <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
                     Student Vendor
                   </Badge>
                 )}
