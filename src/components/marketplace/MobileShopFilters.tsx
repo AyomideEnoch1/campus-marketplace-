@@ -755,19 +755,28 @@ export function MobileShopFilters({
             </div>
 
             {/* Sticky Bottom Actions */}
-            <div className="p-4 border-t border-neutral-200/80 bg-neutral-50/80 flex items-center gap-3">
+            <div className="p-4 border-t border-neutral-200/80 bg-neutral-50/80 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+                className="w-1/4 rounded-full text-xs font-bold h-11 border-neutral-200 text-neutral-700 flex items-center justify-center gap-1 shadow-2xs"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back</span>
+              </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleResetAll}
-                className="w-1/3 rounded-full text-xs font-bold h-11 border-neutral-200 text-neutral-700"
+                className="w-1/4 rounded-full text-xs font-bold h-11 border-neutral-200 text-neutral-700 shadow-2xs"
               >
-                Reset All
+                Reset
               </Button>
               <Button
                 type="button"
                 onClick={handleApply}
-                className="w-2/3 rounded-full text-xs font-bold h-11 bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
+                className="w-1/2 rounded-full text-xs font-bold h-11 bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
               >
                 Apply Filters
               </Button>
