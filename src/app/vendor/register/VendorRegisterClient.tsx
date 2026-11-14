@@ -19,6 +19,8 @@ import {
   ArrowRight,
   Info,
   ExternalLink,
+  X,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -94,6 +96,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [showCodeOfConductModal, setShowCodeOfConductModal] = React.useState(false);
 
   // Restore draft from sessionStorage if user previously filled part of the form
   React.useEffect(() => {
@@ -749,15 +752,14 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
           <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <p className="text-xs text-neutral-500">
               By registering, you agree to the{" "}
-              <Link
-                href="/vendor-guidelines"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-emerald-600 font-bold hover:underline inline-flex items-center gap-0.5"
+              <button
+                type="button"
+                onClick={() => setShowCodeOfConductModal(true)}
+                className="text-emerald-600 font-bold hover:underline inline-flex items-center gap-0.5 cursor-pointer"
               >
                 <span>Seller Code of Conduct</span>
-                <ExternalLink className="w-3 h-3 inline" />
-              </Link>{" "}
+                <Info className="w-3.5 h-3.5 inline ml-0.5 text-emerald-500" />
+              </button>{" "}
               and Escrow terms.
             </p>
 
@@ -770,6 +772,91 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
             </Button>
           </div>
         </form>
+
+        {/* Inline Seller Code of Conduct Modal (Leaves form intact!) */}
+        {showCodeOfConductModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-neutral-100 p-6 sm:p-8 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-base text-neutral-900 leading-tight">
+                      Seller Code of Conduct
+                    </h3>
+                    <p className="text-[11px] text-neutral-500">
+                      Campus guidelines &amp; standards for sellers
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCodeOfConductModal(false)}
+                  className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Rules list */}
+              <div className="space-y-3.5 text-xs text-neutral-600 leading-relaxed">
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-neutral-900 text-xs">Accurate Product Conditions</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">
+                      Always declare whether an item is Brand New, Like New, or Fair. Upload real photographs of actual items you have on campus.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-start gap-3">
+                  <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-neutral-900 text-xs">Responsive WhatsApp Communications</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">
+                      Respond promptly to buyer inquiries and agree on clear pickup times at designated public campus landmarks during daylight hours.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-100 flex items-start gap-3">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-neutral-900 text-xs">Zero Tolerance for Counterfeits or Scams</p>
+                    <p className="text-[11px] text-neutral-500 mt-0.5">
+                      Deceptive listings or contraband result in instant store revocation, forfeiture of pending escrow payouts, and reporting to university authorities.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-3">
+                <Link
+                  href="/vendor-guidelines"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-semibold text-neutral-500 hover:text-neutral-900 flex items-center gap-1"
+                >
+                  <span>Open full page</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+                <Button
+                  type="button"
+                  onClick={() => setShowCodeOfConductModal(false)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6 h-10 shadow-sm cursor-pointer"
+                >
+                  Got It &bull; Resume Form
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
