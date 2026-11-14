@@ -14,6 +14,7 @@ import {
   DollarSign,
   Store,
   ShieldCheck,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -414,22 +415,31 @@ export function MobileShopFilters({
           {/* Drawer Container */}
           <div className="relative z-10 w-full max-h-[88vh] bg-white rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
             {/* Header */}
-            <div className="px-5 pt-3 pb-3 border-b border-neutral-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
-                  <SlidersHorizontal className="w-4 h-4" />
+            <div className="px-4 sm:px-5 pt-3.5 pb-3 border-b border-neutral-100 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold transition-colors shrink-0 shadow-2xs"
+                  aria-label="Back to products"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back</span>
+                </button>
+                <div className="w-7 h-7 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-neutral-900 leading-tight">
+                <div className="truncate">
+                  <h3 className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight truncate">
                     Filter &amp; Sort
                   </h3>
-                  <p className="text-[11px] text-neutral-500">
-                    Refine products to find exactly what you need
+                  <p className="text-[10px] sm:text-[11px] text-neutral-500 truncate">
+                    Refine campus listings
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={handleResetAll}
                   className="text-xs font-semibold text-neutral-500 hover:text-rose-600 px-2 py-1 rounded-lg"

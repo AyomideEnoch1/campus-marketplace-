@@ -18,6 +18,7 @@ import {
   Sparkles,
   ArrowRight,
   Info,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -94,6 +95,64 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Restore draft from sessionStorage if user previously filled part of the form
+  React.useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("ct_vendor_form_draft");
+      if (saved) {
+        const d = JSON.parse(saved);
+        if (d.fullName) setFullName(d.fullName);
+        if (d.email) setEmail(d.email);
+        if (d.phone) setPhone(d.phone);
+        if (d.whatsapp) setWhatsapp(d.whatsapp);
+        if (d.campusId) setCampusId(d.campusId);
+        if (d.storeName) setStoreName(d.storeName);
+        if (d.storeDescription) setStoreDescription(d.storeDescription);
+        if (d.faculty) setFaculty(d.faculty);
+        if (d.department) setDepartment(d.department);
+        if (d.businessName) setBusinessName(d.businessName);
+        if (d.businessAddress) setBusinessAddress(d.businessAddress);
+        if (d.sellerType) setSellerType(d.sellerType);
+      }
+    } catch {}
+  }, []);
+
+  // Save form draft so navigating away never loses progress
+  React.useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        "ct_vendor_form_draft",
+        JSON.stringify({
+          fullName,
+          email,
+          phone,
+          whatsapp,
+          campusId,
+          storeName,
+          storeDescription,
+          faculty,
+          department,
+          businessName,
+          businessAddress,
+          sellerType,
+        })
+      );
+    } catch {}
+  }, [
+    fullName,
+    email,
+    phone,
+    whatsapp,
+    campusId,
+    storeName,
+    storeDescription,
+    faculty,
+    department,
+    businessName,
+    businessAddress,
+    sellerType,
+  ]);
+
   // Selected campus details
   const selectedCampus = campuses.find((c) => c.id === campusId);
   const guestVendorsEnabled = selectedCampus?.settings ? selectedCampus.settings.guestVendorsEnabled : true;
@@ -164,6 +223,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         throw new Error(data.error || "Failed to register vendor account");
       }
 
+      try {
+        sessionStorage.removeItem("ct_vendor_form_draft");
+      } catch {}
+
       router.push("/dashboard");
       router.refresh();
     } catch (err: any) {
@@ -187,15 +250,24 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
             </span>
           </Link>
           <h1 className="text-2xl sm:text-4xl font-black text-neutral-950 tracking-tight">
-            Vendor Onboarding & Verification
+            Vendor Onboarding &amp; Verification
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-lg mx-auto">
-            Sell directly to thousands of Nigerian university students. Choose your seller classification to begin.
+            Sell directly to thousands of Nigerian university students. Choose how you&apos;d like to sell to get started.
           </p>
         </div>
 
         {/* Seller Type Selector Tabs */}
-        <div className="bg-white rounded-3xl border border-neutral-200/80 p-3 sm:p-4 shadow-sm">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+              Select Your Seller Account
+            </span>
+            <span className="text-[11px] text-neutral-400">
+              Student or External Trader
+            </span>
+          </div>
+          <div className="bg-white rounded-3xl border border-neutral-200/80 p-3 sm:p-4 shadow-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Student Vendor Option */}
             <button
@@ -291,6 +363,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
               </div>
             </button>
           </div>
+        </div>
         </div>
 
         {/* Guest Warning / Info Alert */}
@@ -676,8 +749,14 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
           <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <p className="text-xs text-neutral-500">
               By registering, you agree to the{" "}
-              <Link href="/vendor-guidelines" className="text-emerald-600 font-bold hover:underline">
-                Seller Code of Conduct
+              <Link
+                href="/vendor-guidelines"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-600 font-bold hover:underline inline-flex items-center gap-0.5"
+              >
+                <span>Seller Code of Conduct</span>
+                <ExternalLink className="w-3 h-3 inline" />
               </Link>{" "}
               and Escrow terms.
             </p>

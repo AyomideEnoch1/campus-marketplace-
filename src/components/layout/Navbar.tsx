@@ -39,6 +39,24 @@ export function Navbar({ initialUser }: NavbarProps) {
     setUser(initialUser);
   }, [initialUser]);
 
+  React.useEffect(() => {
+    let isMounted = true;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted) return;
+        if (data?.user) {
+          setUser(data.user);
+        } else if (data === null) {
+          setUser(null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname]);
+
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -128,38 +146,42 @@ export function Navbar({ initialUser }: NavbarProps) {
 
         {/* Right Actions: Wishlist, Cart, Profile */}
         <div className="flex items-center gap-1 md:gap-2.5">
-          {/* Wishlist / Saved Items */}
-          <Link
-            href="/saved"
-            className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-            title="Saved Items"
-          >
-            <Heart className="w-5 h-5" />
-            {savedCount > 0 && (
-              <Badge
-                variant="accent"
-                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 text-white animate-in zoom-in-75"
-              >
-                {savedCount}
-              </Badge>
-            )}
-          </Link>
+          {/* Wishlist / Saved Items (Only visible after sign in) */}
+          {user && (
+            <Link
+              href="/saved"
+              className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+              title="Saved Items"
+            >
+              <Heart className="w-5 h-5" />
+              {savedCount > 0 && (
+                <Badge
+                  variant="accent"
+                  className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 text-white animate-in zoom-in-75"
+                >
+                  {savedCount}
+                </Badge>
+              )}
+            </Link>
+          )}
 
-          {/* Cart Icon */}
-          <Link
-            href="/cart"
-            className="relative w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-            title="Cart"
-          >
-            <ShoppingBag className="w-5 h-5" />
-            {totalCount > 0 && (
-              <Badge
-                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
-              >
-                {totalCount}
-              </Badge>
-            )}
-          </Link>
+          {/* Cart / Bag Icon (Only visible after sign in) */}
+          {user && (
+            <Link
+              href="/cart"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+              title="Bag"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {totalCount > 0 && (
+                <Badge
+                  className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
+                >
+                  {totalCount}
+                </Badge>
+              )}
+            </Link>
+          )}
 
           {/* User Auth Section */}
           {user ? (
@@ -255,7 +277,7 @@ export function Navbar({ initialUser }: NavbarProps) {
           ) : (
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-xs font-semibold">
+                <Button variant="ghost" size="sm" className="text-xs font-semibold px-2.5 sm:px-3">
                   Sign In
                 </Button>
               </Link>
