@@ -3,10 +3,20 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ShoppingBag, MapPin, CheckCircle2, MessageCircle, Star } from "lucide-react";
+import {
+  Heart,
+  ShoppingBag,
+  MapPin,
+  CheckCircle2,
+  MessageCircle,
+  Star,
+  Plus,
+  Check,
+} from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useWishlist } from "@/lib/wishlist";
+import { useCart } from "@/lib/cart";
 
 interface ProductCardProps {
   product: {
@@ -22,6 +32,7 @@ interface ProductCardProps {
     images: { url: string; altText?: string | null }[];
     category?: { name: string; slug: string };
     vendor?: {
+      id?: string;
       storeName: string;
       slug: string;
       whatsapp?: string;
@@ -35,6 +46,18 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { toggleSave, isSaved } = useWishlist();
+  const { addItem } = useCart();
+  const [isAdded, setIsAdded] = React.useState(false);
+  const addedTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (addedTimeoutRef.current) {
+        clearTimeout(addedTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const isFavorite = isSaved(product.id);
   const primaryImage =
     product.images?.[0]?.url ||
@@ -50,6 +73,41 @@ export function ProductCard({ product }: ProductCardProps) {
     USED_LIKE_NEW: "Like New",
     USED_GOOD: "Good Condition",
     USED_FAIR: "Fair Condition",
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    addItem({
+      id: product.id,
+      title: product.title,
+      slug: product.slug,
+      price: product.price,
+      image: primaryImage,
+      quantity: 1,
+      condition: product.condition ? (conditionLabels[product.condition] || product.condition) : undefined,
+      vendor: {
+        id: product.vendor?.id || product.vendor?.slug || "campus-vendor",
+        storeName: product.vendor?.storeName || "Campus Vendor",
+        slug: product.vendor?.slug || "campus-vendor",
+        whatsapp: product.vendor?.whatsapp,
+        campus: product.vendor?.campus
+          ? { name: product.vendor.campus.name, slug: product.vendor.campus.slug }
+          : undefined,
+        sellerType: product.vendor?.sellerType,
+        isRegisteredBusiness: product.vendor?.isRegisteredBusiness,
+        isTrustedSeller: product.vendor?.isTrustedSeller,
+      },
+    });
+
+    setIsAdded(true);
+    if (addedTimeoutRef.current) {
+      clearTimeout(addedTimeoutRef.current);
+    }
+    addedTimeoutRef.current = setTimeout(() => {
+      setIsAdded(false);
+    }, 1800);
   };
 
   return (
@@ -124,13 +182,28 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Quick Add overlay button */}
         <div className="absolute bottom-2.5 left-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:flex gap-1.5 z-10">
-          <Link
-            href={`/product/${product.slug}`}
-            className="flex-1 py-2 px-3 rounded-xl bg-white/95 backdrop-blur-md text-xs font-semibold text-neutral-900 shadow-md hover:bg-white flex items-center justify-center gap-1.5 transition-colors"
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            className={`flex-1 py-2 px-3 rounded-xl backdrop-blur-md text-xs font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 ${
+              isAdded
+                ? "bg-emerald-600 text-white shadow-emerald-200/50"
+                : "bg-white/95 text-neutral-900 hover:bg-emerald-600 hover:text-white"
+            }`}
+            title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            Quick View
-          </Link>
+            {isAdded ? (
+              <>
+                <Check className="w-3.5 h-3.5 animate-in zoom-in-75 duration-150" />
+                Added to Bag
+              </>
+            ) : (
+              <>
+                <Plus className="w-3.5 h-3.5" />
+                Add to Bag
+              </>
+            )}
+          </button>
           {product.vendor?.whatsapp && (
             <a
               href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20your%20product%20"${encodeURIComponent(
@@ -193,24 +266,47 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
 
-        {/* Pricing & Condition */}
-        <div className="pt-1 flex items-baseline justify-between gap-1 border-t border-neutral-50">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-extrabold text-sm sm:text-base text-neutral-900">
-              {formatNGN(product.price)}
-            </span>
-            {product.comparePrice && product.comparePrice > product.price && (
-              <span className="text-[11px] text-neutral-400 line-through">
-                {formatNGN(product.comparePrice)}
+        {/* Pricing, Condition & Add to Bag */}
+        <div className="pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight">
+                {formatNGN(product.price)}
               </span>
+              {product.comparePrice && product.comparePrice > product.price && (
+                <span className="text-[10px] sm:text-[11px] text-neutral-400 line-through">
+                  {formatNGN(product.comparePrice)}
+                </span>
+              )}
+            </div>
+
+            {product.condition && (
+              <div className="mt-0.5">
+                <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-md inline-block shrink-0 whitespace-nowrap">
+                  {conditionLabels[product.condition] || product.condition}
+                </span>
+              </div>
             )}
           </div>
 
-          {product.condition && (
-            <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap">
-              {conditionLabels[product.condition] || product.condition}
-            </span>
-          )}
+          {/* Add to Bag Button with Plus Icon */}
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            aria-label={`Add ${product.title} to shopping bag`}
+            title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
+            className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
+              isAdded
+                ? "bg-emerald-600 text-white scale-105 shadow-emerald-200/50"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md hover:scale-105"
+            }`}
+          >
+            {isAdded ? (
+              <Check className="w-4 h-4 animate-in zoom-in-75 duration-150" />
+            ) : (
+              <Plus className="w-4 h-4 transition-transform duration-200" />
+            )}
+          </button>
         </div>
       </div>
     </div>
