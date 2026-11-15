@@ -18,6 +18,7 @@ import { useCart, CartItem } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, itemsByVendor } = useCart();
@@ -50,8 +51,13 @@ export default function CartPage() {
 
   const vendorIds = Object.keys(itemsByVendor);
 
+  // While communicating with backend to verify credentials
+  if (authLoading) {
+    return <Loader isModal={true} />;
+  }
+
   // Require sign-in before accessing order bag page
-  if (!authLoading && !user) {
+  if (!user) {
     return (
       <div className="min-h-[75vh] flex items-center justify-center py-16 px-4 bg-neutral-50/50">
         <div className="max-w-md w-full bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-8 text-center space-y-5">

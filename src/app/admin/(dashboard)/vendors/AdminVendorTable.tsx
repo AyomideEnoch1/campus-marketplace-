@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 interface AdminVendorTableProps {
   initialVendors: any[];
@@ -208,7 +209,13 @@ export function AdminVendorTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800/80">
-              {filteredVendors.length === 0 ? (
+              {isRefreshing && filteredVendors.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center">
+                    <Loader isModal={false} />
+                  </td>
+                </tr>
+              ) : filteredVendors.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-neutral-500">
                     No vendors found matching the selected filters.

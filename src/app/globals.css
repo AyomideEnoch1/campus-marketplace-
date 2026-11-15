@@ -61,3 +61,41 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Branded Loader Animations: Sweeping from first end to other end */
+@keyframes loader-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-15deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(250%) skewX(-15deg);
+    opacity: 0;
+  }
+}
+
+@keyframes loader-track {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loader-sweep {
+  animation: loader-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-loader-track {
+  animation: loader-track 1.8s ease-in-out infinite;
+}

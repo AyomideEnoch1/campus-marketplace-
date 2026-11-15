@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/Loader";
 import { Input } from "@/components/ui/input";
 
 export const dynamic = "force-dynamic";
@@ -299,7 +300,7 @@ export default function LoginPage() {
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 bg-gradient-to-b from-neutral-50 to-neutral-100/60">
       <React.Suspense
         fallback={
-          <div className="text-sm text-neutral-500">Loading sign in form...</div>
+          <Loader isModal={true} />
         }
       >
         <LoginForm />
