@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { CartSnackbar, SnackbarData } from "@/components/ui/CartSnackbar";
 
 export interface CartItem {
   id: string; // product id
@@ -33,6 +34,7 @@ interface CartContextType {
   totalCount: number;
   totalAmount: number;
   itemsByVendor: Record<string, { vendor: CartItem["vendor"]; items: CartItem[]; subtotal: number }>;
+  triggerSnackbar?: (data: SnackbarData) => void;
 }
 
 const CartContext = React.createContext<CartContextType | undefined>(undefined);
@@ -42,6 +44,33 @@ const CART_STORAGE_KEY = "campus_market_cart_items";
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = React.useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
+  const [snackbar, setSnackbar] = React.useState<SnackbarData | null>(null);
+  const snackbarTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const triggerSnackbar = React.useCallback((data: SnackbarData) => {
+    if (snackbarTimerRef.current) {
+      clearTimeout(snackbarTimerRef.current);
+    }
+    setSnackbar(data);
+    snackbarTimerRef.current = setTimeout(() => {
+      setSnackbar(null);
+    }, 2000); // Does not stay for more than two seconds
+  }, []);
+
+  const dismissSnackbar = React.useCallback(() => {
+    if (snackbarTimerRef.current) {
+      clearTimeout(snackbarTimerRef.current);
+    }
+    setSnackbar(null);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (snackbarTimerRef.current) {
+        clearTimeout(snackbarTimerRef.current);
+      }
+    };
+  }, []);
 
   // Load cart from localStorage on mount
   React.useEffect(() => {
@@ -78,10 +107,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { ...newItem, quantity: newItem.quantity || 1 }];
     });
+
+    triggerSnackbar({
+      id: newItem.id,
+      type: "added",
+      title: newItem.title,
+      image: newItem.image,
+      price: newItem.price,
+    });
   };
 
   const removeItem = (id: string) => {
+    const itemToRemove = items.find((i) => i.id === id);
     setItems((prev) => prev.filter((i) => i.id !== id));
+
+    if (itemToRemove) {
+      triggerSnackbar({
+        id: itemToRemove.id,
+        type: "removed",
+        title: itemToRemove.title,
+        image: itemToRemove.image,
+        price: itemToRemove.price,
+      });
+    }
   };
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -140,9 +188,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalCount,
         totalAmount,
         itemsByVendor,
+        triggerSnackbar,
       }}
     >
       {children}
+      <CartSnackbar data={snackbar} onDismiss={dismissSnackbar} />
     </CartContext.Provider>
   );
 }

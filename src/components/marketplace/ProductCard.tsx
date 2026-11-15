@@ -12,11 +12,13 @@ import {
   Star,
   Plus,
   Check,
+  Eye,
 } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
+import { ProductImageLightbox } from "./ProductImageLightbox";
 
 interface ProductCardProps {
   product: {
@@ -48,6 +50,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { toggleSave, isSaved } = useWishlist();
   const { addItem } = useCart();
   const [isAdded, setIsAdded] = React.useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
   const addedTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
@@ -65,7 +68,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const discountPercent =
     product.comparePrice && product.comparePrice > product.price
-      ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+      ? Math.round(
+          ((product.comparePrice - product.price) / product.comparePrice) * 100,
+        )
       : null;
 
   const conditionLabels: Record<string, string> = {
@@ -86,14 +91,19 @@ export function ProductCard({ product }: ProductCardProps) {
       price: product.price,
       image: primaryImage,
       quantity: 1,
-      condition: product.condition ? (conditionLabels[product.condition] || product.condition) : undefined,
+      condition: product.condition
+        ? conditionLabels[product.condition] || product.condition
+        : undefined,
       vendor: {
         id: product.vendor?.id || product.vendor?.slug || "campus-vendor",
         storeName: product.vendor?.storeName || "Campus Vendor",
         slug: product.vendor?.slug || "campus-vendor",
         whatsapp: product.vendor?.whatsapp,
         campus: product.vendor?.campus
-          ? { name: product.vendor.campus.name, slug: product.vendor.campus.slug }
+          ? {
+              name: product.vendor.campus.name,
+              slug: product.vendor.campus.slug,
+            }
           : undefined,
         sellerType: product.vendor?.sellerType,
         isRegisteredBusiness: product.vendor?.isRegisteredBusiness,
@@ -111,204 +121,225 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <div className="group relative flex flex-col rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
-      {/* Product Image Box */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
-        <Link href={`/product/${product.slug}`} className="block w-full h-full">
-          <Image
-            src={primaryImage}
-            alt={product.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
-          />
-        </Link>
-
-        {/* Top Badges */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
-          {product.vendor?.sellerType === "guest" ? (
-            <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
-              Guest Vendor
-            </Badge>
-          ) : (
-            <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap inline-flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-              Student Vendor
-            </Badge>
-          )}
-          {discountPercent && (
-            <Badge className="bg-amber-300 text-amber-950 border border-amber-400/60 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
-              -{discountPercent}%
-            </Badge>
-          )}
-          {product.isFeatured && (
-            <Badge className="bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap shadow-xs">
-              Hot Drop
-            </Badge>
-          )}
-        </div>
-
-        {/* Wishlist Heart Button */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleSave({
-              id: product.id,
-              title: product.title,
-              slug: product.slug,
-              price: product.price,
-              comparePrice: product.comparePrice,
-              image: primaryImage,
-              condition: product.condition,
-              categoryName: product.category?.name,
-              vendorName: product.vendor?.storeName,
-              vendorCampus: product.vendor?.campus?.name,
-            });
-          }}
-          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 ${
-            isFavorite
-              ? "bg-rose-50 text-rose-500 shadow-md"
-              : "bg-white/85 backdrop-blur-xs text-neutral-600 hover:text-rose-500 hover:bg-white shadow-xs"
-          }`}
-          aria-label="Add to wishlist"
-        >
-          <Heart
-            className={`w-4 h-4 transition-transform active:scale-125 ${
-              isFavorite ? "fill-rose-500" : ""
-            }`}
-          />
-        </button>
-
-        {/* Quick Add overlay button */}
-        <div className="absolute bottom-2.5 left-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:flex gap-1.5 z-10">
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            className={`flex-1 py-2 px-3 rounded-xl backdrop-blur-md text-xs font-semibold shadow-md flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 ${
-              isAdded
-                ? "bg-emerald-600 text-white shadow-emerald-200/50"
-                : "bg-white/95 text-neutral-900 hover:bg-emerald-600 hover:text-white"
-            }`}
-            title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
+    <>
+      <div className="group relative flex flex-col rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
+        {/* Product Image Box */}
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
+          <Link
+            href={`/product/${product.slug}`}
+            className="block w-full h-full"
           >
-            {isAdded ? (
-              <>
-                <Check className="w-3.5 h-3.5 animate-in zoom-in-75 duration-150" />
-                Added to Bag
-              </>
-            ) : (
-              <>
-                <Plus className="w-3.5 h-3.5" />
-                Add to Bag
-              </>
-            )}
-          </button>
-          {product.vendor?.whatsapp && (
-            <a
-              href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20your%20product%20"${encodeURIComponent(
-                product.title
-              )}"%20on%20CampusTrade`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md hover:bg-emerald-600 transition-colors shrink-0"
-              title="Chat Vendor on WhatsApp"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Product Content Details */}
-      <div className="p-3.5 flex flex-col flex-grow justify-between gap-2">
-        <div>
-          {/* Vendor & Campus Meta */}
-          {product.vendor && (
-            <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
-              <Link
-                href={`/store/${product.vendor.slug}`}
-                className="hover:text-emerald-700 hover:underline truncate max-w-[120px] font-medium"
-              >
-                {product.vendor.storeName}
-              </Link>
-              {product.vendor.campus && (
-                <span className="flex items-center gap-0.5 text-neutral-400 font-medium shrink-0">
-                  <MapPin className="w-3 h-3 text-emerald-600" />
-                  {product.vendor.campus.name.split(" ")[0]}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Title */}
-          <Link href={`/product/${product.slug}`}>
-            <h3 className="font-semibold text-neutral-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
-              {product.title}
-            </h3>
+            <Image
+              src={primaryImage}
+              alt={product.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
+            />
           </Link>
 
-          {/* Rating or New Badge (Section Requirement) */}
-          <div className="flex items-center gap-1.5 mt-1 text-[11px]">
-            {product.reviewCount && product.reviewCount >= 3 ? (
-              <>
-                <div className="flex items-center gap-0.5 text-amber-500 font-bold">
-                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                  <span>{product.avgRating ? product.avgRating.toFixed(1) : "5.0"}</span>
-                </div>
-                <span className="text-neutral-400">({product.reviewCount})</span>
-              </>
+          {/* Top Badges */}
+          <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
+            {product.vendor?.sellerType === "guest" ? (
+              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+                Guest Vendor
+              </Badge>
             ) : (
-              <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 px-1.5 py-0.2 rounded-md">
-                New
-              </span>
+              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                Student Vendor
+              </Badge>
+            )}
+            {discountPercent && (
+              <Badge className="bg-amber-300 text-amber-950 border border-amber-400/60 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
+                -{discountPercent}%
+              </Badge>
+            )}
+            {product.isFeatured && (
+              <Badge className="bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap shadow-xs">
+                Hot Drop
+              </Badge>
+            )}
+          </div>
+
+          {/* Wishlist Heart Button */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleSave({
+                id: product.id,
+                title: product.title,
+                slug: product.slug,
+                price: product.price,
+                comparePrice: product.comparePrice,
+                image: primaryImage,
+                condition: product.condition,
+                categoryName: product.category?.name,
+                vendorName: product.vendor?.storeName,
+                vendorCampus: product.vendor?.campus?.name,
+              });
+            }}
+            className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 ${
+              isFavorite
+                ? "bg-rose-50 text-rose-500 shadow-md"
+                : "bg-white/85 backdrop-blur-xs text-neutral-600 hover:text-rose-500 hover:bg-white shadow-xs"
+            }`}
+            aria-label="Add to wishlist"
+          >
+            <Heart
+              className={`w-4 h-4 transition-transform active:scale-125 ${
+                isFavorite ? "fill-rose-500" : ""
+              }`}
+            />
+          </button>
+
+          {/* Hover Overlay: "View Item Image" Action & WhatsApp */}
+          <div className="absolute bottom-2.5 left-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hidden sm:flex gap-1.5 z-10">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsLightboxOpen(true);
+              }}
+              className="flex-1 py-2 px-3 rounded-xl bg-white/95 backdrop-blur-md text-xs font-semibold text-neutral-900 shadow-md hover:bg-emerald-700 hover:text-white flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 group/btn"
+              title="View item image"
+            >
+              <Eye className="w-3.5 h-3.5 transition-transform group-hover/btn:scale-110" />
+              <span>View Item Image</span>
+            </button>
+            {product.vendor?.whatsapp && (
+              <a
+                href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20your%20product%20"${encodeURIComponent(
+                  product.title,
+                )}"%20on%20CampusTrade`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md hover:bg-emerald-600 transition-colors shrink-0"
+                title="Chat Vendor on WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </a>
             )}
           </div>
         </div>
 
-        {/* Pricing, Condition & Add to Bag */}
-        <div className="pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight">
-                {formatNGN(product.price)}
-              </span>
-              {product.comparePrice && product.comparePrice > product.price && (
-                <span className="text-[10px] sm:text-[11px] text-neutral-400 line-through">
-                  {formatNGN(product.comparePrice)}
+        {/* Product Content Details */}
+        <div className="p-3.5 flex flex-col flex-grow justify-between gap-2">
+          <div>
+            {/* Vendor & Campus Meta */}
+            {product.vendor && (
+              <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
+                <Link
+                  href={`/store/${product.vendor.slug}`}
+                  className="hover:text-emerald-700 hover:underline truncate max-w-[120px] font-medium"
+                >
+                  {product.vendor.storeName}
+                </Link>
+                {product.vendor.campus && (
+                  <span className="flex items-center gap-0.5 text-neutral-400 font-medium shrink-0">
+                    <MapPin className="w-3 h-3 text-emerald-600" />
+                    {product.vendor.campus.name.split(" ")[0]}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Title */}
+            <Link href={`/product/${product.slug}`}>
+              <h3 className="font-semibold text-neutral-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
+                {product.title}
+              </h3>
+            </Link>
+
+            {/* Rating or New Badge (Section Requirement) */}
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              {product.reviewCount && product.reviewCount >= 3 ? (
+                <>
+                  <div className="flex items-center gap-0.5 text-amber-500 font-bold">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span>
+                      {product.avgRating ? product.avgRating.toFixed(1) : "5.0"}
+                    </span>
+                  </div>
+                  <span className="text-neutral-400">
+                    ({product.reviewCount})
+                  </span>
+                </>
+              ) : (
+                <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 px-1.5 py-0.2 rounded-md">
+                  New
                 </span>
               )}
             </div>
-
-            {product.condition && (
-              <div className="mt-0.5">
-                <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-md inline-block shrink-0 whitespace-nowrap">
-                  {conditionLabels[product.condition] || product.condition}
-                </span>
-              </div>
-            )}
           </div>
 
-          {/* Add to Bag Button with Plus Icon */}
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            aria-label={`Add ${product.title} to shopping bag`}
-            title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
-            className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
-              isAdded
-                ? "bg-emerald-600 text-white scale-105 shadow-emerald-200/50"
-                : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md hover:scale-105"
-            }`}
-          >
-            {isAdded ? (
-              <Check className="w-4 h-4 animate-in zoom-in-75 duration-150" />
-            ) : (
-              <Plus className="w-4 h-4 transition-transform duration-200" />
-            )}
-          </button>
+          {/* Pricing, Condition & Add to Bag */}
+          <div className="pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight">
+                  {formatNGN(product.price)}
+                </span>
+                {product.comparePrice &&
+                  product.comparePrice > product.price && (
+                    <span className="text-[10px] sm:text-[11px] text-neutral-400 line-through">
+                      {formatNGN(product.comparePrice)}
+                    </span>
+                  )}
+              </div>
+
+              {product.condition && (
+                <div className="mt-0.5">
+                  <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-md inline-block shrink-0 whitespace-nowrap">
+                    {conditionLabels[product.condition] || product.condition}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Add to Bag Button with Plus Icon */}
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              aria-label={`Add ${product.title} to shopping bag`}
+              title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
+              className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
+                isAdded
+                  ? "bg-emerald-600 text-white scale-105 shadow-emerald-200/50"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md hover:scale-105"
+              }`}
+            >
+              {isAdded ? (
+                <Check className="w-4 h-4 animate-in zoom-in-75 duration-150" />
+              ) : (
+                <Plus className="w-4 h-4 transition-transform duration-200" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Lightbox Modal for Viewing Product Image */}
+      {isLightboxOpen && (
+        <ProductImageLightbox
+          images={
+            product.images && product.images.length > 0
+              ? product.images
+              : [{ url: primaryImage }]
+          }
+          initialIndex={0}
+          title={product.title}
+          price={product.price}
+          condition={
+            product.condition
+              ? conditionLabels[product.condition] || product.condition
+              : undefined
+          }
+          onClose={() => setIsLightboxOpen(false)}
+        />
+      )}
+    </>
   );
 }
