@@ -45,31 +45,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = React.useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [snackbar, setSnackbar] = React.useState<SnackbarData | null>(null);
-  const snackbarTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const triggerSnackbar = React.useCallback((data: SnackbarData) => {
-    if (snackbarTimerRef.current) {
-      clearTimeout(snackbarTimerRef.current);
-    }
     setSnackbar(data);
-    snackbarTimerRef.current = setTimeout(() => {
-      setSnackbar(null);
-    }, 2000); // Does not stay for more than two seconds
   }, []);
 
   const dismissSnackbar = React.useCallback(() => {
-    if (snackbarTimerRef.current) {
-      clearTimeout(snackbarTimerRef.current);
-    }
     setSnackbar(null);
-  }, []);
-
-  React.useEffect(() => {
-    return () => {
-      if (snackbarTimerRef.current) {
-        clearTimeout(snackbarTimerRef.current);
-      }
-    };
   }, []);
 
   // Load cart from localStorage on mount
@@ -192,7 +174,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      <CartSnackbar data={snackbar} onDismiss={dismissSnackbar} />
+      <CartSnackbar data={snackbar} onDismiss={dismissSnackbar} duration={3000} />
     </CartContext.Provider>
   );
 }
