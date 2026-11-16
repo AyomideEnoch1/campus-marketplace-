@@ -59,7 +59,9 @@ function LoginForm() {
       }
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "Failed to sign in. Please verify your credentials.");
+      setError(
+        err.message || "Failed to sign in. Please verify your credentials.",
+      );
     } finally {
       setLoading(false);
     }
@@ -69,11 +71,11 @@ function LoginForm() {
     setSelectedRole(role);
     setError("");
     if (role === "buyer") {
-      setEmail("student@campustrade.ng");
-      setPassword("StudentPassword123!");
+      setEmail("");
+      setPassword("");
     } else {
-      setEmail("kicks@unilag.ng");
-      setPassword("VendorPassword123!");
+      setEmail("");
+      setPassword("");
     }
   };
 
@@ -81,20 +83,9 @@ function LoginForm() {
     <div className="w-full max-w-lg bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-7 sm:p-9 space-y-7">
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <Link href="/" className="inline-flex items-center gap-2.5 mb-1">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-            <GraduationCap className="w-5 h-5" />
-          </div>
-          <span className="font-extrabold text-2xl tracking-tight text-neutral-900">
-            Campus<span className="text-emerald-600">Trade</span>
-          </span>
-        </Link>
         <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
           Welcome to the Campus Marketplace
         </h1>
-        <p className="text-xs text-neutral-500 max-w-sm mx-auto leading-relaxed">
-          Sign in to your account to place orders, chat with vendors, or manage your student storefront.
-        </p>
       </div>
 
       {/* Role Selection / Demo Quick-Switch */}
@@ -103,9 +94,6 @@ function LoginForm() {
           <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
             Select Account Type
           </label>
-          <span className="text-[11px] text-emerald-600 font-semibold">
-            One-click demo fill
-          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -298,11 +286,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 bg-gradient-to-b from-neutral-50 to-neutral-100/60">
-      <React.Suspense
-        fallback={
-          <Loader isModal={true} />
-        }
-      >
+      <React.Suspense fallback={<Loader isModal={true} />}>
         <LoginForm />
       </React.Suspense>
     </div>

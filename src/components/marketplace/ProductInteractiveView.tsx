@@ -19,12 +19,14 @@ import {
   ExternalLink,
   X,
   ArrowRight,
+  Maximize2,
 } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { ProductImageLightbox } from "./ProductImageLightbox";
 
 interface ProductInteractiveViewProps {
   product: {
@@ -69,6 +71,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
   const [quantity, setQuantity] = React.useState(1);
   const [showBagModal, setShowBagModal] = React.useState(false);
   const [addedSuccess, setAddedSuccess] = React.useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
 
   const maxStock = Math.max(1, product.stock);
 
@@ -187,15 +190,40 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
         )}
 
         {/* Main Display Frame */}
-        <div className="relative aspect-[4/5] sm:aspect-square w-full rounded-3xl overflow-hidden bg-neutral-100 border border-neutral-200/80 shadow-xs">
+        <div
+          onClick={() => {
+            if (viewMode === "photo") {
+              setIsLightboxOpen(true);
+            }
+          }}
+          className={`relative aspect-[4/5] sm:aspect-square w-full rounded-3xl overflow-hidden bg-neutral-100 border border-neutral-200/80 shadow-xs ${
+            viewMode === "photo" ? "cursor-zoom-in group/mainimg" : ""
+          }`}
+        >
           {viewMode === "photo" ? (
-            <Image
-              src={currentImage}
-              alt={product.title}
-              fill
-              priority
-              className="object-cover object-center"
-            />
+            <>
+              <Image
+                src={currentImage}
+                alt={product.title}
+                fill
+                priority
+                className="object-cover object-center group-hover/mainimg:scale-105 transition-transform duration-500 ease-out"
+              />
+              {/* Expand / View Full Image Pill */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxOpen(true);
+                }}
+                className="absolute bottom-3.5 right-3.5 px-3 py-1.5 rounded-full bg-black/65 hover:bg-black/85 text-white backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 shadow-md border border-white/20 transition-all hover:scale-105 active:scale-95 z-10 cursor-pointer"
+                title="View full image in Lightbox"
+                aria-label="View full image in Lightbox"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>View Full Image</span>
+              </button>
+            </>
           ) : (
             // Google Model Viewer Web Component
             <div className="w-full h-full flex items-center justify-center bg-neutral-900">
@@ -556,6 +584,22 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
             </div>
           </div>
         </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {isLightboxOpen && (
+        <ProductImageLightbox
+          images={
+            product.images && product.images.length > 0
+              ? product.images
+              : [{ url: currentImage }]
+          }
+          initialIndex={selectedImageIndex}
+          title={product.title}
+          price={product.price}
+          condition={conditionLabels[product.condition] || product.condition}
+          onClose={() => setIsLightboxOpen(false)}
+        />
       )}
     </div>
   );

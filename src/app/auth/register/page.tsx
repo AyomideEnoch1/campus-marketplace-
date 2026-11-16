@@ -3,7 +3,14 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Store, UserCheck, ShieldCheck } from "lucide-react";
+import {
+  GraduationCap,
+  Store,
+  ShoppingBag,
+  CheckCircle2,
+  ShieldCheck,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCampuses } from "@/hooks/use-campuses-query";
@@ -72,7 +79,9 @@ export default function RegisterPage() {
       router.push(data.redirectTo || "/shop");
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "Failed to register. Please check your information.");
+      setError(
+        err.message || "Failed to register. Please check your information.",
+      );
     } finally {
       setLoading(false);
     }
@@ -83,46 +92,84 @@ export default function RegisterPage() {
       <div className="w-full max-w-lg bg-white rounded-3xl border border-neutral-100 shadow-xl p-8 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <span className="font-extrabold text-2xl tracking-tight text-neutral-900">
-              Campus<span className="text-emerald-600">Trade</span>
-            </span>
-          </Link>
-          <h1 className="text-2xl font-extrabold text-neutral-900">Join CampusTrade</h1>
-          <p className="text-xs text-neutral-500">
-            Create your account to start buying or launch your verified campus store
-          </p>
+          <h1 className="text-2xl font-extrabold text-neutral-900">
+            Join CampusTrade
+          </h1>
         </div>
 
-        {/* Role Toggle Selector */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-neutral-100">
-          <button
-            type="button"
-            onClick={() => setRole("BUYER")}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              role === "BUYER"
-                ? "bg-white text-neutral-950 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
-            }`}
-          >
-            <UserCheck className="w-4 h-4 text-emerald-600" />
-            Student Buyer
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole("VENDOR")}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              role === "VENDOR"
-                ? "bg-white text-neutral-950 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
-            }`}
-          >
-            <Store className="w-4 h-4 text-emerald-600" />
-            Student Seller / Vendor
-          </button>
+        {/* Role Selection / Account Type Tabs */}
+        <div className="space-y-2">
+          <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+            Select Account Type
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Student Buyer Option */}
+            <button
+              type="button"
+              onClick={() => setRole("BUYER")}
+              className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 cursor-pointer ${
+                role === "BUYER"
+                  ? "bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
+                  : "bg-neutral-50/80 hover:bg-white border-neutral-200 hover:border-neutral-300"
+              }`}
+            >
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  role === "BUYER"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white text-neutral-700 border border-neutral-200 group-hover:text-emerald-600"
+                }`}
+              >
+                <ShoppingBag className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-neutral-900">
+                    Student Buyer
+                  </span>
+                  {role === "BUYER" && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  )}
+                </div>
+                <p className="text-[11px] text-neutral-500 mt-0.5 line-clamp-2 leading-snug">
+                  Browse listings, save items & place campus orders
+                </p>
+              </div>
+            </button>
+            {/* Student Seller / Vendor Option */}
+            <button
+              type="button"
+              onClick={() => setRole("VENDOR")}
+              className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 cursor-pointer ${
+                role === "VENDOR"
+                  ? "bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
+                  : "bg-neutral-50/80 hover:bg-white border-neutral-200 hover:border-neutral-300"
+              }`}
+            >
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  role === "VENDOR"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white text-neutral-700 border border-neutral-200 group-hover:text-emerald-600"
+                }`}
+              >
+                <Store className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-neutral-900">
+                    Student Seller / Vendor
+                  </span>
+                  {role === "VENDOR" && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  )}
+                </div>
+                <p className="text-[11px] text-neutral-500 mt-0.5 line-clamp-2 leading-snug">
+                  Open your verified store, list products & reach students
+                </p>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Error Notification */}
@@ -136,7 +183,9 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Full Name</label>
+              <label className="text-xs font-bold text-neutral-700">
+                Full Name
+              </label>
               <Input
                 type="text"
                 required
@@ -146,7 +195,9 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Email Address</label>
+              <label className="text-xs font-bold text-neutral-700">
+                Email Address
+              </label>
               <Input
                 type="email"
                 required
@@ -159,7 +210,9 @@ export default function RegisterPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Password</label>
+              <label className="text-xs font-bold text-neutral-700">
+                Password
+              </label>
               <Input
                 type="password"
                 required
@@ -169,7 +222,9 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Phone Number</label>
+              <label className="text-xs font-bold text-neutral-700">
+                Phone Number
+              </label>
               <Input
                 type="tel"
                 placeholder="+234 801 234 5678"
@@ -185,13 +240,16 @@ export default function RegisterPage() {
               <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] text-emerald-900 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>
-                  Student vendors get a customizable storefront, layout picker, and direct WhatsApp buyer order requests.
+                  Student vendors get a customizable storefront, layout picker,
+                  and direct WhatsApp buyer order requests.
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Store Name</label>
+                  <label className="text-xs font-bold text-neutral-700">
+                    Store Name
+                  </label>
                   <Input
                     type="text"
                     required
@@ -201,7 +259,9 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Campus Location</label>
+                  <label className="text-xs font-bold text-neutral-700">
+                    Campus Location
+                  </label>
                   <select
                     aria-label="Select Campus Location"
                     className="flex h-10 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20"
@@ -215,9 +275,13 @@ export default function RegisterPage() {
                     ))}
                     {campuses.length === 0 && (
                       <>
-                        <option value="unilag">University of Lagos (UNILAG)</option>
+                        <option value="unilag">
+                          University of Lagos (UNILAG)
+                        </option>
                         <option value="ui">University of Ibadan (UI)</option>
-                        <option value="oau">Obafemi Awolowo University (OAU)</option>
+                        <option value="oau">
+                          Obafemi Awolowo University (OAU)
+                        </option>
                       </>
                     )}
                   </select>
@@ -226,7 +290,9 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">WhatsApp for Orders</label>
+                  <label className="text-xs font-bold text-neutral-700">
+                    WhatsApp for Orders
+                  </label>
                   <Input
                     type="tel"
                     required
@@ -236,7 +302,9 @@ export default function RegisterPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Faculty / Department</label>
+                  <label className="text-xs font-bold text-neutral-700">
+                    Faculty / Department
+                  </label>
                   <Input
                     type="text"
                     placeholder="e.g. Engineering / Electrical"
@@ -247,7 +315,9 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700">Store Short Bio</label>
+                <label className="text-xs font-bold text-neutral-700">
+                  Store Short Bio
+                </label>
                 <textarea
                   className="w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-20"
                   placeholder="Describe the items you sell and your campus delivery schedule..."
@@ -261,20 +331,24 @@ export default function RegisterPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md shadow-emerald-600/20"
+            className="w-full h-11 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md shadow-emerald-600/20"
           >
             {loading
               ? "Creating your account..."
               : role === "VENDOR"
-              ? "Register Student Store &rarr;"
-              : "Create Buyer Account &rarr;"}
+                ? "Register Student Store"
+                : "Create Buyer Account"}
+            <ArrowRight size={18} />
           </Button>
         </form>
 
         {/* Login Prompt */}
         <div className="pt-2 text-center text-xs text-neutral-500">
           Already have an account?{" "}
-          <Link href="/auth/login" className="font-bold text-emerald-600 hover:underline">
+          <Link
+            href="/auth/login"
+            className="font-bold text-emerald-600 hover:underline"
+          >
             Sign In here
           </Link>
         </div>
