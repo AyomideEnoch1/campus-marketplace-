@@ -61,3 +61,72 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Branded Loader Animations: Sweeping from first end to other end */
+@keyframes loader-sweep {
+  0% {
+    transform: translateX(-150%) skewX(-15deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(250%) skewX(-15deg);
+    opacity: 0;
+  }
+}
+
+@keyframes loader-track {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loader-sweep {
+  animation: loader-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-loader-track {
+  animation: loader-track 1.8s ease-in-out infinite;
+}
+
+/* Snackbar Slide-In & Slide-Out Animations */
+@keyframes snackbar-slide-in {
+  0% {
+    transform: translate(-50%, 36px) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes snackbar-slide-out {
+  0% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 36px) scale(0.95);
+    opacity: 0;
+  }
+}
+
+.animate-snackbar-in {
+  animation: snackbar-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-snackbar-out {
+  animation: snackbar-slide-out 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+}

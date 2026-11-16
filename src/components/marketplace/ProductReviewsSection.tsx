@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ReviewFormModal } from "./ReviewFormModal";
 import { formatDate } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 interface ReviewItem {
   id: string;
@@ -468,8 +469,8 @@ export function ProductReviewsSection({
       {/* REVIEWS LIST */}
       <div className="space-y-4">
         {loading ? (
-          <div className="py-12 text-center text-xs text-neutral-400">
-            Loading student reviews...
+          <div className="py-12 flex justify-center bg-white rounded-3xl border border-neutral-100 p-8 shadow-2xs">
+            <Loader isModal={false} />
           </div>
         ) : reviews.length === 0 ? (
           <div className="py-12 text-center bg-white rounded-3xl border border-neutral-200/80 p-8 space-y-3">

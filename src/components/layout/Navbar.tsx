@@ -39,7 +39,13 @@ export function Navbar({ initialUser }: NavbarProps) {
     setUser(initialUser);
   }, [initialUser]);
 
+  const prevPathnameRef = React.useRef(pathname);
   React.useEffect(() => {
+    if (prevPathnameRef.current === pathname && initialUser !== undefined) {
+      return;
+    }
+    prevPathnameRef.current = pathname;
+
     let isMounted = true;
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : null))
@@ -55,7 +61,7 @@ export function Navbar({ initialUser }: NavbarProps) {
     return () => {
       isMounted = false;
     };
-  }, [pathname]);
+  }, [pathname, initialUser]);
 
   const handleLogout = async () => {
     try {

@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 export const dynamic = "force-dynamic";
 
@@ -202,6 +203,7 @@ function CheckoutForm() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
+      {loading && <Loader isModal={true} />}
       <div className="flex items-center gap-2 mb-6 text-xs text-neutral-500">
         <Link href="/cart" className="hover:text-neutral-900 flex items-center gap-1 font-semibold">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Cart
@@ -558,7 +560,7 @@ function CheckoutForm() {
 export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-neutral-50/50">
-      <React.Suspense fallback={<div className="p-12 text-center text-xs text-neutral-500">Loading checkout...</div>}>
+      <React.Suspense fallback={<Loader isModal={true} />}>
         <CheckoutForm />
       </React.Suspense>
     </div>

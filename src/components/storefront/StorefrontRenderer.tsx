@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,6 +8,7 @@ import {
   MessageCircle,
   ShieldCheck,
   Share2,
+  Check,
   Sparkles,
   Star,
   CheckCircle2,
@@ -60,8 +63,32 @@ export function StorefrontRenderer({
   recentReviews = [],
   isPreview = false,
 }: StorefrontRendererProps) {
+  const [copied, setCopied] = React.useState(false);
   const brandColor = vendor.brandColor || "#059669";
   const layout = vendor.layout || "grid";
+
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: vendor.storeName,
+          text: `Check out ${vendor.storeName} on CampusTrade!`,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {}
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -141,7 +168,7 @@ export function StorefrontRenderer({
               {vendor.campus && (
                 <p className="text-xs sm:text-sm text-neutral-600 flex items-center gap-1 font-medium">
                   <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                  {vendor.campus.name} {vendor.businessAddress ? `&bull; ${vendor.businessAddress}` : vendor.faculty ? `&bull; ${vendor.faculty}` : ""}
+                  {vendor.campus.name} {vendor.businessAddress ? `• ${vendor.businessAddress}` : vendor.faculty ? `• ${vendor.faculty}` : ""}
                 </p>
               )}
 
@@ -190,16 +217,22 @@ export function StorefrontRenderer({
             )}
 
             <button
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  navigator.clipboard.writeText(window.location.href);
-                  alert("Store link copied to clipboard!");
-                }
-              }}
-              className="p-2.5 rounded-full border border-neutral-200 text-neutral-700 hover:bg-neutral-100 shadow-xs transition-colors"
-              title="Share store link"
+              type="button"
+              onClick={handleShare}
+              className="relative p-2.5 rounded-full border border-neutral-200 text-neutral-700 hover:bg-neutral-100 shadow-xs transition-colors cursor-pointer"
+              title={copied ? "Store link copied!" : "Share store link"}
+              aria-label="Share store link"
             >
-              <Share2 className="w-4 h-4" />
+              {copied ? (
+                <Check className="w-4 h-4 text-emerald-600 animate-in zoom-in-75" />
+              ) : (
+                <Share2 className="w-4 h-4" />
+              )}
+              {copied && (
+                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-neutral-900 text-white text-[10px] font-bold whitespace-nowrap shadow-md pointer-events-none animate-in fade-in slide-in-from-top-1 z-20">
+                  Link copied!
+                </span>
+              )}
             </button>
           </div>
         </div>

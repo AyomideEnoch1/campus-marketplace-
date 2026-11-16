@@ -97,7 +97,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
   };
 
   const handleAddToCart = () => {
-    addItem({
+    const added = addItem({
       id: product.id,
       title: product.title,
       slug: product.slug,
@@ -117,6 +117,8 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
         isRegisteredBusiness: product.vendor.isRegisteredBusiness,
       },
     });
+
+    if (!added) return;
 
     setAddedSuccess(true);
     setShowBagModal(true);

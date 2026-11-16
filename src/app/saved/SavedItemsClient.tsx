@@ -17,6 +17,7 @@ import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { formatNGN } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 export function SavedItemsClient() {
   const { savedItems, removeItem, clearWishlist } = useWishlist();
@@ -69,8 +70,13 @@ export function SavedItemsClient() {
     setTimeout(() => setAddedId(null), 2000);
   };
 
+  // While communicating with backend to verify credentials
+  if (authLoading) {
+    return <Loader isModal={true} />;
+  }
+
   // Require sign-in before accessing saved items page
-  if (!authLoading && !user) {
+  if (!user) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center py-16 px-4 bg-neutral-50/50">
         <div className="max-w-md w-full bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-8 text-center space-y-5">

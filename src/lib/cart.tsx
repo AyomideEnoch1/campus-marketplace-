@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
+import { CartSnackbar, SnackbarData } from "@/components/ui/CartSnackbar";
+import { AuthRequiredModal } from "@/components/ui/AuthRequiredModal";
 
 export interface CartItem {
   id: string; // product id
@@ -25,7 +28,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
+  addItem: (item: CartItem) => boolean;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -33,15 +36,68 @@ interface CartContextType {
   totalCount: number;
   totalAmount: number;
   itemsByVendor: Record<string, { vendor: CartItem["vendor"]; items: CartItem[]; subtotal: number }>;
+  triggerSnackbar?: (data: SnackbarData) => void;
+  isAuthenticated: boolean;
+  user: any;
+  openAuthModal: () => void;
+  closeAuthModal: () => void;
+  isAuthModalOpen: boolean;
 }
 
 const CartContext = React.createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = "campus_market_cart_items";
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export interface CartProviderProps {
+  children: React.ReactNode;
+  initialUser?: any;
+}
+
+export function CartProvider({ children, initialUser = null }: CartProviderProps) {
   const [items, setItems] = React.useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
+  const [snackbar, setSnackbar] = React.useState<SnackbarData | null>(null);
+  const [user, setUser] = React.useState<any>(initialUser);
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+
+  const pathname = usePathname();
+
+  React.useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+
+  // Sync user authentication status with backend when route changes
+  const prevPathnameRef = React.useRef(pathname);
+  React.useEffect(() => {
+    if (prevPathnameRef.current === pathname && initialUser !== undefined) {
+      return;
+    }
+    prevPathnameRef.current = pathname;
+
+    let isMounted = true;
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted) return;
+        if (data?.user) {
+          setUser(data.user);
+        } else if (data === null) {
+          setUser(null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [pathname, initialUser]);
+
+  const triggerSnackbar = React.useCallback((data: SnackbarData) => {
+    setSnackbar(data);
+  }, []);
+
+  const dismissSnackbar = React.useCallback(() => {
+    setSnackbar(null);
+  }, []);
 
   // Load cart from localStorage on mount
   React.useEffect(() => {
@@ -68,7 +124,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, isLoaded]);
 
-  const addItem = (newItem: CartItem) => {
+  const addItem = (newItem: CartItem): boolean => {
+    // Prevent unauthenticated users from adding to cart
+    if (!user) {
+      setIsAuthModalOpen(true);
+      return false;
+    }
+
     setItems((prev) => {
       const existingIndex = prev.findIndex((i) => i.id === newItem.id);
       if (existingIndex > -1) {
@@ -78,10 +140,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { ...newItem, quantity: newItem.quantity || 1 }];
     });
+
+    triggerSnackbar({
+      id: newItem.id,
+      type: "added",
+      title: newItem.title,
+      image: newItem.image,
+      price: newItem.price,
+    });
+
+    return true;
   };
 
   const removeItem = (id: string) => {
+    const itemToRemove = items.find((i) => i.id === id);
     setItems((prev) => prev.filter((i) => i.id !== id));
+
+    if (itemToRemove) {
+      triggerSnackbar({
+        id: itemToRemove.id,
+        type: "removed",
+        title: itemToRemove.title,
+        image: itemToRemove.image,
+        price: itemToRemove.price,
+      });
+    }
   };
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -140,9 +223,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalCount,
         totalAmount,
         itemsByVendor,
+        triggerSnackbar,
+        isAuthenticated: !!user,
+        user,
+        openAuthModal: () => setIsAuthModalOpen(true),
+        closeAuthModal: () => setIsAuthModalOpen(false),
+        isAuthModalOpen,
       }}
     >
       {children}
+      <CartSnackbar data={snackbar} onDismiss={dismissSnackbar} duration={3000} />
+      <AuthRequiredModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </CartContext.Provider>
   );
 }

@@ -19,6 +19,7 @@ import {
   AlertCircle,
   ChevronRight,
   ShieldCheck,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,7 @@ interface OrderData {
   } | null;
   notes?: string | null;
   createdAt: string | Date;
+  updatedAt?: string | Date;
   vendor: {
     id: string;
     storeName: string;
@@ -342,24 +344,36 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* Track My Item Button */}
+                      <Link href={`/orders/track/${order.orderNumber}`}>
+                        <Button
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer transition-all hover:scale-[1.02]"
+                        >
+                          <Truck className="w-3.5 h-3.5" />
+                          <span>Track My Item</span>
+                        </Button>
+                      </Link>
+
                       {whatsappUrl && (
                         <a
                           href={whatsappUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl shadow-sm transition-transform active:scale-95"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-3 py-2 rounded-xl border border-neutral-200/80 transition-colors"
                         >
-                          <MessageCircle className="w-4 h-4" />
-                          Chat Seller
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Chat Seller</span>
                         </a>
                       )}
+
                       <Link href={`/order-success/${order.orderNumber}`}>
                         <Button
                           variant="outline"
                           size="sm"
                           className="text-xs font-bold rounded-xl gap-1"
                         >
-                          Receipt
+                          <span>Receipt</span>
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
@@ -404,11 +418,22 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                               </div>
                             </div>
 
-                            {/* Price and Review action */}
-                            <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-200/40">
-                              <span className="font-extrabold text-xs sm:text-sm text-neutral-900">
+                            {/* Price, Track and Review action */}
+                            <div className="flex items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-200/40">
+                              <span className="font-extrabold text-xs sm:text-sm text-neutral-900 mr-1">
                                 {formatNGN(item.unitPrice * item.quantity)}
                               </span>
+
+                              <Link href={`/orders/track/${order.orderNumber}`}>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-[11px] font-bold text-neutral-600 hover:text-emerald-700 rounded-xl h-8 gap-1 px-2.5"
+                                >
+                                  <Truck className="w-3 h-3 text-emerald-600" />
+                                  <span>Track</span>
+                                </Button>
+                              </Link>
 
                               {item.review ? (
                                 <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[11px] font-bold flex items-center gap-1">
@@ -435,7 +460,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                                 </Button>
                               ) : (
                                 <span className="text-[10px] text-neutral-400">
-                                  Review available on delivery
+                                  Review on delivery
                                 </span>
                               )}
                             </div>
@@ -467,6 +492,15 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                           {order.meetupPoint.description ? ` (${order.meetupPoint.description})` : ""}
                         </p>
                       )}
+                      <div className="pl-6 pt-0.5">
+                        <Link
+                          href={`/orders/track/${order.orderNumber}`}
+                          className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-1"
+                        >
+                          <Truck className="w-3 h-3 text-emerald-600" />
+                          <span>Track 6-step milestones & delivery status &rarr;</span>
+                        </Link>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3">
