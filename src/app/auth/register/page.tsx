@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { GraduationCap, Store, UserCheck, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCampuses } from "@/hooks/use-campuses-query";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -23,22 +24,16 @@ export default function RegisterPage() {
   const [department, setDepartment] = React.useState("");
   const [storeDescription, setStoreDescription] = React.useState("");
 
-  const [campuses, setCampuses] = React.useState<any[]>([]);
+  const { data: campusData } = useCampuses();
+  const campuses = campusData?.campuses || [];
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
-    // Load active campuses
-    fetch("/api/campuses")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.campuses && data.campuses.length > 0) {
-          setCampuses(data.campuses);
-          setCampusId(data.campuses[0].id);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (campuses.length > 0 && (!campusId || campusId === "clunilag001")) {
+      setCampusId(campuses[0].id);
+    }
+  }, [campuses, campusId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

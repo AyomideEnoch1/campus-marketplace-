@@ -26,6 +26,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatNGN, formatDate } from "@/lib/utils";
 import { ReviewFormModal } from "@/components/marketplace/ReviewFormModal";
+import { useOrders, useInvalidateOrders } from "@/hooks/use-orders-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/react-query/query-keys";
 
 interface OrderItemData {
   id: string;
@@ -82,7 +85,21 @@ interface OrdersClientProps {
 
 export function OrdersClient({ initialOrders }: OrdersClientProps) {
   const router = useRouter();
-  const [orders, setOrders] = React.useState<OrderData[]>(initialOrders);
+  const queryClient = useQueryClient();
+  const invalidateOrders = useInvalidateOrders();
+
+  // Cached server-state for orders with background refetching
+  const { data: ordersData, isFetching } = useOrders(initialOrders as any);
+  const [localOrders, setLocalOrders] = React.useState<OrderData[]>(initialOrders);
+
+  // Sync query data with local state when new orders arrive
+  React.useEffect(() => {
+    if (ordersData?.orders) {
+      setLocalOrders(ordersData.orders as any);
+    }
+  }, [ordersData]);
+
+  const orders = localOrders;
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedStatus, setSelectedStatus] = React.useState<string>("ALL");
 
@@ -120,7 +137,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
   const handleReviewSuccess = () => {
     if (reviewModalData) {
       // Mark item as reviewed locally
-      setOrders((prev) =>
+      setLocalOrders((prev) =>
         prev.map((ord) => ({
           ...ord,
           items: ord.items.map((it) => {
@@ -136,6 +153,8 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       );
     }
     setReviewModalData(null);
+    invalidateOrders();
+    queryClient.invalidateQueries({ queryKey: queryKeys.reviews.all });
     router.refresh();
   };
 

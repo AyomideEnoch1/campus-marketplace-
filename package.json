@@ -19,6 +19,7 @@
     "@prisma/client": "^5.22.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.46.2",
+    "@tanstack/react-query": "^5.107.1",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

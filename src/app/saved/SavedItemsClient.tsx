@@ -18,37 +18,15 @@ import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { formatNGN } from "@/lib/utils";
 import { Loader } from "@/components/ui/Loader";
+import { useCurrentUser } from "@/hooks/use-auth-query";
 
 export function SavedItemsClient() {
   const { savedItems, removeItem, clearWishlist } = useWishlist();
   const { addItem } = useCart();
   const [addedId, setAddedId] = React.useState<string | null>(null);
-  const [user, setUser] = React.useState<any>(null);
-  const [authLoading, setAuthLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    let isMounted = true;
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!isMounted) return;
-        if (data?.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      })
-      .catch(() => {
-        if (isMounted) setUser(null);
-      })
-      .finally(() => {
-        if (isMounted) setAuthLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { data: authData, isLoading: authLoading } = useCurrentUser();
+  const user = authData?.user;
 
   const handleMoveToBag = (item: any) => {
     addItem({
@@ -70,8 +48,8 @@ export function SavedItemsClient() {
     setTimeout(() => setAddedId(null), 2000);
   };
 
-  // While communicating with backend to verify credentials
-  if (authLoading) {
+  // While communicating with backend to verify credentials on initial cold boot
+  if (authLoading && !authData) {
     return <Loader isModal={true} />;
   }
 

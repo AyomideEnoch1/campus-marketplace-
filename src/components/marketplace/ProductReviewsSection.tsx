@@ -19,6 +19,10 @@ import { Button } from "@/components/ui/button";
 import { ReviewFormModal } from "./ReviewFormModal";
 import { formatDate } from "@/lib/utils";
 import { Loader } from "@/components/ui/Loader";
+import { ReviewSkeleton } from "@/components/ui/skeleton";
+import { useProductReviews, useHelpfulVoteMutation } from "@/hooks/use-reviews-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/react-query/query-keys";
 
 interface ReviewItem {
   id: string;
@@ -59,25 +63,38 @@ export function ProductReviewsSection({
   sellerStoreName,
   isSeller,
 }: ProductReviewsSectionProps) {
-  const [reviews, setReviews] = React.useState<ReviewItem[]>([]);
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [avgRating, setAvgRating] = React.useState(0);
-  const [breakdown, setBreakdown] = React.useState<Record<string, number>>({
-    "5": 0,
-    "4": 0,
-    "3": 0,
-    "2": 0,
-    "1": 0,
-  });
-
-  const [eligibleOrderItemId, setEligibleOrderItemId] = React.useState<string | null>(null);
-  const [hasUserReviewed, setHasUserReviewed] = React.useState(false);
-  const [loading, setLoading] = React.useState(true);
+  const queryClient = useQueryClient();
 
   // Filters & Sorting
   const [starFilter, setStarFilter] = React.useState<string>("ALL");
   const [withPhotosOnly, setWithPhotosOnly] = React.useState(false);
   const [sortOption, setSortOption] = React.useState<string>("newest");
+
+  const filterParams = React.useMemo(
+    () => ({
+      rating: starFilter,
+      withPhotos: withPhotosOnly,
+      sort: sortOption,
+    }),
+    [starFilter, withPhotosOnly, sortOption]
+  );
+
+  // TanStack Query for Reviews: Caches results, background refetches, and keeps previous data on filter switch
+  const { data: reviewsData, isLoading, isFetching } = useProductReviews(productId, filterParams);
+
+  const reviews = reviewsData?.reviews || [];
+  const totalCount = reviewsData?.totalCount || 0;
+  const avgRating = reviewsData?.avgRating || 0;
+  const breakdown = reviewsData?.breakdown || { "5": 0, "4": 0, "3": 0, "2": 0, "1": 0 };
+  const eligibleOrderItemId = reviewsData?.eligibleOrderItemId || null;
+  const hasUserReviewed = reviewsData?.hasUserReviewed || false;
+
+  // Optimistic Helpful Vote Mutation
+  const helpfulVoteMutation = useHelpfulVoteMutation(productId, filterParams);
+
+  const handleVoteHelpful = (reviewId: string) => {
+    helpfulVoteMutation.mutate(reviewId);
+  };
 
   // Modals & Forms
   const [reviewModalOpen, setReviewModalOpen] = React.useState(false);
@@ -94,60 +111,9 @@ export function ProductReviewsSection({
   // Photo Lightbox
   const [zoomPhoto, setZoomPhoto] = React.useState<string | null>(null);
 
-  const fetchReviews = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (starFilter !== "ALL") params.append("rating", starFilter);
-      if (withPhotosOnly) params.append("withPhotos", "true");
-      params.append("sort", sortOption);
-
-      const res = await fetch(`/api/products/${productId}/reviews?${params.toString()}`);
-      const data = await res.json();
-      if (res.ok) {
-        setReviews(data.reviews || []);
-        setTotalCount(data.totalCount || 0);
-        setAvgRating(data.avgRating || 0);
-        setBreakdown(data.breakdown || { "5": 0, "4": 0, "3": 0, "2": 0, "1": 0 });
-        setEligibleOrderItemId(data.eligibleOrderItemId || null);
-        setHasUserReviewed(data.hasUserReviewed || false);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [productId, starFilter, withPhotosOnly, sortOption]);
-
-  React.useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
-
-  const handleVoteHelpful = async (reviewId: string) => {
-    try {
-      const res = await fetch(`/api/reviews/${reviewId}/helpful`, {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setReviews((prev) =>
-          prev.map((r) =>
-            r.id === reviewId
-              ? {
-                  ...r,
-                  hasVotedHelpful: data.voted,
-                  helpfulCount: data.helpfulCount,
-                }
-              : r
-          )
-        );
-      } else {
-        alert(data.error || "Please sign in to vote.");
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const invalidateReviews = React.useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.reviews.all });
+  }, [queryClient]);
 
   const handleSellerReply = async (reviewId: string) => {
     if (!replyText.trim()) return;
@@ -162,7 +128,7 @@ export function ProductReviewsSection({
       if (res.ok) {
         setReplyingReviewId(null);
         setReplyText("");
-        fetchReviews();
+        invalidateReviews();
       } else {
         alert(data.error || "Failed to post reply");
       }
@@ -208,7 +174,7 @@ export function ProductReviewsSection({
         method: "DELETE",
       });
       if (res.ok) {
-        fetchReviews();
+        invalidateReviews();
       }
     } catch (e) {
       console.error(e);
@@ -228,7 +194,7 @@ export function ProductReviewsSection({
           isOpen={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
           onSuccess={() => {
-            fetchReviews();
+            invalidateReviews();
           }}
         />
       )}
@@ -452,6 +418,11 @@ export function ProductReviewsSection({
         </div>
 
         <div className="flex items-center gap-2 text-xs">
+          {isFetching && !isLoading && (
+            <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full animate-pulse whitespace-nowrap">
+              Updating...
+            </span>
+          )}
           <span className="text-neutral-500 font-medium whitespace-nowrap">Sort by:</span>
           <select
             value={sortOption}
@@ -468,9 +439,10 @@ export function ProductReviewsSection({
 
       {/* REVIEWS LIST */}
       <div className="space-y-4">
-        {loading ? (
-          <div className="py-12 flex justify-center bg-white rounded-3xl border border-neutral-100 p-8 shadow-2xs">
-            <Loader isModal={false} />
+        {isLoading && !reviewsData ? (
+          <div className="space-y-4">
+            <ReviewSkeleton />
+            <ReviewSkeleton />
           </div>
         ) : reviews.length === 0 ? (
           <div className="py-12 text-center bg-white rounded-3xl border border-neutral-200/80 p-8 space-y-3">
