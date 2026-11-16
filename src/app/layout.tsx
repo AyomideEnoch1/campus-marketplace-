@@ -33,7 +33,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className="min-h-screen flex flex-col bg-white text-neutral-900 font-sans antialiased">
-        <CartProvider>
+        <CartProvider initialUser={sessionUser}>
           <WishlistProvider>
             <RouteNavigationLoader />
             <AnnouncementBar />

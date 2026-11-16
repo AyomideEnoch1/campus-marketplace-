@@ -84,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    addItem({
+    const added = addItem({
       id: product.id,
       title: product.title,
       slug: product.slug,
@@ -110,6 +110,8 @@ export function ProductCard({ product }: ProductCardProps) {
         isTrustedSeller: product.vendor?.isTrustedSeller,
       },
     });
+
+    if (!added) return;
 
     setIsAdded(true);
     if (addedTimeoutRef.current) {
