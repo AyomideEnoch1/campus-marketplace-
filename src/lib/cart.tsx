@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
 import { CartSnackbar, SnackbarData } from "@/components/ui/CartSnackbar";
 import { AuthRequiredModal } from "@/components/ui/AuthRequiredModal";
+import { useCurrentUser } from "@/hooks/use-auth-query";
+import { toast } from "sonner";
 
 export interface CartItem {
   id: string; // product id
@@ -28,9 +29,9 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: CartItem) => boolean;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addItem: (item: CartItem) => Promise<boolean>;
+  removeItem: (id: string) => Promise<void>;
+  updateQuantity: (id: string, quantity: number) => Promise<void>;
   clearCart: () => void;
   clearVendorItems: (vendorId: string) => void;
   totalCount: number;
@@ -57,39 +58,11 @@ export function CartProvider({ children, initialUser = null }: CartProviderProps
   const [items, setItems] = React.useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [snackbar, setSnackbar] = React.useState<SnackbarData | null>(null);
-  const [user, setUser] = React.useState<any>(initialUser);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
-  const pathname = usePathname();
-
-  React.useEffect(() => {
-    setUser(initialUser);
-  }, [initialUser]);
-
-  // Sync user authentication status with backend when route changes
-  const prevPathnameRef = React.useRef(pathname);
-  React.useEffect(() => {
-    if (prevPathnameRef.current === pathname && initialUser !== undefined) {
-      return;
-    }
-    prevPathnameRef.current = pathname;
-
-    let isMounted = true;
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!isMounted) return;
-        if (data?.user) {
-          setUser(data.user);
-        } else if (data === null) {
-          setUser(null);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      isMounted = false;
-    };
-  }, [pathname, initialUser]);
+  // TanStack Query cached user session: eliminates duplicate network requests on route navigation
+  const { data: authData } = useCurrentUser(initialUser);
+  const user = authData?.user ?? initialUser;
 
   const triggerSnackbar = React.useCallback((data: SnackbarData) => {
     setSnackbar(data);
@@ -124,23 +97,41 @@ export function CartProvider({ children, initialUser = null }: CartProviderProps
     }
   }, [items, isLoaded]);
 
-  const addItem = (newItem: CartItem): boolean => {
-    // Prevent unauthenticated users from adding to cart
+  /**
+   * Optimistically add product to cart.
+   * 1. Updates UI immediately with snackbar feedback.
+   * 2. Dispatches server-side validation request to verify stock & availability.
+   * 3. On failure, rolls back to previous cart snapshot and notifies user via toast.
+   */
+  const addItem = async (newItem: CartItem): Promise<boolean> => {
     if (!user) {
       setIsAuthModalOpen(true);
       return false;
     }
 
-    setItems((prev) => {
-      const existingIndex = prev.findIndex((i) => i.id === newItem.id);
-      if (existingIndex > -1) {
-        const updated = [...prev];
-        updated[existingIndex].quantity += newItem.quantity || 1;
-        return updated;
-      }
-      return [...prev, { ...newItem, quantity: newItem.quantity || 1 }];
-    });
+    // Preserve previous state for potential rollback
+    const previousItems = [...items];
+    const requestedQty = newItem.quantity || 1;
 
+    // Calculate optimistic state
+    const existingIndex = previousItems.findIndex((i) => i.id === newItem.id);
+    let targetQuantity = requestedQty;
+    let nextItems: CartItem[];
+
+    if (existingIndex > -1) {
+      nextItems = previousItems.map((item, idx) => {
+        if (idx === existingIndex) {
+          targetQuantity = item.quantity + requestedQty;
+          return { ...item, quantity: targetQuantity };
+        }
+        return item;
+      });
+    } else {
+      nextItems = [...previousItems, { ...newItem, quantity: requestedQty }];
+    }
+
+    // Apply optimistic update immediately
+    setItems(nextItems);
     triggerSnackbar({
       id: newItem.id,
       type: "added",
@@ -149,32 +140,109 @@ export function CartProvider({ children, initialUser = null }: CartProviderProps
       price: newItem.price,
     });
 
-    return true;
-  };
-
-  const removeItem = (id: string) => {
-    const itemToRemove = items.find((i) => i.id === id);
-    setItems((prev) => prev.filter((i) => i.id !== id));
-
-    if (itemToRemove) {
-      triggerSnackbar({
-        id: itemToRemove.id,
-        type: "removed",
-        title: itemToRemove.title,
-        image: itemToRemove.image,
-        price: itemToRemove.price,
+    // Validate with backend in background
+    try {
+      const res = await fetch("/api/cart/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add",
+          productId: newItem.id,
+          quantity: targetQuantity,
+        }),
       });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Unable to add product to cart");
+      }
+
+      return true;
+    } catch (err: any) {
+      // Rollback optimistic update
+      console.error("Cart optimistic update failed, rolling back:", err);
+      setItems(previousItems);
+      setSnackbar(null);
+      toast.error(err.message || "Failed to add item to bag. Rolled back.", {
+        duration: 4000,
+      });
+      return false;
     }
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  /**
+   * Optimistically remove product from cart with rollback on error.
+   */
+  const removeItem = async (id: string): Promise<void> => {
+    const itemToRemove = items.find((i) => i.id === id);
+    if (!itemToRemove) return;
+
+    const previousItems = [...items];
+    const nextItems = previousItems.filter((i) => i.id !== id);
+
+    // Apply optimistic update
+    setItems(nextItems);
+    triggerSnackbar({
+      id: itemToRemove.id,
+      type: "removed",
+      title: itemToRemove.title,
+      image: itemToRemove.image,
+      price: itemToRemove.price,
+    });
+
+    try {
+      const res = await fetch("/api/cart/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "remove", productId: id }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to remove item");
+      }
+    } catch (err: any) {
+      // Rollback on failure
+      setItems(previousItems);
+      toast.error(err.message || "Failed to remove item. Restored to bag.");
+    }
+  };
+
+  /**
+   * Optimistically update item quantity with backend stock check and rollback.
+   */
+  const updateQuantity = async (id: string, quantity: number): Promise<void> => {
     if (quantity <= 0) {
-      removeItem(id);
+      await removeItem(id);
       return;
     }
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity } : i))
-    );
+
+    const previousItems = [...items];
+    const nextItems = previousItems.map((i) => (i.id === id ? { ...i, quantity } : i));
+
+    // Apply optimistic update immediately
+    setItems(nextItems);
+
+    try {
+      const res = await fetch("/api/cart/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update",
+          productId: id,
+          quantity,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Quantity could not be updated");
+      }
+    } catch (err: any) {
+      // Rollback to previous quantity
+      setItems(previousItems);
+      toast.error(err.message || "Failed to update item quantity. Restoring original amount.");
+    }
   };
 
   const clearCart = () => {
@@ -188,7 +256,7 @@ export function CartProvider({ children, initialUser = null }: CartProviderProps
   const totalCount = items.reduce((acc, item) => acc + item.quantity, 0);
   const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  // Group items by vendor (Section 4.5 requirement)
+  // Group items by vendor
   const itemsByVendor = React.useMemo(() => {
     const groups: Record<
       string,

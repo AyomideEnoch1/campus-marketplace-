@@ -80,11 +80,12 @@ export function ProductCard({ product }: ProductCardProps) {
     USED_FAIR: "Fair Condition",
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const added = addItem({
+    setIsAdded(true);
+    const added = await addItem({
       id: product.id,
       title: product.title,
       slug: product.slug,
@@ -111,9 +112,11 @@ export function ProductCard({ product }: ProductCardProps) {
       },
     });
 
-    if (!added) return;
+    if (!added) {
+      setIsAdded(false);
+      return;
+    }
 
-    setIsAdded(true);
     if (addedTimeoutRef.current) {
       clearTimeout(addedTimeoutRef.current);
     }

@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { useCurrentUser, useLogout } from "@/hooks/use-auth-query";
 
 interface NavbarProps {
   initialUser?: any;
@@ -30,49 +31,19 @@ export function Navbar({ initialUser }: NavbarProps) {
   const router = useRouter();
   const { totalCount } = useCart();
   const { savedCount } = useWishlist();
-  const [user, setUser] = React.useState(initialUser);
+
+  // Deduplicated TanStack Query cached auth state
+  const { data: authData } = useCurrentUser(initialUser);
+  const user = authData?.user ?? initialUser;
+  const logoutMutation = useLogout();
+
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [selectedCampus, setSelectedCampus] = React.useState<string>("all");
 
-  React.useEffect(() => {
-    setUser(initialUser);
-  }, [initialUser]);
-
-  const prevPathnameRef = React.useRef(pathname);
-  React.useEffect(() => {
-    if (prevPathnameRef.current === pathname && initialUser !== undefined) {
-      return;
-    }
-    prevPathnameRef.current = pathname;
-
-    let isMounted = true;
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!isMounted) return;
-        if (data?.user) {
-          setUser(data.user);
-        } else if (data === null) {
-          setUser(null);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      isMounted = false;
-    };
-  }, [pathname, initialUser]);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      setUser(null);
-      setUserDropdownOpen(false);
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      console.error("Logout error", err);
-    }
+  const handleLogout = () => {
+    setUserDropdownOpen(false);
+    logoutMutation.mutate();
   };
 
   const navLinks = [
@@ -272,10 +243,11 @@ export function Navbar({ initialUser }: NavbarProps) {
 
                   <button
                     onClick={handleLogout}
+                    disabled={logoutMutation.isPending}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors text-left"
                   >
                     <LogOut className="w-4 h-4 text-rose-500" />
-                    Sign Out
+                    {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
                   </button>
                 </div>
               )}

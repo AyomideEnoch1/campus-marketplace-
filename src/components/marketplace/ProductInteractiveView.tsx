@@ -96,8 +96,9 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
     USED_FAIR: "Used - Fair Condition",
   };
 
-  const handleAddToCart = () => {
-    const added = addItem({
+  const handleAddToCart = async () => {
+    setAddedSuccess(true);
+    const added = await addItem({
       id: product.id,
       title: product.title,
       slug: product.slug,
@@ -118,15 +119,17 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
       },
     });
 
-    if (!added) return;
+    if (!added) {
+      setAddedSuccess(false);
+      return;
+    }
 
-    setAddedSuccess(true);
     setShowBagModal(true);
     setTimeout(() => setAddedSuccess(false), 3000);
   };
 
-  const handleToggleWishlist = () => {
-    toggleSave({
+  const handleToggleWishlist = async () => {
+    await toggleSave({
       id: product.id,
       title: product.title,
       slug: product.slug,

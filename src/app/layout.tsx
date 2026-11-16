@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Footer } from "@/components/layout/Footer";
 import { getSession } from "@/lib/auth";
+import { QueryProvider } from "@/lib/react-query/query-provider";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { RouteNavigationLoader } from "@/components/common/RouteNavigationLoader";
@@ -33,16 +34,18 @@ export default async function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className="min-h-screen flex flex-col bg-white text-neutral-900 font-sans antialiased">
-        <CartProvider initialUser={sessionUser}>
-          <WishlistProvider>
-            <RouteNavigationLoader />
-            <AnnouncementBar />
-            <Navbar initialUser={sessionUser} />
-            <main className="flex-grow pb-16 md:pb-0">{children}</main>
-            <MobileNav initialUser={sessionUser} />
-            <Footer />
-          </WishlistProvider>
-        </CartProvider>
+        <QueryProvider>
+          <CartProvider initialUser={sessionUser}>
+            <WishlistProvider>
+              <RouteNavigationLoader />
+              <AnnouncementBar />
+              <Navbar initialUser={sessionUser} />
+              <main className="flex-grow pb-16 md:pb-0">{children}</main>
+              <MobileNav initialUser={sessionUser} />
+              <Footer />
+            </WishlistProvider>
+          </CartProvider>
+        </QueryProvider>
       </body>
     </html>
   );
