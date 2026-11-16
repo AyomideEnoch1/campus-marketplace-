@@ -1,0 +1,124 @@
+import { notFound, redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { OrderTrackingClient } from "./OrderTrackingClient";
+
+export const dynamic = "force-dynamic";
+
+interface OrderTrackingPageProps {
+  params: { orderNumber: string };
+}
+
+export async function generateMetadata({
+  params,
+}: OrderTrackingPageProps): Promise<Metadata> {
+  return {
+    title: `Track Order #${params.orderNumber} | CampusTrade`,
+    description: `Real-time milestone tracking and campus delivery status for order #${params.orderNumber}.`,
+  };
+}
+
+export default async function OrderTrackingPage({
+  params,
+}: OrderTrackingPageProps) {
+  const session = await getSession();
+
+  if (!session) {
+    redirect(`/auth/login?redirect=/orders/track/${params.orderNumber}`);
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { orderNumber: params.orderNumber },
+    include: {
+      meetupPoint: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      },
+      vendor: {
+        include: {
+          campus: {
+            select: {
+              name: true,
+              city: true,
+            },
+          },
+        },
+      },
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              images: {
+                take: 1,
+                orderBy: { position: "asc" },
+                select: { url: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    notFound();
+  }
+
+  // Ensure user is authorized to track this order (buyer or vendor or admin)
+  const isBuyer = order.buyerId === session.id || order.buyerEmail === session.email;
+  const isVendor = order.vendor.userId === session.id;
+  const isAdmin = session.role === "ADMIN";
+
+  if (!isBuyer && !isVendor && !isAdmin) {
+    redirect("/orders");
+  }
+
+  const sanitizedOrder = {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    totalAmount: order.totalAmount,
+    status: order.status,
+    deliveryMethod: order.deliveryMethod,
+    deliveryAddress: order.deliveryAddress,
+    meetupPoint: order.meetupPoint,
+    notes: order.notes,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    vendor: {
+      id: order.vendor.id,
+      storeName: order.vendor.storeName,
+      slug: order.vendor.slug,
+      whatsapp: order.vendor.whatsapp,
+      sellerType: order.vendor.sellerType,
+      isTrustedSeller: order.vendor.isTrustedSeller,
+      isRegisteredBusiness: order.vendor.isRegisteredBusiness,
+      campus: order.vendor.campus
+        ? {
+            name: order.vendor.campus.name,
+            city: order.vendor.campus.city,
+          }
+        : null,
+    },
+    items: order.items.map((i) => ({
+      id: i.id,
+      productId: i.productId,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      product: {
+        id: i.product.id,
+        title: i.product.title,
+        slug: i.product.slug,
+        images: i.product.images,
+      },
+    })),
+  };
+
+  return <OrderTrackingClient order={sanitizedOrder} />;
+}
