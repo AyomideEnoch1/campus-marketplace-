@@ -67,8 +67,18 @@ function LoginForm() {
       const targetUrl = redirectParam || data.redirectTo || (selectedRole === "vendor" ? "/dashboard" : "/shop");
       window.location.href = targetUrl;
     } catch (err: any) {
+      console.error("Sign-in error:", err);
+      const msg = err.message || "";
+      const isSystemError =
+        msg.includes("fetch") ||
+        msg.includes("Failed to fetch") ||
+        msg.includes("Prisma") ||
+        msg.includes("database") ||
+        msg.includes("SQL") ||
+        msg.includes("500") ||
+        msg.includes("Internal");
       setError(
-        err.message || "Failed to sign in. Please verify your credentials.",
+        isSystemError ? "Something went wrong. Please try again later." : msg || "Something went wrong. Please try again later."
       );
       setLoading(false);
     }

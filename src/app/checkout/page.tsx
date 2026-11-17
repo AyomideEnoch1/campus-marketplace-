@@ -111,7 +111,7 @@ function CheckoutForm() {
           ? (deliveryAddress || (meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ?? "Campus Safe Point"))
           : deliveryAddress,
         meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
-        vendorId: group.vendor.id,
+        vendorId: group.vendor.id || group.vendor.slug,
         notes,
         items: group.items.map((i) => ({
           productId: i.id,

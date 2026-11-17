@@ -248,7 +248,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
       window.location.href = "/dashboard";
     } catch (err: any) {
-      setError(err.message || "An unexpected error occurred. Please try again.");
+      console.error("Vendor register error:", err);
+      const msg = err.message || "";
+      const isSystem = msg.includes("fetch") || msg.includes("Prisma") || msg.includes("500");
+      setError(isSystem ? "Something went wrong. Please try again later." : msg || "Something went wrong. Please try again later.");
       setLoading(false);
     }
   };

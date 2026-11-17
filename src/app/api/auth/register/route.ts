@@ -354,7 +354,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Registration API error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to complete registration" },
+      { error: "Something went wrong. Please try again later." },
       { status: 500 }
     );
   }

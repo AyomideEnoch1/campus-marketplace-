@@ -36,42 +36,55 @@ export async function getSession(): Promise<SessionUser | null> {
     const decoded = verifyToken(token);
     if (!decoded) return null;
 
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      include: {
-        vendorProfile: {
-          select: {
-            id: true,
-            storeName: true,
-            slug: true,
-            status: true,
-            campusId: true,
-            layout: true,
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        include: {
+          vendorProfile: {
+            select: {
+              id: true,
+              storeName: true,
+              slug: true,
+              status: true,
+              campusId: true,
+              layout: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!user) return null;
+      if (!user) return null;
 
-    return {
-      id: user.id,
-      userId: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role as Role,
-      avatarUrl: user.avatarUrl,
-      vendorProfile: user.vendorProfile
-        ? {
-            id: user.vendorProfile.id,
-            storeName: user.vendorProfile.storeName,
-            slug: user.vendorProfile.slug,
-            status: user.vendorProfile.status as any,
-            campusId: user.vendorProfile.campusId,
-            layout: user.vendorProfile.layout,
-          }
-        : null,
-    };
+      return {
+        id: user.id,
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role as Role,
+        avatarUrl: user.avatarUrl,
+        vendorProfile: user.vendorProfile
+          ? {
+              id: user.vendorProfile.id,
+              storeName: user.vendorProfile.storeName,
+              slug: user.vendorProfile.slug,
+              status: user.vendorProfile.status as any,
+              campusId: user.vendorProfile.campusId,
+              layout: user.vendorProfile.layout,
+            }
+          : null,
+      };
+    } catch (dbError) {
+      console.warn("Database lookup warning during getSession, using verified JWT token fallback:", dbError);
+      return {
+        id: decoded.userId,
+        userId: decoded.userId,
+        email: decoded.email,
+        fullName: decoded.role === "VENDOR" ? "Campus Vendor" : "Student Buyer",
+        role: decoded.role as Role,
+        avatarUrl: null,
+        vendorProfile: null,
+      };
+    }
   } catch (error) {
     console.error("Error retrieving session:", error);
     return null;

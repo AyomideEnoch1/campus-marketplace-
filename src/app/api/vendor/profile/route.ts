@@ -9,12 +9,13 @@ const profileSchema = z.object({
   storeName: z.string().min(2, "Store name must be at least 2 characters"),
   storeDescription: z.string().optional(),
   whatsapp: z.string().min(8, "WhatsApp number is required"),
-  faculty: z.string().optional(),
-  department: z.string().optional(),
+  faculty: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
+  studentIdUrl: z.string().optional().nullable(),
   brandColor: z.string().regex(/^#([0-9a-fA-F]{3}){1,2}$/, "Invalid hex color").default("#0F172A"),
   layout: z.enum(["grid", "list", "showcase", "lookbook"]).default("grid"),
-  logo: z.string().optional(),
-  banner: z.string().optional(),
+  logo: z.string().optional().nullable(),
+  banner: z.string().optional().nullable(),
 });
 
 export async function GET() {

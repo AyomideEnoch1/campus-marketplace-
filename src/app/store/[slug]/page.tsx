@@ -1,6 +1,9 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { StorefrontRenderer } from "@/components/storefront/StorefrontRenderer";
 
 interface StorePageProps {
@@ -28,18 +31,28 @@ export async function generateMetadata({
 }
 
 export default async function StorePage({ params }: StorePageProps) {
+  const session = await getSession();
+
   const vendor = await prisma.vendorProfile.findUnique({
     where: { slug: params.slug },
     include: {
       campus: true,
-      products: {
-        where: { status: "PUBLISHED" },
-        orderBy: { createdAt: "desc" },
-        include: {
-          images: { orderBy: { position: "asc" } },
-          category: true,
-        },
-      },
+    },
+  });
+
+  if (!vendor) notFound();
+
+  // If vendor is viewing their own live store, show all their active products; otherwise show PUBLISHED items
+  const isOwner = session?.id === vendor.userId;
+  const products = await prisma.product.findMany({
+    where: {
+      vendorId: vendor.id,
+      ...(isOwner ? { status: { not: "HIDDEN" } } : { status: "PUBLISHED" }),
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      images: { orderBy: { position: "asc" } },
+      category: true,
     },
   });
 
@@ -93,7 +106,7 @@ export default async function StorePage({ params }: StorePageProps) {
             completedOrdersCount,
           } as any
         }
-        products={vendor.products}
+        products={products}
         recentReviews={formattedReviews}
       />
     </div>

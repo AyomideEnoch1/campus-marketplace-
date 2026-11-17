@@ -250,7 +250,7 @@ export function CartProvider({ children, initialUser = null }: CartProviderProps
   };
 
   const clearVendorItems = (vendorId: string) => {
-    setItems((prev) => prev.filter((i) => i.vendor.id !== vendorId));
+    setItems((prev) => prev.filter((i) => i.vendor.id !== vendorId && i.vendor.slug !== vendorId));
   };
 
   const totalCount = items.reduce((acc, item) => acc + item.quantity, 0);

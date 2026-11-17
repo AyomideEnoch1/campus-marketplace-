@@ -198,7 +198,19 @@ function RegisterContent() {
       const targetUrl = data.redirectTo || (role === "VENDOR" ? "/dashboard" : "/shop");
       window.location.href = targetUrl;
     } catch (err: any) {
-      setError(err.message || "Failed to register. Please check your information and try again.");
+      console.error("Registration error:", err);
+      const msg = err.message || "";
+      const isSystemError =
+        msg.includes("fetch") ||
+        msg.includes("Failed to fetch") ||
+        msg.includes("Prisma") ||
+        msg.includes("database") ||
+        msg.includes("SQL") ||
+        msg.includes("500") ||
+        msg.includes("Internal");
+      setError(
+        isSystemError ? "Something went wrong. Please try again later." : msg || "Something went wrong. Please try again later."
+      );
       setLoading(false);
     }
   };

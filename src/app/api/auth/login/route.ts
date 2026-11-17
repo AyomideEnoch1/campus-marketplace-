@@ -151,7 +151,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Login API error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred during login" },
+      { error: "Something went wrong. Please try again later." },
       { status: 500 }
     );
   }

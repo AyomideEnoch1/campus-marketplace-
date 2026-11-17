@@ -155,14 +155,40 @@ export async function POST(request: Request) {
       items,
     } = parsed.data;
 
-    // Verify vendor
-    const vendor = await prisma.vendorProfile.findUnique({
+    // Verify vendor by ID, slug, or via product lookup
+    let vendor = await prisma.vendorProfile.findUnique({
       where: { id: vendorId },
       include: { campus: true },
     });
 
     if (!vendor) {
+      // Fallback: vendorId was passed as vendor slug
+      vendor = await prisma.vendorProfile.findUnique({
+        where: { slug: vendorId },
+        include: { campus: true },
+      });
+    }
+
+    if (!vendor && items.length > 0) {
+      // Additional fallback: resolve vendor via the first product in cart
+      const firstProduct = await prisma.product.findUnique({
+        where: { id: items[0].productId },
+        include: { vendor: { include: { campus: true } } },
+      });
+      if (firstProduct?.vendor) {
+        vendor = firstProduct.vendor;
+      }
+    }
+
+    if (!vendor) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+    }
+
+    if (vendor.status === "SUSPENDED") {
+      return NextResponse.json(
+        { error: "This merchant store is currently suspended and cannot accept orders." },
+        { status: 403 }
+      );
     }
 
     // Compute total amount
@@ -231,7 +257,7 @@ export async function POST(request: Request) {
           deliveryAddress: finalDeliveryAddress,
           deliveryMethod,
           meetupPointId: finalMeetupPointId,
-          vendorId,
+          vendorId: vendor.id,
           totalAmount,
           notes: notes || null,
           status: "PENDING",
