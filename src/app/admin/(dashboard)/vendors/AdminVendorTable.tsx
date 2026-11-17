@@ -364,8 +364,8 @@ export function AdminVendorTable({
 
       {/* Review & Verification Inspection Modal */}
       {inspectVendor && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 text-neutral-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-3xl w-full p-4 sm:p-6 lg:p-7 space-y-5 text-neutral-200 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
               <div className="space-y-1">
@@ -689,8 +689,8 @@ export function AdminVendorTable({
             )}
 
             {/* Moderation Actions Footer */}
-            <div className="pt-4 border-t border-neutral-800 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+            <div className="pt-4 border-t border-neutral-800 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
                   disabled={processingId === inspectVendor.id}
@@ -725,9 +725,9 @@ export function AdminVendorTable({
                 size="sm"
                 disabled={processingId === inspectVendor.id || inspectVendor.status === "APPROVED"}
                 onClick={() => handleUpdateStatus(inspectVendor.id, "APPROVE")}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6 h-10 shadow-md shadow-emerald-600/30 gap-1.5"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6 h-10 shadow-md shadow-emerald-600/30 gap-1.5 justify-center"
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 Approve & Activate Vendor
               </Button>
             </div>
