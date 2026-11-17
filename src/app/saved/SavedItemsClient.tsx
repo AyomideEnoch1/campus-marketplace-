@@ -17,37 +17,16 @@ import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { formatNGN } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
+import { useCurrentUser } from "@/hooks/use-auth-query";
 
 export function SavedItemsClient() {
   const { savedItems, removeItem, clearWishlist } = useWishlist();
   const { addItem } = useCart();
   const [addedId, setAddedId] = React.useState<string | null>(null);
-  const [user, setUser] = React.useState<any>(null);
-  const [authLoading, setAuthLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    let isMounted = true;
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!isMounted) return;
-        if (data?.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      })
-      .catch(() => {
-        if (isMounted) setUser(null);
-      })
-      .finally(() => {
-        if (isMounted) setAuthLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { data: authData, isLoading: authLoading } = useCurrentUser();
+  const user = authData?.user;
 
   const handleMoveToBag = (item: any) => {
     addItem({
@@ -59,9 +38,9 @@ export function SavedItemsClient() {
       quantity: 1,
       condition: item.condition || "Good Condition",
       vendor: {
-        id: item.id, // fallback
-        storeName: item.vendorName || "Campus Vendor",
-        slug: item.slug,
+        id: item.vendorId || item.vendor?.id || item.id,
+        storeName: item.vendorName || item.vendor?.storeName || "Campus Vendor",
+        slug: item.vendor?.slug || item.slug,
       },
     });
 
@@ -69,8 +48,13 @@ export function SavedItemsClient() {
     setTimeout(() => setAddedId(null), 2000);
   };
 
+  // While communicating with backend to verify credentials on initial cold boot
+  if (authLoading && !authData) {
+    return <Loader isModal={true} />;
+  }
+
   // Require sign-in before accessing saved items page
-  if (!authLoading && !user) {
+  if (!user) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center py-16 px-4 bg-neutral-50/50">
         <div className="max-w-md w-full bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-8 text-center space-y-5">

@@ -5,6 +5,113 @@ import { getSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const orders = await prisma.order.findMany({
+      where: {
+        OR: [{ buyerId: session.id }, { buyerEmail: session.email }],
+      },
+      orderBy: { createdAt: "desc" },
+      include: {
+        meetupPoint: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+          },
+        },
+        vendor: {
+          include: {
+            campus: {
+              select: {
+                name: true,
+                city: true,
+              },
+            },
+          },
+        },
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                images: {
+                  take: 1,
+                  orderBy: { position: "asc" },
+                  select: { url: true },
+                },
+              },
+            },
+            review: {
+              select: {
+                id: true,
+                rating: true,
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const sanitizedOrders = orders.map((o) => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      totalAmount: o.totalAmount,
+      status: o.status,
+      deliveryMethod: o.deliveryMethod,
+      deliveryAddress: o.deliveryAddress,
+      meetupPoint: o.meetupPoint,
+      notes: o.notes,
+      createdAt: o.createdAt,
+      updatedAt: o.updatedAt,
+      vendor: {
+        id: o.vendor.id,
+        storeName: o.vendor.storeName,
+        slug: o.vendor.slug,
+        whatsapp: o.vendor.whatsapp,
+        sellerType: o.vendor.sellerType,
+        isTrustedSeller: o.vendor.isTrustedSeller,
+        isRegisteredBusiness: o.vendor.isRegisteredBusiness,
+        campus: o.vendor.campus
+          ? {
+              name: o.vendor.campus.name,
+              city: o.vendor.campus.city,
+            }
+          : null,
+      },
+      items: o.items.map((i) => ({
+        id: i.id,
+        productId: i.productId,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        product: {
+          id: i.product.id,
+          title: i.product.title,
+          slug: i.product.slug,
+          images: i.product.images,
+        },
+        review: i.review,
+      })),
+    }));
+
+    return NextResponse.json({ orders: sanitizedOrders });
+  } catch (error: any) {
+    console.error("GET /api/orders error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch orders" },
+      { status: 500 }
+    );
+  }
+}
+
 const orderSchema = z.object({
   buyerName: z.string().min(2, "Please enter your full name"),
   buyerEmail: z.string().email("Please provide a valid email address"),
@@ -48,14 +155,40 @@ export async function POST(request: Request) {
       items,
     } = parsed.data;
 
-    // Verify vendor
-    const vendor = await prisma.vendorProfile.findUnique({
+    // Verify vendor by ID, slug, or via product lookup
+    let vendor = await prisma.vendorProfile.findUnique({
       where: { id: vendorId },
       include: { campus: true },
     });
 
     if (!vendor) {
+      // Fallback: vendorId was passed as vendor slug
+      vendor = await prisma.vendorProfile.findUnique({
+        where: { slug: vendorId },
+        include: { campus: true },
+      });
+    }
+
+    if (!vendor && items.length > 0) {
+      // Additional fallback: resolve vendor via the first product in cart
+      const firstProduct = await prisma.product.findUnique({
+        where: { id: items[0].productId },
+        include: { vendor: { include: { campus: true } } },
+      });
+      if (firstProduct?.vendor) {
+        vendor = firstProduct.vendor;
+      }
+    }
+
+    if (!vendor) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+    }
+
+    if (vendor.status === "SUSPENDED") {
+      return NextResponse.json(
+        { error: "This merchant store is currently suspended and cannot accept orders." },
+        { status: 403 }
+      );
     }
 
     // Compute total amount
@@ -125,7 +258,7 @@ export async function POST(request: Request) {
             deliveryAddress: finalDeliveryAddress,
             deliveryMethod,
             meetupPointId: finalMeetupPointId,
-            vendorId,
+            vendorId: vendor.id,
             totalAmount,
             notes: notes || null,
             status: "PENDING",

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireVendor } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -135,11 +136,8 @@ export async function POST(request: Request) {
       }
     }
 
-    // Enforce approval rule: pending vendors cannot publish publicly until approved
-    let productStatus = data.status;
-    if (vendor.status !== "APPROVED" && productStatus === "PUBLISHED") {
-      productStatus = "DRAFT";
-    }
+    // Honor selected product status
+    const productStatus = data.status || "PUBLISHED";
 
     // Generate unique slug
     const baseSlug = slugify(data.title);
@@ -201,6 +199,12 @@ export async function POST(request: Request) {
       maxWait: 15000,
       timeout: 30000,
     });
+
+    try {
+      revalidatePath(`/store/${vendor.slug}`);
+      revalidatePath("/shop");
+      revalidatePath("/dashboard/products");
+    } catch (e) {}
 
     return NextResponse.json({ success: true, product: newProduct });
   } catch (error: any) {

@@ -28,6 +28,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { formatNGN, formatDate } from "@/lib/utils";
+import { useUpdateAccountMutation } from "@/hooks/use-account-query";
+import { useLogout } from "@/hooks/use-auth-query";
+import { SignoutModal } from "@/components/ui/SignoutModal";
 
 interface AccountUser {
   id: string;
@@ -79,9 +82,13 @@ export function AccountClient({ initialUser }: AccountClientProps) {
   const router = useRouter();
   const [fullName, setFullName] = React.useState(initialUser.fullName);
   const [phone, setPhone] = React.useState(initialUser.phone || "");
-  const [saving, setSaving] = React.useState(false);
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
+
+  const updateAccountMutation = useUpdateAccountMutation();
+  const logoutMutation = useLogout();
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const saving = updateAccountMutation.isPending;
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,40 +96,40 @@ export function AccountClient({ initialUser }: AccountClientProps) {
       setSaveError("Full name cannot be empty.");
       return;
     }
-    setSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
 
-    try {
-      const res = await fetch("/api/account", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, phone }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to update profile");
+    updateAccountMutation.mutate(
+      { fullName, phone },
+      {
+        onSuccess: () => {
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 3000);
+        },
+        onError: (err: any) => {
+          setSaveError(err.message || "Failed to update profile");
+        },
       }
-
-      setSaveSuccess(true);
-      router.refresh();
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err: any) {
-      setSaveError(err.message || "Something went wrong");
-    } finally {
-      setSaving(false);
-    }
+    );
   };
 
   const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
+    setIsSigningOut(true);
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 400);
+      },
+      onError: () => {
+        setIsSigningOut(false);
+      },
+      onSettled: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 600);
+      },
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -475,6 +482,8 @@ export function AccountClient({ initialUser }: AccountClientProps) {
           </div>
         </div>
       </div>
-    </div>
+    
+      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} onClose={() => setIsSigningOut(false)} />
+</div>
   );
 }

@@ -5,7 +5,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
-import { slugify } from "@/lib/utils";
+import { slugify, cleanPhoneNumber } from "@/lib/utils";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -76,10 +76,13 @@ export async function POST(request: Request) {
       vouchedBy,
     } = parsed.data;
 
-    const contactPhone = phone?.trim() || whatsapp?.trim();
+    // Clean whitespaces from phone numbers for database consistency
+    const rawContactPhone = phone?.trim() || whatsapp?.trim();
+    const cleanPhone = rawContactPhone ? cleanPhoneNumber(rawContactPhone) : null;
+    const cleanWhatsapp = whatsapp?.trim() ? cleanPhoneNumber(whatsapp.trim()) : cleanPhone;
 
     // In Guest flow, phone is required for Tier 1 OTP/Instant flow, email is optional
-    if (role === "VENDOR" && sellerType === "guest" && !contactPhone) {
+    if (role === "VENDOR" && sellerType === "guest" && !cleanPhone) {
       return NextResponse.json(
         { error: "Phone number is required for guest vendor registration" },
         { status: 400 }
@@ -89,9 +92,9 @@ export async function POST(request: Request) {
     // Determine email
     let userEmail = email?.toLowerCase().trim();
     if (!userEmail) {
-      if (contactPhone) {
-        const cleanPhone = contactPhone.replace(/[^0-9]/g, "");
-        userEmail = `${cleanPhone}@guest.campustrade.ng`;
+      if (cleanPhone) {
+        const digitsOnly = cleanPhone.replace(/[^0-9]/g, "");
+        userEmail = `${digitsOnly}@guest.campustrade.ng`;
       } else {
         return NextResponse.json(
           { error: "Email address or phone number is required" },
@@ -100,26 +103,40 @@ export async function POST(request: Request) {
       }
     }
 
-    // Duplicate Phone Check across all users & vendors
-    if (contactPhone) {
+    // Duplicate Phone Check scoped strictly to the selected role/account type
+    if (cleanPhone) {
       const existingPhone = await prisma.user.findFirst({
-        where: { phone: contactPhone },
+        where: {
+          phone: cleanPhone,
+          role,
+        },
       });
       if (existingPhone) {
         return NextResponse.json(
-          { error: "This phone number is already registered to an existing account. Please sign in or use another number." },
+          {
+            error: `This phone number is already registered to an existing ${
+              role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
+            } account. Please sign in or use another number.`,
+          },
           { status: 409 }
         );
       }
     }
 
-    // Check if email already exists
-    const existingEmail = await prisma.user.findUnique({
-      where: { email: userEmail },
+    // Duplicate Email Check scoped strictly to the selected role/account type
+    const existingEmail = await prisma.user.findFirst({
+      where: {
+        email: userEmail,
+        role,
+      },
     });
     if (existingEmail) {
       return NextResponse.json(
-        { error: "An account with this email address already exists" },
+        {
+          error: `An account with this email address already exists for a ${
+            role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
+          }. Please sign in or use another email.`,
+        },
         { status: 409 }
       );
     }
@@ -213,7 +230,7 @@ export async function POST(request: Request) {
 
     if (role === "VENDOR") {
       finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
-      finalWhatsapp = whatsapp?.trim() || contactPhone || "";
+      finalWhatsapp = cleanWhatsapp || cleanPhone || whatsapp?.trim() || contactPhone || "";
 
       if (!finalWhatsapp) {
         return NextResponse.json(
@@ -265,7 +282,7 @@ export async function POST(request: Request) {
             fullName,
             email: userEmail,
             passwordHash,
-            phone: contactPhone || null,
+            phone: cleanPhone || contactPhone || null,
             role,
           },
         });
@@ -361,7 +378,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Registration API error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to complete registration" },
+      { error: "Something went wrong. Please try again later." },
       { status: 500 }
     );
   }

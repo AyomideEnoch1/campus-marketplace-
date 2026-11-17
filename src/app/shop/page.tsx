@@ -109,6 +109,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         category: { select: { name: true, slug: true } },
         vendor: {
           select: {
+            id: true,
             storeName: true,
             slug: true,
             whatsapp: true,

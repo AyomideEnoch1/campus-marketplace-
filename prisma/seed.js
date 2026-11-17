@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -27,16 +29,45 @@ async function main() {
   }
 
   // 2. Seed Admin User
+  // console.log('Seeding super admin...');
+  // const adminPasswordHash = await bcrypt.hash('AdminPassword123!', 10);
+  // const adminUser = await prisma.user.upsert({
+  //   where: { email: 'admin@campustrade.ng' },
+  //   update: {
+  //     role: 'ADMIN',
+  //     fullName: 'Super Administrator',
+  //   },
+  //   create: {
+  //     email: 'admin@campustrade.ng',
+  //     passwordHash: adminPasswordHash,
+  //     role: 'ADMIN',
+  //     fullName: 'Super Administrator',
+  //     phone: '+2348011112233',
+  //     emailVerified: new Date(),
+  //   },
+  // });
+  // console.log(`Admin account created: ${adminUser.email}`);
+
+  // 2. Seed Admin User
   console.log('Seeding super admin...');
-  const adminPasswordHash = await bcrypt.hash('AdminPassword123!', 10);
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail || !adminPassword) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be configured in .env');
+  }
+
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@campustrade.ng' },
+    where: { email: adminEmail },
     update: {
       role: 'ADMIN',
       fullName: 'Super Administrator',
     },
     create: {
-      email: 'admin@campustrade.ng',
+      email: adminEmail,
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
       fullName: 'Super Administrator',

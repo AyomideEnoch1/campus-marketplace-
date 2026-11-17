@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -62,6 +64,7 @@ async function getHomepageData() {
           category: { select: { name: true, slug: true } },
           vendor: {
             select: {
+              id: true,
               storeName: true,
               slug: true,
               whatsapp: true,
@@ -77,6 +80,7 @@ async function getHomepageData() {
           images: { orderBy: { position: "asc" } },
           vendor: {
             select: {
+              id: true,
               storeName: true,
               slug: true,
               campus: { select: { name: true, slug: true } },
@@ -102,6 +106,11 @@ async function getHomepageData() {
 }
 
 export default async function HomePage() {
+  const session = await getSession();
+  if (session?.role === "VENDOR") {
+    redirect("/dashboard");
+  }
+
   const { categories, campuses, newArrivals, featuredProducts, vendors } =
     await getHomepageData();
 

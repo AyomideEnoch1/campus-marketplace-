@@ -2,91 +2,183 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { GraduationCap, Store, UserCheck, ShieldCheck, Loader2 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Store,
+  ShoppingBag,
+  CheckCircle2,
+  ShieldCheck,
+  ArrowRight,
+  ArrowLeft,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Phone,
+  Mail,
+  User,
+  MapPin,
+  Building,
+  GraduationCap,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Loader } from "@/components/ui/Loader";
+import { useCampuses } from "@/hooks/use-campuses-query";
+import { formatNigerianPhone, cleanPhoneNumber } from "@/lib/utils";
+import { PasswordStrengthGauge } from "@/components/ui/PasswordStrengthGauge";
 
-export default function RegisterPage() {
+export const dynamic = "force-dynamic";
+
+type RoleType = "BUYER" | "VENDOR";
+
+function RegisterContent() {
   const router = useRouter();
-  const [role, setRole] = React.useState<"BUYER" | "VENDOR">("BUYER");
+  const searchParams = useSearchParams();
+
+  // Role selection: "BUYER" | "VENDOR" | null (null = initial account type selection screen)
+  const [role, setRole] = React.useState<RoleType | null>(null);
+
+  // Stepper state:
+  // Step 0: Account Type Selection
+  // Step 1: Personal Information (Buyer & Vendor)
+  // Step 2: Account Security (Final for Buyer; Step 2 of 3 for Vendor)
+  // Step 3: Store Information (Final for Vendor)
+  const [currentStep, setCurrentStep] = React.useState<number>(0);
+  const [slideDirection, setSlideDirection] = React.useState<"forward" | "backward">("forward");
+
+  // Step 1 Fields: Personal Information
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [phone, setPhone] = React.useState("");
+  const [phone, setPhone] = React.useState("+234 ");
 
-  // Vendor fields
+  // Step 2 Fields: Security
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+
+  // Step 3 Fields: Store Information (Vendor only)
   const [storeName, setStoreName] = React.useState("");
   const [campusId, setCampusId] = React.useState("clunilag001");
-  const [whatsapp, setWhatsapp] = React.useState("");
+  const [whatsapp, setWhatsapp] = React.useState("+234 ");
   const [faculty, setFaculty] = React.useState("");
   const [department, setDepartment] = React.useState("");
   const [storeDescription, setStoreDescription] = React.useState("");
 
-  const [campuses, setCampuses] = React.useState<any[]>([]);
+  // Campuses for vendor selection
+  const { data: campusData } = useCampuses();
+  const campuses = campusData?.campuses || [];
+
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
+  // Default campus selection
   React.useEffect(() => {
-    // Load active campuses
-    fetch("/api/campuses")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.campuses && data.campuses.length > 0) {
-          setCampuses(data.campuses);
-          setCampusId(data.campuses[0].id);
-        }
-      })
-      .catch(() => {});
-  }, []);
+    if (campuses.length > 0 && (!campusId || campusId === "clunilag001")) {
+      setCampusId(campuses[0].id);
+    }
+  }, [campuses, campusId]);
 
+  // Keep WhatsApp in sync with phone unless user specifically customized it
+  const [whatsappUserEdited, setWhatsappUserEdited] = React.useState(false);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatNigerianPhone(e.target.value);
+    setPhone(formatted);
+    if (!whatsappUserEdited) {
+      setWhatsapp(formatted);
+    }
+  };
+
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setWhatsappUserEdited(true);
+    const formatted = formatNigerianPhone(e.target.value);
+    setWhatsapp(formatted);
+  };
+
+  // Navigation helpers
+  const goToStep = (step: number, direction: "forward" | "backward") => {
+    setSlideDirection(direction);
+    setError("");
+    setCurrentStep(step);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleSelectRole = (selectedRole: RoleType) => {
+    setRole(selectedRole);
+    goToStep(1, "forward");
+  };
+
+  // Field validations
+  const isNameValid = fullName.trim().length >= 2;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isPhoneValid = cleanPhoneNumber(phone).replace(/\D/g, "").length >= 10;
+  const isStep1Valid = isNameValid && isEmailValid && isPhoneValid;
+
+  const isPasswordValid = password.length >= 6;
+  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+  const isStep2Valid = isPasswordValid && passwordsMatch;
+
+  const isStoreNameValid = storeName.trim().length >= 2;
+  const isCampusValid = Boolean(campusId && campusId.trim().length > 0);
+  const isWhatsappValid = cleanPhoneNumber(whatsapp).replace(/\D/g, "").length >= 10;
+  const isStep3Valid = isStoreNameValid && isCampusValid && isWhatsappValid;
+
+  const totalSteps = role === "VENDOR" ? 3 : 2;
+
+  // Form Submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    if (loading) return;
 
-    if (!fullName.trim()) {
-      setError("Please enter your full name.");
-      return;
-    }
-    if (!email.trim() || !email.includes("@")) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-    if (!phone.trim() || phone.trim().length < 7) {
-      setError("Please enter a valid phone number (at least 7 digits).");
+    if (!role) {
+      setError("Please select an account type first.");
+      goToStep(0, "backward");
       return;
     }
 
-    if (role === "VENDOR") {
-      if (!storeName.trim()) {
-        setError("Please enter a store name for your campus shop.");
-        return;
-      }
-      if (!whatsapp.trim() && !phone.trim()) {
-        setError("Please enter a WhatsApp contact number for receiving orders.");
-        return;
-      }
+    if (!isStep1Valid) {
+      setError("Please complete all required personal information fields.");
+      goToStep(1, "backward");
+      return;
+    }
+
+    if (!isStep2Valid) {
+      setError("Please ensure your password is at least 6 characters and both passwords match.");
+      goToStep(2, "backward");
+      return;
+    }
+
+    if (role === "VENDOR" && !isStep3Valid) {
+      setError("Please fill out the required store name and valid WhatsApp number.");
+      return;
     }
 
     setLoading(true);
+    setError("");
 
     try {
+      const cleanPhone = cleanPhoneNumber(phone);
+      const cleanWhatsapp = whatsapp ? cleanPhoneNumber(whatsapp) : cleanPhone;
+
       const payload: any = {
         fullName: fullName.trim(),
-        email: email.trim().toLowerCase(),
+        email: email.trim(),
         password,
-        phone: phone.trim(),
+        phone: cleanPhone,
         role,
       };
 
       if (role === "VENDOR") {
         payload.storeName = storeName.trim();
         payload.campusId = campusId;
-        payload.whatsapp = (whatsapp || phone).trim();
+        payload.whatsapp = cleanWhatsapp || cleanPhone;
         payload.faculty = faculty.trim();
         payload.department = department.trim();
         payload.storeDescription = storeDescription.trim();
@@ -103,240 +195,673 @@ export default function RegisterPage() {
         throw new Error(data.error || "Registration failed");
       }
 
-      router.push(data.redirectTo || "/shop");
-      router.refresh();
+      const targetUrl = data.redirectTo || (role === "VENDOR" ? "/dashboard" : "/shop");
+      window.location.href = targetUrl;
     } catch (err: any) {
-      setError(err.message || "Failed to register. Please check your information.");
-    } finally {
+      console.error("Registration error:", err);
+      const msg = err.message || "";
+      const isSystemError =
+        msg.includes("fetch") ||
+        msg.includes("Failed to fetch") ||
+        msg.includes("Prisma") ||
+        msg.includes("database") ||
+        msg.includes("SQL") ||
+        msg.includes("500") ||
+        msg.includes("Internal");
+      setError(
+        isSystemError ? "Something went wrong. Please try again later." : msg || "Something went wrong. Please try again later."
+      );
       setLoading(false);
     }
   };
 
+  // Keyboard navigation on Enter
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") {
+      e.preventDefault();
+      if (currentStep === 1 && isStep1Valid) {
+        goToStep(2, "forward");
+      } else if (currentStep === 2) {
+        if (role === "VENDOR" && isStep2Valid) {
+          goToStep(3, "forward");
+        } else if (role === "BUYER" && isStep2Valid && !loading) {
+          handleSubmit(e as any);
+        }
+      } else if (currentStep === 3 && role === "VENDOR" && isStep3Valid && !loading) {
+        handleSubmit(e as any);
+      }
+    }
+  };
+
+  const animationClass =
+    slideDirection === "forward"
+      ? "animate-in fade-in-50 slide-in-from-right-8 duration-300"
+      : "animate-in fade-in-50 slide-in-from-left-8 duration-300";
+
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 bg-neutral-50/70">
-      <div className="w-full max-w-lg bg-white rounded-3xl border border-neutral-100 shadow-xl p-8 space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-              <GraduationCap className="w-6 h-6" />
+    <div className="min-h-[85vh] flex items-center justify-center py-10 sm:py-14 px-4 bg-gradient-to-b from-neutral-50 via-neutral-100/50 to-neutral-50">
+      <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-6 sm:p-9 space-y-7 transition-all">
+        {/* =================================================================== */}
+        {/* SCREEN 0: Initial Screen – Account Type Selection                   */}
+        {/* =================================================================== */}
+        {currentStep === 0 && (
+          <div className="space-y-7 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100 shadow-sm">
+                <GraduationCap className="w-6 h-6" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
+                Join CampusTrade
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
+                Connect directly with verified students and trusted campus merchants. How would you like to use CampusTrade?
+              </p>
             </div>
-            <span className="font-extrabold text-2xl tracking-tight text-neutral-900">
-              Campus<span className="text-emerald-600">Trade</span>
-            </span>
-          </Link>
-          <h1 className="text-2xl font-extrabold text-neutral-900">Join CampusTrade</h1>
-          <p className="text-xs text-neutral-500">
-            Create your account to start buying or launch your verified campus store
-          </p>
-        </div>
 
-        {/* Role Toggle Selector */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-neutral-100">
-          <button
-            type="button"
-            onClick={() => setRole("BUYER")}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              role === "BUYER"
-                ? "bg-white text-neutral-950 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
-            }`}
-          >
-            <UserCheck className="w-4 h-4 text-emerald-600" />
-            Student Buyer
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole("VENDOR")}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              role === "VENDOR"
-                ? "bg-white text-neutral-950 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-800"
-            }`}
-          >
-            <Store className="w-4 h-4 text-emerald-600" />
-            Student Seller / Vendor
-          </button>
-        </div>
+            {/* Error Notification if any */}
+            {error && (
+              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold animate-in fade-in-50">
+                {error}
+              </div>
+            )}
 
-        {/* Error Notification */}
-        {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
-            {error}
+            {/* Account Type Selection Cards */}
+            <div className="space-y-3.5">
+              {/* Option 1: Student / Buyer Card */}
+              <button
+                type="button"
+                onClick={() => handleSelectRole("BUYER")}
+                className="w-full group p-5 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-neutral-200/90 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-lg hover:shadow-emerald-600/5 relative flex items-start gap-4 cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 group-hover:border-emerald-300 text-neutral-700 group-hover:text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
+                  <ShoppingBag className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base sm:text-lg font-black text-neutral-900 group-hover:text-emerald-950 transition-colors">
+                      Student / Buyer
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                      Shopper
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+                    Browse campus listings, save favorite items, and place direct WhatsApp orders with hostel delivery.
+                  </p>
+                  <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
+                    <span>Get started as buyer (2 quick steps)</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </button>
+
+              {/* Option 2: Campus Vendor Card */}
+              <button
+                type="button"
+                onClick={() => handleSelectRole("VENDOR")}
+                className="w-full group p-5 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-neutral-200/90 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-lg hover:shadow-emerald-600/5 relative flex items-start gap-4 cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 group-hover:border-emerald-300 text-neutral-700 group-hover:text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
+                  <Store className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base sm:text-lg font-black text-neutral-900 group-hover:text-emerald-950 transition-colors">
+                      Campus Vendor
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                      Seller
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
+                    Open your campus storefront, showcase products to university students, and manage customer orders on WhatsApp.
+                  </p>
+                  <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
+                    <span>Set up your store (3 easy steps)</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Footer / Login Link */}
+            <div className="pt-2 text-center text-xs text-neutral-500 border-t border-neutral-100">
+              Already have an account?{" "}
+              <Link
+                href="/auth/login"
+                className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+              >
+                Sign In here
+              </Link>
+            </div>
           </div>
         )}
 
-        {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Full Name *</label>
-              <Input
-                type="text"
-                required
-                maxLength={70}
-                placeholder="e.g. Tobi Adebayo"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Email Address *</label>
-              <Input
-                type="email"
-                required
-                maxLength={100}
-                placeholder="student@unilag.edu.ng"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
+        {/* =================================================================== */}
+        {/* REGISTRATION FLOW (Steps 1, 2, and 3)                                */}
+        {/* =================================================================== */}
+        {currentStep > 0 && (
+          <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
+            {/* Top Stepper Header */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => goToStep(currentStep - 1, "backward")}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer group"
+                >
+                  <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                  <span>
+                    {currentStep === 1
+                      ? "Change account type"
+                      : "Previous step"}
+                  </span>
+                </button>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Password (min 6 chars) *</label>
-              <Input
-                type="password"
-                required
-                minLength={6}
-                maxLength={64}
-                placeholder="Min 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Phone Number *</label>
-              <Input
-                type="tel"
-                required
-                minLength={7}
-                maxLength={15}
-                placeholder="+234 801 234 5678"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Vendor Specific Onboarding Fields */}
-          {role === "VENDOR" && (
-            <div className="pt-4 border-t border-neutral-100 space-y-4 animate-in fade-in-50">
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] text-emerald-900 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>
-                  Student vendors get a customizable storefront, layout picker, and direct WhatsApp buyer order requests.
-                </span>
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                  {role === "VENDOR" ? (
+                    <>
+                      <Store className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Vendor Flow</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Buyer Flow</span>
+                    </>
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Step Title & Subtitle */}
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+                  {currentStep === 1 && "Personal Information"}
+                  {currentStep === 2 && "Account Security"}
+                  {currentStep === 3 && "Store Information"}
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+                  {currentStep === 1 &&
+                    "Enter your basic details to set up your profile and contact channel."}
+                  {currentStep === 2 &&
+                    "Create a strong password to keep your campus account safe and secure."}
+                  {currentStep === 3 &&
+                    "Set up your store name, university campus, and WhatsApp ordering line."}
+                </p>
+              </div>
+            </div>
+
+            {/* Error Notification if any */}
+            {error && (
+              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold animate-in fade-in-50">
+                {error}
+              </div>
+            )}
+
+            {/* =============================================================== */}
+            {/* STEP 1: Personal Information (Both Buyer & Vendor)              */}
+            {/* =============================================================== */}
+            {currentStep === 1 && (
+              <div key="step-1" className={`space-y-4 ${animationClass}`}>
+                {/* Full Name */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Store Name *</label>
-                  <Input
-                    type="text"
-                    required
-                    maxLength={60}
-                    placeholder="e.g. Unilag Drip Corner"
-                    value={storeName}
-                    onChange={(e) => setStoreName(e.target.value)}
+                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                    Full Name <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type="text"
+                      required
+                      autoFocus
+                      placeholder="e.g. Tobi Adebayo"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                    />
+                  </div>
+                  {fullName.length > 0 && !isNameValid && (
+                    <p className="text-[11px] text-rose-500 font-medium">
+                      Full name must be at least 2 characters.
+                    </p>
+                  )}
+                </div>
+
+                {/* Email Address */}
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                    Email Address <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type="email"
+                      required
+                      placeholder="student@unilag.edu.ng or personal@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                    />
+                  </div>
+                  {email.length > 0 && !isEmailValid && (
+                    <p className="text-[11px] text-rose-500 font-medium">
+                      Please enter a valid email address.
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone Number */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      Phone Number <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[11px] text-neutral-400 font-medium">
+                      Format: +234 814 817 6165
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type="tel"
+                      required
+                      placeholder="+234 814 817 6165"
+                      value={phone}
+                      onChange={handlePhoneChange}
+                      className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                    />
+                  </div>
+                  <p className="text-[11px] text-neutral-400">
+                    Type or paste 10 or 11 digits. &apos;+234&apos; is automatically formatted.
+                  </p>
+                </div>
+
+                {/* Step 1 Navigation Buttons */}
+                <div className="pt-3 flex items-center justify-between gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => goToStep(0, "backward")}
+                    className="h-11 px-5 rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-100 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1.5" />
+                    <span>Back</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    disabled={!isStep1Valid}
+                    onClick={() => goToStep(2, "forward")}
+                    className="h-11 px-6 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 ml-auto"
+                  >
+                    <span>Next: Security</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* =============================================================== */}
+            {/* STEP 2: Account Security (Both Buyer & Vendor)                  */}
+            {/* =============================================================== */}
+            {currentStep === 2 && (
+              <div key="step-2" className={`space-y-4 ${animationClass}`}>
+                {/* Password Input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                    Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      autoFocus
+                      placeholder="Minimum 6 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Password Strength Gauge */}
+                {password && (
+                  <PasswordStrengthGauge password={password} />
+                )}
+
+                {/* Confirm Password Input */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      Confirm Password <span className="text-rose-500">*</span>
+                    </label>
+                    {passwordsMatch && (
+                      <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Passwords match
+                      </span>
+                    )}
+                    {passwordsMismatch && (
+                      <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Passwords do not match
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      placeholder="Re-enter your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`pl-10 pr-10 h-12 rounded-xl text-sm bg-neutral-50/60 text-neutral-900 ${
+                        passwordsMismatch
+                          ? "border-rose-400 focus-visible:ring-rose-500/20"
+                          : passwordsMatch
+                          ? "border-emerald-400 focus-visible:ring-emerald-500/20"
+                          : "border-neutral-200 focus:bg-white"
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Step 2 Navigation Buttons */}
+                <div className="pt-3 flex items-center justify-between gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => goToStep(1, "backward")}
+                    className="h-11 px-5 rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-100 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1.5" />
+                    <span>Back</span>
+                  </Button>
+
+                  {role === "BUYER" ? (
+                    /* Final Button for Buyer */
+                    <Button
+                      type="submit"
+                      disabled={!isStep2Valid || loading}
+                      className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
+                        loading
+                          ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
+                          : !isStep2Valid
+                          ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                      }`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center gap-2 text-neutral-500">
+                          <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+                          <span>Creating your account...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span>Create Buyer Account</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    /* Next Button for Vendor (proceeds to Step 3) */
+                    <Button
+                      type="button"
+                      disabled={!isStep2Valid}
+                      onClick={() => goToStep(3, "forward")}
+                      className="h-11 px-6 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 ml-auto"
+                    >
+                      <span>Next: Store Info</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* =============================================================== */}
+            {/* STEP 3: Store Information (Vendor Only - Final Step)            */}
+            {/* =============================================================== */}
+            {currentStep === 3 && role === "VENDOR" && (
+              <div key="step-3" className={`space-y-4 ${animationClass}`}>
+                {/* Information Banner */}
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-900 flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span>
+                    Your storefront will be visible to students on your campus. Buyers can browse your products and place direct WhatsApp orders.
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Store Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      Store Name <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Store className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <Input
+                        type="text"
+                        required
+                        autoFocus
+                        placeholder="e.g. Unilag Drip Corner"
+                        value={storeName}
+                        onChange={(e) => setStoreName(e.target.value)}
+                        className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Campus Location */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      Campus Location <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <select
+                        aria-label="Select Campus Location"
+                        className="flex h-12 w-full rounded-xl border border-neutral-200 bg-neutral-50/60 pl-10 pr-4 text-sm text-neutral-900 focus-visible:outline-none focus:bg-white focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                        value={campusId}
+                        onChange={(e) => setCampusId(e.target.value)}
+                      >
+                        {campuses.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                        {campuses.length === 0 && (
+                          <>
+                            <option value="unilag">University of Lagos (UNILAG)</option>
+                            <option value="ui">University of Ibadan (UI)</option>
+                            <option value="oau">Obafemi Awolowo University (OAU)</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* WhatsApp Number for Orders */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      WhatsApp for Orders <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[11px] text-neutral-400 font-medium">
+                      Format: +234 814 817 6165
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input
+                      type="tel"
+                      required
+                      placeholder="+234 814 817 6165"
+                      value={whatsapp}
+                      onChange={handleWhatsappChange}
+                      className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                    />
+                  </div>
+                  <p className="text-[11px] text-neutral-400">
+                    Buyers will tap a WhatsApp button on your listings to coordinate campus deliveries.
+                  </p>
+                </div>
+
+                {/* Faculty & Department */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      Faculty (Optional)
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="e.g. Engineering"
+                      value={faculty}
+                      onChange={(e) => setFaculty(e.target.value)}
+                      className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      Department (Optional)
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="e.g. Electrical Engineering"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Store Bio */}
+                <div className="space-y-1.5">
+                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                    Store Short Bio (Optional)
+                  </label>
+                  <textarea
+                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-20"
+                    placeholder="Describe what you sell, hostel pickup locations, and active sales hours..."
+                    value={storeDescription}
+                    onChange={(e) => setStoreDescription(e.target.value)}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Campus Location *</label>
-                  <select
-                    aria-label="Select Campus Location"
-                    className="flex h-10 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20"
-                    value={campusId}
-                    onChange={(e) => setCampusId(e.target.value)}
+
+                {/* Step 3 Navigation Buttons */}
+                <div className="pt-3 flex items-center justify-between gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => goToStep(2, "backward")}
+                    className="h-11 px-5 rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-100 cursor-pointer"
                   >
-                    {campuses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                    {campuses.length === 0 && (
+                    <ArrowLeft className="w-4 h-4 mr-1.5" />
+                    <span>Back</span>
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    disabled={!isStep3Valid || loading}
+                    className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
+                      loading
+                        ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
+                        : !isStep3Valid
+                        ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                        : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                    }`}
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2 text-neutral-500">
+                        <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+                        <span>Creating your store...</span>
+                      </div>
+                    ) : (
                       <>
-                        <option value="unilag">University of Lagos (UNILAG)</option>
-                        <option value="ui">University of Ibadan (UI)</option>
-                        <option value="oau">Obafemi Awolowo University (OAU)</option>
+                        <span>Register Student Store</span>
+                        <ArrowRight className="w-4 h-4" />
                       </>
                     )}
-                  </select>
+                  </Button>
                 </div>
               </div>
+            )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">WhatsApp for Orders *</label>
-                  <Input
-                    type="tel"
-                    required
-                    minLength={7}
-                    maxLength={15}
-                    placeholder="+234 802 345 6789"
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Faculty / Department</label>
-                  <Input
-                    type="text"
-                    maxLength={60}
-                    placeholder="e.g. Engineering / Electrical"
-                    value={faculty}
-                    onChange={(e) => setFaculty(e.target.value)}
-                  />
-                </div>
-              </div>
+            {/* =============================================================== */}
+            {/* PROGRESS INDICATOR (DOTS) – Only shown when currentStep > 0     */}
+            {/* =============================================================== */}
+            <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+              <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                Step {currentStep} of {totalSteps}:{" "}
+                <span className="text-neutral-800 normal-case font-semibold">
+                  {currentStep === 1 && "Personal Information"}
+                  {currentStep === 2 && "Account Security"}
+                  {currentStep === 3 && "Store Information"}
+                </span>
+              </span>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700">Store Short Bio</label>
-                <textarea
-                  maxLength={400}
-                  className="w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-20"
-                  placeholder="Describe the items you sell and your campus delivery schedule..."
-                  value={storeDescription}
-                  onChange={(e) => setStoreDescription(e.target.value)}
-                />
+              {/* Stepper Dots */}
+              <div className="flex items-center gap-1.5">
+                {Array.from({ length: totalSteps }).map((_, index) => {
+                  const stepNumber = index + 1;
+                  const isCurrent = currentStep === stepNumber;
+                  const isCompleted = currentStep > stepNumber;
+
+                  return (
+                    <div
+                      key={stepNumber}
+                      title={`Step ${stepNumber}`}
+                      className={`transition-all duration-300 rounded-full ${
+                        isCurrent
+                          ? "w-7 h-2.5 bg-emerald-600 shadow-xs"
+                          : isCompleted
+                          ? "w-2.5 h-2.5 bg-emerald-500"
+                          : "w-2.5 h-2.5 bg-neutral-200"
+                      }`}
+                    />
+                  );
+                })}
               </div>
             </div>
-          )}
 
-          <Button
-            type="submit"
-            disabled={
-              loading ||
-              !fullName.trim() ||
-              !email.trim() ||
-              !email.includes("@") ||
-              password.length < 6 ||
-              phone.trim().length < 7 ||
-              (role === "VENDOR" && (!storeName.trim() || (!whatsapp.trim() && !phone.trim())))
-            }
-            className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-md shadow-emerald-600/20 transition-all inline-flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>{role === "VENDOR" ? "Registering Store..." : "Creating Account..."}</span>
-              </>
-            ) : role === "VENDOR" ? (
-              "Register Student Store →"
-            ) : (
-              "Create Buyer Account →"
-            )}
-          </Button>
-        </form>
-
-        {/* Login Prompt */}
-        <div className="pt-2 text-center text-xs text-neutral-500">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="font-bold text-emerald-600 hover:underline">
-            Sign In here
-          </Link>
-        </div>
+            {/* Bottom link to login */}
+            <div className="text-center text-xs text-neutral-500">
+              Already have an account?{" "}
+              <Link
+                href="/auth/login"
+                className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+              >
+                Sign In here
+              </Link>
+            </div>
+          </form>
+        )}
 
         {/* Full-screen Submission Load State Overlay */}
         {loading && (
@@ -370,5 +895,13 @@ export default function RegisterPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <React.Suspense fallback={<Loader isModal={true} />}>
+      <RegisterContent />
+    </React.Suspense>
   );
 }

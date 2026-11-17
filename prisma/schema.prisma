@@ -56,7 +56,7 @@ enum ReportStatus {
 
 model User {
   id            String    @id @default(cuid())
-  email         String    @unique
+  email         String
   passwordHash  String?
   role          Role      @default(BUYER)
   fullName      String
@@ -78,6 +78,7 @@ model User {
   vouchesGiven   Vouch[]             @relation("UserVouches")
   disputes       Dispute[]
 
+  @@unique([email, role])
   @@index([role])
   @@index([email])
 }

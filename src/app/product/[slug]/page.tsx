@@ -82,6 +82,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       category: true,
       vendor: {
         select: {
+          id: true,
           storeName: true,
           slug: true,
           whatsapp: true,

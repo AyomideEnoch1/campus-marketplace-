@@ -23,30 +23,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
+import { useSafeMeetupPoints, SafeMeetupPoint, VendorMeta } from "@/hooks/use-meetup-points-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/react-query/query-keys";
 
 export const dynamic = "force-dynamic";
-
-interface SafeMeetupPoint {
-  id: string;
-  name: string;
-  description: string | null;
-  active: boolean;
-}
-
-interface VendorMeta {
-  id: string;
-  sellerType: "student" | "guest" | string;
-  verificationTier: number;
-  isTrustedSeller: boolean;
-  isRegisteredBusiness: boolean;
-  storeName: string;
-  campusId: string;
-  campus?: {
-    id: string;
-    name: string;
-    city: string;
-  };
-}
 
 function CheckoutForm() {
   const router = useRouter();
@@ -71,44 +53,22 @@ function CheckoutForm() {
   const selectedVendorId = vendorIdParam || vendorIds[0];
   const group = selectedVendorId ? itemsByVendor[selectedVendorId] : null;
 
-  // Remote vendor & safe meetup points state
-  const [vendorMeta, setVendorMeta] = React.useState<VendorMeta | null>(null);
-  const [meetupPoints, setMeetupPoints] = React.useState<SafeMeetupPoint[]>([]);
-  const [fetchingMeta, setFetchingMeta] = React.useState(false);
+  const queryClient = useQueryClient();
+
+  // Cached remote vendor & safe meetup points state via TanStack Query
+  const { data: meetupData, isLoading: fetchingMeta } = useSafeMeetupPoints(group?.vendor.id);
+  const vendorMeta = meetupData?.vendor || null;
+  const meetupPoints = meetupData?.meetupPoints || [];
 
   React.useEffect(() => {
-    if (!group?.vendor.id) return;
-
-    let cancelled = false;
-    setFetchingMeta(true);
-
-    fetch(`/api/safe-meetup-points?vendorId=${encodeURIComponent(group.vendor.id)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        if (data.vendor) {
-          setVendorMeta(data.vendor);
-          if (data.vendor.sellerType === "guest") {
-            setDeliveryMethod("SAFE_MEETUP_POINT");
-          }
-        }
-        if (Array.isArray(data.meetupPoints)) {
-          setMeetupPoints(data.meetupPoints);
-          if (data.meetupPoints.length > 0 && !selectedMeetupPointId) {
-            setSelectedMeetupPointId(data.meetupPoints[0].id);
-            setDeliveryAddress(`${data.meetupPoints[0].name} - ${data.meetupPoints[0].description || ""}`.trim());
-          }
-        }
-      })
-      .catch((err) => console.error("Failed to load meetup points", err))
-      .finally(() => {
-        if (!cancelled) setFetchingMeta(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [group?.vendor.id]);
+    if (vendorMeta?.sellerType === "guest") {
+      setDeliveryMethod("SAFE_MEETUP_POINT");
+    }
+    if (meetupPoints.length > 0 && !selectedMeetupPointId) {
+      setSelectedMeetupPointId(meetupPoints[0].id);
+      setDeliveryAddress(`${meetupPoints[0].name} - ${meetupPoints[0].description || ""}`.trim());
+    }
+  }, [vendorMeta, meetupPoints, selectedMeetupPointId]);
 
   const isGuestSeller =
     vendorMeta?.sellerType === "guest" || group?.vendor?.sellerType === "guest";
@@ -171,6 +131,7 @@ function CheckoutForm() {
           ? (deliveryAddress || (meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ?? "Campus Safe Point"))
           : deliveryAddress,
         meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
+        vendorId: group.vendor.id || group.vendor.slug,
         notes,
         items: group.items.map((i) => ({
           productId: i.id,
@@ -226,6 +187,7 @@ function CheckoutForm() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
+      {loading && <Loader isModal={true} />}
       <div className="flex items-center gap-2 mb-6 text-xs text-neutral-500">
         <Link href="/cart" className="hover:text-neutral-900 flex items-center gap-1 font-semibold">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Cart
@@ -606,7 +568,7 @@ function CheckoutForm() {
 export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-neutral-50/50">
-      <React.Suspense fallback={<div className="p-12 text-center text-xs text-neutral-500">Loading checkout...</div>}>
+      <React.Suspense fallback={<Loader isModal={true} />}>
         <CheckoutForm />
       </React.Suspense>
     </div>

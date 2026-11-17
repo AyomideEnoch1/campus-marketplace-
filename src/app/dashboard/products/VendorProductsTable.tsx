@@ -23,15 +23,23 @@ export function VendorProductsTable({
   const handleDelete = async (productId: string, title: string) => {
     if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
 
+    const previousProducts = [...products];
+    // Optimistic UI: remove product immediately from table
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
     setDeletingId(productId);
+
     try {
       const res = await fetch(`/api/vendor/products/${productId}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete product");
-      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete product");
+      }
     } catch (err: any) {
-      alert(err.message || "Error deleting product");
+      // Revert optimistic update on failure
+      setProducts(previousProducts);
+      alert(err.message || "Failed to delete product. Restoring inventory item.");
     } finally {
       setDeletingId(null);
     }
