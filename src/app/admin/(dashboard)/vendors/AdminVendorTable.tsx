@@ -195,14 +195,136 @@ export function AdminVendorTable({
         </select>
       </div>
 
-      {/* Mobile Swipe Hint */}
-      <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 sm:hidden px-1">
-        <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-        <span>Swipe table horizontally to review vendor details & actions</span>
+      {/* Mobile Card List (sm:hidden) */}
+      <div className="sm:hidden space-y-3">
+        {isRefreshing && filteredVendors.length === 0 ? (
+          <div className="py-12 text-center rounded-2xl bg-neutral-900 border border-neutral-800">
+            <Loader isModal={false} />
+          </div>
+        ) : filteredVendors.length === 0 ? (
+          <div className="py-8 text-center text-xs text-neutral-500 rounded-2xl bg-neutral-900 border border-neutral-800">
+            No vendors found matching the selected filters.
+          </div>
+        ) : (
+          filteredVendors.map((vendor) => {
+            const isGuest = vendor.sellerType === "guest";
+
+            return (
+              <div
+                key={vendor.id}
+                className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-3.5 shadow-xs"
+              >
+                {/* Header: Logo, Name, Badges */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 overflow-hidden shrink-0 flex items-center justify-center font-bold text-emerald-400">
+                      {vendor.logo ? (
+                        <img src={vendor.logo} alt="" className="w-full h-full object-cover" />
+                      ) : isGuest ? (
+                        <Building2 className="w-5 h-5 text-indigo-400" />
+                      ) : (
+                        <GraduationCap className="w-5 h-5 text-emerald-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-bold text-white text-sm truncate">{vendor.storeName}</p>
+                        {vendor.isRegisteredBusiness && (
+                          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[9px] py-0 px-1 shrink-0">
+                            CAC
+                          </Badge>
+                        )}
+                        {vendor.isTrustedSeller && (
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[9px] py-0 px-1 shrink-0">
+                            ★
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                        {vendor.user.fullName} &bull; {vendor.user.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <Badge
+                    variant={
+                      vendor.status === "APPROVED"
+                        ? "default"
+                        : vendor.status === "PENDING"
+                        ? "warning"
+                        : "destructive"
+                    }
+                    className="text-[10px] px-2 py-0.5 shrink-0 whitespace-nowrap font-bold"
+                  >
+                    {vendor.status}
+                  </Badge>
+                </div>
+
+                {/* Badges & Meta Row */}
+                <div className="flex flex-wrap items-center gap-2 text-xs pt-1 border-t border-neutral-800/60">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      isGuest
+                        ? "bg-purple-950/80 text-purple-300 border border-purple-800/60"
+                        : "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
+                    }`}
+                  >
+                    {isGuest ? (
+                      <>
+                        <Building2 className="w-3 h-3" /> Guest
+                      </>
+                    ) : (
+                      <>
+                        <GraduationCap className="w-3 h-3" /> Student
+                      </>
+                    )}
+                  </span>
+
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0 whitespace-nowrap select-none">
+                    {`Tier ${vendor.verificationTier || 1}`}
+                  </span>
+
+                  <span className="text-[10px] text-neutral-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-800/80 shrink-0 whitespace-nowrap font-mono">
+                    <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
+                    {`${vendor.payoutDelayHours || (isGuest ? 72 : 48)}h Payout`}
+                  </span>
+
+                  <span className="text-[11px] text-neutral-300 flex items-center gap-1 shrink-0 ml-auto font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    {vendor.campus?.name.split(" ")[0]}
+                  </span>
+                </div>
+
+                {/* Actions Row */}
+                <div className="flex items-center gap-2 pt-2 border-t border-neutral-800/60">
+                  <a
+                    href={`https://wa.me/${vendor.whatsapp?.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 px-3 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-emerald-700 text-emerald-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">WhatsApp</span>
+                  </a>
+
+                  <Button
+                    size="sm"
+                    onClick={() => setInspectVendor(vendor)}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-1.5 py-2 h-auto"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Review Docs
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      {/* Vendors Table */}
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 overflow-hidden shadow-sm">
+      {/* Desktop / Tablet Vendors Table (hidden on mobile) */}
+      <div className="hidden sm:block rounded-2xl border border-neutral-800 bg-neutral-900 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[850px]">
             <thead className="bg-neutral-950/70 border-b border-neutral-800 text-neutral-400 uppercase tracking-wider font-semibold">
@@ -300,12 +422,12 @@ export function AdminVendorTable({
                       {/* Tier & Escrow Payout */}
                       <td className="py-3.5 px-4 text-neutral-300 min-w-[130px] whitespace-nowrap">
                         <div className="flex flex-col gap-1 items-start whitespace-nowrap shrink-0">
-                          <Badge variant="secondary" className="text-[10px] uppercase font-bold shrink-0 whitespace-nowrap px-2.5 py-0.5 tracking-wider">
-                            Tier&nbsp;{vendor.verificationTier || 1}
-                          </Badge>
+                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0 whitespace-nowrap select-none">
+                            {`Tier ${vendor.verificationTier || 1}`}
+                          </span>
                           <p className="text-[11px] text-neutral-400 flex items-center gap-1 shrink-0 whitespace-nowrap font-mono">
                             <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
-                            {vendor.payoutDelayHours || (isGuest ? 72 : 48)}h&nbsp;Payout
+                            <span>{`${vendor.payoutDelayHours || (isGuest ? 72 : 48)}h Payout`}</span>
                           </p>
                         </div>
                       </td>
@@ -320,7 +442,7 @@ export function AdminVendorTable({
                               ? "warning"
                               : "destructive"
                           }
-                          className="text-[10px] px-2 shrink-0 whitespace-nowrap"
+                          className="text-[10px] px-2 shrink-0 whitespace-nowrap font-bold"
                         >
                           {vendor.status}
                         </Badge>
@@ -385,12 +507,12 @@ export function AdminVendorTable({
                     >
                       {inspectVendor.sellerType === "guest" ? "Guest Vendor" : "Student Vendor"}
                     </Badge>
-                    <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0 whitespace-nowrap px-2.5 py-0.5 font-bold">
-                      Tier&nbsp;{inspectVendor.verificationTier || 1}
-                    </Badge>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0 whitespace-nowrap select-none">
+                      {`Tier ${inspectVendor.verificationTier || 1}`}
+                    </span>
                     <span className="text-[10px] sm:text-[11px] text-neutral-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-800/80 shrink-0 whitespace-nowrap font-mono">
                       <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
-                      {inspectVendor.payoutDelayHours || (inspectVendor.sellerType === "guest" ? 72 : 48)}h&nbsp;Payout
+                      {`${inspectVendor.payoutDelayHours || (inspectVendor.sellerType === "guest" ? 72 : 48)}h Payout`}
                     </span>
                   </div>
                 </div>
