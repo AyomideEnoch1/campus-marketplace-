@@ -209,7 +209,7 @@ export function AdminVendorTable({
               <tr>
                 <th className="py-3 px-4">Vendor &amp; Account Type</th>
                 <th className="py-3 px-4">Campus & Location</th>
-                <th className="py-3 px-4">Tier & Payout</th>
+                <th className="py-3 px-4 min-w-[130px] whitespace-nowrap">Tier &amp; Payout</th>
                 <th className="py-3 px-4">Status & Badges</th>
                 <th className="py-3 px-4">Contact</th>
                 <th className="py-3 px-4 text-right">Verification Action</th>
@@ -298,14 +298,14 @@ export function AdminVendorTable({
                       </td>
 
                       {/* Tier & Escrow Payout */}
-                      <td className="py-3.5 px-4 text-neutral-300 whitespace-nowrap">
-                        <div className="flex flex-col gap-1 items-start">
-                          <Badge variant="secondary" className="text-[10px] uppercase font-bold shrink-0 whitespace-nowrap px-2 py-0.5">
-                            Tier {vendor.verificationTier || 1}
+                      <td className="py-3.5 px-4 text-neutral-300 min-w-[130px] whitespace-nowrap">
+                        <div className="flex flex-col gap-1 items-start whitespace-nowrap shrink-0">
+                          <Badge variant="secondary" className="text-[10px] uppercase font-bold shrink-0 whitespace-nowrap px-2.5 py-0.5 tracking-wider">
+                            Tier&nbsp;{vendor.verificationTier || 1}
                           </Badge>
-                          <p className="text-[11px] text-neutral-400 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                          <p className="text-[11px] text-neutral-400 flex items-center gap-1 shrink-0 whitespace-nowrap font-mono">
                             <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
-                            {vendor.payoutDelayHours || (isGuest ? 72 : 48)}h Payout
+                            {vendor.payoutDelayHours || (isGuest ? 72 : 48)}h&nbsp;Payout
                           </p>
                         </div>
                       </td>
@@ -385,12 +385,12 @@ export function AdminVendorTable({
                     >
                       {inspectVendor.sellerType === "guest" ? "Guest Vendor" : "Student Vendor"}
                     </Badge>
-                    <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0 whitespace-nowrap">
-                      Tier {inspectVendor.verificationTier || 1}
+                    <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0 whitespace-nowrap px-2.5 py-0.5 font-bold">
+                      Tier&nbsp;{inspectVendor.verificationTier || 1}
                     </Badge>
-                    <span className="text-[10px] sm:text-[11px] text-neutral-400 flex items-center gap-1 px-1.5 py-0.5 rounded bg-neutral-800/80 shrink-0 whitespace-nowrap">
+                    <span className="text-[10px] sm:text-[11px] text-neutral-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-800/80 shrink-0 whitespace-nowrap font-mono">
                       <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
-                      {inspectVendor.payoutDelayHours || (inspectVendor.sellerType === "guest" ? 72 : 48)}h Payout
+                      {inspectVendor.payoutDelayHours || (inspectVendor.sellerType === "guest" ? 72 : 48)}h&nbsp;Payout
                     </span>
                   </div>
                 </div>
