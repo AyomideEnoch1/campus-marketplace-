@@ -12,6 +12,7 @@ import {
   User,
   Phone,
   MapPin,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice, formatDate } from "@/lib/utils";
@@ -127,10 +128,16 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: OrderData[]
         </div>
       </div>
 
+      {/* Mobile Swipe Hint */}
+      <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 sm:hidden px-1">
+        <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+        <span>Swipe table horizontally to review orders & statuses</span>
+      </div>
+
       {/* Orders Table */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-neutral-300">
+          <table className="w-full text-left text-xs text-neutral-300 min-w-[850px]">
             <thead className="bg-neutral-950/60 text-neutral-400 font-semibold border-b border-neutral-800">
               <tr>
                 <th className="py-3 px-4">Order #</th>

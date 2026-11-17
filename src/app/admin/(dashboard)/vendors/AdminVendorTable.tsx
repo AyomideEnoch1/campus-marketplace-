@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Award,
   RefreshCw,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -141,7 +142,7 @@ export function AdminVendorTable({
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-neutral-900 border border-neutral-800 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-2xl bg-neutral-900 border border-neutral-800 text-xs">
         <div className="relative">
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
           <Input
@@ -194,10 +195,16 @@ export function AdminVendorTable({
         </select>
       </div>
 
+      {/* Mobile Swipe Hint */}
+      <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 sm:hidden px-1">
+        <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+        <span>Swipe table horizontally to review vendor details & actions</span>
+      </div>
+
       {/* Vendors Table */}
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 overflow-hidden">
+      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[850px]">
             <thead className="bg-neutral-950/70 border-b border-neutral-800 text-neutral-400 uppercase tracking-wider font-semibold">
               <tr>
                 <th className="py-3 px-4">Vendor &amp; Account Type</th>
