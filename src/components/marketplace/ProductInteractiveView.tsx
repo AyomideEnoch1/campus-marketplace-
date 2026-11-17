@@ -8,6 +8,7 @@ import {
   Heart,
   ShoppingBag,
   MessageCircle,
+  MessageSquare,
   Share2,
   ShieldCheck,
   MapPin,
@@ -436,20 +437,34 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
               </button>
             </div>
 
-            {/* Direct WhatsApp Chat Action */}
-            {product.vendor.whatsapp && (
-              <a
-                href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20"${encodeURIComponent(
-                  product.title
-                )}"%20listed%20for%20${formatNGN(product.price)}%20on%20CampusTrade`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01]"
+            {/* Direct In-App Chat & WhatsApp Action */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <Link
+                href={`/messages?vendor=${product.vendor.id}&product=${product.id}`}
+                className="w-full h-12 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
               >
-                <MessageCircle className="w-5 h-5" />
-                Chat Vendor on WhatsApp &rarr;
-              </a>
-            )}
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                In-App Chat with Seller
+              </Link>
+
+              {product.vendor.whatsapp ? (
+                <a
+                  href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20"${encodeURIComponent(
+                    product.title
+                  )}"%20listed%20for%20${formatNGN(product.price)}%20on%20CampusTrade`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01]"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Chat on WhatsApp
+                </a>
+              ) : (
+                <div className="w-full h-12 rounded-2xl bg-neutral-100 text-neutral-500 font-medium text-xs flex items-center justify-center">
+                  In-App Chat Only
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

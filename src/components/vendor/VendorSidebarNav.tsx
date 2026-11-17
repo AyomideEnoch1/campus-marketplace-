@@ -9,6 +9,7 @@ import {
   PlusCircle,
   Palette,
   ShoppingBag,
+  MessageSquare,
   Settings,
 } from "lucide-react";
 
@@ -18,6 +19,7 @@ const navItems = [
   { label: "Add Product", href: "/dashboard/products/new", icon: PlusCircle },
   { label: "Store Customizer", href: "/dashboard/customize", icon: Palette },
   { label: "Orders", href: "/dashboard/orders", icon: ShoppingBag },
+  { label: "Customer Chat", href: "/dashboard/messages", icon: MessageSquare },
   { label: "Store Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

@@ -77,6 +77,8 @@ model User {
   reviewReports  ReviewReport[]
   vouchesGiven   Vouch[]             @relation("UserVouches")
   disputes       Dispute[]
+  buyerConversations Conversation[] @relation("BuyerConversations")
+  sentChatMessages   ChatMessage[]  @relation("UserSentMessages")
 
   @@unique([email, role])
   @@index([role])
@@ -142,6 +144,7 @@ model VendorProfile {
   receivedSellerRatings  SellerRating[]  @relation("SellerRatingsReceived")
   reviewReplies          ReviewReply[]
   vouchesReceived        Vouch[]         @relation("GuestVouches")
+  vendorConversations    Conversation[]  @relation("VendorConversations")
 
   @@index([slug])
   @@index([campusId])
@@ -220,6 +223,7 @@ model Product {
   productReviews ProductReview[]
   favorites      Favorite[]
   reports        Report[]
+  conversations  Conversation[]
 
   @@index([slug])
   @@index([vendorId])
@@ -729,3 +733,39 @@ model PlatformSettingAudit {
   @@index([key])
   @@index([createdAt])
 }
+
+model Conversation {
+  id            String        @id @default(cuid())
+  buyerId       String
+  buyer         User          @relation("BuyerConversations", fields: [buyerId], references: [id], onDelete: Cascade)
+  vendorId      String
+  vendor        VendorProfile @relation("VendorConversations", fields: [vendorId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  lastMessage   String?
+  lastMessageAt DateTime      @default(now())
+  messages      ChatMessage[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([buyerId, vendorId, productId])
+  @@index([buyerId])
+  @@index([vendorId])
+  @@index([lastMessageAt])
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("UserSentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
