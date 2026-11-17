@@ -18,6 +18,7 @@ import {
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
+import { VendorLogoutButton } from "@/components/vendor/VendorLogoutButton";
 
 export default async function VendorDashboardLayout({
   children,
@@ -123,6 +124,7 @@ export default async function VendorDashboardLayout({
                   <Icon className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>{item.label}</span>
                 </Link>
+    
               );
             })}
           </nav>
@@ -144,9 +146,10 @@ export default async function VendorDashboardLayout({
 
           <div className="flex items-center justify-between pt-2 px-1 text-xs text-neutral-500">
             <span className="truncate max-w-[120px] font-medium">{session.fullName}</span>
-            <Link href="/api/auth/logout" className="text-rose-600 hover:underline text-[11px]">
-              Logout
-            </Link>
+            <VendorLogoutButton />
+
+
+
           </div>
         </div>
       </aside>

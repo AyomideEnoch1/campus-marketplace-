@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { useCurrentUser, useLogout } from "@/hooks/use-auth-query";
+import { SignoutModal } from "@/components/ui/SignoutModal";
 
 interface NavbarProps {
   initialUser?: any;
@@ -40,10 +41,17 @@ export function Navbar({ initialUser }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [selectedCampus, setSelectedCampus] = React.useState<string>("all");
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   const handleLogout = () => {
     setUserDropdownOpen(false);
-    logoutMutation.mutate();
+    setMobileMenuOpen(false);
+    setIsSigningOut(true);
+    logoutMutation.mutate(undefined, {
+      onError: () => {
+        setIsSigningOut(false);
+      },
+    });
   };
 
   const navLinks = [
@@ -332,6 +340,8 @@ export function Navbar({ initialUser }: NavbarProps) {
           </div>
         </div>
       )}
+      {/* Fullscreen Blocking Signout Modal */}
+      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} />
     </header>
   );
 }

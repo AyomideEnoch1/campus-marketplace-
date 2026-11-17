@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { SingleImageUpload } from "@/components/ui/single-image-upload";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { formatNigerianPhone, cleanPhoneNumber } from "@/lib/utils";
 import { PasswordStrengthGauge } from "@/components/ui/PasswordStrengthGauge";
 
@@ -168,6 +168,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError(null);
 
@@ -245,11 +246,9 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         sessionStorage.removeItem("ct_vendor_form_draft");
       } catch {}
 
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -837,9 +836,20 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
             <Button
               type="submit"
               disabled={loading || (sellerType === "guest" && !guestVendorsEnabled) || (confirmPassword.length > 0 && password !== confirmPassword)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-8 h-11 shadow-md shadow-emerald-600/20"
+              className={`rounded-xl text-xs font-bold px-8 h-11 text-white shadow-md shadow-emerald-600/20 transition-all ${
+                loading
+                  ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-md shadow-emerald-600/20"
+              }`}
             >
-              {loading ? "Verifying & Creating Store..." : `Complete ${sellerType === "guest" ? "Guest" : "Student"} Registration`}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Verifying & Creating Store...</span>
+                </div>
+              ) : (
+                `Complete ${sellerType === "guest" ? "Guest" : "Student"} Registration`
+              )}
             </Button>
           </div>
         </form>

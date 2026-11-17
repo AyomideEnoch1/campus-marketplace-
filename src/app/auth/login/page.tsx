@@ -14,6 +14,7 @@ import {
   EyeOff,
   CheckCircle2,
   Info,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/Loader";
@@ -37,6 +38,7 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     if (!selectedRole) {
       setError("Please select whether you are signing in as a Student Buyer or Campus Vendor.");
       return;
@@ -62,17 +64,12 @@ function LoginForm() {
       }
 
       // Route to intended destination or appropriate dashboard
-      if (redirectParam) {
-        router.push(redirectParam);
-      } else {
-        router.push(data.redirectTo || (selectedRole === "vendor" ? "/dashboard" : "/shop"));
-      }
-      router.refresh();
+      const targetUrl = redirectParam || data.redirectTo || (selectedRole === "vendor" ? "/dashboard" : "/shop");
+      window.location.href = targetUrl;
     } catch (err: any) {
       setError(
         err.message || "Failed to sign in. Please verify your credentials.",
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -113,8 +110,13 @@ function LoginForm() {
           {/* User / Student Buyer Option */}
           <button
             type="button"
+            disabled={loading}
             onClick={() => handleSelectRole("buyer")}
-            className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 cursor-pointer ${
+            className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 ${
+              loading
+                ? "cursor-not-allowed opacity-70 pointer-events-none"
+                : "cursor-pointer"
+            } ${
               selectedRole === "buyer"
                 ? "bg-emerald-50/70 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
                 : "bg-neutral-50/80 hover:bg-white border-neutral-200 hover:border-neutral-300"
@@ -147,8 +149,13 @@ function LoginForm() {
           {/* Vendor / Campus Vendor Option */}
           <button
             type="button"
+            disabled={loading}
             onClick={() => handleSelectRole("vendor")}
-            className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 cursor-pointer ${
+            className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 ${
+              loading
+                ? "cursor-not-allowed opacity-70 pointer-events-none"
+                : "cursor-pointer"
+            } ${
               selectedRole === "vendor"
                 ? "bg-emerald-50/70 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
                 : "bg-neutral-50/80 hover:bg-white border-neutral-200 hover:border-neutral-300"
@@ -308,12 +315,17 @@ function LoginForm() {
           disabled={isFormDisabled}
           className={`w-full h-11 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 mt-2 ${
             !selectedRole
-              ? "bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none"
+              ? "bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none border border-neutral-200"
+              : loading
+              ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
               : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 cursor-pointer"
           }`}
         >
           {loading ? (
-            "Signing in..."
+            <div className="flex items-center gap-2 text-neutral-500">
+              <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+              <span>Signing in, please wait...</span>
+            </div>
           ) : (
             <>
               <span>
