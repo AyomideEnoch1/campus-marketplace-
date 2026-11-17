@@ -10,23 +10,36 @@ import {
   CheckCircle2,
   ShieldCheck,
   ArrowRight,
+  Info,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Phone,
+  Mail,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCampuses } from "@/hooks/use-campuses-query";
+import { formatNigerianPhone, cleanPhoneNumber } from "@/lib/utils";
+import { PasswordStrengthGauge } from "@/components/ui/PasswordStrengthGauge";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [role, setRole] = React.useState<"BUYER" | "VENDOR">("BUYER");
+  const [role, setRole] = React.useState<"BUYER" | "VENDOR" | null>(null);
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [phone, setPhone] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [phone, setPhone] = React.useState("+234 ");
 
   // Vendor fields
   const [storeName, setStoreName] = React.useState("");
   const [campusId, setCampusId] = React.useState("clunilag001");
-  const [whatsapp, setWhatsapp] = React.useState("");
+  const [whatsapp, setWhatsapp] = React.useState("+234 ");
   const [faculty, setFaculty] = React.useState("");
   const [department, setDepartment] = React.useState("");
   const [storeDescription, setStoreDescription] = React.useState("");
@@ -42,24 +55,58 @@ export default function RegisterPage() {
     }
   }, [campuses, campusId]);
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatNigerianPhone(e.target.value);
+    setPhone(formatted);
+  };
+
+  const handleWhatsappChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatNigerianPhone(e.target.value);
+    setWhatsapp(formatted);
+  };
+
+  const isFormDisabled = !role || loading;
+  const passwordsMatch =
+    confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!role) {
+      setError("Please select whether you are creating a Student Buyer or Vendor account.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please ensure both passwords are identical.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
+      const cleanPhone = cleanPhoneNumber(phone);
+      const cleanWhatsapp = whatsapp ? cleanPhoneNumber(whatsapp) : cleanPhone;
+
       const payload: any = {
         fullName,
         email,
         password,
-        phone,
+        phone: cleanPhone,
         role,
       };
 
       if (role === "VENDOR") {
         payload.storeName = storeName;
         payload.campusId = campusId;
-        payload.whatsapp = whatsapp || phone;
+        payload.whatsapp = cleanWhatsapp || cleanPhone;
         payload.faculty = faculty;
         payload.department = department;
         payload.storeDescription = storeDescription;
@@ -76,7 +123,7 @@ export default function RegisterPage() {
         throw new Error(data.error || "Registration failed");
       }
 
-      router.push(data.redirectTo || "/shop");
+      router.push(data.redirectTo || (role === "VENDOR" ? "/dashboard" : "/shop"));
       router.refresh();
     } catch (err: any) {
       setError(
@@ -89,27 +136,41 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 bg-neutral-50/70">
-      <div className="w-full max-w-lg bg-white rounded-3xl border border-neutral-100 shadow-xl p-8 space-y-6">
+      <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-100 shadow-xl p-7 sm:p-9 space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-extrabold text-neutral-900">
-            Join CampusTrade
+        <div className="text-center space-y-1.5">
+          <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
+            Join Campus<span className="text-emerald-500">Trade</span>
           </h1>
+          <p className="text-xs text-neutral-500">
+            Create an account to start buying on campus or launch your student store
+          </p>
         </div>
 
         {/* Role Selection / Account Type Tabs */}
         <div className="space-y-2">
-          <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
-            Select Account Type
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider block">
+              Select Account Type <span className="text-rose-500">*</span>
+            </label>
+            {!role && (
+              <span className="text-[11px] text-amber-600 font-semibold animate-pulse">
+                Select one to unlock fields
+              </span>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Student Buyer Option */}
             <button
               type="button"
-              onClick={() => setRole("BUYER")}
+              onClick={() => {
+                setRole("BUYER");
+                setError("");
+              }}
               className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 cursor-pointer ${
                 role === "BUYER"
-                  ? "bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
+                  ? "bg-emerald-50/70 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
                   : "bg-neutral-50/80 hover:bg-white border-neutral-200 hover:border-neutral-300"
               }`}
             >
@@ -132,17 +193,21 @@ export default function RegisterPage() {
                   )}
                 </div>
                 <p className="text-[11px] text-neutral-500 mt-0.5 line-clamp-2 leading-snug">
-                  Browse listings, save items & place campus orders
+                  Browse listings, save items &amp; place campus orders
                 </p>
               </div>
             </button>
+
             {/* Student Seller / Vendor Option */}
             <button
               type="button"
-              onClick={() => setRole("VENDOR")}
+              onClick={() => {
+                setRole("VENDOR");
+                setError("");
+              }}
               className={`p-3.5 rounded-2xl border text-left transition-all duration-200 relative group flex items-start gap-3 cursor-pointer ${
                 role === "VENDOR"
-                  ? "bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
+                  ? "bg-emerald-50/70 border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm"
                   : "bg-neutral-50/80 hover:bg-white border-neutral-200 hover:border-neutral-300"
               }`}
             >
@@ -165,16 +230,23 @@ export default function RegisterPage() {
                   )}
                 </div>
                 <p className="text-[11px] text-neutral-500 mt-0.5 line-clamp-2 leading-snug">
-                  Open your verified store, list products & reach students
+                  Open your verified store, list products &amp; reach students
                 </p>
               </div>
             </button>
           </div>
+
+          {!role && (
+            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-800 text-xs flex items-center gap-2 animate-in fade-in-50">
+              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Please select <strong>Student Buyer</strong> or <strong>Student Seller / Vendor</strong> above to enable registration.</span>
+            </div>
+          )}
         </div>
 
         {/* Error Notification */}
         {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium animate-in fade-in-50">
             {error}
           </div>
         )}
@@ -183,53 +255,190 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">
+              <label
+                className={`text-xs font-bold block transition-colors ${
+                  !role ? "text-neutral-400" : "text-neutral-700"
+                }`}
+              >
                 Full Name
               </label>
               <Input
                 type="text"
                 required
+                disabled={isFormDisabled}
                 placeholder="e.g. Tobi Adebayo"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                className={
+                  !role
+                    ? "bg-neutral-100/90 text-neutral-400 border-neutral-200 cursor-not-allowed select-none placeholder:text-neutral-400/70"
+                    : ""
+                }
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">
+              <label
+                className={`text-xs font-bold block transition-colors ${
+                  !role ? "text-neutral-400" : "text-neutral-700"
+                }`}
+              >
                 Email Address
               </label>
               <Input
                 type="email"
                 required
+                disabled={isFormDisabled}
                 placeholder="student@unilag.edu.ng"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className={
+                  !role
+                    ? "bg-neutral-100/90 text-neutral-400 border-neutral-200 cursor-not-allowed select-none placeholder:text-neutral-400/70"
+                    : ""
+                }
               />
             </div>
           </div>
 
+          {/* Password & Confirm Password */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">
+              <label
+                className={`text-xs font-bold block transition-colors ${
+                  !role ? "text-neutral-400" : "text-neutral-700"
+                }`}
+              >
                 Password
               </label>
-              <Input
-                type="password"
-                required
-                placeholder="Min 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  disabled={isFormDisabled}
+                  placeholder="Min 6 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`pr-10 ${
+                    !role
+                      ? "bg-neutral-100/90 text-neutral-400 border-neutral-200 cursor-not-allowed select-none placeholder:text-neutral-400/70"
+                      : ""
+                  }`}
+                />
+                <button
+                  type="button"
+                  disabled={isFormDisabled}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    !role
+                      ? "text-neutral-300 cursor-not-allowed"
+                      : "text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                  }`}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
+
+            {/* Confirm Password */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">
+              <div className="flex items-center justify-between">
+                <label
+                  className={`text-xs font-bold block transition-colors ${
+                    !role ? "text-neutral-400" : "text-neutral-700"
+                  }`}
+                >
+                  Confirm Password
+                </label>
+                {passwordsMatch && (
+                  <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Match
+                  </span>
+                )}
+                {passwordsMismatch && (
+                  <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Mismatch
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  disabled={isFormDisabled}
+                  placeholder="Re-enter password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`pr-10 ${
+                    !role
+                      ? "bg-neutral-100/90 text-neutral-400 border-neutral-200 cursor-not-allowed select-none placeholder:text-neutral-400/70"
+                      : passwordsMismatch
+                      ? "border-rose-400 focus-visible:ring-rose-500/20"
+                      : passwordsMatch
+                      ? "border-emerald-400 focus-visible:ring-emerald-500/20"
+                      : ""
+                  }`}
+                />
+                <button
+                  type="button"
+                  disabled={isFormDisabled}
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    !role
+                      ? "text-neutral-300 cursor-not-allowed"
+                      : "text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                  }`}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Password Strength Gauge */}
+          {password && !isFormDisabled && (
+            <PasswordStrengthGauge password={password} />
+          )}
+
+          {/* Phone Number Field */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label
+                className={`text-xs font-bold block transition-colors ${
+                  !role ? "text-neutral-400" : "text-neutral-700"
+                }`}
+              >
                 Phone Number
               </label>
+            </div>
+            <div className="relative">
+              <Phone
+                className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
+                  !role ? "text-neutral-300" : "text-neutral-400"
+                }`}
+              />
               <Input
                 type="tel"
-                placeholder="+234 801 234 5678"
+                required
+                disabled={isFormDisabled}
+                placeholder="+234 814 817 6165"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange}
+                className={`pl-10 h-11 ${
+                  !role
+                    ? "bg-neutral-100/90 text-neutral-400 border-neutral-200 cursor-not-allowed select-none placeholder:text-neutral-400/70"
+                    : ""
+                }`}
               />
             </div>
           </div>
@@ -237,11 +446,10 @@ export default function RegisterPage() {
           {/* Vendor Specific Onboarding Fields */}
           {role === "VENDOR" && (
             <div className="pt-4 border-t border-neutral-100 space-y-4 animate-in fade-in-50">
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] text-emerald-900 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-900 flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
                 <span>
-                  Student vendors get a customizable storefront, layout picker,
-                  and direct WhatsApp buyer order requests.
+                  Student vendors receive a customizable storefront, layout picker, and direct customer WhatsApp ordering.
                 </span>
               </div>
 
@@ -296,9 +504,9 @@ export default function RegisterPage() {
                   <Input
                     type="tel"
                     required
-                    placeholder="+234 802 345 6789"
+                    placeholder="+234 814 817 6165"
                     value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
+                    onChange={handleWhatsappChange}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -320,7 +528,7 @@ export default function RegisterPage() {
                 </label>
                 <textarea
                   className="w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-20"
-                  placeholder="Describe the items you sell and your campus delivery schedule..."
+                  placeholder="Describe what you sell and your campus delivery schedule..."
                   value={storeDescription}
                   onChange={(e) => setStoreDescription(e.target.value)}
                 />
@@ -330,15 +538,28 @@ export default function RegisterPage() {
 
           <Button
             type="submit"
-            disabled={loading}
-            className="w-full h-11 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md shadow-emerald-600/20"
+            disabled={isFormDisabled || (confirmPassword.length > 0 && password !== confirmPassword)}
+            className={`w-full h-11 flex items-center justify-center gap-2 font-bold rounded-2xl transition-all shadow-md ${
+              !role
+                ? "bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none"
+                : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 cursor-pointer"
+            }`}
           >
-            {loading
-              ? "Creating your account..."
-              : role === "VENDOR"
-                ? "Register Student Store"
-                : "Create Buyer Account"}
-            <ArrowRight size={18} />
+            {loading ? (
+              "Creating your account..."
+            ) : !role ? (
+              "Select Account Type to Register"
+            ) : role === "VENDOR" ? (
+              <>
+                <span>Register Student Store</span>
+                <ArrowRight size={18} />
+              </>
+            ) : (
+              <>
+                <span>Create Buyer Account</span>
+                <ArrowRight size={18} />
+              </>
+            )}
           </Button>
         </form>
 

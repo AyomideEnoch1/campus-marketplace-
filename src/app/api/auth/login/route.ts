@@ -9,6 +9,7 @@ const loginSchema = z.object({
   identifier: z.string().min(2, "Please enter your email or phone number").optional(),
   email: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["buyer", "vendor", "BUYER", "VENDOR", "ADMIN", "admin"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { password } = parsed.data;
+    const { password, role } = parsed.data;
     const lowerIdentifier = rawIdentifier.toLowerCase();
     const digitsOnly = rawIdentifier.replace(/[^0-9]/g, "");
 
@@ -42,20 +43,54 @@ export async function POST(request: Request) {
       possibleQueries.push({ phone: `+${digitsOnly}` });
       if (digitsOnly.startsWith("234") && digitsOnly.length === 13) {
         possibleQueries.push({ phone: `0${digitsOnly.slice(3)}` });
+        possibleQueries.push({ phone: `+${digitsOnly}` });
       } else if (digitsOnly.startsWith("0") && digitsOnly.length === 11) {
         possibleQueries.push({ phone: `+234${digitsOnly.slice(1)}` });
+        possibleQueries.push({ phone: digitsOnly });
+      } else if (digitsOnly.length === 10) {
+        possibleQueries.push({ phone: `+234${digitsOnly}` });
+        possibleQueries.push({ phone: `0${digitsOnly}` });
       }
       possibleQueries.push({ email: `${digitsOnly}@guest.campustrade.ng` });
     }
 
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: possibleQueries,
-      },
+    const targetRole = role ? (role.toUpperCase() as "BUYER" | "VENDOR" | "ADMIN") : null;
+
+    // Filter by selected role/table
+    let userWhere: any = { OR: possibleQueries };
+    if (targetRole === "VENDOR") {
+      userWhere.role = "VENDOR";
+    } else if (targetRole === "BUYER") {
+      userWhere.role = "BUYER";
+    }
+
+    let user = await prisma.user.findFirst({
+      where: userWhere,
       include: {
         vendorProfile: true,
       },
     });
+
+    // Helpful diagnostic check if role was selected but not found
+    if (!user && targetRole) {
+      const otherRole = targetRole === "VENDOR" ? "BUYER" : "VENDOR";
+      const userInOtherRole = await prisma.user.findFirst({
+        where: {
+          OR: possibleQueries,
+          role: otherRole,
+        },
+      });
+
+      if (userInOtherRole) {
+        const correctTab = otherRole === "VENDOR" ? "Campus Vendor" : "Student Buyer";
+        return NextResponse.json(
+          {
+            error: `This account is registered as a ${correctTab}. Please select the ${correctTab} tab to sign in.`,
+          },
+          { status: 401 }
+        );
+      }
+    }
 
     if (!user || !user.passwordHash) {
       return NextResponse.json(

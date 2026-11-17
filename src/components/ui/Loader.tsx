@@ -12,10 +12,7 @@ export interface LoaderProps {
   className?: string;
 }
 
-export function Loader({
-  isModal = true,
-  className = "",
-}: LoaderProps) {
+export function Loader({ isModal = true, className = "" }: LoaderProps) {
   const modalCard = (
     <div
       role="status"
@@ -33,15 +30,28 @@ export function Loader({
         </div>
 
         {/* Brand text turned to Loading... with the exact font, text, style, and vibe */}
-        <div className="relative z-10 font-extrabold text-xl sm:text-2xl tracking-tight text-neutral-900 leading-none flex items-baseline">
-          <span>Load</span>
-          <span className="text-emerald-500">ing</span>
+        {/* <div className="relative z-10 font-extrabold text-xl sm:text-2xl tracking-tight text-neutral-900 leading-none flex items-baseline">
           <span className="inline-flex text-emerald-500 ml-0.5 font-bold">
-            <span className="animate-bounce inline-block" style={{ animationDelay: "0ms" }}>.</span>
-            <span className="animate-bounce inline-block" style={{ animationDelay: "150ms" }}>.</span>
-            <span className="animate-bounce inline-block" style={{ animationDelay: "300ms" }}>.</span>
+            <span
+              className="animate-bounce inline-block"
+              style={{ animationDelay: "0ms" }}
+            >
+              .
+            </span>
+            <span
+              className="animate-bounce inline-block"
+              style={{ animationDelay: "150ms" }}
+            >
+              .
+            </span>
+            <span
+              className="animate-bounce inline-block"
+              style={{ animationDelay: "300ms" }}
+            >
+              .
+            </span>
           </span>
-        </div>
+        </div> */}
       </div>
 
       {/* Traveling Ambient Progress Line below */}
@@ -49,7 +59,7 @@ export function Loader({
         <div className="absolute inset-y-0 w-2/3 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full animate-loader-track" />
       </div>
 
-      <span className="sr-only">Loading...</span>
+      {/* <span className="sr-only">Loading...</span> */}
     </div>
   );
 

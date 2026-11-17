@@ -24,6 +24,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { SingleImageUpload } from "@/components/ui/single-image-upload";
+import { Eye, EyeOff } from "lucide-react";
+import { formatNigerianPhone, cleanPhoneNumber } from "@/lib/utils";
+import { PasswordStrengthGauge } from "@/components/ui/PasswordStrengthGauge";
 
 interface CampusData {
   id: string;
@@ -60,8 +63,11 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [phone, setPhone] = React.useState("");
-  const [whatsapp, setWhatsapp] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [phone, setPhone] = React.useState("+234 ");
+  const [whatsapp, setWhatsapp] = React.useState("+234 ");
   const [campusId, setCampusId] = React.useState(campuses[0]?.id || "");
 
   React.useEffect(() => {
@@ -165,6 +171,18 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
     setLoading(true);
     setError(null);
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match. Please ensure both passwords are identical.");
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
+
     // Validate Guest specifics
     if (sellerType === "guest") {
       if (!guestVendorsEnabled) {
@@ -185,8 +203,8 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         fullName,
         email: email || undefined,
         password,
-        phone,
-        whatsapp: whatsapp || phone,
+        phone: cleanPhoneNumber(phone),
+        whatsapp: cleanPhoneNumber(whatsapp || phone),
         role: "VENDOR",
         sellerType,
         storeName: storeName || businessName,
@@ -428,11 +446,12 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <Input
                   type="tel"
                   required
-                  placeholder="e.g. 08012345678"
+                  placeholder="+234 814 817 6165"
                   value={phone}
                   onChange={(e) => {
-                    setPhone(e.target.value);
-                    if (!whatsapp) setWhatsapp(e.target.value);
+                    const formatted = formatNigerianPhone(e.target.value);
+                    setPhone(formatted);
+                    if (!whatsapp || whatsapp === "+234 ") setWhatsapp(formatted);
                   }}
                   className="rounded-xl text-xs h-10"
                 />
@@ -461,16 +480,70 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-neutral-700">Create Password *</label>
-                <Input
-                  type="password"
-                  required
-                  placeholder="Minimum 6 characters"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="rounded-xl text-xs h-10"
-                />
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="Minimum 6 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="rounded-xl text-xs h-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-neutral-700">Confirm Password *</label>
+                  {confirmPassword.length > 0 && password === confirmPassword && (
+                    <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Match
+                    </span>
+                  )}
+                  {confirmPassword.length > 0 && password !== confirmPassword && (
+                    <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Mismatch
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    placeholder="Re-enter password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`rounded-xl text-xs h-10 pr-10 ${
+                      confirmPassword.length > 0 && password !== confirmPassword
+                        ? "border-rose-400"
+                        : confirmPassword.length > 0 && password === confirmPassword
+                        ? "border-emerald-400"
+                        : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
+
+            {password && (
+              <PasswordStrengthGauge password={password} />
+            )}
 
             {/* Campus Selection */}
             <div className="space-y-1">
@@ -763,7 +836,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
             <Button
               type="submit"
-              disabled={loading || (sellerType === "guest" && !guestVendorsEnabled)}
+              disabled={loading || (sellerType === "guest" && !guestVendorsEnabled) || (confirmPassword.length > 0 && password !== confirmPassword)}
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-8 h-11 shadow-md shadow-emerald-600/20"
             >
               {loading ? "Verifying & Creating Store..." : `Complete ${sellerType === "guest" ? "Guest" : "Student"} Registration`}
