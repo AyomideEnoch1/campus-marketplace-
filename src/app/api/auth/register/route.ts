@@ -230,7 +230,7 @@ export async function POST(request: Request) {
 
     if (role === "VENDOR") {
       finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
-      finalWhatsapp = cleanWhatsapp || cleanPhone || whatsapp?.trim() || contactPhone || "";
+      finalWhatsapp = cleanWhatsapp || cleanPhone || whatsapp?.trim() || rawContactPhone || "";
 
       if (!finalWhatsapp) {
         return NextResponse.json(
@@ -282,7 +282,7 @@ export async function POST(request: Request) {
             fullName,
             email: userEmail,
             passwordHash,
-            phone: cleanPhone || contactPhone || null,
+            phone: cleanPhone || rawContactPhone || null,
             role,
           },
         });

@@ -143,17 +143,6 @@ export function ProductCard({ product }: ProductCardProps) {
             />
           </Link>
 
-<<<<<<< HEAD
-      {/* Product Content Details */}
-      <div className="p-3 sm:p-3.5 flex flex-col flex-grow justify-between gap-2">
-        <div>
-          {/* Vendor & Campus Meta */}
-          {product.vendor && (
-            <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
-              <Link
-                href={`/store/${product.vendor.slug}`}
-                className="hover:text-emerald-700 hover:underline truncate max-w-[120px] font-medium"
-=======
           {/* Top Badges */}
           <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
             {product.vendor?.sellerType === "guest" ? (
