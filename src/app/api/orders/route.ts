@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { sendOrderConfirmationEmail, sendVendorOrderNotificationEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -158,14 +159,14 @@ export async function POST(request: Request) {
     // Verify vendor by ID, slug, or via product lookup
     let vendor = await prisma.vendorProfile.findUnique({
       where: { id: vendorId },
-      include: { campus: true },
+      include: { campus: true, user: true },
     });
 
     if (!vendor) {
       // Fallback: vendorId was passed as vendor slug
       vendor = await prisma.vendorProfile.findUnique({
         where: { slug: vendorId },
-        include: { campus: true },
+        include: { campus: true, user: true },
       });
     }
 
@@ -173,7 +174,7 @@ export async function POST(request: Request) {
       // Additional fallback: resolve vendor via the first product in cart
       const firstProduct = await prisma.product.findUnique({
         where: { id: items[0].productId },
-        include: { vendor: { include: { campus: true } } },
+        include: { vendor: { include: { campus: true, user: true } } },
       });
       if (firstProduct?.vendor) {
         vendor = firstProduct.vendor;
@@ -307,6 +308,38 @@ export async function POST(request: Request) {
         timeout: 30000,
       }
     );
+
+    // Trigger transactional emails asynchronously (non-blocking)
+    if (buyerEmail) {
+      sendOrderConfirmationEmail(buyerEmail, {
+        buyerName,
+        orderNumber: newOrder.orderNumber,
+        items: items.map((i) => ({
+          title: `Item #${i.productId.slice(-5)}`,
+          quantity: i.quantity,
+          price: i.unitPrice,
+        })),
+        totalAmount,
+        campusName: vendor.campus?.name || "Campus",
+        meetupPoint: finalDeliveryAddress,
+      }).catch((err) => console.error("Buyer confirmation email error:", err));
+    }
+
+    if (vendor.user?.email) {
+      sendVendorOrderNotificationEmail(vendor.user.email, {
+        storeName: vendor.storeName,
+        orderNumber: newOrder.orderNumber,
+        buyerName,
+        buyerPhone,
+        items: items.map((i) => ({
+          title: `Item #${i.productId.slice(-5)}`,
+          quantity: i.quantity,
+          price: i.unitPrice,
+        })),
+        payoutAmount: totalAmount,
+        meetupPoint: finalDeliveryAddress,
+      }).catch((err) => console.error("Vendor order notification email error:", err));
+    }
 
     return NextResponse.json({
       success: true,

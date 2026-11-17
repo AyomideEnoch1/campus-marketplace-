@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { propagateVoucherStrike } from "@/lib/vouches";
+import { sendVendorStatusEmail } from "@/lib/email";
 
 export async function PATCH(
   request: Request,
@@ -86,6 +87,17 @@ export async function PATCH(
         }),
       },
     });
+
+    // Send email notification to vendor asynchronously
+    if (updated.user?.email && (status || action)) {
+      sendVendorStatusEmail(updated.user.email, {
+        storeName: updated.storeName,
+        applicantName: updated.user.fullName || updated.storeName,
+        status: (action === "REQUEST_INFO" ? "INFO_REQUESTED" : updated.status) as any,
+        rejectionReason,
+        tier: updated.verificationTier || 1,
+      }).catch((e) => console.error("Vendor status email error:", e));
+    }
 
     return NextResponse.json({ success: true, vendor: updated });
   } catch (error: any) {
