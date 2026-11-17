@@ -1,144 +1,67 @@
 import { prisma } from "@/lib/prisma";
-import { Activity, Clock, User, ShieldCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/utils";
+import { AdminActivityTable, ActivityLogItem } from "./AdminActivityTable";
+import { Activity, ShieldCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminActivityPage() {
-  const logs = await prisma.activityLog.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    include: {
-      user: {
-        select: {
-          fullName: true,
-          email: true,
-          role: true,
+  let logs: ActivityLogItem[] = [];
+
+  try {
+    const rawLogs = await prisma.activityLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 150,
+      include: {
+        user: {
+          select: {
+            fullName: true,
+            email: true,
+            role: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  const getActionBadge = (action: string) => {
-    if (action.includes("APPROVED") || action.includes("PUBLISHED") || action.includes("CREATED")) {
-      return (
-        <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">
-          {action}
-        </Badge>
-      );
-    }
-    if (action.includes("REJECTED") || action.includes("DELETED") || action.includes("FLAGGED")) {
-      return (
-        <Badge className="bg-red-950 text-red-400 border border-red-800 text-[10px]">
-          {action}
-        </Badge>
-      );
-    }
-    return (
-      <Badge className="bg-blue-950 text-blue-400 border border-blue-800 text-[10px]">
-        {action}
-      </Badge>
-    );
-  };
+    logs = rawLogs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      entityType: log.entityType,
+      entityId: log.entityId,
+      metadataJson: log.metadataJson,
+      ipAddress: log.ipAddress,
+      createdAt: log.createdAt.toISOString(),
+      user: log.user
+        ? {
+            fullName: log.user.fullName,
+            email: log.user.email,
+            role: log.user.role,
+          }
+        : null,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch activity logs:", error);
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-white tracking-tight">
-          System Activity & Audit Trail
-        </h1>
-        <p className="text-xs text-neutral-400 mt-1">
-          Cryptographically recorded timeline of administrative actions, moderation events, and state changes.
-        </p>
-      </div>
-
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-neutral-300">
-            <thead className="bg-neutral-950/60 text-neutral-400 font-semibold border-b border-neutral-800">
-              <tr>
-                <th className="py-3 px-4">Timestamp</th>
-                <th className="py-3 px-4">Action</th>
-                <th className="py-3 px-4">Target Entity</th>
-                <th className="py-3 px-4">Performed By</th>
-                <th className="py-3 px-4">Audit Metadata</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800/60">
-              {logs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-neutral-500">
-                    No activity logs recorded yet.
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log) => {
-                  let metadataObj: any = null;
-                  try {
-                    if (log.metadataJson) {
-                      metadataObj = JSON.parse(log.metadataJson);
-                    }
-                  } catch (e) {
-                    metadataObj = log.metadataJson;
-                  }
-
-                  return (
-                    <tr key={log.id} className="hover:bg-neutral-800/40 transition-colors">
-                      <td className="py-3 px-4 font-mono text-[11px] text-neutral-400 whitespace-nowrap">
-                        {formatDate(log.createdAt)}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        {getActionBadge(log.action)}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <span className="font-semibold text-white">
-                          {log.entityType}
-                        </span>
-                        {log.entityId && (
-                          <span className="text-[10px] text-neutral-500 font-mono ml-1.5">
-                            #{log.entityId.slice(-6)}
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
-                            {log.user ? log.user.fullName[0] : "S"}
-                          </div>
-                          <div>
-                            <p className="font-bold text-white text-[11px]">
-                              {log.user ? log.user.fullName : "System Agent"}
-                            </p>
-                            <p className="text-[10px] text-neutral-400">
-                              {log.user ? log.user.role : "AUTOMATED"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-3 px-4 font-mono text-[11px] text-neutral-400 max-w-xs truncate">
-                        {metadataObj ? (
-                          typeof metadataObj === "object" ? (
-                            JSON.stringify(metadataObj)
-                          ) : (
-                            String(metadataObj)
-                          )
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              System Activity & Audit Trail
+            </h1>
+            <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live Audit Active
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+            Real-time audit log of vendor moderations, role updates, product changes, and administrative operations
+          </p>
         </div>
       </div>
+
+      <AdminActivityTable initialLogs={logs} />
     </div>
   );
 }
