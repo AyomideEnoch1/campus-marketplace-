@@ -55,7 +55,7 @@ export function VendorLogoutButton({
         )}
       </button>
 
-      <SignoutModal
+      <SignoutModal onClose={() => setIsSigningOut(false)}
         isOpen={isSigningOut}
         message={
           variant === "admin"

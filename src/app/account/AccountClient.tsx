@@ -112,8 +112,18 @@ export function AccountClient({ initialUser }: AccountClientProps) {
   const handleLogout = async () => {
     setIsSigningOut(true);
     logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 400);
+      },
       onError: () => {
         setIsSigningOut(false);
+      },
+      onSettled: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 600);
       },
     });
   };
@@ -467,7 +477,7 @@ export function AccountClient({ initialUser }: AccountClientProps) {
         </div>
       </div>
     
-      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} />
+      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} onClose={() => setIsSigningOut(false)} />
 </div>
   );
 }

@@ -48,8 +48,18 @@ export function Navbar({ initialUser }: NavbarProps) {
     setMobileMenuOpen(false);
     setIsSigningOut(true);
     logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 400);
+      },
       onError: () => {
         setIsSigningOut(false);
+      },
+      onSettled: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 600);
       },
     });
   };
@@ -341,7 +351,7 @@ export function Navbar({ initialUser }: NavbarProps) {
         </div>
       )}
       {/* Fullscreen Blocking Signout Modal */}
-      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} />
+      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} onClose={() => setIsSigningOut(false)} />
     </header>
   );
 }

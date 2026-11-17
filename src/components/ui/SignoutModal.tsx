@@ -8,22 +8,45 @@ interface SignoutModalProps {
   isOpen: boolean;
   message?: string;
   submessage?: string;
+  onClose?: () => void;
+  autoCloseMs?: number;
 }
 
 export function SignoutModal({
   isOpen,
   message = "Signing Out...",
   submessage = "Please wait while we securely end your session and clear your data.",
+  onClose,
+  autoCloseMs = 2500,
 }: SignoutModalProps) {
   const [mounted, setMounted] = React.useState(false);
+  const [timedOut, setTimedOut] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Prevent keyboard dismiss, scrolling, and block all user interactions on the entire screen
+  // Failsafe auto-dismiss timer so the modal can NEVER get stuck on screen
   React.useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setTimedOut(false);
+      return;
+    }
+
+    setTimedOut(false);
+    const timer = setTimeout(() => {
+      setTimedOut(true);
+      if (onClose) onClose();
+    }, autoCloseMs);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, autoCloseMs, onClose]);
+
+  const shouldShow = isOpen && !timedOut;
+
+  // Prevent keyboard dismiss, scrolling, and block all user interactions while modal is actively showing
+  React.useEffect(() => {
+    if (!shouldShow) return;
 
     // Block keyboard navigation
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,7 +56,6 @@ export function SignoutModal({
 
     // Block clicks, mousedown, and touches from reaching anything underneath
     const blockEvent = (e: Event) => {
-      // Allow events inside the modal if needed, but intercept everything else
       const target = e.target as HTMLElement | null;
       if (!target?.closest("[data-signout-modal-card]")) {
         e.preventDefault();
@@ -55,17 +77,17 @@ export function SignoutModal({
     window.addEventListener("touchstart", blockEvent, true);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
-      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overflow = originalOverflow || "";
+      document.documentElement.style.overflow = originalHtmlOverflow || "";
       window.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("click", blockEvent, true);
       window.removeEventListener("mousedown", blockEvent, true);
       window.removeEventListener("pointerdown", blockEvent, true);
       window.removeEventListener("touchstart", blockEvent, true);
     };
-  }, [isOpen]);
+  }, [shouldShow]);
 
-  if (!isOpen || !mounted) return null;
+  if (!shouldShow || !mounted) return null;
 
   return createPortal(
     <div
