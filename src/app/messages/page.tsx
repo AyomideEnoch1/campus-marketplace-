@@ -103,16 +103,7 @@ export default async function MessagesPage({
   }));
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-6xl">
-      <div className="mb-4">
-        <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
-          In-App Messages
-        </h1>
-        <p className="text-xs text-neutral-500 mt-0.5">
-          Real-time conversations with verified student vendors &amp; campus sellers
-        </p>
-      </div>
-
+    <div className="h-[calc(100dvh-64px)] md:h-[calc(100dvh-113px)] flex flex-col p-2 sm:p-4 max-w-7xl mx-auto w-full overflow-hidden -mb-16 md:mb-0">
       <ChatContainer
         initialConversations={conversations}
         currentUserId={session.id}

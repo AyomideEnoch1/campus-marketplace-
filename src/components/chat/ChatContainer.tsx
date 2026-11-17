@@ -115,17 +115,17 @@ export function ChatContainer({
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-140px)] min-h-[550px]">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 h-full min-h-0 flex-1 overflow-hidden">
       {/* Sidebar: Conversation List */}
       <div
-        className={`md:col-span-4 lg:col-span-4 bg-white border border-neutral-200/80 rounded-3xl p-4 flex flex-col h-full overflow-hidden shadow-xs ${
+        className={`md:col-span-4 lg:col-span-4 bg-white border border-neutral-200/80 rounded-3xl p-3 sm:p-4 flex flex-col h-full min-h-0 overflow-hidden shadow-xs ${
           showMobileChat ? "hidden md:flex" : "flex"
         }`}
       >
         <div className="pb-3 border-b border-neutral-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-emerald-600" />
-            <h2 className="font-extrabold text-base text-neutral-900">In-App Chat</h2>
+            <h2 className="font-extrabold text-base text-neutral-900">Chat</h2>
           </div>
           <span className="text-xs font-mono text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full border border-neutral-200/60 font-semibold">
             {conversations.length} Active
@@ -154,7 +154,7 @@ export function ChatContainer({
               <p className="text-[11px] text-neutral-400">
                 {isVendorPortal
                   ? "When buyers message your store about listings, chats appear here."
-                  : "Click 'In-App Chat' on any product to start an in-app inquiry."}
+                  : "Click 'Chat with Seller' on any product to start a conversation."}
               </p>
             </div>
           ) : (
@@ -218,7 +218,7 @@ export function ChatContainer({
 
       {/* Main Chat Window */}
       <div
-        className={`md:col-span-8 lg:col-span-8 h-full ${
+        className={`md:col-span-8 lg:col-span-8 h-full min-h-0 flex flex-col overflow-hidden ${
           showMobileChat ? "flex col-span-12" : "hidden md:flex"
         }`}
       >

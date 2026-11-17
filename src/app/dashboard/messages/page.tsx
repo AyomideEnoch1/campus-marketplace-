@@ -69,21 +69,23 @@ export default async function VendorMessagesPage() {
   }));
 
   return (
-    <div className="space-y-6">
-      <div className="pb-4 border-b border-neutral-200">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight">
+    <div className="h-[calc(100dvh-120px)] sm:h-[calc(100dvh-140px)] flex flex-col overflow-hidden">
+      <div className="pb-3 border-b border-neutral-200 shrink-0">
+        <h1 className="text-xl sm:text-2xl font-extrabold text-neutral-950 tracking-tight">
           Customer Inquiries &amp; Chat
         </h1>
-        <p className="text-xs sm:text-sm text-neutral-500 mt-1">
+        <p className="text-xs text-neutral-500 mt-0.5">
           Respond directly to student inquiries, bargain on pricing, and coordinate on-campus handoffs
         </p>
       </div>
 
-      <ChatContainer
-        initialConversations={conversations}
-        currentUserId={session.id}
-        isVendorPortal={true}
-      />
+      <div className="flex-1 min-h-0 pt-3">
+        <ChatContainer
+          initialConversations={conversations}
+          currentUserId={session.id}
+          isVendorPortal={true}
+        />
+      </div>
     </div>
   );
 }

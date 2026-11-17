@@ -30,8 +30,12 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
   const { data: authData } = useCurrentUser(initialUser);
   const user = authData?.user ?? initialUser;
 
-  // Don't show public bottom nav inside admin dashboard or vendor dashboard
-  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) {
+  // Don't show public bottom nav inside admin dashboard, vendor dashboard, or chat room
+  if (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/messages")
+  ) {
     return null;
   }
 

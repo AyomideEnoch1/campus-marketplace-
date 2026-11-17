@@ -437,14 +437,14 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
               </button>
             </div>
 
-            {/* Direct In-App Chat & WhatsApp Action */}
+            {/* Direct Chat & WhatsApp Action */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <Link
                 href={`/messages?vendor=${product.vendor.id}&product=${product.id}`}
                 className="w-full h-12 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
               >
                 <MessageSquare className="w-4 h-4 text-emerald-400" />
-                In-App Chat with Seller
+                Chat with Seller
               </Link>
 
               {product.vendor.whatsapp ? (
@@ -461,7 +461,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
                 </a>
               ) : (
                 <div className="w-full h-12 rounded-2xl bg-neutral-100 text-neutral-500 font-medium text-xs flex items-center justify-center">
-                  In-App Chat Only
+                  Chat with Seller Only
                 </div>
               )}
             </div>
