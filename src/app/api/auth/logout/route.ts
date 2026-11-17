@@ -8,3 +8,9 @@ export async function POST() {
   response.cookies.delete(AUTH_COOKIE_NAME);
   return response;
 }
+
+export async function GET(request: Request) {
+  const response = NextResponse.redirect(new URL("/auth/login", request.url));
+  response.cookies.delete(AUTH_COOKIE_NAME);
+  return response;
+}

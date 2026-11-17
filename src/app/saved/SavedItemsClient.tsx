@@ -38,9 +38,9 @@ export function SavedItemsClient() {
       quantity: 1,
       condition: item.condition || "Good Condition",
       vendor: {
-        id: item.id, // fallback
-        storeName: item.vendorName || "Campus Vendor",
-        slug: item.slug,
+        id: item.vendorId || item.vendor?.id || item.id,
+        storeName: item.vendorName || item.vendor?.storeName || "Campus Vendor",
+        slug: item.vendor?.slug || item.slug,
       },
     });
 

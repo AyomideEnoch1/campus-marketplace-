@@ -96,7 +96,7 @@ export function ProductCard({ product }: ProductCardProps) {
         ? conditionLabels[product.condition] || product.condition
         : undefined,
       vendor: {
-        id: product.vendor?.id || product.vendor?.slug || "campus-vendor",
+        id: product.vendor?.id || (product as any).vendorId || product.vendor?.slug || "campus-vendor",
         storeName: product.vendor?.storeName || "Campus Vendor",
         slug: product.vendor?.slug || "campus-vendor",
         whatsapp: product.vendor?.whatsapp,

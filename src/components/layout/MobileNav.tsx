@@ -29,7 +29,7 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
   const user = authData?.user ?? initialUser;
 
   // Don't show public bottom nav inside admin dashboard
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/dashboard")) {
     return null;
   }
 

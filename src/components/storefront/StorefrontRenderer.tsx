@@ -17,6 +17,7 @@ import {
   Smile,
   GraduationCap,
   Building2,
+  ArrowLeft,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,17 @@ export function StorefrontRenderer({
     <div className="min-h-screen bg-white">
       {/* 1. STORE HEADER BANNER */}
       <div className="relative w-full h-44 sm:h-64 lg:h-80 bg-neutral-900 overflow-hidden">
+        {/* Back to Overview button */}
+        <div className="absolute top-4 left-4 z-20">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-neutral-950/80 hover:bg-neutral-950 text-white text-xs font-bold backdrop-blur-md shadow-lg border border-white/20 transition-all hover:scale-[1.02] cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 text-emerald-400" />
+            <span>Back to Overview</span>
+          </Link>
+        </div>
+
         {vendor.banner ? (
           <Image
             src={vendor.banner}
@@ -137,7 +149,10 @@ export function StorefrontRenderer({
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight">
+                <h1
+                  className="text-2xl sm:text-3xl font-extrabold tracking-tight transition-colors"
+                  style={{ color: brandColor }}
+                >
                   {vendor.storeName}
                 </h1>
                 {vendor.sellerType === "guest" ? (
@@ -166,9 +181,19 @@ export function StorefrontRenderer({
               </div>
 
               {vendor.campus && (
-                <p className="text-xs sm:text-sm text-neutral-600 flex items-center gap-1 font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                  {vendor.campus.name} {vendor.businessAddress ? `• ${vendor.businessAddress}` : vendor.faculty ? `• ${vendor.faculty}` : ""}
+                <p className="text-xs sm:text-sm flex flex-wrap items-center gap-1 font-semibold transition-colors">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: brandColor }} />
+                  <span style={{ color: brandColor }}>{vendor.campus.name}</span>
+                  {(vendor.faculty || vendor.department) && (
+                    <span style={{ color: brandColor }} className="opacity-80">
+                      • {vendor.department || vendor.faculty}
+                    </span>
+                  )}
+                  {vendor.businessAddress && (
+                    <span className="text-neutral-500 font-normal">
+                      • {vendor.businessAddress}
+                    </span>
+                  )}
                 </p>
               )}
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireVendor } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
@@ -87,11 +88,8 @@ export async function PUT(
 
     const data = parsed.data;
 
-    // Enforce approval check on status
-    let newStatus = data.status;
-    if (vendor.status !== "APPROVED" && newStatus === "PUBLISHED") {
-      newStatus = "DRAFT";
-    }
+    // Honor status
+    const newStatus = data.status;
 
     const updated = await prisma.$transaction(async (tx) => {
       const p = await tx.product.update({
@@ -129,6 +127,12 @@ export async function PUT(
       return p;
     });
 
+    try {
+      revalidatePath(`/store/${vendor.slug}`);
+      revalidatePath("/shop");
+      revalidatePath("/dashboard/products");
+    } catch (e) {}
+
     return NextResponse.json({ success: true, product: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -160,6 +164,12 @@ export async function DELETE(
     await prisma.product.delete({
       where: { id: params.id },
     });
+
+    try {
+      revalidatePath(`/store/${vendor.slug}`);
+      revalidatePath("/shop");
+      revalidatePath("/dashboard/products");
+    } catch (e) {}
 
     return NextResponse.json({ success: true, message: "Product deleted successfully" });
   } catch (error: any) {

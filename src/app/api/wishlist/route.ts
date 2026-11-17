@@ -21,6 +21,7 @@ export async function GET() {
             category: { select: { name: true, slug: true } },
             vendor: {
               select: {
+                id: true,
                 storeName: true,
                 slug: true,
                 campus: { select: { name: true, slug: true } },

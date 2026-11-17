@@ -30,6 +30,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { formatNGN, formatDate } from "@/lib/utils";
 import { useUpdateAccountMutation } from "@/hooks/use-account-query";
 import { useLogout } from "@/hooks/use-auth-query";
+import { SignoutModal } from "@/components/ui/SignoutModal";
 
 interface AccountUser {
   id: string;
@@ -86,6 +87,7 @@ export function AccountClient({ initialUser }: AccountClientProps) {
 
   const updateAccountMutation = useUpdateAccountMutation();
   const logoutMutation = useLogout();
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
   const saving = updateAccountMutation.isPending;
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -108,7 +110,22 @@ export function AccountClient({ initialUser }: AccountClientProps) {
   };
 
   const handleLogout = async () => {
-    logoutMutation.mutate();
+    setIsSigningOut(true);
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 400);
+      },
+      onError: () => {
+        setIsSigningOut(false);
+      },
+      onSettled: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 600);
+      },
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -459,6 +476,8 @@ export function AccountClient({ initialUser }: AccountClientProps) {
           </div>
         </div>
       </div>
-    </div>
+    
+      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} onClose={() => setIsSigningOut(false)} />
+</div>
   );
 }
