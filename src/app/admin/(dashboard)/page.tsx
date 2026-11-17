@@ -129,25 +129,25 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
             <div
               key={i}
-              className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between"
+              className="p-3 sm:p-5 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between gap-2"
             >
-              <div>
-                <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-semibold text-neutral-400 uppercase tracking-wider truncate">
                   {stat.label}
                 </p>
-                <h3 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white mt-0.5 sm:mt-1">
                   {stat.value}
                 </h3>
-                <p className="text-xs text-neutral-400 mt-1">{stat.sub}</p>
+                <p className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 sm:mt-1 truncate">{stat.sub}</p>
               </div>
-              <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 ${stat.color}`}>
-                <Icon className="w-6 h-6" />
+              <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl border flex items-center justify-center shrink-0 ${stat.color}`}>
+                <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
               </div>
             </div>
           );
