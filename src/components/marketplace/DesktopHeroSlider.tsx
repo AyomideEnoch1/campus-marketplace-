@@ -161,13 +161,42 @@ const desktopSlides: DesktopSlide[] = [
   },
 ];
 
-export function DesktopHeroSlider() {
+export function DesktopHeroSlider({
+  customHeroBadge,
+  customHeroTitle,
+  customHeroSubtitle,
+  customHeroCta,
+}: {
+  customHeroBadge?: string;
+  customHeroTitle?: string;
+  customHeroSubtitle?: string;
+  customHeroCta?: string;
+} = {}) {
+  const slides = React.useMemo(() => {
+    const list = [...desktopSlides];
+    if (customHeroTitle || customHeroSubtitle || customHeroCta) {
+      const words = (customHeroTitle || "").trim().split(" ");
+      const mid = Math.min(2, Math.max(1, Math.floor(words.length / 2)));
+      list[0] = {
+        ...list[0],
+        title: customHeroTitle ? words.slice(0, mid).join(" ") : list[0].title,
+        highlightText: customHeroTitle ? words.slice(mid).join(" ") : list[0].highlightText,
+        description: customHeroSubtitle || list[0].description,
+        primaryCta: {
+          ...list[0].primaryCta,
+          label: customHeroCta || list[0].primaryCta.label,
+        },
+      };
+    }
+    return list;
+  }, [customHeroTitle, customHeroSubtitle, customHeroCta]);
+
   const [current, setCurrent] = React.useState(0);
   const [isPaused, setIsPaused] = React.useState(false);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
 
-  const total = desktopSlides.length;
-  const slide = desktopSlides[current];
+  const total = slides.length;
+  const slide = slides[current];
 
   const changeSlide = React.useCallback(
     (nextIdx: number) => {
@@ -351,7 +380,7 @@ export function DesktopHeroSlider() {
                 <div className="absolute bottom-4 right-0 xl:bottom-6 xl:right-2 z-30 flex items-center gap-2.5 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-full border border-neutral-200/80 shadow-lg">
                   {/* Clickable Dots */}
                   <div className="flex items-center gap-1.5">
-                    {desktopSlides.map((_, i) => (
+                    {slides.map((_, i) => (
                       <button
                         key={i}
                         type="button"

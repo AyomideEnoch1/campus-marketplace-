@@ -30,7 +30,7 @@ import { getCategoryImage, CATEGORY_IMAGES } from "@/lib/category-images";
 // Fetch dynamic data from database
 async function getHomepageData() {
   try {
-    const [categories, campuses, newArrivals, featuredProducts, vendors] = await Promise.all([
+    const [categories, campuses, newArrivals, featuredProducts, vendors, siteSettings] = await Promise.all([
       prisma.category.findMany({
         where: { parentId: null, isActive: true },
         take: 8,
@@ -96,12 +96,41 @@ async function getHomepageData() {
           _count: { select: { products: true } },
         },
       }),
+      prisma.siteSetting.findMany({
+        where: {
+          key: {
+            in: [
+              "hero_badge",
+              "hero_title",
+              "hero_subtitle",
+              "hero_cta_text",
+              "flash_sale_badge",
+              "flash_sale_title",
+              "flash_sale_subtitle",
+              "seller_promo_title",
+              "seller_promo_subtitle",
+            ],
+          },
+        },
+      }),
     ]);
 
-    return { categories, campuses, newArrivals, featuredProducts, vendors };
+    const cmsSettings: Record<string, string> = {};
+    (siteSettings || []).forEach((s) => {
+      cmsSettings[s.key] = s.value;
+    });
+
+    return { categories, campuses, newArrivals, featuredProducts, vendors, cmsSettings };
   } catch (error) {
     console.error("Error loading homepage data:", error);
-    return { categories: [], campuses: [], newArrivals: [], featuredProducts: [], vendors: [] };
+    return {
+      categories: [],
+      campuses: [],
+      newArrivals: [],
+      featuredProducts: [],
+      vendors: [],
+      cmsSettings: {},
+    };
   }
 }
 
@@ -111,7 +140,7 @@ export default async function HomePage() {
     redirect("/dashboard");
   }
 
-  const { categories, campuses, newArrivals, featuredProducts, vendors } =
+  const { categories, campuses, newArrivals, featuredProducts, vendors, cmsSettings = {} } =
     await getHomepageData();
 
   return (
@@ -247,13 +276,13 @@ export default async function HomePage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1 z-10 max-w-[70%]">
                 <span className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200">
-                  Semester Rush Clearance
+                  {cmsSettings.flash_sale_badge || "Semester Rush Clearance"}
                 </span>
                 <h4 className="text-base font-black leading-snug">
-                  Up To 50% Off Campus Essentials
+                  {cmsSettings.flash_sale_title || "Up To 50% Off Campus Essentials"}
                 </h4>
                 <p className="text-[10px] text-amber-100">
-                  Verified deals from graduating students.
+                  {cmsSettings.flash_sale_subtitle || "Verified deals from graduating students."}
                 </p>
               </div>
               <Link
@@ -347,7 +376,12 @@ export default async function HomePage() {
       {/* ========================================================= */}
       <div className="hidden lg:block">
         {/* 1. HERO SECTION (Interactive Desktop Hero Slider) */}
-        <DesktopHeroSlider />
+        <DesktopHeroSlider
+          customHeroBadge={cmsSettings.hero_badge}
+          customHeroTitle={cmsSettings.hero_title}
+          customHeroSubtitle={cmsSettings.hero_subtitle}
+          customHeroCta={cmsSettings.hero_cta_text}
+        />
 
       {/* 2. TRUST AND VALUE PROPOSITIONS BAR */}
       <TrustBar />
@@ -453,14 +487,14 @@ export default async function HomePage() {
             <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl shadow-orange-600/15">
               <div className="relative z-10 space-y-3">
                 <Badge variant="dark" className="bg-white/20 backdrop-blur-md text-white border-0 text-xs font-bold">
-                  Semester Rush Deals
+                  {cmsSettings.flash_sale_badge || "Semester Rush Deals"}
                 </Badge>
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
-                  Up To 50% Off <br />
-                  Campus Essentials
+                  {cmsSettings.flash_sale_title || "Up To 50% Off Campus Essentials"}
                 </h3>
                 <p className="text-xs sm:text-sm text-amber-100 max-w-sm">
-                  Limited inventory discounts from student vendors wrapping up their clearance sales.
+                  {cmsSettings.flash_sale_subtitle ||
+                    "Limited inventory discounts from student vendors wrapping up their clearance sales."}
                 </p>
 
                 {/* Countdown Timer Block */}
@@ -513,11 +547,11 @@ export default async function HomePage() {
                   Student Seller Community
                 </Badge>
                 <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
-                  Turn Your Drip or Skills <br />
-                  Into Campus Income
+                  {cmsSettings.seller_promo_title || "Turn Your Drip or Skills Into Campus Income"}
                 </h3>
                 <p className="text-xs sm:text-sm text-neutral-400 max-w-sm">
-                  Launch your storefront in under 3 minutes. Pick your storefront layout, upload items, and receive WhatsApp orders.
+                  {cmsSettings.seller_promo_subtitle ||
+                    "Launch your storefront in under 3 minutes. Pick your storefront layout, upload items, and receive WhatsApp orders."}
                 </p>
                 <ul className="text-xs text-neutral-300 space-y-1.5 pt-1">
                   <li className="flex items-center gap-1.5">
