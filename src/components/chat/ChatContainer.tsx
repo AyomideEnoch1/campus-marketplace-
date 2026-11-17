@@ -118,16 +118,16 @@ export function ChatContainer({
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-140px)] min-h-[550px]">
       {/* Sidebar: Conversation List */}
       <div
-        className={`md:col-span-4 lg:col-span-4 bg-neutral-900 border border-neutral-800 rounded-3xl p-4 flex flex-col h-full overflow-hidden ${
+        className={`md:col-span-4 lg:col-span-4 bg-white border border-neutral-200/80 rounded-3xl p-4 flex flex-col h-full overflow-hidden shadow-xs ${
           showMobileChat ? "hidden md:flex" : "flex"
         }`}
       >
-        <div className="pb-3 border-b border-neutral-800 flex items-center justify-between">
+        <div className="pb-3 border-b border-neutral-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-emerald-400" />
-            <h2 className="font-extrabold text-base text-white">In-App Chat</h2>
+            <MessageSquare className="w-5 h-5 text-emerald-600" />
+            <h2 className="font-extrabold text-base text-neutral-900">In-App Chat</h2>
           </div>
-          <span className="text-xs font-mono text-neutral-400 bg-neutral-950 px-2 py-0.5 rounded-full border border-neutral-800">
+          <span className="text-xs font-mono text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full border border-neutral-200/60 font-semibold">
             {conversations.length} Active
           </span>
         </div>
@@ -135,12 +135,12 @@ export function ChatContainer({
         {/* Search */}
         <div className="py-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
             <Input
               placeholder="Search chat or student..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-neutral-950 border-neutral-800 text-white placeholder:text-neutral-500 text-xs h-9 rounded-xl"
+              className="pl-9 bg-neutral-50 border-neutral-200 text-neutral-900 placeholder:text-neutral-400 text-xs h-9 rounded-xl focus:bg-white"
             />
           </div>
         </div>
@@ -148,13 +148,13 @@ export function ChatContainer({
         {/* Conversation List Items */}
         <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
           {filteredConversations.length === 0 ? (
-            <div className="py-12 text-center text-neutral-500 text-xs space-y-2">
-              <MessageSquare className="w-8 h-8 mx-auto text-neutral-600 opacity-40" />
-              <p className="font-semibold text-neutral-400">No active conversations</p>
-              <p className="text-[11px] text-neutral-500">
+            <div className="py-12 text-center text-neutral-400 text-xs space-y-2">
+              <MessageSquare className="w-8 h-8 mx-auto text-neutral-300 opacity-60" />
+              <p className="font-semibold text-neutral-600">No active conversations</p>
+              <p className="text-[11px] text-neutral-400">
                 {isVendorPortal
                   ? "When buyers message your store about listings, chats appear here."
-                  : "Click 'Chat with Seller' on any product to start an in-app inquiry."}
+                  : "Click 'In-App Chat' on any product to start an in-app inquiry."}
               </p>
             </div>
           ) : (
@@ -170,36 +170,42 @@ export function ChatContainer({
                 <button
                   key={conv.id}
                   onClick={() => handleSelectConversation(conv)}
-                  className={`w-full text-left p-3 rounded-2xl transition-all flex items-start gap-3 ${
+                  className={`w-full text-left p-3 rounded-2xl transition-all flex items-start gap-3 cursor-pointer ${
                     isActive
-                      ? "bg-emerald-950/60 border border-emerald-800/80 text-white shadow-xs"
-                      : "bg-neutral-950/50 hover:bg-neutral-800/60 border border-neutral-800/60 text-neutral-300"
+                      ? "bg-emerald-50/80 border border-emerald-300/80 text-emerald-950 shadow-xs"
+                      : "bg-white hover:bg-neutral-50 border border-neutral-100 text-neutral-700"
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-neutral-800 text-emerald-400 font-bold flex items-center justify-center shrink-0 border border-neutral-700">
+                  <div
+                    className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center shrink-0 border ${
+                      isActive
+                        ? "bg-emerald-600 text-white border-emerald-500 shadow-xs"
+                        : "bg-neutral-100 text-emerald-700 border-neutral-200"
+                    }`}
+                  >
                     {title?.[0] || "U"}
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
-                      <p className="font-bold text-xs text-white truncate">
+                      <p className="font-bold text-xs text-neutral-900 truncate">
                         {title}
                       </p>
                       {unread > 0 && (
-                        <span className="w-4 h-4 rounded-full bg-emerald-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">
+                        <span className="w-4 h-4 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center shrink-0">
                           {unread}
                         </span>
                       )}
                     </div>
 
                     {conv.product && (
-                      <p className="text-[10px] text-emerald-400 font-semibold truncate flex items-center gap-1">
+                      <p className="text-[10px] text-emerald-700 font-semibold truncate flex items-center gap-1">
                         <Package className="w-3 h-3 shrink-0" />
                         {conv.product.title}
                       </p>
                     )}
 
-                    <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                    <p className="text-[11px] text-neutral-500 truncate mt-0.5">
                       {conv.lastMessage || "Tap to chat"}
                     </p>
                   </div>
@@ -224,9 +230,9 @@ export function ChatContainer({
             onBack={() => setShowMobileChat(false)}
           />
         ) : (
-          <div className="w-full h-full bg-neutral-900 border border-neutral-800 rounded-3xl flex flex-col items-center justify-center p-8 text-center text-neutral-400">
-            <MessageSquare className="w-12 h-12 text-neutral-600 mb-3" />
-            <h3 className="text-lg font-bold text-white">Select a Conversation</h3>
+          <div className="w-full h-full bg-white border border-neutral-200/80 rounded-3xl flex flex-col items-center justify-center p-8 text-center text-neutral-500 shadow-xs">
+            <MessageSquare className="w-12 h-12 text-neutral-300 mb-3" />
+            <h3 className="text-lg font-bold text-neutral-800">Select a Conversation</h3>
             <p className="text-xs text-neutral-500 mt-1 max-w-sm">
               Connect directly with verified campus vendors and buyers to negotiate prices and schedule safe campus meetups.
             </p>

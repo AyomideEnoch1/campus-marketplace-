@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -97,7 +98,8 @@ export async function POST(
     const conversation = await prisma.conversation.findUnique({
       where: { id: params.id },
       include: {
-        vendor: { select: { userId: true } },
+        vendor: { select: { userId: true, storeName: true } },
+        buyer: { select: { id: true, fullName: true } },
       },
     });
 
@@ -138,6 +140,19 @@ export async function POST(
         lastMessageAt: new Date(),
       },
     });
+
+    // Dispatch real-time notification to the recipient
+    const isSenderBuyer = session.id === conversation.buyerId;
+    const recipientUserId = isSenderBuyer ? conversation.vendor.userId : conversation.buyerId;
+    const senderName = isSenderBuyer ? (conversation.buyer.fullName || "Student Buyer") : conversation.vendor.storeName;
+
+    createNotification({
+      userId: recipientUserId,
+      type: "CHAT_MESSAGE",
+      title: `Message from ${senderName}`,
+      message: content.trim().slice(0, 100),
+      link: isSenderBuyer ? "/dashboard/messages" : "/messages",
+    }).catch((e) => console.error("Chat notification error:", e));
 
     return NextResponse.json({ success: true, message });
   } catch (error: any) {

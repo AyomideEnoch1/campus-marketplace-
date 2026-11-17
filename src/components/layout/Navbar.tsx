@@ -23,6 +23,7 @@ import { useWishlist } from "@/lib/wishlist";
 import { useCurrentUser, useLogout } from "@/hooks/use-auth-query";
 import { SignoutModal } from "@/components/ui/SignoutModal";
 import { SignInAsBuyerButton } from "@/components/vendor/SignInAsBuyerButton";
+import { NotificationBell } from "./NotificationBell";
 
 interface NavbarProps {
   initialUser?: any;
@@ -186,6 +187,9 @@ export function Navbar({ initialUser }: NavbarProps) {
               )}
             </Link>
           )}
+
+          {/* Real-Time Notification Bell (Only visible when signed in) */}
+          {user && <NotificationBell currentUserId={user.id} />}
 
           {/* User Auth Section */}
           {user ? (

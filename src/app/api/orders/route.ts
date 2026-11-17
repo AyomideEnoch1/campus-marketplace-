@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { sendOrderConfirmationEmail, sendVendorOrderNotificationEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -339,6 +340,28 @@ export async function POST(request: Request) {
         payoutAmount: totalAmount,
         meetupPoint: finalDeliveryAddress,
       }).catch((err) => console.error("Vendor order notification email error:", err));
+    }
+
+    // In-App Real-Time Notification for Vendor
+    if (vendor.user?.id) {
+      createNotification({
+        userId: vendor.user.id,
+        type: "ORDER_CREATED",
+        title: `New Order #${newOrder.orderNumber}! 🛍️`,
+        message: `${buyerName} placed an order (${items.length} items • ₦${totalAmount.toLocaleString()})`,
+        link: "/dashboard/orders",
+      }).catch((e) => console.error("Vendor order notification error:", e));
+    }
+
+    // In-App Real-Time Notification for Buyer
+    if (session?.id) {
+      createNotification({
+        userId: session.id,
+        type: "ORDER_STATUS",
+        title: `Order #${newOrder.orderNumber} Confirmed 🎉`,
+        message: `Your payment is secured in escrow. Awaiting campus pickup.`,
+        link: "/orders",
+      }).catch((e) => console.error("Buyer order notification error:", e));
     }
 
     return NextResponse.json({
