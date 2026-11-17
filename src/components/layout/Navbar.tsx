@@ -46,6 +46,10 @@ export function Navbar({ initialUser }: NavbarProps) {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
   const isVendorInterface = pathname.startsWith("/dashboard");
 
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleLogout = () => {
     setUserDropdownOpen(false);
     setMobileMenuOpen(false);
@@ -302,19 +306,21 @@ export function Navbar({ initialUser }: NavbarProps) {
             </div>
           )}
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 transition-colors"
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          {/* Mobile Menu Button (Only visible on Home page on small screens) */}
+          {pathname === "/" && (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 transition-colors"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation */}
-      {mobileMenuOpen && (
+      {/* Mobile Drawer Navigation (Only on Home page on small screens) */}
+      {mobileMenuOpen && pathname === "/" && (
         <div className="md:hidden border-t border-neutral-100 bg-white px-4 py-4 space-y-3 animate-in slide-in-from-top-2">
           <div className="space-y-1">
             {navLinks.map((link) => (
