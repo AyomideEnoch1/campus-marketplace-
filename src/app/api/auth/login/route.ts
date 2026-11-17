@@ -150,8 +150,12 @@ export async function POST(request: Request) {
     return response;
   } catch (error: any) {
     console.error("Login API error:", error);
+    const errorMessage =
+      error?.message?.includes("EMAXCONNSESSION") || error?.message?.includes("connection")
+        ? "Database connection limit reached. Please try again in a few moments."
+        : error?.message || "Something went wrong. Please try again later.";
     return NextResponse.json(
-      { error: "Something went wrong. Please try again later." },
+      { error: errorMessage },
       { status: 500 }
     );
   }

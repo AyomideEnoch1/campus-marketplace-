@@ -77,18 +77,7 @@ function LoginForm() {
       window.location.href = targetUrl;
     } catch (err: any) {
       console.error("Sign-in error:", err);
-      const msg = err.message || "";
-      const isSystemError =
-        msg.includes("fetch") ||
-        msg.includes("Failed to fetch") ||
-        msg.includes("Prisma") ||
-        msg.includes("database") ||
-        msg.includes("SQL") ||
-        msg.includes("500") ||
-        msg.includes("Internal");
-      setError(
-        isSystemError ? "Something went wrong. Please try again later." : msg || "Something went wrong. Please try again later."
-      );
+      setError(err?.message || "Failed to sign in. Please try again.");
       setLoading(false);
     }
   };
