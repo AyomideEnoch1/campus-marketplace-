@@ -206,104 +206,128 @@ export async function POST(request: Request) {
     // Payout delay: 72 hours for guest sellers (students get 48 hours)
     const payoutDelayHours = sellerType === "guest" ? 72 : 48;
 
-    // Create user and vendor profile in a transaction
-    const newUser = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          fullName,
-          email: userEmail,
-          passwordHash,
-          phone: contactPhone || null,
-          role,
-        },
+    let finalCampusId: string | null = null;
+    let finalStoreName = "";
+    let uniqueSlug = "";
+    let finalWhatsapp = "";
+
+    if (role === "VENDOR") {
+      finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
+      finalWhatsapp = whatsapp?.trim() || contactPhone || "";
+
+      if (!finalWhatsapp) {
+        return NextResponse.json(
+          { error: "A WhatsApp phone number is required for vendors to coordinate customer meetups" },
+          { status: 400 }
+        );
+      }
+
+      // Validate campusId against database before opening transaction
+      let targetCampus = campusId
+        ? await prisma.campus.findUnique({ where: { id: campusId } })
+        : null;
+
+      if (!targetCampus) {
+        targetCampus = await prisma.campus.findFirst({
+          where: { isActive: true },
+          orderBy: { name: "asc" },
+        });
+      }
+
+      if (!targetCampus) {
+        return NextResponse.json(
+          { error: "No active campus found in the system" },
+          { status: 400 }
+        );
+      }
+      finalCampusId = targetCampus.id;
+
+      // Compute unique slug in one fast query before transaction
+      const baseSlug = slugify(finalStoreName);
+      const existingVendors = await prisma.vendorProfile.findMany({
+        where: { slug: { startsWith: baseSlug } },
+        select: { slug: true },
       });
+      const existingSlugs = new Set(existingVendors.map((v) => v.slug));
+      uniqueSlug = baseSlug;
+      let counter = 1;
+      while (existingSlugs.has(uniqueSlug)) {
+        uniqueSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+    }
 
-      if (role === "VENDOR") {
-        const finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
-
-        // Validate campusId against database
-        let targetCampus = campusId
-          ? await tx.campus.findUnique({ where: { id: campusId } })
-          : null;
-
-        if (!targetCampus) {
-          targetCampus = await tx.campus.findFirst({
-            where: { isActive: true },
-            orderBy: { name: "asc" },
-          });
-        }
-
-        if (!targetCampus) {
-          throw new Error("No active campus found in the system");
-        }
-
-        const finalCampusId = targetCampus.id;
-        const finalWhatsapp = whatsapp?.trim() || contactPhone || "";
-
-        if (!finalWhatsapp) {
-          throw new Error("A WhatsApp phone number is required for vendors to coordinate customer meetups");
-        }
-
-        const baseSlug = slugify(finalStoreName);
-        let uniqueSlug = baseSlug;
-        let counter = 1;
-        while (await tx.vendorProfile.findUnique({ where: { slug: uniqueSlug } })) {
-          uniqueSlug = `${baseSlug}-${counter}`;
-          counter++;
-        }
-
-        const vendorProfile = await tx.vendorProfile.create({
+    // Create user and vendor profile in a transaction with extended timeout for cloud Supabase
+    const newUser = await prisma.$transaction(
+      async (tx) => {
+        const user = await tx.user.create({
           data: {
-            userId: user.id,
-            storeName: finalStoreName,
-            slug: uniqueSlug,
-            campusId: finalCampusId,
-            whatsapp: finalWhatsapp,
-            storeDescription: storeDescription || null,
-            sellerType,
-            verificationTier,
-            payoutDelayHours,
-            // Student fields
-            faculty: faculty || null,
-            department: department || null,
-            studentIdUrl: studentIdUrl || null,
-            // Guest fields
-            businessName: businessName || finalStoreName,
-            businessCategory: businessCategory || null,
-            businessAddress: businessAddress || null,
-            businessPhotoPath: businessPhotoPath || null,
-            cacNumber: cacNumber || null,
-            cacDocumentPath: cacDocumentPath || null,
-            isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
-            governmentIdType: governmentIdType || null,
-            governmentIdHash: governmentIdHash || null,
-            idDocumentPath: idDocumentPath || null,
-            selfieDocumentPath: selfieDocumentPath || null,
-            vouchedBy: vouchedBy || null,
-            status: vendorStatus as any,
+            fullName,
+            email: userEmail,
+            passwordHash,
+            phone: contactPhone || null,
+            role,
           },
         });
 
-        // If vouched by an existing user/vendor, record vouch entry
-        if (vouchedBy) {
-          const voucherUser = await tx.user.findUnique({
-            where: { id: vouchedBy },
+        if (role === "VENDOR" && finalCampusId) {
+          const vendorProfile = await tx.vendorProfile.create({
+            data: {
+              userId: user.id,
+              storeName: finalStoreName,
+              slug: uniqueSlug,
+              campusId: finalCampusId,
+              whatsapp: finalWhatsapp,
+              storeDescription: storeDescription || null,
+              sellerType,
+              verificationTier,
+              payoutDelayHours,
+              // Student fields
+              faculty: faculty || null,
+              department: department || null,
+              studentIdUrl: studentIdUrl || null,
+              // Guest fields
+              businessName: businessName || finalStoreName,
+              businessCategory: businessCategory || null,
+              businessAddress: businessAddress || null,
+              businessPhotoPath: businessPhotoPath || null,
+              cacNumber: cacNumber || null,
+              cacDocumentPath: cacDocumentPath || null,
+              isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
+              governmentIdType: governmentIdType || null,
+              governmentIdHash: governmentIdHash || null,
+              idDocumentPath: idDocumentPath || null,
+              selfieDocumentPath: selfieDocumentPath || null,
+              vouchedBy: vouchedBy || null,
+              status: vendorStatus as any,
+            },
           });
-          if (voucherUser) {
-            await tx.vouch.create({
-              data: {
-                voucherId: voucherUser.id,
-                guestId: vendorProfile.id,
-                status: "ACCEPTED",
-                notes: `Vouched at registration for ${finalStoreName}`,
-              },
+
+          // If vouched by an existing user/vendor, record vouch entry
+          if (vouchedBy) {
+            const voucherUser = await tx.user.findUnique({
+              where: { id: vouchedBy },
             });
+            if (voucherUser) {
+              await tx.vouch.create({
+                data: {
+                  voucherId: voucherUser.id,
+                  guestId: vendorProfile.id,
+                  status: "ACCEPTED",
+                  notes: `Vouched at registration for ${finalStoreName}`,
+                },
+              });
+            }
           }
         }
-      }
 
-      return user;
-    });
+        return user;
+      },
+      {
+        maxWait: 15000,
+        timeout: 30000,
+      }
+    );
 
     const token = signToken({
       userId: newUser.id,

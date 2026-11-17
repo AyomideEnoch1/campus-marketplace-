@@ -85,6 +85,10 @@ export function AccountClient({ initialUser }: AccountClientProps) {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim()) {
+      setSaveError("Full name cannot be empty.");
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
@@ -409,6 +413,7 @@ export function AccountClient({ initialUser }: AccountClientProps) {
                   <Input
                     type="text"
                     required
+                    maxLength={70}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="rounded-xl text-xs h-10"
@@ -431,6 +436,7 @@ export function AccountClient({ initialUser }: AccountClientProps) {
                   <label className="text-xs font-bold text-neutral-700">Phone / WhatsApp Number</label>
                   <Input
                     type="tel"
+                    maxLength={15}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="rounded-xl text-xs h-10"
@@ -441,8 +447,8 @@ export function AccountClient({ initialUser }: AccountClientProps) {
 
                 <Button
                   type="submit"
-                  disabled={saving}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold h-10 shadow-sm mt-2"
+                  disabled={saving || !fullName.trim()}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold h-10 shadow-sm mt-2 transition-all"
                 >
                   {saving ? "Saving Changes..." : "Save Profile"}
                 </Button>

@@ -197,6 +197,9 @@ export async function POST(request: Request) {
       }
 
       return product;
+    }, {
+      maxWait: 15000,
+      timeout: 30000,
     });
 
     return NextResponse.json({ success: true, product: newProduct });

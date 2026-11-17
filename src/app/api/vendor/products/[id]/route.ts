@@ -127,6 +127,9 @@ export async function PUT(
       }
 
       return p;
+    }, {
+      maxWait: 15000,
+      timeout: 30000,
     });
 
     return NextResponse.json({ success: true, product: updated });

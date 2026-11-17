@@ -18,6 +18,8 @@ import {
 import { getSession } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Flame, Sparkles, Store, ChevronLeft, ChevronRight } from "lucide-react";
+import { Flame, Sparkles, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SlideItem {
@@ -193,22 +193,6 @@ export function MobileHeroSlider() {
             );
           })}
         </div>
-
-        {/* Floating Quick Left/Right Arrow Overlays */}
-        <button
-          onClick={() => setCurrent((prev) => (prev - 1 + slides.length) % slides.length)}
-          className="absolute left-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/15 text-white/80 hover:bg-black/30 flex items-center justify-center backdrop-blur-xs transition-colors z-20"
-          aria-label="Previous Slide"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setCurrent((prev) => (prev + 1) % slides.length)}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-black/15 text-white/80 hover:bg-black/30 flex items-center justify-center backdrop-blur-xs transition-colors z-20"
-          aria-label="Next Slide"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Pagination Dots */}

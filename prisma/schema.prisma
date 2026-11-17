@@ -76,6 +76,7 @@ model User {
   helpfulVotes   ReviewHelpfulVote[]
   reviewReports  ReviewReport[]
   vouchesGiven   Vouch[]             @relation("UserVouches")
+  disputes       Dispute[]
 
   @@index([role])
   @@index([email])
@@ -134,6 +135,8 @@ model VendorProfile {
 
   products               Product[]
   orders                 Order[]
+  payouts                Payout[]
+  sellerBankAccount      SellerBankAccount?
   receivedProductReviews ProductReview[] @relation("SellerProductReviews")
   receivedSellerRatings  SellerRating[]  @relation("SellerRatingsReceived")
   reviewReplies          ReviewReply[]
@@ -265,6 +268,25 @@ model Order {
   vendor          VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   status          OrderStatus @default(PENDING)
   totalAmount     Float
+  tx_ref          String?     @unique
+  escrow_status   String      @default("pending")
+  escrow_mode     String      @default("escrow") // escrow | direct
+  escrow_forced_reason String?
+  fee_amount      Float       @default(0.0)
+  fee_percent     Float       @default(0.0)
+  fee_payer       String      @default("buyer") // buyer | seller | split
+  settings_snapshot String?   // JSON snapshot of platform settings at order creation
+  subtotal        Float       @default(0.0)
+  commission      Float       @default(0.0)
+  seller_amount   Float       @default(0.0)
+  currency        String      @default("NGN")
+  flw_transaction_id String?
+  paid_at         DateTime?
+  delivered_at    DateTime?
+  confirmed_at    DateTime?
+  released_at     DateTime?
+  auto_release_at DateTime?
+  dispute_deadline DateTime?
   notes           String?
   meetupPointId   String?
   meetupPoint     SafeMeetupPoint? @relation(fields: [meetupPointId], references: [id], onDelete: SetNull)
@@ -273,8 +295,16 @@ model Order {
 
   items         OrderItem[]
   sellerRatings SellerRating[]
+  payments      Payment[]
+  payouts       Payout[]
+  escrowLedger  EscrowLedger[]
+  deliveryCode  DeliveryCode?
+  dispute       Dispute?
+  refunds       Refund[]
 
   @@index([orderNumber])
+  @@index([tx_ref])
+  @@index([escrow_status])
   @@index([vendorId])
   @@index([buyerId])
   @@index([status])
@@ -524,4 +554,177 @@ model Vouch {
 
   @@index([voucherId])
   @@index([guestId])
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  orderId           String   @map("order_id")
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  flwTransactionId  String   @unique @map("flw_transaction_id")
+  txRef             String   @unique @map("tx_ref")
+  amount            Float
+  currency          String   @default("NGN")
+  status            String   // successful, failed
+  paymentType       String?  @map("payment_type")
+  rawVerifyResponse String?  @map("raw_verify_response") // JSON string
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("payments")
+  @@index([orderId])
+  @@index([flwTransactionId])
+  @@index([txRef])
+}
+
+model Payout {
+  id            String        @id @default(cuid())
+  orderId       String        @map("order_id")
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sellerId      String        @map("seller_id")
+  seller        VendorProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  amount        Float
+  reference     String        @unique // payout_orderId_attempt
+  flwTransferId String?       @map("flw_transfer_id")
+  status        String        @default("pending") // pending, processing, successful, failed, reversed
+  failureReason String?       @map("failure_reason")
+  attempts      Int           @default(1)
+  nextRetryAt   DateTime?     @map("next_retry_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  completedAt   DateTime?     @map("completed_at")
+
+  @@map("payouts")
+  @@index([orderId])
+  @@index([sellerId])
+  @@index([reference])
+  @@index([status])
+}
+
+model EscrowLedger {
+  id          String   @id @default(cuid())
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type        String   // escrow_in, commission, escrow_out, refund_out, adjustment
+  amount      Float
+  currency    String   @default("NGN")
+  reference   String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("escrow_ledger")
+  @@index([orderId])
+  @@index([type])
+  @@index([reference])
+  @@index([createdAt])
+}
+
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  provider    String   @default("flutterwave")
+  eventId     String   @unique @map("event_id")
+  eventType   String   @map("event_type")
+  payload     String   // JSON string
+  status      String   @default("processed") // processed, ignored, failed
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@map("webhook_events")
+  @@index([eventId])
+  @@index([eventType])
+}
+
+model DeliveryCode {
+  id        String   @id @default(cuid())
+  orderId   String   @unique @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  codeHash  String   @map("code_hash")
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("delivery_codes")
+  @@index([orderId])
+}
+
+model Dispute {
+  id                  String    @id @default(cuid())
+  orderId             String    @unique @map("order_id")
+  order               Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  buyerId             String    @map("buyer_id")
+  buyer               User      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  reason              String
+  description         String
+  evidencePaths       String?   @map("evidence_paths") // JSON string
+  status              String    @default("open") // open, under_review, resolved_refund, resolved_release, resolved_split
+  resolution          String?   // refund, release, split
+  resolutionNotes     String?   @map("resolution_notes")
+  refundAmount        Float?    @default(0.0) @map("refund_amount")
+  sellerReleaseAmount Float?    @default(0.0) @map("seller_release_amount")
+  resolvedAt          DateTime? @map("resolved_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  refunds Refund[]
+
+  @@map("disputes")
+  @@index([orderId])
+  @@index([buyerId])
+  @@index([status])
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  orderId     String   @map("order_id")
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  disputeId   String?  @map("dispute_id")
+  dispute     Dispute? @relation(fields: [disputeId], references: [id], onDelete: SetNull)
+  amount      Float
+  flwRefundId String?  @map("flw_refund_id")
+  status      String   @default("pending") // pending, successful, failed
+  reason      String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("refunds")
+  @@index([orderId])
+  @@index([disputeId])
+}
+
+model SellerBankAccount {
+  id            String        @id @default(cuid())
+  sellerId      String        @unique @map("seller_id")
+  seller        VendorProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  bankCode      String        @map("bank_code")
+  bankName      String        @map("bank_name")
+  accountNumber String        @map("account_number")
+  accountName   String        @map("account_name")
+  verified      Boolean       @default(false)
+  verifiedAt    DateTime?     @map("verified_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@unique([bankCode, accountNumber], name: "unique_bank_account")
+  @@map("seller_bank_accounts")
+  @@index([sellerId])
+  @@index([accountNumber])
+}
+
+model PlatformSetting {
+  key         String   @id
+  value       String   // JSON string
+  description String?
+  updatedBy   String?  @map("updated_by")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+
+  @@map("platform_settings")
+}
+
+model PlatformSettingAudit {
+  id        String   @id @default(cuid())
+  key       String
+  oldValue  String?  @map("old_value")
+  newValue  String   @map("new_value")
+  changedBy String?  @map("changed_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("platform_settings_audit")
+  @@index([key])
+  @@index([createdAt])
 }

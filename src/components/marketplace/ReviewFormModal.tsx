@@ -87,6 +87,10 @@ export function ReviewFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!comment.trim()) {
+      setErrorMsg("Please write a short comment or review describing your experience.");
+      return;
+    }
     setSubmitting(true);
     setErrorMsg("");
 
@@ -414,8 +418,8 @@ export function ReviewFormModal({
               </Button>
               <Button
                 type="submit"
-                disabled={submitting}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl px-5"
+                disabled={submitting || !comment.trim()}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl px-5 transition-all"
               >
                 {submitting ? "Posting..." : "Submit Review"}
               </Button>

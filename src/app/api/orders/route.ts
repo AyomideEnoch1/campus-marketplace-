@@ -113,61 +113,67 @@ export async function POST(request: Request) {
     const dateStr = new Date().toISOString().slice(0, 7).replace("-", "");
     const orderNumber = `ORD-${dateStr}-${randomSuffix}`;
 
-    const newOrder = await prisma.$transaction(async (tx) => {
-      const order = await tx.order.create({
-        data: {
-          orderNumber,
-          buyerId: session?.id || null,
-          buyerName,
-          buyerEmail,
-          buyerPhone,
-          deliveryAddress: finalDeliveryAddress,
-          deliveryMethod,
-          meetupPointId: finalMeetupPointId,
-          vendorId,
-          totalAmount,
-          notes: notes || null,
-          status: "PENDING",
-        },
-      });
-
-      for (const item of items) {
-        await tx.orderItem.create({
+    const newOrder = await prisma.$transaction(
+      async (tx) => {
+        const order = await tx.order.create({
           data: {
-            orderId: order.id,
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-          },
-        });
-
-        // Decrement stock if in stock
-        await tx.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      }
-
-      // Log activity
-      await tx.activityLog.create({
-        data: {
-          action: "ORDER_CREATED",
-          entityType: "Order",
-          entityId: order.id,
-          metadataJson: JSON.stringify({
             orderNumber,
+            buyerId: session?.id || null,
+            buyerName,
+            buyerEmail,
+            buyerPhone,
+            deliveryAddress: finalDeliveryAddress,
+            deliveryMethod,
+            meetupPointId: finalMeetupPointId,
+            vendorId,
             totalAmount,
-            vendorStore: vendor.storeName,
-          }),
-        },
-      });
+            notes: notes || null,
+            status: "PENDING",
+          },
+        });
 
-      return order;
-    });
+        for (const item of items) {
+          await tx.orderItem.create({
+            data: {
+              orderId: order.id,
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+            },
+          });
+
+          // Decrement stock if in stock
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
+            },
+          });
+        }
+
+        // Log activity
+        await tx.activityLog.create({
+          data: {
+            action: "ORDER_CREATED",
+            entityType: "Order",
+            entityId: order.id,
+            metadataJson: JSON.stringify({
+              orderNumber,
+              totalAmount,
+              vendorStore: vendor.storeName,
+            }),
+          },
+        });
+
+        return order;
+      },
+      {
+        maxWait: 15000,
+        timeout: 30000,
+      }
+    );
 
     return NextResponse.json({
       success: true,

@@ -148,7 +148,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       {/* Product Content Details */}
-      <div className="p-3.5 flex flex-col flex-grow justify-between gap-2">
+      <div className="p-3 sm:p-3.5 flex flex-col flex-grow justify-between gap-2">
         <div>
           {/* Vendor & Campus Meta */}
           {product.vendor && (
@@ -175,8 +175,8 @@ export function ProductCard({ product }: ProductCardProps) {
             </h3>
           </Link>
 
-          {/* Rating or New Badge (Section Requirement) */}
-          <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+          {/* Rating / New Badge & Condition Tag */}
+          <div className="flex items-center gap-1.5 mt-1.5 text-[11px] flex-wrap">
             {product.reviewCount && product.reviewCount >= 3 ? (
               <>
                 <div className="flex items-center gap-0.5 text-amber-500 font-bold">
@@ -186,29 +186,27 @@ export function ProductCard({ product }: ProductCardProps) {
                 <span className="text-neutral-400">({product.reviewCount})</span>
               </>
             ) : (
-              <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 px-1.5 py-0.2 rounded-md">
+              <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 px-1.5 py-0.5 rounded-md leading-none">
                 New
+              </span>
+            )}
+
+            {product.condition && (
+              <span className="inline-flex items-center text-[9px] sm:text-[10px] font-medium text-neutral-600 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap leading-none">
+                {conditionLabels[product.condition] || product.condition}
               </span>
             )}
           </div>
         </div>
 
-        {/* Pricing & Condition */}
-        <div className="pt-1 flex items-baseline justify-between gap-1 border-t border-neutral-50">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-extrabold text-sm sm:text-base text-neutral-900">
-              {formatNGN(product.price)}
-            </span>
-            {product.comparePrice && product.comparePrice > product.price && (
-              <span className="text-[11px] text-neutral-400 line-through">
-                {formatNGN(product.comparePrice)}
-              </span>
-            )}
-          </div>
-
-          {product.condition && (
-            <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap">
-              {conditionLabels[product.condition] || product.condition}
+        {/* Pricing */}
+        <div className="pt-2 border-t border-neutral-100 flex items-baseline gap-1.5 min-w-0">
+          <span className="font-extrabold text-sm sm:text-base text-neutral-900 tracking-tight">
+            {formatNGN(product.price)}
+          </span>
+          {product.comparePrice && product.comparePrice > product.price && (
+            <span className="text-[10px] sm:text-[11px] text-neutral-400 line-through">
+              {formatNGN(product.comparePrice)}
             </span>
           )}
         </div>

@@ -293,6 +293,7 @@ export function ProductReviewsSection({
                   </label>
                   <textarea
                     rows={3}
+                    maxLength={500}
                     value={reportDetails}
                     onChange={(e) => setReportDetails(e.target.value)}
                     placeholder="Describe why this review violates campus marketplace guidelines..."

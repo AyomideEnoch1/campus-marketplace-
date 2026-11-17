@@ -35,14 +35,24 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (!email.trim()) {
+      setError("Please enter your email address or phone number.");
+      return;
+    }
+    if (!password.trim()) {
+      setError("Please enter your password.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       const data = await res.json();
@@ -201,13 +211,14 @@ function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-neutral-700 block">
-            Email Address or Phone Number
+            Email Address or Phone Number *
           </label>
           <div className="relative">
             <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <Input
               type="text"
               required
+              maxLength={100}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -222,7 +233,7 @@ function LoginForm() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-neutral-700 block">
-              Password
+              Password *
             </label>
             <Link
               href="#"
@@ -236,6 +247,7 @@ function LoginForm() {
             <Input
               type={showPassword ? "text" : "password"}
               required
+              maxLength={64}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -257,8 +269,8 @@ function LoginForm() {
 
         <Button
           type="submit"
-          disabled={loading}
-          className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all hover:shadow-emerald-600/30 flex items-center justify-center gap-2 mt-2"
+          disabled={loading || !email.trim() || !password.trim()}
+          className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all hover:shadow-emerald-600/30 flex items-center justify-center gap-2 mt-2"
         >
           {loading ? (
             "Signing in..."

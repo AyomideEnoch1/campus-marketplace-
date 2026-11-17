@@ -21,6 +21,7 @@ import {
   ExternalLink,
   X,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -165,23 +166,53 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+
+    if (!fullName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+    if (!phone.trim() || phone.trim().length < 7) {
+      setError("Please enter a valid phone number (at least 7 digits).");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (sellerType === "student") {
+      if (!email.trim() || !email.includes("@")) {
+        setError("Please enter a valid student email address.");
+        return;
+      }
+      if (!storeName.trim()) {
+        setError("Please enter a store name.");
+        return;
+      }
+    }
 
     // Validate Guest specifics
     if (sellerType === "guest") {
       if (!guestVendorsEnabled) {
         setError(`Guest registration is temporarily disabled on ${selectedCampus?.name || "this campus"}. Only verified students can sell.`);
-        setLoading(false);
         return;
       }
-
+      if (!businessName.trim() && !storeName.trim()) {
+        setError("Please enter your Business / Trade name.");
+        return;
+      }
+      if (!businessAddress.trim()) {
+        setError("Please enter your physical shop or business address.");
+        return;
+      }
       if (!idDocumentPath || !selfieDocumentPath) {
         setError("Please upload your government-issued ID and selfie holding your ID for Tier 2 verification.");
-        setLoading(false);
         return;
       }
     }
+
+    setLoading(true);
 
     try {
       const payload: any = {
@@ -417,6 +448,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <label className="text-xs font-bold text-neutral-700">Full Name *</label>
                 <Input
                   required
+                  maxLength={70}
                   placeholder="e.g. Samuel Adekunle"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -431,6 +463,8 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <Input
                   type="tel"
                   required
+                  minLength={7}
+                  maxLength={15}
                   placeholder="e.g. 08012345678"
                   value={phone}
                   onChange={(e) => {
@@ -451,6 +485,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <Input
                   type="email"
                   required={sellerType === "student"}
+                  maxLength={100}
                   placeholder={
                     sellerType === "student"
                       ? "student@unilag.edu.ng"
@@ -467,6 +502,8 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <Input
                   type="password"
                   required
+                  minLength={6}
+                  maxLength={64}
                   placeholder="Minimum 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -523,6 +560,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 </label>
                 <Input
                   required
+                  maxLength={60}
                   placeholder={sellerType === "guest" ? "e.g. Apex Tech Gadgets" : "e.g. Demilade Thrift Hub"}
                   value={sellerType === "guest" ? businessName : storeName}
                   onChange={(e) => {
@@ -559,6 +597,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-neutral-700">Faculty & Department</label>
                   <Input
+                    maxLength={60}
                     placeholder="e.g. Engineering, Mechanical"
                     value={faculty}
                     onChange={(e) => setFaculty(e.target.value)}
@@ -572,6 +611,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
               <label className="text-xs font-bold text-neutral-700">Storefront Bio</label>
               <textarea
                 rows={2}
+                maxLength={400}
                 placeholder="Briefly describe what you sell to students..."
                 value={storeDescription}
                 onChange={(e) => setStoreDescription(e.target.value)}
@@ -586,6 +626,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 </label>
                 <Input
                   required
+                  maxLength={200}
                   placeholder="e.g. Shop 4, Commercial Hub Beside Unilag Back Gate, Akoka"
                   value={businessAddress}
                   onChange={(e) => setBusinessAddress(e.target.value)}
@@ -765,13 +806,63 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
             <Button
               type="submit"
-              disabled={loading || (sellerType === "guest" && !guestVendorsEnabled)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-8 h-11 shadow-md shadow-emerald-600/20"
+              disabled={
+                loading ||
+                !fullName.trim() ||
+                phone.trim().length < 7 ||
+                password.length < 6 ||
+                !campusId ||
+                (sellerType === "student" && (!email.trim() || !email.includes("@") || !storeName.trim())) ||
+                (sellerType === "guest" && (!guestVendorsEnabled || !businessName.trim() || !businessAddress.trim() || !idDocumentPath || !selfieDocumentPath))
+              }
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold px-8 h-11 shadow-md shadow-emerald-600/20 transition-all inline-flex items-center justify-center gap-2"
             >
-              {loading ? "Verifying & Creating Store..." : `Complete ${sellerType === "guest" ? "Guest" : "Student"} Registration`}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Verifying &amp; Creating Store...</span>
+                </>
+              ) : (
+                `Complete ${sellerType === "guest" ? "Guest" : "Student"} Registration`
+              )}
             </Button>
           </div>
         </form>
+
+        {/* Full-screen Submission Load State Overlay */}
+        {loading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-8 text-center space-y-4 animate-in zoom-in-95 duration-200">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100/80 shadow-inner">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              </div>
+              
+              <div className="space-y-1.5">
+                <h3 className="font-extrabold text-lg text-neutral-900">
+                  Creating Your Store...
+                </h3>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Please hold on while we secure your vendor credentials and set up your campus storefront.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/60 text-left space-y-2 text-xs text-neutral-600">
+                <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Validating credentials &amp; campus</span>
+                </div>
+                <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Configuring vendor profile</span>
+                </div>
+                <div className="flex items-center gap-2 text-neutral-800 font-bold animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 ml-0.5" />
+                  <span>Redirecting to your dashboard...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Inline Seller Code of Conduct Modal (Leaves form intact!) */}
         {showCodeOfConductModal && (

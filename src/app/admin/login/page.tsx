@@ -16,6 +16,10 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setError("Please fill in both email and password.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -86,6 +90,7 @@ export default function AdminLoginPage() {
               <Input
                 type="email"
                 required
+                maxLength={100}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10 bg-neutral-950 border-neutral-800 text-white placeholder:text-neutral-600 focus-visible:border-emerald-500"
@@ -100,6 +105,7 @@ export default function AdminLoginPage() {
               <Input
                 type="password"
                 required
+                maxLength={64}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 bg-neutral-950 border-neutral-800 text-white placeholder:text-neutral-600 focus-visible:border-emerald-500"
@@ -109,8 +115,8 @@ export default function AdminLoginPage() {
 
           <Button
             type="submit"
-            disabled={loading}
-            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg shadow-emerald-600/30"
+            disabled={loading || !email.trim() || !password.trim()}
+            className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-emerald-600/30 transition-all"
           >
             {loading ? "Authenticating..." : "Enter Admin Dashboard"}
           </Button>

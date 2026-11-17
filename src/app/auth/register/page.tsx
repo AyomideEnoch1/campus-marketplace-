@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GraduationCap, Store, UserCheck, ShieldCheck } from "lucide-react";
+import { GraduationCap, Store, UserCheck, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -42,25 +42,54 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    if (!fullName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+    if (!phone.trim() || phone.trim().length < 7) {
+      setError("Please enter a valid phone number (at least 7 digits).");
+      return;
+    }
+
+    if (role === "VENDOR") {
+      if (!storeName.trim()) {
+        setError("Please enter a store name for your campus shop.");
+        return;
+      }
+      if (!whatsapp.trim() && !phone.trim()) {
+        setError("Please enter a WhatsApp contact number for receiving orders.");
+        return;
+      }
+    }
+
+    setLoading(true);
 
     try {
       const payload: any = {
-        fullName,
-        email,
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
         password,
-        phone,
+        phone: phone.trim(),
         role,
       };
 
       if (role === "VENDOR") {
-        payload.storeName = storeName;
+        payload.storeName = storeName.trim();
         payload.campusId = campusId;
-        payload.whatsapp = whatsapp || phone;
-        payload.faculty = faculty;
-        payload.department = department;
-        payload.storeDescription = storeDescription;
+        payload.whatsapp = (whatsapp || phone).trim();
+        payload.faculty = faculty.trim();
+        payload.department = department.trim();
+        payload.storeDescription = storeDescription.trim();
       }
 
       const res = await fetch("/api/auth/register", {
@@ -141,20 +170,22 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Full Name</label>
+              <label className="text-xs font-bold text-neutral-700">Full Name *</label>
               <Input
                 type="text"
                 required
+                maxLength={70}
                 placeholder="e.g. Tobi Adebayo"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Email Address</label>
+              <label className="text-xs font-bold text-neutral-700">Email Address *</label>
               <Input
                 type="email"
                 required
+                maxLength={100}
                 placeholder="student@unilag.edu.ng"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -164,19 +195,24 @@ export default function RegisterPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Password</label>
+              <label className="text-xs font-bold text-neutral-700">Password (min 6 chars) *</label>
               <Input
                 type="password"
                 required
+                minLength={6}
+                maxLength={64}
                 placeholder="Min 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Phone Number</label>
+              <label className="text-xs font-bold text-neutral-700">Phone Number *</label>
               <Input
                 type="tel"
+                required
+                minLength={7}
+                maxLength={15}
                 placeholder="+234 801 234 5678"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -196,17 +232,18 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Store Name</label>
+                  <label className="text-xs font-bold text-neutral-700">Store Name *</label>
                   <Input
                     type="text"
                     required
+                    maxLength={60}
                     placeholder="e.g. Unilag Drip Corner"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Campus Location</label>
+                  <label className="text-xs font-bold text-neutral-700">Campus Location *</label>
                   <select
                     aria-label="Select Campus Location"
                     className="flex h-10 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20"
@@ -231,10 +268,12 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">WhatsApp for Orders</label>
+                  <label className="text-xs font-bold text-neutral-700">WhatsApp for Orders *</label>
                   <Input
                     type="tel"
                     required
+                    minLength={7}
+                    maxLength={15}
                     placeholder="+234 802 345 6789"
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
@@ -244,6 +283,7 @@ export default function RegisterPage() {
                   <label className="text-xs font-bold text-neutral-700">Faculty / Department</label>
                   <Input
                     type="text"
+                    maxLength={60}
                     placeholder="e.g. Engineering / Electrical"
                     value={faculty}
                     onChange={(e) => setFaculty(e.target.value)}
@@ -254,6 +294,7 @@ export default function RegisterPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-700">Store Short Bio</label>
                 <textarea
+                  maxLength={400}
                   className="w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-20"
                   placeholder="Describe the items you sell and your campus delivery schedule..."
                   value={storeDescription}
@@ -265,14 +306,27 @@ export default function RegisterPage() {
 
           <Button
             type="submit"
-            disabled={loading}
-            className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md shadow-emerald-600/20"
+            disabled={
+              loading ||
+              !fullName.trim() ||
+              !email.trim() ||
+              !email.includes("@") ||
+              password.length < 6 ||
+              phone.trim().length < 7 ||
+              (role === "VENDOR" && (!storeName.trim() || (!whatsapp.trim() && !phone.trim())))
+            }
+            className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-md shadow-emerald-600/20 transition-all inline-flex items-center justify-center gap-2"
           >
-            {loading
-              ? "Creating your account..."
-              : role === "VENDOR"
-              ? "Register Student Store &rarr;"
-              : "Create Buyer Account &rarr;"}
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>{role === "VENDOR" ? "Registering Store..." : "Creating Account..."}</span>
+              </>
+            ) : role === "VENDOR" ? (
+              "Register Student Store →"
+            ) : (
+              "Create Buyer Account →"
+            )}
           </Button>
         </form>
 
@@ -283,6 +337,37 @@ export default function RegisterPage() {
             Sign In here
           </Link>
         </div>
+
+        {/* Full-screen Submission Load State Overlay */}
+        {loading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-8 text-center space-y-4 animate-in zoom-in-95 duration-200">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100/80 shadow-inner">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              </div>
+              
+              <div className="space-y-1.5">
+                <h3 className="font-extrabold text-lg text-neutral-900">
+                  {role === "VENDOR" ? "Setting Up Your Store..." : "Creating Your Account..."}
+                </h3>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Please hold on while we save your credentials and initialize your profile.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/60 text-left space-y-2 text-xs text-neutral-600">
+                <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Connecting to campus database</span>
+                </div>
+                <div className="flex items-center gap-2 text-neutral-800 font-bold animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Finalizing setup &amp; redirecting...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
