@@ -81,9 +81,9 @@ export function ChatRoom({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const isBuyer = currentUserId === conversation.buyerId;
-  const otherPartyName = isBuyer
-    ? conversation.vendor.storeName
-    : conversation.buyer.fullName;
+  const otherPartyName =
+    (isBuyer ? conversation.vendor?.storeName : conversation.buyer?.fullName) ||
+    "User";
 
   // Auto-scroll to bottom
   const scrollToBottom = (smooth = true) => {
@@ -229,7 +229,7 @@ export function ChatRoom({
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             </div>
             <p className="text-[11px] text-neutral-500 flex items-center gap-1 truncate">
-              {conversation.vendor.campus ? (
+              {conversation.vendor?.campus ? (
                 <>
                   <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
                   {conversation.vendor.campus.name}
@@ -246,7 +246,7 @@ export function ChatRoom({
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             Escrow Protected
           </span>
-          {isBuyer && (
+          {isBuyer && conversation.vendor?.slug && (
             <Link
               href={`/store/${conversation.vendor.slug}`}
               className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200/80 px-2.5 py-1 rounded-xl font-semibold transition-colors"
@@ -312,11 +312,16 @@ export function ChatRoom({
         ) : (
           messages.map((msg) => {
             const isMe = msg.senderId === currentUserId;
-            const timeStr = new Date(msg.createdAt).toLocaleTimeString("en-NG", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            });
+            let timeStr = "";
+            try {
+              timeStr = new Date(msg.createdAt).toLocaleTimeString("en-NG", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
+            } catch {
+              timeStr = "";
+            }
 
             return (
               <div

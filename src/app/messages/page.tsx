@@ -12,7 +12,10 @@ export default async function MessagesPage({
 }) {
   const session = await getSession();
   if (!session) {
-    redirect(`/auth/login?redirect=/messages`);
+    const returnUrl = searchParams?.vendor
+      ? `/messages?vendor=${searchParams.vendor}${searchParams.product ? `&product=${searchParams.product}` : ""}`
+      : "/messages";
+    redirect(`/auth/login?redirect=${encodeURIComponent(returnUrl)}`);
   }
 
   // If vendor query param is provided, automatically start/find conversation

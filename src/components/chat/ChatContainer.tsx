@@ -104,8 +104,9 @@ export function ChatContainer({
   };
 
   const filteredConversations = conversations.filter((c) => {
+    const isMeBuyer = currentUserId === c.buyerId;
     const otherName =
-      currentUserId === c.buyerId ? c.vendor.storeName : c.buyer.fullName;
+      (isMeBuyer ? c.vendor?.storeName : c.buyer?.fullName) || "User";
     const q = searchTerm.toLowerCase();
     return (
       otherName.toLowerCase().includes(q) ||
@@ -160,9 +161,9 @@ export function ChatContainer({
           ) : (
             filteredConversations.map((conv) => {
               const isMeBuyer = currentUserId === conv.buyerId;
-              const title = isMeBuyer
-                ? conv.vendor.storeName
-                : conv.buyer.fullName;
+              const title =
+                (isMeBuyer ? conv.vendor?.storeName : conv.buyer?.fullName) ||
+                "User";
               const isActive = activeConversationId === conv.id;
               const unread = conv._count?.messages || 0;
 
@@ -224,6 +225,7 @@ export function ChatContainer({
       >
         {activeConversation ? (
           <ChatRoom
+            key={activeConversation.id}
             conversation={activeConversation}
             initialMessages={messages}
             currentUserId={currentUserId}

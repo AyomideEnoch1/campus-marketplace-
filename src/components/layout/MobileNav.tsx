@@ -30,15 +30,6 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
   const { data: authData } = useCurrentUser(initialUser);
   const user = authData?.user ?? initialUser;
 
-  // Don't show public bottom nav inside admin dashboard, vendor dashboard, or chat room
-  if (
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/messages")
-  ) {
-    return null;
-  }
-
   const isVendor = user?.role === "VENDOR";
   const isAdmin = user?.role === "ADMIN";
 
@@ -86,6 +77,15 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
       { label: "Sign In", href: "/auth/login", icon: UserIcon },
     ];
   }, [isVendor, isAdmin, user, savedCount, totalCount]);
+
+  // Don't show public bottom nav inside admin dashboard, vendor dashboard, or chat room (must be after all hooks)
+  if (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/messages")
+  ) {
+    return null;
+  }
 
   return (
     <nav
