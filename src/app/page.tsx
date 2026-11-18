@@ -409,6 +409,7 @@ export default async function HomePage() {
       <div className="hidden lg:block">
         <DesktopReferenceLayout
           categories={categories as any}
+          campuses={campuses as any}
           allProducts={allProducts as any}
           recommendations={
             featuredProducts.length >= 3
