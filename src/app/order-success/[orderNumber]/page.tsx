@@ -59,10 +59,6 @@ export default async function OrderSuccessPage({
         </div>
 
         <div className="space-y-2">
-          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Order Request Received
-          </Badge>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight">
             Thank You, {order.buyerName.split(" ")[0]}!
           </h1>

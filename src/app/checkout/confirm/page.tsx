@@ -117,10 +117,6 @@ function CheckoutConfirmContent() {
             </div>
 
             <div className="space-y-1.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                Payment Secured in Escrow
-              </span>
               <h1 className="text-2xl font-black text-neutral-950 tracking-tight pt-1">
                 Order Paid &amp; Protected!
               </h1>

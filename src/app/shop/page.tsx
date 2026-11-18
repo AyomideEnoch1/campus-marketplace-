@@ -177,11 +177,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 fallbackLabel="Back to Home"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors"
               />
-              <span className="text-neutral-300">&bull;</span>
-              <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                Student Marketplace Catalog
-              </Badge>
             </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-950">
               Explore Campus Drops &amp; Goods

@@ -793,8 +793,7 @@ export function DesktopReferenceLayout({
 
           {/* Right: Description & Platform Info */}
           <div className="max-w-md space-y-2 text-right md:text-left">
-            <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
               CampusTrade for Students &amp; Campus Needs
             </p>
             <p className="text-xs text-neutral-300 leading-relaxed">

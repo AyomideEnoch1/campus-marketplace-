@@ -45,10 +45,6 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
       {/* Header */}
       <section className="bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-10 sm:py-14 px-4 border-b border-neutral-100">
         <div className="container mx-auto max-w-4xl text-center space-y-3">
-          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Student Entrepreneurs
-          </Badge>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-neutral-950">
             Verified Campus Storefronts
           </h1>
