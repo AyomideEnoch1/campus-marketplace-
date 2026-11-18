@@ -60,6 +60,33 @@ interface CampusItem {
   slug: string;
 }
 
+const HERO_SLIDES = [
+  {
+    id: "shop",
+    title: "Shop",
+    subtitle: "Verified Student Marketplace",
+    image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=85",
+  },
+  {
+    id: "explore",
+    title: "Explore",
+    subtitle: "Hostel Essentials & Campus Tech",
+    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1800&q=85",
+  },
+  {
+    id: "trending",
+    title: "Trending",
+    subtitle: "Fresh Drops From Fellow Students",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1800&q=85",
+  },
+  {
+    id: "deals",
+    title: "Deals",
+    subtitle: "Semester Clearance & Student Discounts",
+    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1800&q=85",
+  },
+];
+
 interface DesktopReferenceLayoutProps {
   categories: CategoryItem[];
   campuses?: CampusItem[];
@@ -89,6 +116,17 @@ export function DesktopReferenceLayout({
   const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [recommendationIndex, setRecommendationIndex] = React.useState<number>(0);
   const [newsletterEmail, setNewsletterEmail] = React.useState<string>("");
+  const [currentSlide, setCurrentSlide] = React.useState<number>(0);
+  const [isSliderHovered, setIsSliderHovered] = React.useState<boolean>(false);
+
+  // Auto-play slider (5 seconds interval, pauses on hover)
+  React.useEffect(() => {
+    if (isSliderHovered) return;
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isSliderHovered]);
 
   // Count helper identical to shop/page.tsx
   const getCategoryCount = (cat: CategoryItem) =>
@@ -223,26 +261,62 @@ export function DesktopReferenceLayout({
   return (
     <div className="bg-[#fcfcfc] text-neutral-900 pb-16">
       {/* ======================================================== */}
-      {/* 1. HERO BANNER WITH GIANT "Shop" TYPOGRAPHY              */}
+      {/* 1. HERO BANNER SLIDER (WITHOUT NAVIGATION ARROWS)        */}
       {/* ======================================================== */}
-      <div className="relative w-full h-[340px] overflow-hidden bg-neutral-900">
-        <Image
-          src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1800&q=85"
-          alt="CampusTrade Modern Interior Shop"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center brightness-[0.78] contrast-[1.05]"
-        />
+      <div
+        className="relative w-full h-[340px] lg:h-[360px] overflow-hidden bg-neutral-900 select-none"
+        onMouseEnter={() => setIsSliderHovered(true)}
+        onMouseLeave={() => setIsSliderHovered(false)}
+      >
+        {HERO_SLIDES.map((slide, idx) => {
+          const isActive = idx === currentSlide;
+          return (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                isActive ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+              }`}
+            >
+              <Image
+                src={slide.image}
+                alt={slide.title}
+                fill
+                priority={idx === 0}
+                sizes="100vw"
+                className="object-cover object-center brightness-[0.74] contrast-[1.05]"
+              />
 
-        {/* Ambient Dark Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60 pointer-events-none" />
+              {/* Ambient Dark Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/65 pointer-events-none" />
 
-        {/* Giant Centered "Shop" Display Typography */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-          <h1 className="text-white text-[120px] lg:text-[150px] font-black tracking-tight leading-none drop-shadow-sm opacity-95">
-            Shop
-          </h1>
+              {/* Giant Centered Display Typography */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
+                <h1 className="text-white text-[110px] lg:text-[145px] font-black tracking-tight leading-none drop-shadow-md opacity-95">
+                  {slide.title}
+                </h1>
+                <p className="text-white/80 text-xs lg:text-sm font-semibold tracking-widest uppercase mt-2 drop-shadow-sm">
+                  {slide.subtitle}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Minimal Bottom Indicators (No Navigation Arrows) */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+          {HERO_SLIDES.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setCurrentSlide(idx)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                idx === currentSlide
+                  ? "w-8 bg-emerald-500 shadow-sm"
+                  : "w-2 bg-white/50 hover:bg-white/80"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
         </div>
       </div>
 
