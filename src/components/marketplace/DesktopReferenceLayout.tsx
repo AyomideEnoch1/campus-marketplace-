@@ -247,10 +247,10 @@ export function DesktopReferenceLayout({
       </div>
 
       {/* ======================================================== */}
-      {/* 2. OVERLAPPING WHITE MAIN CONTAINER CARD                 */}
+      {/* 2. "Give All You Need" SECTION (POSITIONED UNDER BANNER) */}
       {/* ======================================================== */}
-      <div className="container mx-auto px-6 max-w-7xl relative -mt-16 z-20">
-        <div className="bg-white rounded-[32px] p-6 lg:p-10 shadow-xl border border-neutral-100">
+      <div className="w-[85%] min-w-[70%] max-w-7xl mx-auto pt-8">
+        <div className="bg-white rounded-3xl p-4 lg:p-6">
           {/* Header Row: "Give All You Need" + Integrated Search */}
           <div className="flex items-center justify-between pb-6 border-b border-neutral-100 gap-4">
             <div>
