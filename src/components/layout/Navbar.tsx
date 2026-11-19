@@ -27,6 +27,7 @@ import { useWishlist } from "@/lib/wishlist";
 import { useCurrentUser, useLogout } from "@/hooks/use-auth-query";
 import { SignoutModal } from "@/components/ui/SignoutModal";
 import { SignInAsBuyerButton } from "@/components/vendor/SignInAsBuyerButton";
+import { SwitchRoleButton } from "@/components/auth/SwitchRoleButton";
 import { NotificationBell } from "./NotificationBell";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 
@@ -246,6 +247,15 @@ export function Navbar({ initialUser }: NavbarProps) {
           {/* Real-Time Notification Bell (Visible on both mobile & desktop when signed in) */}
           {user && <NotificationBell currentUserId={user.id} />}
 
+          {/* Quick Switch Role Pill (Desktop) */}
+          {user?.canSwitchRole && (
+            <SwitchRoleButton
+              targetRole={user.role === "VENDOR" ? "BUYER" : "VENDOR"}
+              variant="pill"
+              className="hidden lg:inline-flex"
+            />
+          )}
+
           {/* User Auth Section */}
           {user ? (
             <div className="relative">
@@ -328,8 +338,12 @@ export function Navbar({ initialUser }: NavbarProps) {
 
                   <div className="border-t border-neutral-100 my-1"></div>
 
-                  {user.role === "VENDOR" && (
-                    <SignInAsBuyerButton variant="dropdown" />
+                  {user.canSwitchRole && (
+                    <SwitchRoleButton
+                      targetRole={user.role === "VENDOR" ? "BUYER" : "VENDOR"}
+                      variant="dropdown"
+                      onSuccess={() => setUserDropdownOpen(false)}
+                    />
                   )}
 
                   <button
@@ -415,6 +429,18 @@ export function Navbar({ initialUser }: NavbarProps) {
               >
                 Join Free
               </Link>
+            </div>
+          )}
+
+          {/* Account Mode Switch (Mobile) */}
+          {user?.canSwitchRole && (
+            <div className="pt-2 border-t border-neutral-100">
+              <SwitchRoleButton
+                targetRole={user.role === "VENDOR" ? "BUYER" : "VENDOR"}
+                variant="pill"
+                className="w-full justify-center py-2.5 text-xs font-bold"
+                onSuccess={() => setMobileMenuOpen(false)}
+              />
             </div>
           )}
 

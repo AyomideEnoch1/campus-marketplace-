@@ -14,7 +14,8 @@ function getSessionRole(token: string): string | null {
     if (payload.exp && Date.now() >= payload.exp * 1000) {
       return null;
     }
-    return payload.role ? String(payload.role).toUpperCase() : null;
+    const effectiveRole = payload.activeRole || payload.role;
+    return effectiveRole ? String(effectiveRole).toUpperCase() : null;
   } catch {
     return null;
   }

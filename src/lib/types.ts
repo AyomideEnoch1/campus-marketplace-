@@ -11,6 +11,8 @@ export interface SessionUser {
   email: string;
   fullName: string;
   role: Role;
+  activeRole?: Role;
+  canSwitchRole?: boolean;
   avatarUrl?: string | null;
   vendorProfile?: {
     id: string;

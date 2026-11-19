@@ -455,13 +455,13 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
             </Link>
           )}
 
-          {/* Sign in as a Buyer */}
+          {/* Switch to Buyer Mode */}
           <div className={collapsed ? "relative group flex justify-center w-full" : "w-full"}>
             <SignInAsBuyerButton collapsed={collapsed} />
             {collapsed && (
               <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 hidden group-hover:flex items-center">
                 <div className="bg-neutral-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
-                  Sign in as a Buyer
+                  Switch to Buyer Mode
                 </div>
               </div>
             )}
