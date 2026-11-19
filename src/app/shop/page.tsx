@@ -17,6 +17,8 @@ import {
   Dumbbell,
   Briefcase,
   LayoutGrid,
+  Store,
+  ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCategoryImage } from "@/lib/category-images";
@@ -116,10 +118,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const rawQ = q?.trim() || "";
   if (rawQ) {
     where.OR = [
-      { title: { contains: rawQ } },
-      { description: { contains: rawQ } },
-      { tags: { contains: rawQ } },
-      { category: { name: { contains: rawQ } } },
+      { title: { contains: rawQ, mode: "insensitive" } },
+      { description: { contains: rawQ, mode: "insensitive" } },
+      { tags: { contains: rawQ, mode: "insensitive" } },
+      { category: { name: { contains: rawQ, mode: "insensitive" } } },
+      { vendor: { storeName: { contains: rawQ, mode: "insensitive" } } },
+      { vendor: { slug: { contains: rawQ, mode: "insensitive" } } },
+      { vendor: { user: { fullName: { contains: rawQ, mode: "insensitive" } } } },
     ];
   }
 
@@ -190,6 +195,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const activeFiltersCount = [campus, category, condition, minPrice, maxPrice, q, vendor, sellerType].filter(
     Boolean
   ).length;
+
+  const matchingVendors = rawQ
+    ? vendors.filter(
+        (v) =>
+          v.storeName.toLowerCase().includes(rawQ.toLowerCase()) ||
+          v.slug.toLowerCase().includes(rawQ.toLowerCase())
+      )
+    : [];
 
   const getCategoryCount = (cat: any) =>
     (cat._count?.products || 0) +
@@ -793,6 +806,43 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 >
                   Clear all filters
                 </Link>
+              </div>
+            )}
+
+            {/* Matching Vendors Banner when query matches a store */}
+            {matchingVendors.length > 0 && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/40 to-white border border-emerald-200/90 shadow-2xs space-y-2.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wider">
+                  <Store className="w-4 h-4 text-emerald-600" />
+                  <span>Matching Vendor Store{matchingVendors.length > 1 ? "s" : ""} ({matchingVendors.length})</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {matchingVendors.map((v) => (
+                    <Link
+                      key={v.id}
+                      href={`/store/${v.slug}`}
+                      className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-neutral-200/90 hover:border-emerald-500 hover:shadow-xs transition-all group"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-black uppercase shrink-0">
+                        {v.storeName ? v.storeName[0] : "V"}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-neutral-900 group-hover:text-emerald-700 transition-colors truncate max-w-[160px] sm:max-w-[200px]">
+                          {v.storeName}
+                        </span>
+                        {v.campus && (
+                          <span className="text-[10px] text-neutral-500 truncate">
+                            {v.campus.name}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1">
+                        Visit Store
+                        <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
 

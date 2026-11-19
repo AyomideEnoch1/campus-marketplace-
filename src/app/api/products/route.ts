@@ -78,6 +78,9 @@ export async function GET(request: Request) {
         { description: { contains: q, mode: "insensitive" } },
         { tags: { contains: q, mode: "insensitive" } },
         { category: { name: { contains: q, mode: "insensitive" } } },
+        { vendor: { storeName: { contains: q, mode: "insensitive" } } },
+        { vendor: { slug: { contains: q, mode: "insensitive" } } },
+        { vendor: { user: { fullName: { contains: q, mode: "insensitive" } } } },
       ];
     }
 
