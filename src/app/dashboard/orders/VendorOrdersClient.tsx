@@ -90,6 +90,22 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm("Are you sure you want to dismiss this unpaid order?")) return;
+    setUpdatingId(orderId);
+    try {
+      const res = await fetch(`/api/vendor/orders/${orderId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete order");
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err: any) {
+      alert(err.message || "Failed to remove order");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const isOrderPaid = (order: OrderRecord) => {
     return Boolean(order.paid_at) || ["paid_held", "confirmed", "delivered", "released"].includes(order.escrow_status);
   };
@@ -412,6 +428,15 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                         className="px-3 py-1.5 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 font-bold transition-colors cursor-pointer"
                       >
                         Cancel Order
+                      </button>
+                    )}
+                    {!paid && (
+                      <button
+                        disabled={updatingId === order.id}
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="px-3 py-1.5 rounded-xl border border-neutral-300 text-neutral-600 hover:bg-neutral-100 font-bold transition-colors cursor-pointer text-xs"
+                      >
+                        Dismiss Unpaid Order
                       </button>
                     )}
                   </div>

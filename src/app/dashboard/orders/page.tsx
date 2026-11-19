@@ -13,7 +13,13 @@ export default async function VendorOrdersPage() {
   if (!vendor) redirect("/vendor/register");
 
   const orders = await prisma.order.findMany({
-    where: { vendorId: vendor.id },
+    where: {
+      vendorId: vendor.id,
+      OR: [
+        { paid_at: { not: null } },
+        { escrow_status: { in: ["held", "paid_held", "confirmed", "delivered", "released"] } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
     include: {
       items: {
