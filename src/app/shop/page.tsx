@@ -215,7 +215,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </div>
 
       {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
-      <div className="border-b border-neutral-100 bg-white sticky top-16 lg:static z-20 py-2.5 sm:py-3 shadow-xs">
+      <div className="border-b border-neutral-200/80 bg-white/95 backdrop-blur-md sticky top-16 z-30 py-2.5 sm:py-3 shadow-xs transition-all">
         <div className="container mx-auto px-4 space-y-2">
           {/* Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
@@ -273,7 +273,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <div className="flex flex-col lg:flex-row items-start gap-6 lg:gap-8">
           {/* Left Sidebar Filter Panel (Fixed/Sticky on large screens while products scroll) */}
           <aside className="hidden lg:block lg:w-64 xl:w-72 shrink-0">
-            <div className="p-5 rounded-3xl border border-neutral-200/80 bg-white sticky top-24 max-h-[calc(100vh-6.5rem)] overflow-y-auto pr-2 pb-6 space-y-5 shadow-xs">
+            <div className="p-5 rounded-3xl border border-neutral-200/80 bg-white sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto pr-2 pb-6 space-y-5 shadow-xs">
               {/* Filter Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-200/60">
                 <span className="font-extrabold text-sm uppercase tracking-wider text-neutral-900 flex items-center gap-2">
