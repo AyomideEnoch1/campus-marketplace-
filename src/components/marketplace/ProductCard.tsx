@@ -227,20 +227,20 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Content Details */}
-        <div className="p-3.5 flex flex-col flex-grow justify-between gap-2">
+        <div className="p-2.5 sm:p-3 flex flex-col flex-grow justify-between gap-1.5 sm:gap-2">
           <div>
             {/* Vendor & Campus Meta */}
             {product.vendor && (
-              <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 mb-0.5 sm:mb-1">
                 <Link
                   href={`/store/${product.vendor.slug}`}
-                  className="hover:text-emerald-700 hover:underline truncate max-w-[120px] font-medium"
+                  className="hover:text-emerald-700 hover:underline truncate max-w-[110px] sm:max-w-[130px] font-medium"
                 >
                   {product.vendor.storeName}
                 </Link>
                 {product.vendor.campus && (
                   <span className="flex items-center gap-0.5 text-neutral-400 font-medium shrink-0">
-                    <MapPin className="w-3 h-3 text-emerald-600" />
+                    <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-emerald-600" />
                     {product.vendor.campus.name.split(" ")[0]}
                   </span>
                 )}
@@ -249,13 +249,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
             {/* Title */}
             <Link href={`/product/${product.slug}`}>
-              <h3 className="font-semibold text-neutral-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
+              <h3 className="font-semibold text-neutral-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
                 {product.title}
               </h3>
             </Link>
 
             {/* Rating & Condition Tag */}
-            <div className="flex items-center gap-1.5 mt-1.5 text-[11px] flex-wrap">
+            <div className="flex items-center gap-1.5 mt-1 sm:mt-1.5 text-[10px] sm:text-[11px] flex-wrap">
               {product.reviewCount && product.reviewCount >= 3 ? (
                 <>
                   <div className="flex items-center gap-0.5 text-amber-500 font-bold">
@@ -279,15 +279,15 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Pricing & Add to Bag */}
-          <div className="pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
+          <div className="pt-1.5 sm:pt-2 flex items-center justify-between gap-1.5 border-t border-neutral-100">
             <div className="flex flex-col min-w-0">
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight">
+              <div className="flex items-baseline gap-1 sm:gap-1.5 flex-wrap">
+                <span className="font-extrabold text-xs sm:text-sm text-neutral-900 leading-tight">
                   {formatNGN(product.price)}
                 </span>
                 {product.comparePrice &&
                   product.comparePrice > product.price && (
-                    <span className="text-[10px] sm:text-[11px] text-neutral-400 line-through">
+                    <span className="text-[9px] sm:text-[10px] text-neutral-400 line-through">
                       {formatNGN(product.comparePrice)}
                     </span>
                   )}
@@ -300,16 +300,16 @@ export function ProductCard({ product }: ProductCardProps) {
               onClick={handleAddToCart}
               aria-label={`Add ${product.title} to shopping bag`}
               title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
-              className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
                 isAdded
                   ? "bg-emerald-600 text-white scale-105 shadow-emerald-200/50"
                   : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md hover:scale-105"
               }`}
             >
               {isAdded ? (
-                <Check className="w-4 h-4 animate-in zoom-in-75 duration-150" />
+                <Check className="w-3.5 h-3.5 animate-in zoom-in-75 duration-150" />
               ) : (
-                <Plus className="w-4 h-4 transition-transform duration-200" />
+                <Plus className="w-3.5 h-3.5 transition-transform duration-200" />
               )}
             </button>
           </div>
