@@ -17,7 +17,16 @@ export default async function VendorOrdersPage() {
     orderBy: { createdAt: "desc" },
     include: {
       items: {
-        include: { product: true },
+        include: {
+          product: {
+            include: {
+              images: {
+                take: 1,
+                orderBy: { position: "asc" },
+              },
+            },
+          },
+        },
       },
     },
   });
