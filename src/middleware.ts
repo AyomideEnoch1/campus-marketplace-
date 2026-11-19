@@ -27,11 +27,6 @@ export function middleware(request: NextRequest) {
 
   // 1. Role: VENDOR routing rules
   if (role === "VENDOR") {
-    // If navigating to the buyer landing page, route vendor directly to their dashboard
-    if (pathname === "/") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-
     // If navigating to sign-in/sign-up without explicit buyer intent, redirect to dashboard
     if (pathname === "/auth/login" || pathname === "/auth/register") {
       const targetRole = searchParams.get("role");

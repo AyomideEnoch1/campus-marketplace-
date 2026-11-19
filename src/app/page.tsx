@@ -167,11 +167,6 @@ async function getHomepageData() {
 }
 
 export default async function HomePage() {
-  const session = await getSession();
-  if (session?.role === "VENDOR") {
-    redirect("/dashboard");
-  }
-
   const { categories, campuses, newArrivals, allProducts, featuredProducts, vendors, cmsSettings = {}, totalProductCount = 20 } =
     await getHomepageData();
 
