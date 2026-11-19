@@ -61,7 +61,7 @@ interface VendorOrdersClientProps {
 export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
   const [orders, setOrders] = React.useState<OrderRecord[]>(initialOrders);
   const [updatingId, setUpdatingId] = React.useState<string | null>(null);
-  const [filterTab, setFilterTab] = React.useState<"ALL" | "PAID" | "UNPAID" | "DELIVERED">("ALL");
+  const [filterTab, setFilterTab] = React.useState<"PAID" | "ALL" | "UNPAID" | "DELIVERED">("PAID");
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const handleUpdateStatus = async (orderId: string, newStatus: string, isPaid: boolean) => {

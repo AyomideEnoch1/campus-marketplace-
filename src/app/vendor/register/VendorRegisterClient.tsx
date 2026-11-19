@@ -201,6 +201,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         setError("Please enter a store name.");
         return;
       }
+      if (!studentIdUrl || !studentIdUrl.trim()) {
+        setError("Student ID photo is mandatory. Please upload a clear photo of yourself holding your student ID card next to your face.");
+        return;
+      }
     }
     // Validate Guest specifics
     if (sellerType === "guest") {
@@ -718,15 +722,23 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
             {sellerType === "student" ? (
               /* Student Verification */
               <div className="space-y-3">
-                <label className="text-xs font-bold text-neutral-700 block">
-                  Student ID Card Photo (Optional for Tier 1, Required for Tier 2)
-                </label>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
+                    <span>Student ID Verification Photo *</span>
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      Mandatory
+                    </span>
+                  </label>
+                  <p className="text-xs text-neutral-600 leading-relaxed">
+                    <strong>Requirement:</strong> You must upload a clear photo of yourself <strong>holding your student ID card next to your face</strong>. Both your facial features and the student ID details (full name, matriculation number, photo) must be distinctly visible and legible.
+                  </p>
+                </div>
                 <SingleImageUpload
                   value={studentIdUrl}
                   onChange={setStudentIdUrl}
                   folder="stores"
-                  label="Upload Student ID Card"
-                  hint="Provide a clear photo of your current university student identity card"
+                  label="Upload Photo Holding Student ID *"
+                  hint="Selfie holding your university student ID card next to your face (PNG, JPG, or WEBP)"
                 />
               </div>
             ) : (

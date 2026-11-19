@@ -554,18 +554,25 @@ export function StoreCustomizerClient({
             {/* Student ID Card Upload */}
             <div className="space-y-2 pt-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-neutral-700">
-                  Student ID Card Document (Photo / Scan)
+                <label className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
+                  <span>Student ID Verification Photo *</span>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    Mandatory
+                  </span>
                 </label>
                 <span className="text-[11px] text-neutral-400">
                   Encrypted &bull; Visible only to campus administrators
                 </span>
               </div>
+              <p className="text-xs text-neutral-500">
+                Upload a clear photo of yourself <strong>holding your student ID card next to your face</strong>.
+              </p>
               <SingleImageUpload
                 value={studentIdUrl}
                 onChange={(url) => setStudentIdUrl(url)}
                 folder="stores"
-                label="Upload University Student ID Card"
+                label="Upload Photo Holding Student ID *"
+                hint="Selfie holding your university student ID card next to your face (PNG, JPG, or WEBP)"
               />
             </div>
           </div>

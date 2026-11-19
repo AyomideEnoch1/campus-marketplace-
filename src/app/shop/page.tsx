@@ -23,6 +23,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { getCategoryImage } from "@/lib/category-images";
 import { ProductCard } from "@/components/marketplace/ProductCard";
+import { HorizontalProductRow } from "@/components/marketplace/HorizontalProductRow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
@@ -212,7 +213,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     <div className="bg-white min-h-screen">
       {/* 1. TOP HERO HEADER (Desktop/Tablet only) */}
       <section className="hidden md:block bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
-        <div className="w-full lg:w-[90%] mx-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl space-y-2.5 sm:space-y-3">
             <div className="flex items-center gap-3">
               <SmartBackButton
@@ -259,7 +260,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
       {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
       <div className="border-b border-neutral-200/80 bg-white/95 backdrop-blur-md sticky top-16 z-30 py-2.5 sm:py-3 shadow-xs transition-all">
-        <div className="w-full lg:w-[90%] mx-auto px-4 space-y-2">
+        <div className="w-full px-4 sm:px-6 lg:px-8 space-y-2">
           {/* Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Link
@@ -331,7 +332,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </div>
 
       {/* 3. MAIN CATALOG WITH SIDEBAR FILTERS (Reference Image 1 Layout) */}
-      <div className="w-full lg:w-[90%] mx-auto px-4 py-6 sm:py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="flex flex-col lg:flex-row items-start lg:items-stretch gap-6 lg:gap-8">
           {/* Left Sidebar Filter Panel (Fixed/Sticky on large screens while products scroll) */}
           <aside className="hidden lg:block lg:w-64 xl:w-72 shrink-0 lg:self-stretch relative">
@@ -844,6 +845,20 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Horizontal Scrollable Row for Featured / Trending Products */}
+            {products.length >= 4 && !rawQ && (
+              <HorizontalProductRow
+                title="⚡ Trending Campus Drops"
+                subtitle="Scroll horizontally to explore top campus student gear & drops"
+                badge="Swipe to explore"
+                products={
+                  products.filter((p) => p.isFeatured).length >= 3
+                    ? products.filter((p) => p.isFeatured)
+                    : products.slice(0, 8)
+                }
+              />
             )}
 
             {/* Product Grid (Matching Reference Image 1) */}

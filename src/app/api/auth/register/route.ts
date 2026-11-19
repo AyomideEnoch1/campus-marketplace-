@@ -81,6 +81,19 @@ export async function POST(request: Request) {
     const cleanPhone = rawContactPhone ? cleanPhoneNumber(rawContactPhone) : null;
     const cleanWhatsapp = whatsapp?.trim() ? cleanPhoneNumber(whatsapp.trim()) : cleanPhone;
 
+    // In Student flow, mandatory student ID photo verification holding ID next to face
+    if (role === "VENDOR" && sellerType === "student") {
+      if (!studentIdUrl || !studentIdUrl.trim()) {
+        return NextResponse.json(
+          {
+            error:
+              "Student ID verification photo is mandatory. Please upload a clear photo of yourself holding your student ID card next to your face.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // In Guest flow, phone is required for Tier 1 OTP/Instant flow, email is optional
     if (role === "VENDOR" && sellerType === "guest" && !cleanPhone) {
       return NextResponse.json(

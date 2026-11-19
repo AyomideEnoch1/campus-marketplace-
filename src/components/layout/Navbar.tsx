@@ -398,76 +398,6 @@ export function Navbar({ initialUser }: NavbarProps) {
             })}
           </div>
 
-          {/* Quick Campus Chips (Instant Filter Access) */}
-          <div className="pt-2 border-t border-neutral-100 space-y-2">
-            <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-1">
-              Filter by University Campus
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { name: "All Campuses", slug: "all" },
-                { name: "UNILAG", slug: "unilag" },
-                { name: "UI", slug: "ui" },
-                { name: "OAU", slug: "oau" },
-              ].map((c) => (
-                <Link
-                  key={c.slug}
-                  href={c.slug === "all" ? "/campuses" : `/campuses?campus=${c.slug}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-neutral-100 hover:bg-emerald-50 hover:text-emerald-800 text-neutral-700 transition-colors"
-                >
-                  {c.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Signed-in Account Shortcuts */}
-          {user && (
-            <div className="pt-2 border-t border-neutral-100 space-y-1">
-              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-3 pb-1">
-                Your Account
-              </p>
-              {user.role === "VENDOR" && (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-bold bg-emerald-600 text-white shadow-xs"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <ShoppingBag className="w-4 h-4" />
-                    Vendor Dashboard
-                  </span>
-                  <span>&rarr;</span>
-                </Link>
-              )}
-              <Link
-                href="/orders"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm text-neutral-700 hover:bg-neutral-50"
-              >
-                <Package className="w-4 h-4 text-neutral-400" />
-                My Orders
-              </Link>
-              <Link
-                href="/saved"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm text-neutral-700 hover:bg-neutral-50"
-              >
-                <Heart className="w-4 h-4 text-neutral-400" />
-                Saved Items ({savedCount})
-              </Link>
-              <Link
-                href="/account"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm text-neutral-700 hover:bg-neutral-50"
-              >
-                <User className="w-4 h-4 text-neutral-400" />
-                Account Profile
-              </Link>
-            </div>
-          )}
-
           {/* Guest Sign In & Join Buttons */}
           {!user && (
             <div className="pt-2 border-t border-neutral-100 flex items-center gap-2">
@@ -488,22 +418,20 @@ export function Navbar({ initialUser }: NavbarProps) {
             </div>
           )}
 
-          {/* Become a Student Seller Banner */}
-          {user?.role !== "VENDOR" && (
-            <div className="pt-2 border-t border-neutral-100">
-              <Link
-                href="/vendor/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-amber-50 border border-emerald-200/90 text-emerald-950 font-bold text-xs shadow-xs group"
-              >
-                <span className="flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                  Become a Student Seller
-                </span>
-                <span className="text-emerald-700">&rarr;</span>
-              </Link>
-            </div>
-          )}
+          {/* Become a Student Seller Action Button */}
+          <div className="pt-2 border-t border-neutral-100">
+            <Link
+              href={user?.role === "VENDOR" ? "/dashboard" : "/vendor/register"}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-amber-50 border border-emerald-200/90 text-emerald-950 font-bold text-xs shadow-xs group"
+            >
+              <span className="flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+                {user?.role === "VENDOR" ? "Go to Vendor Dashboard" : "Become a Student Seller"}
+              </span>
+              <span className="text-emerald-700">&rarr;</span>
+            </Link>
+          </div>
         </div>
       )}
 
