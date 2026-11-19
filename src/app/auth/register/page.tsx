@@ -19,6 +19,8 @@ import {
   MapPin,
   Building,
   GraduationCap,
+  Store,
+  UserCheck,
   Sparkles,
   Loader2,
 } from "lucide-react";
@@ -39,6 +41,7 @@ function RegisterContent() {
 
   // Role selection: "BUYER" | "VENDOR" | null (null = initial account type selection screen)
   const [role, setRole] = React.useState<RoleType | null>(null);
+  const [buyerType, setBuyerType] = React.useState<"student" | "guest">("student");
 
   // Stepper state:
   // Step 0: Account Type Selection
@@ -108,8 +111,11 @@ function RegisterContent() {
     }
   };
 
-  const handleSelectRole = (selectedRole: RoleType) => {
+  const handleSelectRole = (selectedRole: RoleType, selectedBuyerType?: "student" | "guest") => {
     setRole(selectedRole);
+    if (selectedBuyerType) {
+      setBuyerType(selectedBuyerType);
+    }
     goToStep(1, "forward");
   };
 
@@ -172,6 +178,7 @@ function RegisterContent() {
         password,
         phone: cleanPhone,
         role,
+        buyerType: role === "BUYER" ? buyerType : undefined,
       };
 
       if (role === "VENDOR") {
@@ -266,62 +273,92 @@ function RegisterContent() {
             )}
 
             {/* Account Type Selection Cards */}
-            <div className="space-y-3.5">
-              {/* Option 1: Student / Buyer Card */}
+            <div className="space-y-3">
+              {/* Option 1: Student Buyer */}
               <button
                 type="button"
-                onClick={() => handleSelectRole("BUYER")}
-                className="w-full group p-5 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-neutral-200/90 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-lg hover:shadow-emerald-600/5 relative flex items-start gap-4 cursor-pointer"
+                onClick={() => handleSelectRole("BUYER", "student")}
+                className="w-full group p-4 sm:p-4.5 rounded-2xl border-2 border-neutral-200/90 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-emerald-600/5 relative flex items-center gap-3.5 cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 group-hover:border-emerald-300 text-neutral-700 group-hover:text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                  <ShoppingBag className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 group-hover:border-emerald-300 text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
+                  <GraduationCap className="w-5 h-5" />
                 </div>
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-base sm:text-lg font-black text-neutral-900 group-hover:text-emerald-950 transition-colors">
-                      Student / Buyer
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-emerald-950 transition-colors">
+                      Student Buyer
                     </span>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
-                      Shopper
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                      Student
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-                    Browse campus listings, save favorite items, and place direct WhatsApp orders with hostel delivery.
+                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                    Shop campus listings, textbooks, and hostel delivery.
                   </p>
-                  <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
-                    <span>Get started as buyer (2 quick steps)</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
                 </div>
+                <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
               </button>
 
-              {/* Option 2: Campus Vendor Card */}
+              {/* Option 2: Guest Buyer */}
+              <button
+                type="button"
+                onClick={() => handleSelectRole("BUYER", "guest")}
+                className="w-full group p-4 sm:p-4.5 rounded-2xl border-2 border-neutral-200/90 hover:border-sky-500 bg-neutral-50/50 hover:bg-sky-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-sky-600/5 relative flex items-center gap-3.5 cursor-pointer"
+              >
+                <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 group-hover:border-sky-300 text-sky-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-sky-950 transition-colors">
+                      Guest Buyer
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded-full">
+                      Guest
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                    Browse and buy without student email verification.
+                  </p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-sky-600 group-hover:translate-x-1 transition-all shrink-0" />
+              </button>
+
+              {/* Option 3: Campus Vendor */}
               <button
                 type="button"
                 onClick={() => handleSelectRole("VENDOR")}
-                className="w-full group p-5 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-neutral-200/90 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-lg hover:shadow-emerald-600/5 relative flex items-start gap-4 cursor-pointer"
+                className="w-full group p-4 sm:p-4.5 rounded-2xl border-2 border-neutral-200/90 hover:border-purple-500 bg-neutral-50/50 hover:bg-purple-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-purple-600/5 relative flex items-center gap-3.5 cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 group-hover:border-emerald-300 text-neutral-700 group-hover:text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                  <ShoppingBag className="w-6 h-6" />
+                <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 group-hover:border-purple-300 text-purple-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
+                  <Store className="w-5 h-5" />
                 </div>
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-base sm:text-lg font-black text-neutral-900 group-hover:text-emerald-950 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-purple-950 transition-colors">
                       Campus Vendor
                     </span>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-full">
                       Seller
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed">
-                    Open your campus storefront, showcase products to university students, and manage customer orders on WhatsApp.
+                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                    Open a verified campus store and sell to students.
                   </p>
-                  <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600 group-hover:text-emerald-700">
-                    <span>Set up your store (3 easy steps)</span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </div>
                 </div>
+                <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all shrink-0" />
               </button>
+            </div>
+
+            {/* Quick Guest Browsing Link */}
+            <div className="text-center pt-0.5">
+              <Link
+                href="/shop"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-emerald-700 transition-colors"
+              >
+                <span>Just looking around? Explore marketplace as guest</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
 
             {/* Footer / Login Link */}
@@ -358,17 +395,22 @@ function RegisterContent() {
                   </span>
                 </button>
 
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border border-neutral-200/80 bg-neutral-50">
                   {role === "VENDOR" ? (
-                    <>
-                      <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="flex items-center gap-1.5 text-purple-700">
+                      <Store className="w-3.5 h-3.5 text-purple-600" />
                       <span>Vendor Flow</span>
-                    </>
+                    </span>
+                  ) : buyerType === "guest" ? (
+                    <span className="flex items-center gap-1.5 text-sky-700">
+                      <UserCheck className="w-3.5 h-3.5 text-sky-600" />
+                      <span>Guest Buyer</span>
+                    </span>
                   ) : (
-                    <>
-                      <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Buyer Flow</span>
-                    </>
+                    <span className="flex items-center gap-1.5 text-emerald-700">
+                      <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Student Buyer</span>
+                    </span>
                   )}
                 </div>
               </div>
@@ -437,7 +479,11 @@ function RegisterContent() {
                     <Input
                       type="email"
                       required
-                      placeholder="student@unilag.edu.ng or personal@email.com"
+                      placeholder={
+                        buyerType === "guest"
+                          ? "personal@email.com"
+                          : "student@unilag.edu.ng or personal@email.com"
+                      }
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
@@ -622,7 +668,11 @@ function RegisterContent() {
                         </div>
                       ) : (
                         <>
-                          <span>Create Buyer Account</span>
+                          <span>
+                            {buyerType === "guest"
+                              ? "Create Guest Account"
+                              : "Create Student Account"}
+                          </span>
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}

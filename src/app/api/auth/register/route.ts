@@ -13,6 +13,7 @@ const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().optional().or(z.literal("")),
   role: z.enum(["BUYER", "VENDOR"]).default("BUYER"),
+  buyerType: z.enum(["student", "guest"]).optional(),
   // Vendor specific fields
   sellerType: z.enum(["student", "guest"]).default("student"),
   storeName: z.string().optional(),
