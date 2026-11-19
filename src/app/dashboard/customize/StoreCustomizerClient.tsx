@@ -368,7 +368,7 @@ export function StoreCustomizerClient({
                 2. Brand Color Palette
               </h3>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Applied to your store header, WhatsApp CTA buttons, and highlighted badges
+                Applied to your store header, Chat CTA buttons, and highlighted badges
               </p>
             </div>
 

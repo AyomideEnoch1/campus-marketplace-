@@ -122,18 +122,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "You cannot start a conversation with your own store" }, { status: 400 });
     }
 
-    // Look for existing conversation
+    // Look for existing conversation between this buyer and vendor
     let conversation = await prisma.conversation.findFirst({
       where: {
         buyerId: session.id,
         vendorId: vendor.id,
-        ...(productId ? { productId } : {}),
       },
+      orderBy: { lastMessageAt: "desc" },
       include: {
         vendor: { select: { storeName: true, slug: true } },
         product: { select: { title: true, price: true } },
       },
     });
+
+    // If exists and productId is provided, update product context without clearing history
+    if (conversation && productId && conversation.productId !== productId) {
+      conversation = await prisma.conversation.update({
+        where: { id: conversation.id },
+        data: {
+          productId,
+          lastMessageAt: new Date(),
+        },
+        include: {
+          vendor: { select: { storeName: true, slug: true } },
+          product: { select: { title: true, price: true } },
+        },
+      });
+    }
 
     // Create if doesn't exist
     if (!conversation) {

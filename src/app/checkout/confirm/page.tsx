@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Package,
   RefreshCw,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +28,35 @@ function CheckoutConfirmContent() {
   const [orderId, setOrderId] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [pollCount, setPollCount] = React.useState(0);
+  const [paying, setPaying] = React.useState(false);
+  const [retryError, setRetryError] = React.useState<string | null>(null);
+
+  const handleRetryPayment = async () => {
+    if (!orderId && !txRef) return;
+    try {
+      setPaying(true);
+      setRetryError(null);
+      const res = await fetch("/api/payments/pay-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: orderId || undefined,
+          orderNumber: txRef || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to initiate payment retry");
+      }
+      if (data.paymentLink) {
+        window.location.href = data.paymentLink;
+      }
+    } catch (err: any) {
+      setRetryError(err.message || "Failed to open payment gateway.");
+    } finally {
+      setPaying(false);
+    }
+  };
 
   // Verification routine
   const checkStatus = React.useCallback(async () => {
@@ -163,26 +193,65 @@ function CheckoutConfirmContent() {
 
         {!loading && !isSuccess && (
           <div className="space-y-5">
-            <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
               <AlertCircle className="w-8 h-8" />
             </div>
 
             <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-neutral-900">Payment Unsuccessful</h2>
+              <h2 className="text-xl font-black text-neutral-900">
+                Payment Not Completed
+              </h2>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                {errorMessage || "We could not verify your payment. No funds were debited to escrow."}
+                {errorMessage ||
+                  "Your order request has been safely saved, but payment was not finalized. No funds have been debited."}
               </p>
             </div>
 
-            <div className="flex flex-col gap-2 pt-2">
-              <Button onClick={() => checkStatus()} variant="outline" className="rounded-2xl text-xs font-bold gap-1.5">
-                <RefreshCw className="w-3.5 h-3.5" /> Re-check Payment Status
-              </Button>
-              <Link href="/cart">
-                <Button className="w-full rounded-2xl bg-neutral-950 text-white text-xs font-bold">
-                  Return to Cart &amp; Retry
+            {retryError && (
+              <p className="text-xs text-rose-600 font-medium">{retryError}</p>
+            )}
+
+            <div className="flex flex-col gap-2.5 pt-2">
+              {(orderId || txRef) && (
+                <Button
+                  onClick={handleRetryPayment}
+                  disabled={paying}
+                  className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold h-11 gap-2 shadow-md shadow-emerald-600/20"
+                >
+                  {paying ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Opening Payment Gateway...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="w-4 h-4" />
+                      <span>Complete Order &amp; Pay Now</span>
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <Link href="/orders" className="block">
+                <Button
+                  variant="outline"
+                  className="w-full rounded-2xl text-xs font-bold border-neutral-300 text-neutral-800"
+                >
+                  View in My Orders
                 </Button>
               </Link>
+
+              <Button
+                onClick={() => {
+                  setLoading(true);
+                  setPollCount(0);
+                  checkStatus();
+                }}
+                variant="ghost"
+                className="rounded-2xl text-xs font-medium text-neutral-600 gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Re-check Payment Status
+              </Button>
             </div>
           </div>
         )}

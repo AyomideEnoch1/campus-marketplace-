@@ -4,7 +4,7 @@ import * as React from "react";
 import { LogOut } from "lucide-react";
 import { SignoutModal } from "@/components/ui/SignoutModal";
 
-interface VendorLogoutButtonProps {
+interface VendorLogoutButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   variant?: "vendor" | "admin";
   showIcon?: boolean;
@@ -16,10 +16,11 @@ export function VendorLogoutButton({
   variant = "vendor",
   showIcon = false,
   children,
+  ...props
 }: VendorLogoutButtonProps) {
   const [isSigningOut, setIsSigningOut] = React.useState(false);
 
-  const handleLogout = async (e: React.MouseEvent) => {
+  const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (isSigningOut) return;
 
@@ -42,6 +43,7 @@ export function VendorLogoutButton({
         onClick={handleLogout}
         disabled={isSigningOut}
         className={className}
+        {...props}
       >
         {children ? (
           children

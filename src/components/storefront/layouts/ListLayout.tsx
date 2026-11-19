@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle, ShoppingBag, MapPin, CheckCircle } from "lucide-react";
+import { MessageCircle, MessageSquare, ShoppingBag, MapPin, CheckCircle } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -99,19 +99,13 @@ export function ListLayout({ vendor, products }: LayoutProps) {
                     </Button>
                   </Link>
 
-                  {vendor.whatsapp && (
-                    <a
-                      href={`https://wa.me/${vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20"${encodeURIComponent(
-                        p.title
-                      )}"%20for%20${formatNGN(p.price)}%20from%20your%20CampusTrade%20store`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      Chat Order
-                    </a>
-                  )}
+                  <Link
+                    href={`/messages?vendor=${vendor.slug || vendor.id}&product=${p.id}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    Chat Vendor
+                  </Link>
                 </div>
               </div>
             </div>

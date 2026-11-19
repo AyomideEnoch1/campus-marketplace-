@@ -77,6 +77,10 @@ export default async function OrdersPage() {
     deliveryAddress: o.deliveryAddress,
     meetupPoint: o.meetupPoint,
     notes: o.notes,
+    paid_at: o.paid_at ? o.paid_at.toISOString() : null,
+    escrow_status: o.escrow_status,
+    escrow_mode: o.escrow_mode,
+    tx_ref: o.tx_ref,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
     vendor: {

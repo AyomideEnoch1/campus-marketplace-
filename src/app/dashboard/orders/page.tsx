@@ -29,7 +29,7 @@ export default async function VendorOrdersPage() {
           Buyer Order Requests
         </h1>
         <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-          Review incoming campus orders, contact buyers via WhatsApp, and mark status
+          Review incoming campus orders, chat with buyers, and mark fulfillment status
         </p>
       </div>
 

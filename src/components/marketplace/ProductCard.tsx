@@ -9,6 +9,7 @@ import {
   MapPin,
   CheckCircle2,
   MessageCircle,
+  MessageSquare,
   Star,
   Plus,
   Check,
@@ -214,18 +215,14 @@ export function ProductCard({ product }: ProductCardProps) {
               <Eye className="w-3.5 h-3.5 transition-transform group-hover/btn:scale-110" />
               <span>View Item Image</span>
             </button>
-            {product.vendor?.whatsapp && (
-              <a
-                href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20your%20product%20"${encodeURIComponent(
-                  product.title,
-                )}"%20on%20CampusTrade`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md hover:bg-emerald-600 transition-colors shrink-0"
-                title="Chat Vendor on WhatsApp"
+            {(product.vendor?.slug || product.vendor?.id) && (
+              <Link
+                href={`/messages?vendor=${product.vendor.slug || product.vendor.id}&product=${product.id}`}
+                className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md hover:bg-emerald-700 transition-colors shrink-0"
+                title="Chat with Seller"
               >
-                <MessageCircle className="w-4 h-4" />
-              </a>
+                <MessageSquare className="w-4 h-4" />
+              </Link>
             )}
           </div>
         </div>

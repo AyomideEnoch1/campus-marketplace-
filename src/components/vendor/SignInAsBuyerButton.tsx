@@ -7,11 +7,13 @@ import { SignoutModal } from "@/components/ui/SignoutModal";
 interface SignInAsBuyerButtonProps {
   className?: string;
   variant?: "sidebar" | "dropdown";
+  collapsed?: boolean;
 }
 
 export function SignInAsBuyerButton({
   className,
   variant = "sidebar",
+  collapsed = false,
 }: SignInAsBuyerButtonProps) {
   const [isSwitching, setIsSwitching] = React.useState(false);
 
@@ -29,6 +31,33 @@ export function SignInAsBuyerButton({
       window.location.href = "/auth/login?role=buyer";
     }
   };
+
+  if (collapsed) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={handleSwitch}
+          disabled={isSwitching}
+          title="Sign in as a Buyer"
+          className={
+            className ||
+            "w-10 h-10 mx-auto flex items-center justify-center rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/60 text-emerald-800 transition-colors cursor-pointer group relative"
+          }
+        >
+          <ShoppingBag className="w-4 h-4 text-emerald-600" />
+          <span className="sr-only">Sign in as a Buyer</span>
+        </button>
+
+        <SignoutModal
+          isOpen={isSwitching}
+          message="Switching to Student Buyer..."
+          submessage="Clearing vendor session and redirecting to buyer sign-in..."
+          onClose={() => setIsSwitching(false)}
+        />
+      </>
+    );
+  }
 
   if (variant === "dropdown") {
     return (

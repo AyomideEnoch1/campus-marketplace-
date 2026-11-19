@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Store, MapPin, Package, ShieldCheck, ArrowRight, MessageCircle } from "lucide-react";
+import { Store, MapPin, Package, ShieldCheck, ArrowRight, MessageCircle, MessageSquare } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -147,12 +147,10 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
                       <Package className="w-3.5 h-3.5 text-neutral-400" />
                       {v._count.products} Products Listed
                     </span>
-                    {v.whatsapp && (
-                      <span className="text-emerald-600 font-bold flex items-center gap-1 text-[11px]">
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        WhatsApp Orders
-                      </span>
-                    )}
+                    <span className="text-emerald-600 font-bold flex items-center gap-1 text-[11px]">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      In-App Chat
+                    </span>
                   </div>
                 </div>
               </div>

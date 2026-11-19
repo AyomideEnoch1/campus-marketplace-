@@ -35,6 +35,10 @@ export interface OrderData {
     description: string | null;
   } | null;
   notes?: string | null;
+  paid_at?: string | Date | null;
+  escrow_status?: string | null;
+  escrow_mode?: string | null;
+  tx_ref?: string | null;
   createdAt: string | Date;
   updatedAt?: string | Date;
   vendor: {

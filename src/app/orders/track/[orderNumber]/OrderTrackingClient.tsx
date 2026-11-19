@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Truck,
   MessageCircle,
+  MessageSquare,
   ExternalLink,
   MapPin,
   Calendar,
@@ -15,6 +16,9 @@ import {
   Package,
   Clock,
   CheckCircle2,
+  CreditCard,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +39,10 @@ interface OrderTrackingClientProps {
       description: string | null;
     } | null;
     notes?: string | null;
+    paid_at?: string | Date | null;
+    escrow_status?: string | null;
+    escrow_mode?: string | null;
+    tx_ref?: string | null;
     createdAt: string | Date;
     updatedAt: string | Date;
     vendor: {
@@ -66,6 +74,45 @@ interface OrderTrackingClientProps {
 }
 
 export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
+  const isUnpaid =
+    !order.paid_at &&
+    order.escrow_status === "pending" &&
+    order.status !== "CANCELLED";
+
+  const [paying, setPaying] = React.useState(false);
+  const [paymentError, setPaymentError] = React.useState<string | null>(null);
+
+  const handleCompletePayment = async () => {
+    try {
+      setPaying(true);
+      setPaymentError(null);
+      const res = await fetch("/api/payments/pay-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to initiate payment");
+      }
+      if (data.paymentLink) {
+        window.location.href = data.paymentLink;
+      } else {
+        throw new Error("No payment link returned from server");
+      }
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      setPaymentError(
+        err.message || "Failed to start payment. Please try again."
+      );
+    } finally {
+      setPaying(false);
+    }
+  };
+
   const whatsappMsg = `Hi ${order.vendor.storeName}, I am tracking my CampusTrade order #${order.orderNumber}. Can you give me an update on delivery to: ${order.deliveryAddress}?`;
   const whatsappUrl = order.vendor.whatsapp
     ? `https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(whatsappMsg)}`
@@ -88,6 +135,27 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
           </Link>
 
           <div className="flex items-center gap-2">
+            {isUnpaid && (
+              <Button
+                size="sm"
+                onClick={handleCompletePayment}
+                disabled={paying}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl gap-1.5 shadow-md shadow-emerald-600/30"
+              >
+                {paying ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Connecting...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Complete Order &amp; Pay</span>
+                  </>
+                )}
+              </Button>
+            )}
+
             <Link href={`/order-success/${order.orderNumber}`}>
               <Button
                 variant="outline"
@@ -100,6 +168,64 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
             </Link>
           </div>
         </div>
+
+        {/* Error message */}
+        {paymentError && (
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{paymentError}</span>
+            </div>
+            <button
+              onClick={() => setPaymentError(null)}
+              className="text-rose-500 hover:text-rose-800 text-xs font-bold underline shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Unpaid Order Alert Banner */}
+        {isUnpaid && (
+          <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-50 via-amber-50/80 to-orange-50 border-2 border-amber-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-amber-950">
+                    Order Placed Without Payment
+                  </h3>
+                  <Badge className="bg-amber-200/90 text-amber-950 border-amber-400 text-[10px] font-black uppercase">
+                    Payment Pending
+                  </Badge>
+                </div>
+                <p className="text-xs text-amber-800/90 leading-relaxed max-w-xl">
+                  Your order is reserved in our system, but the vendor cannot fulfill or ship items until payment is confirmed in escrow. Click below to complete your payment of <strong>{formatNGN(order.totalAmount)}</strong> securely.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleCompletePayment}
+              disabled={paying}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl h-11 px-5 shadow-lg shadow-emerald-600/30 shrink-0 w-full sm:w-auto gap-2"
+            >
+              {paying ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Connecting to Flutterwave...</span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Complete Order &amp; Pay Now &rarr;</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Tracking Header Card */}
         <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 sm:p-8 shadow-xs space-y-5">
@@ -121,18 +247,14 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
               </p>
             </div>
 
-            {/* Direct WhatsApp button */}
-            {whatsappUrl && (
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02]"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Chat Seller on WhatsApp</span>
-              </a>
-            )}
+            {/* Direct In-App Chat button */}
+            <Link
+              href={`/messages?vendor=${order.vendor.slug || order.vendor.id}${order.items[0]?.productId ? `&product=${order.items[0].productId}` : ""}`}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.02]"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat with Seller</span>
+            </Link>
           </div>
 
           {/* Quick Meta Grid */}

@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle, Heart, ArrowUpRight } from "lucide-react";
+import { MessageCircle, MessageSquare, Heart, ArrowUpRight } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -63,20 +63,14 @@ export function LookbookLayout({ vendor, products }: LayoutProps) {
                   </Badge>
                 </div>
 
-                {/* WhatsApp button */}
-                {vendor.whatsapp && (
-                  <a
-                    href={`https://wa.me/${vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20love%20Look%20#${idx + 1}%20("${encodeURIComponent(
-                      p.title
-                    )}")%20from%20your%20Lookbook`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="absolute top-4 right-4 w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-10"
-                    title="Inquire Look"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </a>
-                )}
+                {/* In-app Chat Button */}
+                <Link
+                  href={`/messages?vendor=${vendor.slug || vendor.id}&product=${p.id}`}
+                  className="absolute top-4 right-4 w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-10"
+                  title="Chat with Vendor"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </Link>
 
                 {/* Editorial Caption on Photo */}
                 <div className="absolute bottom-5 left-5 right-5 text-white z-10 space-y-2">

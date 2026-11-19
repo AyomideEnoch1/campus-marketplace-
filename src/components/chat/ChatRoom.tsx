@@ -13,6 +13,7 @@ import {
   ExternalLink,
   ShieldCheck,
   ChevronLeft,
+  Loader2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ interface ChatRoomProps {
   initialMessages: ChatMessageItem[];
   currentUserId: string;
   onBack?: () => void;
+  onMessageSent?: (message: ChatMessageItem) => void;
 }
 
 export function ChatRoom({
@@ -74,8 +76,10 @@ export function ChatRoom({
   initialMessages,
   currentUserId,
   onBack,
+  onMessageSent,
 }: ChatRoomProps) {
-  const [messages, setMessages] = useState<ChatMessageItem[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessageItem[]>(initialMessages || []);
+  const [isLoading, setIsLoading] = useState(false);
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -96,51 +100,132 @@ export function ChatRoom({
     scrollToBottom(false);
   }, [messages.length]);
 
+  // Synchronize when initialMessages changes from parent
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
+
+  // Fetch previous messages on mount or conversation change if empty or mismatched
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadMessages() {
+      // If we already have initialMessages belonging to this exact conversation, no need to show loading
+      if (
+        initialMessages &&
+        initialMessages.length > 0 &&
+        initialMessages[0].conversationId === conversation.id
+      ) {
+        setMessages(initialMessages);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await fetch(`/api/conversations/${conversation.id}/messages`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!isCancelled && data.messages) {
+            setMessages(data.messages);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load messages for conversation:", err);
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadMessages();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [conversation.id]);
+
+  // Periodic polling fallback (every 4 seconds) to ensure real-time consistency
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/conversations/${conversation.id}/messages`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.messages && Array.isArray(data.messages)) {
+            setMessages((prev) => {
+              // Only update if there are new messages or status changes
+              if (
+                data.messages.length !== prev.length ||
+                (data.messages.length > 0 &&
+                  prev.length > 0 &&
+                  data.messages[data.messages.length - 1].id !== prev[prev.length - 1].id)
+              ) {
+                return data.messages;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch {
+        // Silent polling fallback
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [conversation.id]);
+
   // Subscribe to Supabase Realtime for instant updates
   useEffect(() => {
     if (!supabase) return;
 
-    const channel = supabase
-      .channel(`chat:${conversation.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "ChatMessage",
-          filter: `conversationId=eq.${conversation.id}`,
-        },
-        async (payload: any) => {
-          const newMsg = payload.new as any;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [
-              ...prev,
-              {
-                id: newMsg.id,
-                conversationId: newMsg.conversationId,
-                senderId: newMsg.senderId,
-                content: newMsg.content,
-                isRead: newMsg.isRead,
-                createdAt: newMsg.createdAt,
-                sender: {
-                  id: newMsg.senderId,
-                  fullName:
-                    newMsg.senderId === currentUserId
-                      ? "You"
-                      : otherPartyName,
-                  role: newMsg.senderId === currentUserId ? "USER" : "VENDOR",
+    try {
+      const channel = supabase
+        .channel(`chat:${conversation.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "ChatMessage",
+            filter: `conversationId=eq.${conversation.id}`,
+          },
+          async (payload: any) => {
+            const newMsg = payload.new as any;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [
+                ...prev,
+                {
+                  id: newMsg.id,
+                  conversationId: newMsg.conversationId,
+                  senderId: newMsg.senderId,
+                  content: newMsg.content,
+                  isRead: newMsg.isRead,
+                  createdAt: newMsg.createdAt,
+                  sender: {
+                    id: newMsg.senderId,
+                    fullName:
+                      newMsg.senderId === currentUserId
+                        ? "You"
+                        : otherPartyName,
+                    role: newMsg.senderId === currentUserId ? "USER" : "VENDOR",
+                  },
                 },
-              },
-            ];
-          });
-        }
-      )
-      .subscribe();
+              ];
+            });
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (e) {
+      console.warn("Supabase realtime subscription failed, polling fallback is active:", e);
+    }
   }, [conversation.id, currentUserId, otherPartyName]);
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -178,9 +263,16 @@ export function ChatRoom({
       if (!res.ok) throw new Error("Failed to send");
 
       const data = await res.json();
+      const deliveredMessage = data.message;
+
       setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? data.message : m))
+        prev.map((m) => (m.id === tempId ? deliveredMessage : m))
       );
+
+      // Notify parent container so conversation list is updated
+      if (onMessageSent && deliveredMessage) {
+        onMessageSent(deliveredMessage);
+      }
     } catch (err) {
       console.error("Failed to deliver message:", err);
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
@@ -305,7 +397,12 @@ export function ChatRoom({
           </p>
         </div>
 
-        {messages.length === 0 ? (
+        {isLoading && messages.length === 0 ? (
+          <div className="py-12 flex flex-col items-center justify-center text-neutral-400 text-xs space-y-2">
+            <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+            <p className="font-semibold text-neutral-600">Loading conversation history...</p>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="py-12 text-center text-neutral-400 text-xs">
             <p>No messages yet. Send a message to start bargaining or arranging meetup!</p>
           </div>

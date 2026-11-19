@@ -54,43 +54,13 @@ export async function POST(request: Request) {
       possibleQueries.push({ email: `${digitsOnly}@guest.campustrade.ng` });
     }
 
-    const targetRole = role ? (role.toUpperCase() as "BUYER" | "VENDOR" | "ADMIN") : null;
-
-    // Filter by selected role/table
-    let userWhere: any = { OR: possibleQueries };
-    if (targetRole === "VENDOR") {
-      userWhere.role = "VENDOR";
-    } else if (targetRole === "BUYER") {
-      userWhere.role = "BUYER";
-    }
-
-    let user = await prisma.user.findFirst({
-      where: userWhere,
+    // Look up the user directly by credentials without requiring pre-selected role tabs
+    const user = await prisma.user.findFirst({
+      where: { OR: possibleQueries },
       include: {
         vendorProfile: true,
       },
     });
-
-    // Helpful diagnostic check if role was selected but not found
-    if (!user && targetRole) {
-      const otherRole = targetRole === "VENDOR" ? "BUYER" : "VENDOR";
-      const userInOtherRole = await prisma.user.findFirst({
-        where: {
-          OR: possibleQueries,
-          role: otherRole,
-        },
-      });
-
-      if (userInOtherRole) {
-        const correctTab = otherRole === "VENDOR" ? "Campus Vendor" : "Student Buyer";
-        return NextResponse.json(
-          {
-            error: `This account is registered as a ${correctTab}. Please select the ${correctTab} tab to sign in.`,
-          },
-          { status: 401 }
-        );
-      }
-    }
 
     if (!user || !user.passwordHash) {
       return NextResponse.json(
@@ -113,6 +83,16 @@ export async function POST(request: Request) {
       email: user.email,
     });
 
+    // Automatically decipher destination according to the user's account role
+    const isVendor = user.role === "VENDOR" || !!user.vendorProfile;
+    const isAdmin = user.role === "ADMIN";
+
+    const defaultRedirect = isAdmin
+      ? "/admin"
+      : isVendor
+      ? "/dashboard"
+      : "/shop";
+
     const response = NextResponse.json({
       success: true,
       user: {
@@ -130,12 +110,7 @@ export async function POST(request: Request) {
             }
           : null,
       },
-      redirectTo:
-        user.role === "ADMIN"
-          ? "/admin"
-          : user.role === "VENDOR"
-          ? "/dashboard"
-          : "/shop",
+      redirectTo: defaultRedirect,
     });
 
     // Set secure HTTP-only cookie

@@ -228,18 +228,14 @@ export function StorefrontRenderer({
 
           {/* Action CTAs */}
           <div className="flex items-center gap-3 w-full md:w-auto">
-            {vendor.whatsapp && (
-              <a
-                href={`https://wa.me/${vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20visiting%20your%20CampusTrade%20storefront`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md transition-all hover:scale-105"
-                style={{ backgroundColor: brandColor }}
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Chat on WhatsApp</span>
-              </a>
-            )}
+            <Link
+              href={`/messages?vendor=${vendor.slug || vendor.id}`}
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md transition-all hover:scale-105"
+              style={{ backgroundColor: brandColor }}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat with Vendor</span>
+            </Link>
 
             <button
               type="button"
