@@ -128,7 +128,7 @@ export function Navbar({ initialUser }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-100 transition-all">
-      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between gap-3">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-3">
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
