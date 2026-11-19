@@ -149,7 +149,7 @@ function SearchBarContent({
         {/* Input Field */}
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -162,7 +162,11 @@ function SearchBarContent({
           placeholder={placeholder}
           autoFocus={autoFocus}
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
           spellCheck="false"
+          data-lpignore="true"
+          data-form-type="other"
           className="w-full bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-hidden text-inherit font-medium"
         />
 
@@ -182,8 +186,8 @@ function SearchBarContent({
         {query.trim().length > 0 && (
           <button
             type="submit"
+            aria-label="Submit search"
             className="ml-1 w-6 h-6 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-xs"
-            title="Search"
           >
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
