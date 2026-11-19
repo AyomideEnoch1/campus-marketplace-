@@ -11,10 +11,15 @@ import {
   Store,
   LogOut,
   ShieldAlert,
+  ShieldCheck,
   ChevronDown,
   Menu,
   X,
   Package,
+  Compass,
+  Sparkles,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,10 +49,16 @@ export function Navbar({ initialUser }: NavbarProps) {
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [selectedCampus, setSelectedCampus] = React.useState<string>("all");
   const [isSigningOut, setIsSigningOut] = React.useState(false);
-  const isVendorInterface = pathname.startsWith("/dashboard");
 
+  // Determine current page context
+  const isVendorDashboard = pathname.startsWith("/dashboard");
+  const isAdminDashboard = pathname.startsWith("/admin");
+  const isCheckout = pathname.startsWith("/checkout");
+
+  // Close menus on page navigation
   React.useEffect(() => {
     setMobileMenuOpen(false);
+    setUserDropdownOpen(false);
   }, [pathname]);
 
   const handleLogout = () => {
@@ -71,39 +82,70 @@ export function Navbar({ initialUser }: NavbarProps) {
     });
   };
 
+  // On vendor dashboard and admin dashboard, their dedicated shell/sidebar owns the header
+  if (isVendorDashboard || isAdminDashboard) {
+    return null;
+  }
+
+  // 1. Distraction-Free Minimal Checkout Header
+  if (isCheckout) {
+    return (
+      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-100">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-xs">
+              <GraduationCap className="w-4 h-4" />
+            </div>
+            <span className="font-extrabold text-lg text-neutral-900 tracking-tight">
+              Campus<span className="text-emerald-500">Trade</span>
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-1.5 rounded-full">
+            <Lock className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Secure Escrow Checkout</span>
+          </div>
+
+          <Link
+            href="/cart"
+            className="text-xs font-bold text-neutral-500 hover:text-neutral-900 flex items-center gap-1"
+          >
+            &larr; Back to Bag
+          </Link>
+        </div>
+      </header>
+    );
+  }
+
+  // 2. Standard Public Marketplace Header
   const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Shop", href: "/shop" },
-    { name: "Campuses", href: "/campuses" },
-    { name: "Vendors", href: "/vendors" },
-    { name: "About", href: "/about" },
+    { name: "Home", href: "/", icon: GraduationCap },
+    { name: "Shop", href: "/shop", icon: Compass },
+    { name: "Campuses", href: "/campuses", icon: GraduationCap },
+    { name: "Vendors", href: "/vendors", icon: Store },
+    { name: "About", href: "/about", icon: Sparkles },
   ];
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-neutral-100 transition-all">
-      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between gap-4">
-        {/* Brand Logo & Campus Badge */}
+      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between gap-3">
+        {/* Brand Logo */}
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
               <GraduationCap className="w-5 h-5 md:w-6 md:h-6" />
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-xl md:text-2xl tracking-tight text-neutral-900 leading-none">
                 Campus<span className="text-emerald-500">Trade</span>
               </span>
-              <span className="text-[10px] font-semibold text-neutral-400 tracking-tight">
+              <span className="text-[10px] font-semibold text-neutral-400 tracking-tight hidden sm:inline-block">
                 Shop &bull; Sell &bull; Connect
               </span>
             </div>
           </Link>
-          {isVendorInterface && (
-            <Badge variant="dark" className="hidden sm:inline-flex text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">
-              VENDOR PORTAL
-            </Badge>
-          )}
 
-          {/* Quick Campus Filter Pill - Only visible on the Campuses page */}
+          {/* Quick Campus Filter Pill - Only visible on desktop on Campuses page */}
           {pathname === "/campuses" && (
             <div className="hidden lg:flex items-center ml-4 pl-4 border-l border-neutral-200">
               <div className="flex items-center gap-1.5 text-xs bg-neutral-100 hover:bg-neutral-200/80 px-3 py-1.5 rounded-full transition-colors cursor-pointer">
@@ -131,9 +173,8 @@ export function Navbar({ initialUser }: NavbarProps) {
           )}
         </div>
 
-        {/* Center Nav Links (Desktop) */}
-        {!isVendorInterface && (
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+        {/* Center Nav Links (Desktop md+) */}
+        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -151,12 +192,11 @@ export function Navbar({ initialUser }: NavbarProps) {
             );
           })}
         </nav>
-        )}
 
-        {/* Right Actions: Wishlist, Cart, Profile */}
-        <div className="flex items-center gap-1 md:gap-2.5">
-          {/* Wishlist / Saved Items (Only visible after sign in on buyer interface) */}
-          {!isVendorInterface && user && (
+        {/* Right Actions: Wishlist, Cart, Notifications, Profile, Hamburger */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* Wishlist / Saved Items (Only on screens >= sm; mobile has bottom nav) */}
+          {user && (
             <Link
               href="/saved"
               className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
@@ -174,11 +214,11 @@ export function Navbar({ initialUser }: NavbarProps) {
             </Link>
           )}
 
-          {/* Cart / Bag Icon (Only visible after sign in on buyer interface) */}
-          {!isVendorInterface && user && (
+          {/* Cart / Bag Icon (Screens >= sm; mobile has bottom nav) */}
+          {user && (
             <Link
               href="/cart"
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+              className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
               title="Bag"
             >
               <ShoppingBag className="w-5 h-5" />
@@ -192,7 +232,7 @@ export function Navbar({ initialUser }: NavbarProps) {
             </Link>
           )}
 
-          {/* Real-Time Notification Bell (Only visible when signed in) */}
+          {/* Real-Time Notification Bell (Visible on both mobile & desktop when signed in) */}
           {user && <NotificationBell currentUserId={user.id} />}
 
           {/* User Auth Section */}
@@ -200,12 +240,13 @@ export function Navbar({ initialUser }: NavbarProps) {
             <div className="relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-neutral-200 hover:border-neutral-300 bg-white shadow-xs transition-colors"
+                className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 pr-2.5 sm:pr-3 py-1 sm:py-1.5 rounded-full border border-neutral-200 hover:border-neutral-300 bg-white shadow-xs transition-colors cursor-pointer"
+                aria-label="User Account Menu"
               >
-                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold uppercase">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold uppercase shrink-0">
                   {user.fullName ? user.fullName[0] : "U"}
                 </div>
-                <span className="hidden sm:inline-block text-xs font-semibold text-neutral-800 max-w-[90px] truncate">
+                <span className="hidden sm:inline-block text-xs font-semibold text-neutral-800 max-w-[85px] truncate">
                   {user.fullName?.split(" ")[0]}
                 </span>
                 <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />
@@ -240,7 +281,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                     <Link
                       href="/dashboard"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors font-medium"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 font-bold transition-colors"
                     >
                       <Store className="w-4 h-4 text-emerald-600" />
                       Vendor Dashboard
@@ -276,14 +317,14 @@ export function Navbar({ initialUser }: NavbarProps) {
 
                   <div className="border-t border-neutral-100 my-1"></div>
 
-                  {(user.role === "VENDOR" || isVendorInterface) && (
+                  {user.role === "VENDOR" && (
                     <SignInAsBuyerButton variant="dropdown" />
                   )}
 
                   <button
                     onClick={handleLogout}
                     disabled={logoutMutation.isPending}
-                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors text-left"
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors text-left cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 text-rose-500" />
                     {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
@@ -306,73 +347,155 @@ export function Navbar({ initialUser }: NavbarProps) {
             </div>
           )}
 
-          {/* Mobile Menu Button (Only visible on Home page on small screens) */}
-          {pathname === "/" && (
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 transition-colors"
-              aria-label="Toggle Navigation Menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          )}
+          {/* Hamburger Menu Button - Prominently visible across ALL public pages on mobile screens */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden w-10 h-10 rounded-2xl border border-neutral-200/80 flex items-center justify-center text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer shrink-0"
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5 text-neutral-900" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation (Only on Home page on small screens) */}
-      {mobileMenuOpen && pathname === "/" && (
-        <div className="md:hidden border-t border-neutral-100 bg-white px-4 py-4 space-y-3 animate-in slide-in-from-top-2">
+      {/* Mobile Drawer Navigation: Slides down cleanly across all public pages */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-neutral-100 bg-white/98 backdrop-blur-xl px-4 py-4 space-y-4 shadow-xl animate-in slide-in-from-top-2 duration-200 max-h-[85vh] overflow-y-auto">
+          {/* Main Navigation Links */}
           <div className="space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-xl text-base font-medium ${
-                  pathname === link.href
-                    ? "bg-emerald-50 text-emerald-800 font-bold"
-                    : "text-neutral-700 hover:bg-neutral-50"
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-3 pb-1">
+              Explore CampusTrade
+            </p>
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all ${
+                    isActive
+                      ? "bg-emerald-50 text-emerald-800 font-bold shadow-xs"
+                      : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-neutral-400"}`} />
+                  <span>{link.name}</span>
+                </Link>
+              );
+            })}
           </div>
 
+          {/* Quick Campus Chips (Instant Filter Access) */}
+          <div className="pt-2 border-t border-neutral-100 space-y-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-1">
+              Filter by University Campus
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { name: "All Campuses", slug: "all" },
+                { name: "UNILAG", slug: "unilag" },
+                { name: "UI", slug: "ui" },
+                { name: "OAU", slug: "oau" },
+              ].map((c) => (
+                <Link
+                  key={c.slug}
+                  href={c.slug === "all" ? "/campuses" : `/campuses?campus=${c.slug}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-neutral-100 hover:bg-emerald-50 hover:text-emerald-800 text-neutral-700 transition-colors"
+                >
+                  {c.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Signed-in Account Shortcuts */}
+          {user && (
+            <div className="pt-2 border-t border-neutral-100 space-y-1">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-3 pb-1">
+                Your Account
+              </p>
+              {user.role === "VENDOR" && (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-bold bg-emerald-600 text-white shadow-xs"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Store className="w-4 h-4" />
+                    Vendor Dashboard
+                  </span>
+                  <span>&rarr;</span>
+                </Link>
+              )}
+              <Link
+                href="/orders"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm text-neutral-700 hover:bg-neutral-50"
+              >
+                <Package className="w-4 h-4 text-neutral-400" />
+                My Orders
+              </Link>
+              <Link
+                href="/saved"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm text-neutral-700 hover:bg-neutral-50"
+              >
+                <Heart className="w-4 h-4 text-neutral-400" />
+                Saved Items ({savedCount})
+              </Link>
+              <Link
+                href="/account"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3.5 py-2 rounded-xl text-sm text-neutral-700 hover:bg-neutral-50"
+              >
+                <User className="w-4 h-4 text-neutral-400" />
+                Account Profile
+              </Link>
+            </div>
+          )}
+
+          {/* Guest Sign In & Join Buttons */}
           {!user && (
             <div className="pt-2 border-t border-neutral-100 flex items-center gap-2">
               <Link
                 href="/auth/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-neutral-200 text-center font-bold text-sm text-neutral-800 hover:bg-neutral-50 transition-colors"
+                className="flex-1 py-2.5 px-4 rounded-2xl border border-neutral-200 text-center font-bold text-sm text-neutral-800 hover:bg-neutral-50 transition-colors"
               >
                 Sign In
               </Link>
               <Link
                 href="/auth/register"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-center font-bold text-sm shadow-sm transition-colors"
+                className="flex-1 py-2.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white text-center font-bold text-sm shadow-sm transition-colors"
               >
                 Join Free
               </Link>
             </div>
           )}
 
-          <div className="pt-2 border-t border-neutral-100 space-y-2">
-            <Link
-              href="/vendor/register"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-50 via-pink-50 to-amber-50 border border-emerald-200 text-emerald-950 font-semibold text-sm"
-            >
-              <span className="flex items-center gap-2">
-                <Store className="w-4 h-4 text-emerald-600" />
-                Become a Student Seller
-              </span>
-              <span>&rarr;</span>
-            </Link>
-          </div>
+          {/* Become a Student Seller Banner */}
+          {user?.role !== "VENDOR" && (
+            <div className="pt-2 border-t border-neutral-100">
+              <Link
+                href="/vendor/register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-amber-50 border border-emerald-200/90 text-emerald-950 font-bold text-xs shadow-xs group"
+              >
+                <span className="flex items-center gap-2">
+                  <Store className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+                  Become a Student Seller
+                </span>
+                <span className="text-emerald-700">&rarr;</span>
+              </Link>
+            </div>
+          )}
         </div>
       )}
+
       {/* Fullscreen Blocking Signout Modal */}
       <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} onClose={() => setIsSigningOut(false)} />
     </header>
