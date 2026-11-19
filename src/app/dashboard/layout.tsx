@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { VendorSidebar } from "@/components/vendor/VendorSidebar";
+import { VendorDashboardMain } from "@/components/vendor/VendorDashboardMain";
 
 export default async function VendorDashboardLayout({
   children,
@@ -32,9 +33,7 @@ export default async function VendorDashboardLayout({
       <VendorSidebar vendor={vendor} session={session} />
 
       {/* Main Vendor Content Area */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-6xl">
-        {children}
-      </main>
+      <VendorDashboardMain>{children}</VendorDashboardMain>
     </div>
   );
 }
