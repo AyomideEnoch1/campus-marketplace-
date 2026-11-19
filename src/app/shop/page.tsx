@@ -185,8 +185,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               Browse textbooks, tech, hostel living gear, and thrift fashion directly from fellow students. Filter by campus or search for what you need.
             </p>
 
-            {/* Search Input Bar */}
-            <div className="pt-1.5 sm:pt-2 max-w-xl">
+            {/* Search Input Bar (Shown on tablet md screens; large lg screens have it in the navbar) */}
+            <div className="pt-1.5 sm:pt-2 max-w-xl lg:hidden">
               <SearchBar
                 defaultValue={rawQ}
                 placeholder="Search textbooks, smartphones, sneakers..."

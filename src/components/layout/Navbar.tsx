@@ -29,6 +29,7 @@ import { useCurrentUser, useLogout } from "@/hooks/use-auth-query";
 import { SignoutModal } from "@/components/ui/SignoutModal";
 import { SignInAsBuyerButton } from "@/components/vendor/SignInAsBuyerButton";
 import { NotificationBell } from "./NotificationBell";
+import { SearchBar } from "@/components/marketplace/SearchBar";
 
 interface NavbarProps {
   initialUser?: any;
@@ -144,6 +145,17 @@ export function Navbar({ initialUser }: NavbarProps) {
               </span>
             </div>
           </Link>
+
+          {/* Shop Search Bar in Navbar on large screen after brand name */}
+          {pathname.startsWith("/shop") && (
+            <div className="hidden lg:flex items-center ml-2 xl:ml-4 w-60 xl:w-80">
+              <SearchBar
+                placeholder="Search campus drops & goods..."
+                size="sm"
+                className="w-full shadow-2xs rounded-full border-neutral-200/90 focus-within:border-emerald-500"
+              />
+            </div>
+          )}
 
           {/* Quick Campus Filter Pill - Only visible on desktop on Campuses page */}
           {pathname === "/campuses" && (
