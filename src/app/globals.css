@@ -29,7 +29,7 @@
 
 html,
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
   color: hsl(var(--foreground));
   background: hsl(var(--background));
