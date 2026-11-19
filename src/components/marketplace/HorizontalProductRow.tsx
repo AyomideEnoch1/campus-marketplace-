@@ -1,20 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "./ProductCard";
 
 interface HorizontalProductRowProps {
   title?: string;
   subtitle?: string;
-  badge?: string;
   products: any[];
 }
 
 export function HorizontalProductRow({
   title = "Trending Campus Drops",
   subtitle = "Popular student gear, textbooks & fashion right now",
-  badge = "Swipe / Scroll",
   products,
 }: HorizontalProductRowProps) {
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -50,21 +48,11 @@ export function HorizontalProductRow({
       {/* Row Header with navigation buttons */}
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <span className="p-1 rounded-lg bg-emerald-100/80 text-emerald-800">
-              <Sparkles className="w-3.5 h-3.5" />
-            </span>
-            <h3 className="text-sm sm:text-base font-extrabold text-neutral-900 tracking-tight">
-              {title}
-            </h3>
-            {badge && (
-              <span className="hidden sm:inline-flex text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                {badge}
-              </span>
-            )}
-          </div>
+          <h3 className="text-sm sm:text-base font-extrabold text-neutral-900 tracking-tight">
+            {title}
+          </h3>
           {subtitle && (
-            <p className="text-xs text-neutral-500 pl-6 hidden sm:block">
+            <p className="text-xs text-neutral-500 hidden sm:block">
               {subtitle}
             </p>
           )}

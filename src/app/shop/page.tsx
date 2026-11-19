@@ -852,7 +852,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <HorizontalProductRow
                 title="⚡ Trending Campus Drops"
                 subtitle="Scroll horizontally to explore top campus student gear & drops"
-                badge="Swipe to explore"
                 products={
                   products.filter((p) => p.isFeatured).length >= 3
                     ? products.filter((p) => p.isFeatured)
