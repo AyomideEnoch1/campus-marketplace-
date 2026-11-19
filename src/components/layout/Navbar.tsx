@@ -247,15 +247,6 @@ export function Navbar({ initialUser }: NavbarProps) {
           {/* Real-Time Notification Bell (Visible on both mobile & desktop when signed in) */}
           {user && <NotificationBell currentUserId={user.id} />}
 
-          {/* Quick Switch Role Pill (Desktop) */}
-          {user?.canSwitchRole && (
-            <SwitchRoleButton
-              targetRole={user.role === "VENDOR" ? "BUYER" : "VENDOR"}
-              variant="pill"
-              className="hidden lg:inline-flex"
-            />
-          )}
-
           {/* User Auth Section */}
           {user ? (
             <div className="relative">
@@ -429,18 +420,6 @@ export function Navbar({ initialUser }: NavbarProps) {
               >
                 Join Free
               </Link>
-            </div>
-          )}
-
-          {/* Account Mode Switch (Mobile) */}
-          {user?.canSwitchRole && (
-            <div className="pt-2 border-t border-neutral-100">
-              <SwitchRoleButton
-                targetRole={user.role === "VENDOR" ? "BUYER" : "VENDOR"}
-                variant="pill"
-                className="w-full justify-center py-2.5 text-xs font-bold"
-                onSuccess={() => setMobileMenuOpen(false)}
-              />
             </div>
           )}
 

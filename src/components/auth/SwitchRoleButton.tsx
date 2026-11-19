@@ -49,13 +49,13 @@ export function SwitchRoleButton({
     }
   };
 
-  const label = isSwitchingToVendor ? "Switch to Seller Mode" : "Switch to Buyer Mode";
+  const label = isSwitchingToVendor ? "Switch to Seller" : "Switch to Buyer";
   const modalMessage = isSwitchingToVendor
-    ? "Switching to Seller Dashboard..."
-    : "Switching to Student Buyer Mode...";
+    ? "Switching to Seller..."
+    : "Switching to Buyer...";
   const modalSubmessage = isSwitchingToVendor
-    ? "Setting up your vendor tools & analytics..."
-    : "Setting up your campus shopping session...";
+    ? "Loading your seller dashboard..."
+    : "Loading your campus shopping session...";
 
   if (variant === "pill") {
     return (

@@ -51,7 +51,7 @@ export function SignInAsBuyerButton({
           type="button"
           onClick={handleSwitch}
           disabled={isSwitching}
-          title="Switch to Buyer Mode"
+          title="Switch to Buyer"
           className={
             className ||
             "w-10 h-10 mx-auto flex items-center justify-center rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/60 text-emerald-800 transition-colors cursor-pointer group relative"
@@ -62,13 +62,13 @@ export function SignInAsBuyerButton({
           ) : (
             <ShoppingBag className="w-4 h-4 text-emerald-600" />
           )}
-          <span className="sr-only">Switch to Buyer Mode</span>
+          <span className="sr-only">Switch to Buyer</span>
         </button>
 
         <SignoutModal
           isOpen={isSwitching}
-          message="Switching to Student Buyer Mode..."
-          submessage="Setting up your buyer shopping session and redirecting to the shop..."
+          message="Switching to Buyer..."
+          submessage="Loading your campus shopping session..."
           onClose={() => setIsSwitching(false)}
         />
       </>
@@ -92,13 +92,13 @@ export function SignInAsBuyerButton({
           ) : (
             <ShoppingBag className="w-4 h-4 text-emerald-600 shrink-0" />
           )}
-          <span>{isSwitching ? "Switching Mode..." : "Switch to Buyer Mode"}</span>
+          <span>{isSwitching ? "Switching..." : "Switch to Buyer"}</span>
         </button>
 
         <SignoutModal
           isOpen={isSwitching}
-          message="Switching to Student Buyer Mode..."
-          submessage="Setting up your buyer shopping session and redirecting to the shop..."
+          message="Switching to Buyer..."
+          submessage="Loading your campus shopping session..."
           onClose={() => setIsSwitching(false)}
         />
       </>
@@ -121,13 +121,13 @@ export function SignInAsBuyerButton({
         ) : (
           <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
         )}
-        <span>{isSwitching ? "Switching..." : "Switch to Buyer Mode"}</span>
+        <span>{isSwitching ? "Switching..." : "Switch to Buyer"}</span>
       </button>
 
       <SignoutModal
         isOpen={isSwitching}
-        message="Switching to Student Buyer Mode..."
-        submessage="Setting up your buyer shopping session and redirecting to the shop..."
+        message="Switching to Buyer..."
+        submessage="Loading your campus shopping session..."
         onClose={() => setIsSwitching(false)}
       />
     </>
