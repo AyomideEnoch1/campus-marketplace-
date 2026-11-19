@@ -30,6 +30,8 @@ import { TrustBar } from "@/components/marketplace/TrustBar";
 import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
+import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
+import { ShopHeroBannerSlider } from "@/components/marketplace/ShopHeroBannerSlider";
 
 interface ShopPageProps {
   searchParams: {
@@ -211,34 +213,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* 1. TOP HERO HEADER (Desktop/Tablet only) */}
-      <section className="hidden md:block bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl space-y-2.5 sm:space-y-3">
-            <div className="flex items-center gap-3">
-              <SmartBackButton
-                fallbackUrl="/"
-                fallbackLabel="Back to Home"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors"
-              />
-            </div>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-950">
-              Explore Campus Drops &amp; Goods
-            </h1>
-            <p className="text-xs sm:text-sm md:text-base text-neutral-600 leading-relaxed">
-              Browse textbooks, tech, hostel living gear, and thrift fashion directly from fellow students. Filter by campus or search for what you need.
-            </p>
-
-            {/* Search Input Bar (Shown on tablet md screens; large lg screens have it in the navbar) */}
-            <div className="pt-1.5 sm:pt-2 max-w-xl lg:hidden">
-              <SearchBar
-                defaultValue={rawQ}
-                placeholder="Search textbooks, smartphones, sneakers..."
-                className="w-full shadow-xs"
-              />
-            </div>
-          </div>
-        </div>
+      {/* 1. TOP HERO BANNER SLIDER (Desktop/Tablet/Large Screen - Matches Home Page) */}
+      <section className="hidden md:block border-b border-neutral-100">
+        <ShopHeroBannerSlider />
       </section>
 
       {/* Mobile Top Search Bar with Visible Back Button */}
@@ -256,6 +233,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             className="w-full shadow-xs"
           />
         </div>
+      </div>
+
+      {/* Mobile Hero Banner Slider (Matches Home Page Mobile Hero Slider) */}
+      <div className="md:hidden px-4 pt-2 pb-1.5">
+        <MobileHeroSlider />
       </div>
 
       {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
