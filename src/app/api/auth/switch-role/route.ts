@@ -60,10 +60,12 @@ export async function POST(request: Request) {
       if (!hasVendorProfile) {
         return NextResponse.json(
           {
-            error: "You do not have a seller account yet. Please register as a vendor first.",
+            success: true,
+            needsOnboarding: true,
             redirectUrl: "/vendor/register",
+            message: "Redirecting to vendor onboarding...",
           },
-          { status: 403 }
+          { status: 200 }
         );
       }
     }
