@@ -151,8 +151,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 Guest Vendor
               </Badge>
             ) : (
-              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap inline-flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
                 Student Vendor
               </Badge>
             )}
