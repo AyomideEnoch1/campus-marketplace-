@@ -1,7 +1,23 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { SlidersHorizontal, ArrowUpDown, X, RotateCcw, MapPin, Tag } from "lucide-react";
+import {
+  SlidersHorizontal,
+  ArrowUpDown,
+  X,
+  RotateCcw,
+  MapPin,
+  Tag,
+  Shirt,
+  Laptop,
+  Home,
+  BookOpen,
+  Sparkles,
+  Utensils,
+  Dumbbell,
+  Briefcase,
+  LayoutGrid,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCategoryImage } from "@/lib/category-images";
 import { ProductCard } from "@/components/marketplace/ProductCard";
@@ -24,6 +40,20 @@ interface ShopPageProps {
     vendor?: string;
     sellerType?: string;
   };
+}
+
+function getCategoryIcon(slug?: string, name?: string) {
+  const s = (slug || "").toLowerCase();
+  const n = (name || "").toLowerCase();
+  if (s.includes("beauty") || n.includes("beauty") || s.includes("fragrance") || s.includes("care") || s.includes("grooming")) return Sparkles;
+  if (s.includes("fashion") || n.includes("fashion") || s.includes("wear") || s.includes("apparel") || s.includes("shoe")) return Shirt;
+  if (s.includes("electron") || n.includes("gadget") || s.includes("phone") || s.includes("laptop") || s.includes("tech")) return Laptop;
+  if (s.includes("hostel") || n.includes("hostel") || s.includes("living") || s.includes("home") || s.includes("appliance")) return Home;
+  if (s.includes("book") || n.includes("book") || s.includes("academic") || s.includes("textbook")) return BookOpen;
+  if (s.includes("food") || n.includes("food") || s.includes("grocer")) return Utensils;
+  if (s.includes("sport") || n.includes("sport") || s.includes("fit")) return Dumbbell;
+  if (s.includes("service") || n.includes("service")) return Briefcase;
+  return Tag;
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
@@ -221,27 +251,36 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Link
               href="/shop"
-              className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
+              className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !category
                   ? "bg-emerald-500 text-white shadow-xs"
                   : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
               }`}
             >
-              All Items ({products.length})
+              <span
+                className={`hidden lg:inline-flex items-center justify-center shrink-0 ${
+                  !category ? "text-white" : "text-emerald-700"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </span>
+              <span>All Items ({products.length})</span>
             </Link>
             {categories.map((cat: any) => {
               const isSelected = category === cat.slug;
+              const IconComponent = getCategoryIcon(cat.slug, cat.name);
               return (
                 <Link
                   key={cat.id}
                   href={`/shop?category=${cat.slug}${campus ? `&campus=${campus}` : ""}`}
-                  className={`inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 pl-2 sm:pl-2.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
                       ? "bg-emerald-500 text-white shadow-xs"
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
-                  <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/60 flex items-center justify-center">
+                  {/* Image only on mobile & tablet screens */}
+                  <div className="lg:hidden w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/60 flex items-center justify-center">
                     <Image
                       src={getCategoryImage(cat.slug)}
                       alt={cat.name}
@@ -250,6 +289,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       className="object-cover object-center"
                     />
                   </div>
+
+                  {/* SVG Icon ONLY on large screens */}
+                  <span
+                    className={`hidden lg:inline-flex items-center justify-center shrink-0 ${
+                      isSelected ? "text-white" : "text-emerald-700"
+                    }`}
+                  >
+                    <IconComponent className="w-3.5 h-3.5" />
+                  </span>
+
                   <span>{cat.name}</span>
                   <span className={`text-[10px] ${isSelected ? "text-emerald-100" : "text-neutral-400"}`}>
                     ({getCategoryCount(cat)})
