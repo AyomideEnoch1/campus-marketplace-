@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { Loader } from "@/components/ui/Loader";
 
 interface ProductFormProps {
   initialData?: any;
@@ -58,27 +59,64 @@ export function ProductForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess(false);
 
-    try {
-      if (images.length === 0) {
-        throw new Error("Please add at least one product image");
-      }
+    if (!title.trim()) {
+      setError("Product title is required.");
+      return;
+    }
+    if (!description.trim()) {
+      setError("Product description is required.");
+      return;
+    }
+    const parsedPrice = parseFloat(price);
+    if (!price || isNaN(parsedPrice) || parsedPrice <= 0) {
+      setError("Please enter a valid price greater than ₦0.");
+      return;
+    }
+    if (parsedPrice > 100000000) {
+      setError("Price cannot exceed ₦100,000,000.");
+      return;
+    }
+    const parsedCompare = comparePrice ? parseFloat(comparePrice) : null;
+    if (parsedCompare !== null && (isNaN(parsedCompare) || parsedCompare > 100000000)) {
+      setError("Compare-at price cannot exceed ₦100,000,000.");
+      return;
+    }
+    const parsedStock = parseInt(stock, 10);
+    if (isNaN(parsedStock) || parsedStock < 0) {
+      setError("Stock quantity cannot be negative.");
+      return;
+    }
+    if (parsedStock > 99999) {
+      setError("Stock quantity cannot exceed 99,999.");
+      return;
+    }
+    if (!categoryId) {
+      setError("Please select a product category.");
+      return;
+    }
+    if (images.length === 0) {
+      setError("Please upload at least one product photo.");
+      return;
+    }
 
+    setLoading(true);
+
+    try {
       const payload = {
-        title,
-        description,
-        price: parseFloat(price),
-        comparePrice: comparePrice ? parseFloat(comparePrice) : null,
-        stock: parseInt(stock, 10),
+        title: title.trim(),
+        description: description.trim(),
+        price: parsedPrice,
+        comparePrice: parsedCompare,
+        stock: parsedStock,
         categoryId,
         condition,
         status,
-        tags: tags || null,
-        model3dUrl: model3dUrl || null,
-        videoUrl: videoUrl || null,
+        tags: tags.trim() || null,
+        model3dUrl: model3dUrl.trim() || null,
+        videoUrl: videoUrl.trim() || null,
         images,
       };
 
@@ -111,7 +149,8 @@ export function ProductForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 relative">
+      {loading && <Loader isModal={true} />}
       {error && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -136,9 +175,10 @@ export function ProductForm({
             </h3>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Product Title</label>
+              <label className="text-xs font-bold text-neutral-700">Product Title *</label>
               <Input
                 required
+                maxLength={120}
                 placeholder="e.g. Vintage Oversized Graphic Hoodie or Casio Scientific Calculator"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -146,10 +186,11 @@ export function ProductForm({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-700">Detailed Description</label>
+              <label className="text-xs font-bold text-neutral-700">Detailed Description *</label>
               <textarea
                 required
                 rows={4}
+                maxLength={3000}
                 placeholder="Describe size, condition, material, features, and on-campus meetup/delivery availability..."
                 className="w-full rounded-xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20"
                 value={description}
@@ -166,12 +207,13 @@ export function ProductForm({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700">Price (₦)</label>
+                <label className="text-xs font-bold text-neutral-700">Price (₦) *</label>
                 <Input
                   type="number"
                   required
-                  min="0"
-                  step="50"
+                  min="1"
+                  max="100000000"
+                  step="1"
                   placeholder="3500"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
@@ -183,7 +225,8 @@ export function ProductForm({
                 <Input
                   type="number"
                   min="0"
-                  step="50"
+                  max="100000000"
+                  step="1"
                   placeholder="5000 (Optional strike-through)"
                   value={comparePrice}
                   onChange={(e) => setComparePrice(e.target.value)}
@@ -191,11 +234,13 @@ export function ProductForm({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700">Stock Quantity</label>
+                <label className="text-xs font-bold text-neutral-700">Stock Quantity *</label>
                 <Input
                   type="number"
                   required
                   min="0"
+                  max="99999"
+                  step="1"
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
                 />
@@ -340,8 +385,19 @@ export function ProductForm({
 
             <Button
               type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl shadow-md shadow-emerald-600/20"
+              disabled={
+                loading ||
+                !title.trim() ||
+                !description.trim() ||
+                !price ||
+                parseFloat(price) <= 0 ||
+                parseFloat(price) > 100000000 ||
+                (comparePrice ? parseFloat(comparePrice) < 0 || parseFloat(comparePrice) > 100000000 : false) ||
+                parseInt(stock, 10) < 0 ||
+                parseInt(stock, 10) > 99999 ||
+                images.length === 0
+              }
+              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold h-11 rounded-xl shadow-md shadow-emerald-600/20 transition-all"
             >
               {loading ? "Saving Product..." : isEditing ? "Update Product" : "Publish Product Now"}
             </Button>

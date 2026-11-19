@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { GraduationCap, ShieldCheck, Heart, Store, Truck, Sparkles, ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 
@@ -22,10 +21,6 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="bg-gradient-to-b from-neutral-50 via-white to-white py-16 px-4 border-b border-neutral-100">
         <div className="container mx-auto max-w-3xl text-center space-y-4">
-          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Our Mission &amp; Story
-          </Badge>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-neutral-950 tracking-tight leading-tight">
             Empowering Student Commerce Across Nigerian Campuses
           </h1>

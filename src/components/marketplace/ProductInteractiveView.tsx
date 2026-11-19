@@ -8,6 +8,7 @@ import {
   Heart,
   ShoppingBag,
   MessageCircle,
+  MessageSquare,
   Share2,
   ShieldCheck,
   MapPin,
@@ -19,12 +20,14 @@ import {
   ExternalLink,
   X,
   ArrowRight,
+  Maximize2,
 } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { ProductImageLightbox } from "./ProductImageLightbox";
 
 interface ProductInteractiveViewProps {
   product: {
@@ -69,6 +72,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
   const [quantity, setQuantity] = React.useState(1);
   const [showBagModal, setShowBagModal] = React.useState(false);
   const [addedSuccess, setAddedSuccess] = React.useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
 
   const maxStock = Math.max(1, product.stock);
 
@@ -96,8 +100,9 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
     USED_FAIR: "Used - Fair Condition",
   };
 
-  const handleAddToCart = () => {
-    addItem({
+  const handleAddToCart = async () => {
+    setAddedSuccess(true);
+    const added = await addItem({
       id: product.id,
       title: product.title,
       slug: product.slug,
@@ -118,13 +123,17 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
       },
     });
 
-    setAddedSuccess(true);
+    if (!added) {
+      setAddedSuccess(false);
+      return;
+    }
+
     setShowBagModal(true);
     setTimeout(() => setAddedSuccess(false), 3000);
   };
 
-  const handleToggleWishlist = () => {
-    toggleSave({
+  const handleToggleWishlist = async () => {
+    await toggleSave({
       id: product.id,
       title: product.title,
       slug: product.slug,
@@ -182,15 +191,40 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
         )}
 
         {/* Main Display Frame */}
-        <div className="relative aspect-[4/5] sm:aspect-square w-full rounded-3xl overflow-hidden bg-neutral-100 border border-neutral-200/80 shadow-xs">
+        <div
+          onClick={() => {
+            if (viewMode === "photo") {
+              setIsLightboxOpen(true);
+            }
+          }}
+          className={`relative aspect-[4/5] sm:aspect-square w-full rounded-3xl overflow-hidden bg-neutral-100 border border-neutral-200/80 shadow-xs ${
+            viewMode === "photo" ? "cursor-zoom-in group/mainimg" : ""
+          }`}
+        >
           {viewMode === "photo" ? (
-            <Image
-              src={currentImage}
-              alt={product.title}
-              fill
-              priority
-              className="object-cover object-center"
-            />
+            <>
+              <Image
+                src={currentImage}
+                alt={product.title}
+                fill
+                priority
+                className="object-cover object-center group-hover/mainimg:scale-105 transition-transform duration-500 ease-out"
+              />
+              {/* Expand / View Full Image Pill */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxOpen(true);
+                }}
+                className="absolute bottom-3.5 right-3.5 px-3 py-1.5 rounded-full bg-black/65 hover:bg-black/85 text-white backdrop-blur-md text-xs font-semibold flex items-center gap-1.5 shadow-md border border-white/20 transition-all hover:scale-105 active:scale-95 z-10 cursor-pointer"
+                title="View full image in Lightbox"
+                aria-label="View full image in Lightbox"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>View Full Image</span>
+              </button>
+            </>
           ) : (
             // Google Model Viewer Web Component
             <div className="w-full h-full flex items-center justify-center bg-neutral-900">
@@ -403,20 +437,34 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
               </button>
             </div>
 
-            {/* Direct WhatsApp Chat Action */}
-            {product.vendor.whatsapp && (
-              <a
-                href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20"${encodeURIComponent(
-                  product.title
-                )}"%20listed%20for%20${formatNGN(product.price)}%20on%20CampusTrade`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01]"
+            {/* Direct Chat & WhatsApp Action */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <Link
+                href={`/messages?vendor=${product.vendor.id}&product=${product.id}`}
+                className="w-full h-12 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
               >
-                <MessageCircle className="w-5 h-5" />
-                Chat Vendor on WhatsApp &rarr;
-              </a>
-            )}
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
+                Chat with Seller
+              </Link>
+
+              {product.vendor.whatsapp ? (
+                <a
+                  href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20"${encodeURIComponent(
+                    product.title
+                  )}"%20listed%20for%20${formatNGN(product.price)}%20on%20CampusTrade`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01]"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Chat on WhatsApp
+                </a>
+              ) : (
+                <div className="w-full h-12 rounded-2xl bg-neutral-100 text-neutral-500 font-medium text-xs flex items-center justify-center">
+                  Chat with Seller Only
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -551,6 +599,22 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
             </div>
           </div>
         </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {isLightboxOpen && (
+        <ProductImageLightbox
+          images={
+            product.images && product.images.length > 0
+              ? product.images
+              : [{ url: currentImage }]
+          }
+          initialIndex={selectedImageIndex}
+          title={product.title}
+          price={product.price}
+          condition={conditionLabels[product.condition] || product.condition}
+          onClose={() => setIsLightboxOpen(false)}
+        />
       )}
     </div>
   );

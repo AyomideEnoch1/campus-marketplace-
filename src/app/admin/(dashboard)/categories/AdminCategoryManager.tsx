@@ -267,7 +267,7 @@ export function AdminCategoryManager({
           return (
             <div key={cat.id} className="transition-colors">
               {/* Parent Row */}
-              <div className="p-4 flex items-center justify-between hover:bg-neutral-800/40">
+              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-800/40">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => toggleExpand(cat.id)}
@@ -302,7 +302,7 @@ export function AdminCategoryManager({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 pl-7 sm:pl-0">
                   <span className="text-xs text-neutral-400 mr-2">
                     {cat._count.products} products · {cat.children.length} subcategories
                   </span>

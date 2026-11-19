@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { uploadToSupabase } from "@/lib/supabase";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
@@ -73,10 +74,28 @@ export async function POST(request: Request) {
       }
 
       const safeFolder = folder === "stores" ? "stores" : folder === "verification" ? "verification" : "products";
+      const uniqueName = `${safeFolder}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`;
+
+      // A. Try Cloud Upload via Supabase Storage
+      try {
+        const { url: supabaseUrl, error: sbErr } = await uploadToSupabase(
+          "marketplace",
+          `${safeFolder}/${uniqueName}`,
+          buffer,
+          mimeType
+        );
+
+        if (supabaseUrl && !sbErr) {
+          return NextResponse.json({ url: supabaseUrl, urls: [supabaseUrl], success: true });
+        }
+      } catch (cloudErr) {
+        console.warn("Supabase Storage upload warning, falling back to local:", cloudErr);
+      }
+
+      // B. Local filesystem fallback (for offline dev)
       const uploadDir = path.join(process.cwd(), "public", "uploads", safeFolder);
       await mkdir(uploadDir, { recursive: true });
 
-      const uniqueName = `${safeFolder}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`;
       const filePath = path.join(uploadDir, uniqueName);
       await writeFile(filePath, buffer);
 
@@ -105,9 +124,6 @@ export async function POST(request: Request) {
         );
       }
 
-      const uploadDir = path.join(process.cwd(), "public", "uploads", safeFolder);
-      await mkdir(uploadDir, { recursive: true });
-
       const uploadedUrls: string[] = [];
 
       for (const file of files) {
@@ -123,13 +139,38 @@ export async function POST(request: Request) {
 
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-
         const uniqueName = `${safeFolder}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`;
-        const filePath = path.join(uploadDir, uniqueName);
-        await writeFile(filePath, buffer);
 
-        const publicUrl = `/uploads/${safeFolder}/${uniqueName}`;
-        uploadedUrls.push(publicUrl);
+        let uploadedUrl: string | null = null;
+
+        // A. Try Supabase Storage upload
+        try {
+          const { url: supabaseUrl, error: sbErr } = await uploadToSupabase(
+            "marketplace",
+            `${safeFolder}/${uniqueName}`,
+            buffer,
+            mimeType
+          );
+
+          if (supabaseUrl && !sbErr) {
+            uploadedUrl = supabaseUrl;
+          }
+        } catch (cloudErr) {
+          console.warn("Supabase Storage upload warning, falling back to local:", cloudErr);
+        }
+
+        // B. Fallback to local disk
+        if (!uploadedUrl) {
+          const uploadDir = path.join(process.cwd(), "public", "uploads", safeFolder);
+          await mkdir(uploadDir, { recursive: true });
+
+          const filePath = path.join(uploadDir, uniqueName);
+          await writeFile(filePath, buffer);
+
+          uploadedUrl = `/uploads/${safeFolder}/${uniqueName}`;
+        }
+
+        uploadedUrls.push(uploadedUrl);
       }
 
       return NextResponse.json({

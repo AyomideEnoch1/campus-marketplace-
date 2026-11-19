@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 import { SearchBar } from "@/components/marketplace/SearchBar";
+import { SmartBackButton } from "@/components/layout/SmartBackButton";
 
 interface ShopPageProps {
   searchParams: {
@@ -108,6 +109,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         category: { select: { name: true, slug: true } },
         vendor: {
           select: {
+            id: true,
             storeName: true,
             slug: true,
             whatsapp: true,
@@ -169,10 +171,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       <section className="hidden md:block bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
         <div className="container mx-auto">
           <div className="max-w-3xl space-y-2.5 sm:space-y-3">
-            <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-              Student Marketplace Catalog
-            </Badge>
+            <div className="flex items-center gap-3">
+              <SmartBackButton
+                fallbackUrl="/"
+                fallbackLabel="Back to Home"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors"
+              />
+            </div>
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-950">
               Explore Campus Drops &amp; Goods
             </h1>
@@ -192,14 +197,21 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         </div>
       </section>
 
-      {/* Mobile Top Search Bar (Compact, visible only on small screens) */}
-      <div className="md:hidden px-4 pt-3 pb-1 bg-white">
-        <SearchBar
-          defaultValue={rawQ}
-          placeholder="Search campus drops & goods..."
-          size="sm"
-          className="w-full shadow-xs"
+      {/* Mobile Top Search Bar with Visible Back Button */}
+      <div className="md:hidden px-4 pt-3 pb-1 bg-white flex items-center gap-2">
+        <SmartBackButton
+          fallbackUrl="/"
+          fallbackLabel="Back"
+          className="h-10 px-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-800 flex items-center gap-1 shrink-0 text-xs font-bold transition-colors shadow-2xs"
         />
+        <div className="flex-1 min-w-0">
+          <SearchBar
+            defaultValue={rawQ}
+            placeholder="Search campus drops & goods..."
+            size="sm"
+            className="w-full shadow-xs"
+          />
+        </div>
       </div>
 
       {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}

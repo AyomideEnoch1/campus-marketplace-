@@ -1,13 +1,15 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { OrdersClient } from "./OrdersClient";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "My Orders | CampusTrade Marketplace",
-  description: "Track your campus purchases, coordinate delivery with student vendors, and leave verified reviews.",
+  description:
+    "Track your campus purchases, coordinate delivery with student vendors, and leave verified reviews.",
 };
 
 export default async function OrdersPage() {
@@ -19,10 +21,7 @@ export default async function OrdersPage() {
 
   const orders = await prisma.order.findMany({
     where: {
-      OR: [
-        { buyerId: session.id },
-        { buyerEmail: session.email },
-      ],
+      OR: [{ buyerId: session.id }, { buyerEmail: session.email }],
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -79,6 +78,7 @@ export default async function OrdersPage() {
     meetupPoint: o.meetupPoint,
     notes: o.notes,
     createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
     vendor: {
       id: o.vendor.id,
       storeName: o.vendor.storeName,

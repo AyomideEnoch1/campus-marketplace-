@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
+import { VendorLogoutButton } from "@/components/vendor/VendorLogoutButton";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
   children,
@@ -109,13 +112,11 @@ export default async function AdminLayout({
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Live Site</span>
             </Link>
-            <Link
-              href="/api/auth/logout"
-              className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-medium border border-rose-900/50 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Logout</span>
-            </Link>
+            <VendorLogoutButton
+              variant="admin"
+              showIcon
+              className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 font-medium border border-rose-900/50 transition-colors cursor-pointer"
+            />
           </div>
         </div>
       </aside>

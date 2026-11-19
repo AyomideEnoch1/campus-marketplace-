@@ -13,9 +13,13 @@ export async function GET() {
             "hero_badge",
             "hero_title",
             "hero_subtitle",
+            "hero_cta_text",
             "announcement_bar",
+            "flash_sale_badge",
             "flash_sale_title",
             "flash_sale_subtitle",
+            "seller_promo_title",
+            "seller_promo_subtitle",
           ],
         },
       },
@@ -41,9 +45,13 @@ export async function POST(request: Request) {
       "hero_badge",
       "hero_title",
       "hero_subtitle",
+      "hero_cta_text",
       "announcement_bar",
+      "flash_sale_badge",
       "flash_sale_title",
       "flash_sale_subtitle",
+      "seller_promo_title",
+      "seller_promo_subtitle",
     ];
 
     const updates = Object.entries(body).filter(([key]) =>

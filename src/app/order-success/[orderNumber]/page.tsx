@@ -11,6 +11,7 @@ import {
   Building,
   GraduationCap,
   Store,
+  Truck,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
@@ -58,10 +59,6 @@ export default async function OrderSuccessPage({
         </div>
 
         <div className="space-y-2">
-          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider shadow-2xs inline-flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Order Request Received
-          </Badge>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight">
             Thank You, {order.buyerName.split(" ")[0]}!
           </h1>
@@ -102,45 +99,54 @@ export default async function OrderSuccessPage({
                   </Badge>
                 )}
               </div>
-              <p className="text-[11px] text-neutral-500">{order.vendor.campus?.name}</p>
+              {order.vendor.campus && (
+                <span className="text-neutral-500 text-[11px]">
+                  Campus: {order.vendor.campus.name}
+                </span>
+              )}
             </div>
+
             <div>
               <span className="text-neutral-400 block">Fulfillment Method:</span>
-              <strong className="text-neutral-900">
-                {order.deliveryMethod === "SAFE_MEETUP_POINT" ? "Campus Safe Meetup Point" : order.deliveryMethod}
-              </strong>
-              <p className="text-[11px] text-neutral-500 truncate">{order.deliveryAddress}</p>
+              <p className="font-semibold text-neutral-900 mt-0.5">
+                {order.deliveryMethod === "SAFE_MEETUP_POINT"
+                  ? "Campus Safe Meetup Point"
+                  : order.deliveryMethod}
+              </p>
+              <span className="text-neutral-500 text-[11px] line-clamp-1">
+                {order.deliveryAddress}
+              </span>
             </div>
           </div>
 
-          {/* Safe Meetup Point Highlight Box if present */}
           {order.meetupPoint && (
-            <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-xs flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-purple-700 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-purple-950">
-                  Campus Safe Meetup Point: {order.meetupPoint.name}
+            <div className="p-3 rounded-xl bg-purple-50 border border-purple-100 text-xs text-purple-900">
+              <p className="font-bold flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-purple-700" />
+                <span>Designated Safe Zone: {order.meetupPoint.name}</span>
+              </p>
+              {order.meetupPoint.description && (
+                <p className="text-[11px] text-purple-700 mt-0.5">
+                  {order.meetupPoint.description}
                 </p>
-                {order.meetupPoint.description && (
-                  <p className="text-[11px] text-purple-800 mt-0.5">
-                    {order.meetupPoint.description}
-                  </p>
-                )}
-              </div>
+              )}
             </div>
           )}
 
-          {/* Items breakdown */}
-          <div className="pt-2 border-t border-neutral-200/60 space-y-1.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-              Items Ordered:
+          {/* Ordered items */}
+          <div className="space-y-2 pt-2 border-t border-neutral-200/60">
+            <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+              Items Ordered ({order.items.length})
             </span>
             {order.items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between text-xs">
-                <span className="text-neutral-800">
-                  {item.quantity} &times; {item.product.title}
+              <div
+                key={item.id}
+                className="flex items-center justify-between text-xs py-1"
+              >
+                <span className="text-neutral-800 line-clamp-1">
+                  <strong>{item.quantity}x</strong> {item.product.title}
                 </span>
-                <span className="font-semibold text-neutral-900">
+                <span className="font-bold text-neutral-900 shrink-0">
                   {formatNGN(item.unitPrice * item.quantity)}
                 </span>
               </div>
@@ -172,6 +178,12 @@ export default async function OrderSuccessPage({
 
         {/* Action Navigation */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <Link href={`/orders/track/${order.orderNumber}`} className="w-full sm:w-auto">
+            <Button className="w-full sm:w-auto text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-md shadow-emerald-600/20">
+              <Truck className="w-3.5 h-3.5" />
+              Track My Item
+            </Button>
+          </Link>
           <Link href="/orders" className="w-full sm:w-auto">
             <Button variant="outline" className="w-full sm:w-auto text-xs font-bold rounded-xl">
               View My Orders

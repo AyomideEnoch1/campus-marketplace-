@@ -18,6 +18,9 @@ import {
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
+import { VendorLogoutButton } from "@/components/vendor/VendorLogoutButton";
+import { VendorSidebarNav } from "@/components/vendor/VendorSidebarNav";
+import { SignInAsBuyerButton } from "@/components/vendor/SignInAsBuyerButton";
 
 export default async function VendorDashboardLayout({
   children,
@@ -110,22 +113,8 @@ export default async function VendorDashboardLayout({
             </div>
           )}
 
-          {/* Nav Links */}
-          <nav className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100/80 transition-colors"
-                >
-                  <Icon className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Active Navigation Sidebar */}
+          <VendorSidebarNav />
         </div>
 
         {/* Bottom Store Link & User */}
@@ -142,11 +131,12 @@ export default async function VendorDashboardLayout({
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
 
-          <div className="flex items-center justify-between pt-2 px-1 text-xs text-neutral-500">
+          {/* Sign in as a Buyer */}
+          <SignInAsBuyerButton />
+
+          <div className="flex items-center justify-between pt-1 px-1 text-xs text-neutral-500">
             <span className="truncate max-w-[120px] font-medium">{session.fullName}</span>
-            <Link href="/api/auth/logout" className="text-rose-600 hover:underline text-[11px]">
-              Logout
-            </Link>
+            <VendorLogoutButton />
           </div>
         </div>
       </aside>

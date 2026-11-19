@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,6 +8,7 @@ import {
   MessageCircle,
   ShieldCheck,
   Share2,
+  Check,
   Sparkles,
   Star,
   CheckCircle2,
@@ -14,6 +17,7 @@ import {
   Smile,
   GraduationCap,
   Building2,
+  ArrowLeft,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,13 +64,48 @@ export function StorefrontRenderer({
   recentReviews = [],
   isPreview = false,
 }: StorefrontRendererProps) {
+  const [copied, setCopied] = React.useState(false);
   const brandColor = vendor.brandColor || "#059669";
   const layout = vendor.layout || "grid";
+
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: vendor.storeName,
+          text: `Check out ${vendor.storeName} on CampusTrade!`,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {}
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
       {/* 1. STORE HEADER BANNER */}
       <div className="relative w-full h-44 sm:h-64 lg:h-80 bg-neutral-900 overflow-hidden">
+        {/* Back to Overview button */}
+        <div className="absolute top-4 left-4 z-20">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-neutral-950/80 hover:bg-neutral-950 text-white text-xs font-bold backdrop-blur-md shadow-lg border border-white/20 transition-all hover:scale-[1.02] cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 text-emerald-400" />
+            <span>Back to Overview</span>
+          </Link>
+        </div>
+
         {vendor.banner ? (
           <Image
             src={vendor.banner}
@@ -110,7 +149,10 @@ export function StorefrontRenderer({
 
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-950 tracking-tight">
+                <h1
+                  className="text-2xl sm:text-3xl font-extrabold tracking-tight transition-colors"
+                  style={{ color: brandColor }}
+                >
                   {vendor.storeName}
                 </h1>
                 {vendor.sellerType === "guest" ? (
@@ -139,9 +181,19 @@ export function StorefrontRenderer({
               </div>
 
               {vendor.campus && (
-                <p className="text-xs sm:text-sm text-neutral-600 flex items-center gap-1 font-medium">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                  {vendor.campus.name} {vendor.businessAddress ? `&bull; ${vendor.businessAddress}` : vendor.faculty ? `&bull; ${vendor.faculty}` : ""}
+                <p className="text-xs sm:text-sm flex flex-wrap items-center gap-1 font-semibold transition-colors">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" style={{ color: brandColor }} />
+                  <span style={{ color: brandColor }}>{vendor.campus.name}</span>
+                  {(vendor.faculty || vendor.department) && (
+                    <span style={{ color: brandColor }} className="opacity-80">
+                      • {vendor.department || vendor.faculty}
+                    </span>
+                  )}
+                  {vendor.businessAddress && (
+                    <span className="text-neutral-500 font-normal">
+                      • {vendor.businessAddress}
+                    </span>
+                  )}
                 </p>
               )}
 
@@ -190,16 +242,22 @@ export function StorefrontRenderer({
             )}
 
             <button
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  navigator.clipboard.writeText(window.location.href);
-                  alert("Store link copied to clipboard!");
-                }
-              }}
-              className="p-2.5 rounded-full border border-neutral-200 text-neutral-700 hover:bg-neutral-100 shadow-xs transition-colors"
-              title="Share store link"
+              type="button"
+              onClick={handleShare}
+              className="relative p-2.5 rounded-full border border-neutral-200 text-neutral-700 hover:bg-neutral-100 shadow-xs transition-colors cursor-pointer"
+              title={copied ? "Store link copied!" : "Share store link"}
+              aria-label="Share store link"
             >
-              <Share2 className="w-4 h-4" />
+              {copied ? (
+                <Check className="w-4 h-4 text-emerald-600 animate-in zoom-in-75" />
+              ) : (
+                <Share2 className="w-4 h-4" />
+              )}
+              {copied && (
+                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-neutral-900 text-white text-[10px] font-bold whitespace-nowrap shadow-md pointer-events-none animate-in fade-in slide-in-from-top-1 z-20">
+                  Link copied!
+                </span>
+              )}
             </button>
           </div>
         </div>

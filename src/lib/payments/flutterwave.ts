@@ -1,0 +1,612 @@
+/**
+ * ==============================================================================
+ * FLUTTERWAVE PAYMENT PROVIDER WRAPPER
+ * ==============================================================================
+ * This module isolates all Flutterwave v3 API calls behind a standard interface.
+ * NO OTHER CODE in the codebase may call Flutterwave directly.
+ * 
+ * Supports:
+ * - createPayment(order)
+ * - verifyTransaction(id)
+ * - verifyWebhook(request)
+ * - sendPayout(seller, amount, reference)
+ * - getTransferStatus(id)
+ * - refund(transactionId, amount, reason)
+ * - resolveBankAccount(bankCode, accountNumber)
+ * - listBanks()
+ * - getMerchantBalance(currency)
+ * ==============================================================================
+ */
+
+const FLW_BASE_URL = "https://api.flutterwave.com/v3";
+
+function getSecretKey(): string {
+  const key = process.env.FLW_SECRET_KEY || process.env.FLUTTERWAVE_SECRET_KEY;
+  if (!key) {
+    console.warn("[Flutterwave] FLW_SECRET_KEY is not defined. Using development mock fallback.");
+    return "FLWSECK_TEST-mock-key";
+  }
+  return key;
+}
+
+function getSecretHash(): string {
+  return process.env.FLW_SECRET_HASH || process.env.FLUTTERWAVE_SECRET_HASH || "campustrade_flw_secret_hash_2026";
+}
+
+// ------------------------------------------------------------------------------
+// Type Definitions
+// ------------------------------------------------------------------------------
+
+export interface CreatePaymentInput {
+  txRef: string;
+  amount: number;
+  currency?: string;
+  customer: {
+    email: string;
+    name: string;
+    phoneNumber?: string;
+  };
+  redirectUrl: string;
+  customizations?: {
+    title?: string;
+    description?: string;
+    logo?: string;
+  };
+  meta?: Record<string, any>;
+}
+
+export interface CreatePaymentOutput {
+  success: boolean;
+  paymentLink: string;
+  txRef: string;
+  rawResponse?: any;
+}
+
+export interface VerifyTransactionOutput {
+  success: boolean;
+  status: "successful" | "failed" | "pending" | "cancelled" | string;
+  txRef: string;
+  amount: number;
+  currency: string;
+  chargedAmount: number;
+  flwTransactionId: string | number;
+  customer: {
+    email: string;
+    name: string;
+    phone_number?: string;
+  };
+  paymentType?: string;
+  rawResponse: any;
+}
+
+export interface PayoutSellerInput {
+  bankCode: string;
+  accountNumber: string;
+  accountName?: string;
+}
+
+export interface PayoutOutput {
+  success: boolean;
+  transferId: string | number;
+  status: "pending" | "processing" | "successful" | "failed" | "reversed" | string;
+  reference: string;
+  fee?: number;
+  rawResponse: any;
+}
+
+export interface TransferStatusOutput {
+  success: boolean;
+  status: "pending" | "processing" | "successful" | "failed" | "reversed" | string;
+  reference: string;
+  transferId: string | number;
+  failureReason?: string;
+  rawResponse: any;
+}
+
+export interface RefundOutput {
+  success: boolean;
+  refundId: string | number;
+  status: string;
+  amount: number;
+  rawResponse: any;
+}
+
+export interface BankAccountResolveOutput {
+  success: boolean;
+  accountName: string;
+  accountNumber: string;
+  rawResponse?: any;
+}
+
+export interface BankItem {
+  id: number | string;
+  code: string;
+  name: string;
+}
+
+export interface MerchantBalanceOutput {
+  currency: string;
+  availableBalance: number;
+  ledgerBalance: number;
+}
+
+// ------------------------------------------------------------------------------
+// Internal Helper for Flutterwave Fetch
+// ------------------------------------------------------------------------------
+
+async function flwRequest<T = any>(
+  endpoint: string,
+  method: "GET" | "POST" | "PUT" = "GET",
+  body?: any
+): Promise<T> {
+  const secretKey = getSecretKey();
+  const url = `${FLW_BASE_URL}${endpoint}`;
+
+  // If secret key is mock or in offline mode, handle with mock responses
+  if (secretKey === "FLWSECK_TEST-mock-key" || process.env.MOCK_FLUTTERWAVE === "true") {
+    return handleMockRequest<T>(endpoint, method, body);
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+
+  const data = await res.json().catch(() => ({ status: "error", message: "Invalid JSON from Flutterwave" }));
+
+  if (!res.ok && data?.status !== "success") {
+    const errorMsg = data?.message || `Flutterwave API error (${res.status})`;
+    const error: any = new Error(errorMsg);
+    error.status = res.status;
+    error.response = data;
+    throw error;
+  }
+
+  return data;
+}
+
+// ------------------------------------------------------------------------------
+// 1. createPayment(order)
+// ------------------------------------------------------------------------------
+
+/**
+ * Initiates Flutterwave Standard checkout and returns the hosted payment link.
+ * NEVER sends client-manipulated prices; amounts must be computed server-side.
+ */
+export async function createPayment(order: CreatePaymentInput): Promise<CreatePaymentOutput> {
+  const payload = {
+    tx_ref: order.txRef,
+    amount: order.amount,
+    currency: order.currency || "NGN",
+    redirect_url: order.redirectUrl,
+    customer: {
+      email: order.customer.email,
+      name: order.customer.name,
+      phonenumber: order.customer.phoneNumber || "",
+    },
+    customizations: {
+      title: order.customizations?.title || "CampusTrade Escrow Payment",
+      description: order.customizations?.description || `Escrow Order Ref: ${order.txRef}`,
+      logo: order.customizations?.logo || "https://campustrade.ng/icons/icon-192x192.png",
+    },
+    meta: {
+      ...order.meta,
+      platform: "CampusTrade",
+      protection: "Escrow Held",
+    },
+  };
+
+  const response = await flwRequest("/payments", "POST", payload);
+
+  if (response.status !== "success" || !response.data?.link) {
+    throw new Error(response.message || "Failed to generate Flutterwave payment link");
+  }
+
+  return {
+    success: true,
+    paymentLink: response.data.link,
+    txRef: order.txRef,
+    rawResponse: response,
+  };
+}
+
+// ------------------------------------------------------------------------------
+// 2. verifyTransaction(id)
+// ------------------------------------------------------------------------------
+
+/**
+ * Verifies a transaction via Flutterwave's GET /transactions/{id}/verify endpoint.
+ * Always check: status === 'successful', tx_ref matches order, amount & currency match exactly.
+ */
+export async function verifyTransaction(id: string | number): Promise<VerifyTransactionOutput> {
+  const response = await flwRequest(`/transactions/${id}/verify`, "GET");
+
+  if (response.status !== "success" || !response.data) {
+    throw new Error(response.message || `Failed to verify transaction #${id}`);
+  }
+
+  const d = response.data;
+
+  return {
+    success: d.status === "successful",
+    status: d.status,
+    txRef: d.tx_ref,
+    amount: Number(d.amount),
+    currency: d.currency,
+    chargedAmount: Number(d.charged_amount || d.amount),
+    flwTransactionId: d.id,
+    customer: {
+      email: d.customer?.email,
+      name: d.customer?.name,
+      phone_number: d.customer?.phone_number,
+    },
+    paymentType: d.payment_type,
+    rawResponse: response,
+  };
+}
+
+// ------------------------------------------------------------------------------
+// 3. verifyWebhook(request)
+// ------------------------------------------------------------------------------
+
+/**
+ * Validates the `verif-hash` header against the FLW_SECRET_HASH.
+ * Rejects requests with mismatched or missing secret hash.
+ */
+export function verifyWebhook(
+  headers: Headers | Record<string, string | string[] | undefined>
+): boolean {
+  const expectedSecretHash = getSecretHash();
+  let receivedHash: string | undefined;
+
+  if (headers instanceof Headers) {
+    receivedHash = headers.get("verif-hash") || undefined;
+  } else {
+    const raw = headers["verif-hash"] || headers["Verif-Hash"];
+    receivedHash = Array.isArray(raw) ? raw[0] : raw;
+  }
+
+  if (!receivedHash || !expectedSecretHash) {
+    return false;
+  }
+
+  return receivedHash.trim() === expectedSecretHash.trim();
+}
+
+// ------------------------------------------------------------------------------
+// 4. sendPayout(seller, amount, reference)
+// ------------------------------------------------------------------------------
+
+/**
+ * Initiates a single payout to the seller's verified bank account using Flutterwave Transfers API.
+ * Uses a unique reference to guarantee idempotency.
+ */
+export async function sendPayout(
+  seller: PayoutSellerInput,
+  amount: number,
+  reference: string
+): Promise<PayoutOutput> {
+  const payload = {
+    account_bank: seller.bankCode,
+    account_number: seller.accountNumber,
+    amount: amount,
+    narration: `CampusTrade Payout ${reference}`,
+    currency: "NGN",
+    reference: reference,
+    callback_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://campustrade.ng"}/api/payments/webhook`,
+    debit_currency: "NGN",
+  };
+
+  const response = await flwRequest("/transfers", "POST", payload);
+
+  if (response.status !== "success" || !response.data) {
+    throw new Error(response.message || `Payout transfer failed for reference ${reference}`);
+  }
+
+  const d = response.data;
+
+  // Flutterwave transfer statuses: 'NEW', 'PENDING', 'SUCCESSFUL', 'FAILED'
+  const normalizedStatus = (d.status || "pending").toLowerCase();
+
+  return {
+    success: normalizedStatus === "successful" || normalizedStatus === "pending" || normalizedStatus === "new",
+    transferId: d.id,
+    status: normalizedStatus === "new" ? "pending" : normalizedStatus,
+    reference: d.reference || reference,
+    fee: d.fee,
+    rawResponse: response,
+  };
+}
+
+// ------------------------------------------------------------------------------
+// 5. getTransferStatus(id)
+// ------------------------------------------------------------------------------
+
+/**
+ * Fetches the current transfer status from Flutterwave GET /transfers/{id}.
+ */
+export async function getTransferStatus(
+  id: string | number
+): Promise<TransferStatusOutput> {
+  const response = await flwRequest(`/transfers/${id}`, "GET");
+
+  if (response.status !== "success" || !response.data) {
+    throw new Error(response.message || `Failed to fetch transfer status for #${id}`);
+  }
+
+  const d = response.data;
+  const status = (d.status || "").toLowerCase();
+
+  return {
+    success: status === "successful",
+    status: status,
+    reference: d.reference,
+    transferId: d.id,
+    failureReason: d.complete_message || d.narrative,
+    rawResponse: response,
+  };
+}
+
+// ------------------------------------------------------------------------------
+// 6. refund(transactionId, amount?, reason?)
+// ------------------------------------------------------------------------------
+
+/**
+ * Initiates a refund for an existing charge through Flutterwave POST /transactions/{id}/refund.
+ */
+export async function refund(
+  transactionId: string | number,
+  amount?: number,
+  reason?: string
+): Promise<RefundOutput> {
+  const payload: Record<string, any> = {};
+  if (amount !== undefined) payload.amount = amount;
+  if (reason) payload.comments = reason;
+
+  const response = await flwRequest(`/transactions/${transactionId}/refund`, "POST", payload);
+
+  if (response.status !== "success" || !response.data) {
+    throw new Error(response.message || `Refund failed for transaction #${transactionId}`);
+  }
+
+  const d = response.data;
+
+  return {
+    success: true,
+    refundId: d.id,
+    status: (d.status || "successful").toLowerCase(),
+    amount: Number(d.amount_refunded || d.amount || amount),
+    rawResponse: response,
+  };
+}
+
+// ------------------------------------------------------------------------------
+// 7. resolveBankAccount(bankCode, accountNumber)
+// ------------------------------------------------------------------------------
+
+/**
+ * Resolves an account number against a Nigerian bank code using POST /accounts/resolve.
+ * Returns the legal account name.
+ */
+export async function resolveBankAccount(
+  bankCode: string,
+  accountNumber: string
+): Promise<BankAccountResolveOutput> {
+  const payload = {
+    account_number: accountNumber.trim(),
+    account_bank: bankCode.trim(),
+  };
+
+  const response = await flwRequest("/accounts/resolve", "POST", payload);
+
+  if (response.status !== "success" || !response.data) {
+    throw new Error(response.message || "Could not resolve bank account details with Flutterwave");
+  }
+
+  return {
+    success: true,
+    accountName: response.data.account_name,
+    accountNumber: response.data.account_number,
+    rawResponse: response,
+  };
+}
+
+// ------------------------------------------------------------------------------
+// 8. listBanks()
+// ------------------------------------------------------------------------------
+
+/**
+ * Returns the list of supported Nigerian commercial & digital banks from GET /banks/NG.
+ */
+export async function listBanks(): Promise<BankItem[]> {
+  const response = await flwRequest("/banks/NG", "GET");
+
+  if (response.status !== "success" || !Array.isArray(response.data)) {
+    // Fallback list of top Nigerian banks if offline/mock
+    return DEFAULT_NIGERIAN_BANKS;
+  }
+
+  return response.data.map((b: any) => ({
+    id: b.id,
+    code: b.code,
+    name: b.name,
+  }));
+}
+
+// ------------------------------------------------------------------------------
+// 9. getMerchantBalance(currency?)
+// ------------------------------------------------------------------------------
+
+/**
+ * Retrieves the merchant account balance from GET /balances.
+ * Used for platform reconciliation (ledger vs Flutterwave balance) and low-balance warnings.
+ */
+export async function getMerchantBalance(currency = "NGN"): Promise<MerchantBalanceOutput> {
+  try {
+    const response = await flwRequest(`/balances`, "GET");
+
+    if (response.status === "success" && Array.isArray(response.data)) {
+      const match = response.data.find((b: any) => b.currency === currency) || response.data[0];
+      if (match) {
+        return {
+          currency: match.currency,
+          availableBalance: Number(match.available_balance || 0),
+          ledgerBalance: Number(match.ledger_balance || 0),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("[Flutterwave] Balance query failed, returning fallback estimate:", err);
+  }
+
+  return {
+    currency: "NGN",
+    availableBalance: 0,
+    ledgerBalance: 0,
+  };
+}
+
+// ------------------------------------------------------------------------------
+// Development / Mock Handlers
+// ------------------------------------------------------------------------------
+
+const DEFAULT_NIGERIAN_BANKS: BankItem[] = [
+  { id: 1, code: "044", name: "Access Bank" },
+  { id: 2, code: "023", name: "Citibank" },
+  { id: 3, code: "050", name: "Ecobank Nigeria" },
+  { id: 4, code: "070", name: "Fidelity Bank" },
+  { id: 5, code: "011", name: "First Bank of Nigeria" },
+  { id: 6, code: "214", name: "First City Monument Bank (FCMB)" },
+  { id: 7, code: "058", name: "Guaranty Trust Bank (GTBank)" },
+  { id: 8, code: "030", name: "Heritage Bank" },
+  { id: 9, code: "301", name: "Jaiz Bank" },
+  { id: 10, code: "082", name: "Keystone Bank" },
+  { id: 11, code: "50211", name: "Kuda Bank" },
+  { id: 12, code: "999991", name: "OPay Digital Services" },
+  { id: 13, code: "999992", name: "PalmPay" },
+  { id: 14, code: "101", name: "Providus Bank" },
+  { id: 15, code: "221", name: "Stanbic IBTC Bank" },
+  { id: 16, code: "068", name: "Standard Chartered Bank" },
+  { id: 17, code: "232", name: "Sterling Bank" },
+  { id: 18, code: "100", name: "Suntrust Bank" },
+  { id: 19, code: "032", name: "Union Bank of Nigeria" },
+  { id: 20, code: "033", name: "United Bank for Africa (UBA)" },
+  { id: 21, code: "215", name: "Unity Bank" },
+  { id: 22, code: "035", name: "Wema Bank" },
+  { id: 23, code: "057", name: "Zenith Bank" },
+];
+
+function handleMockRequest<T>(endpoint: string, method: string, body?: any): T {
+  if (endpoint.startsWith("/payments")) {
+    return {
+      status: "success",
+      message: "Hosted Link Generated (Mock)",
+      data: {
+        link: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/checkout/mock-flw-gateway?tx_ref=${body?.tx_ref}&amount=${body?.amount}`,
+      },
+    } as any;
+  }
+
+  if (endpoint.includes("/verify")) {
+    return {
+      status: "success",
+      message: "Transaction fetched successfully (Mock)",
+      data: {
+        id: 987654321,
+        tx_ref: "mock_tx_ref",
+        flw_ref: "FLW_MOCK_REF_123",
+        amount: 15000,
+        currency: "NGN",
+        charged_amount: 15000,
+        status: "successful",
+        payment_type: "card",
+        customer: {
+          name: "Test Campus Buyer",
+          email: "buyer@campus.edu.ng",
+          phone_number: "08012345678",
+        },
+      },
+    } as any;
+  }
+
+  if (endpoint.startsWith("/transfers") && method === "POST") {
+    return {
+      status: "success",
+      message: "Transfer Queued Successfully (Mock)",
+      data: {
+        id: 11223344,
+        account_number: body?.account_number,
+        bank_code: body?.account_bank,
+        full_name: "Test Vendor Payout",
+        amount: body?.amount,
+        fee: 10.75,
+        reference: body?.reference,
+        status: "SUCCESSFUL",
+        complete_message: "Payout executed successfully via Flutterwave mock",
+      },
+    } as any;
+  }
+
+  if (endpoint.includes("/transfers/")) {
+    return {
+      status: "success",
+      message: "Transfer details fetched (Mock)",
+      data: {
+        id: 11223344,
+        reference: "mock_reference",
+        status: "SUCCESSFUL",
+        complete_message: "Transfer completed",
+      },
+    } as any;
+  }
+
+  if (endpoint.includes("/refund")) {
+    return {
+      status: "success",
+      message: "Refund processed (Mock)",
+      data: {
+        id: 556677,
+        status: "successful",
+        amount_refunded: body?.amount || 5000,
+      },
+    } as any;
+  }
+
+  if (endpoint.includes("/accounts/resolve")) {
+    return {
+      status: "success",
+      message: "Account details resolved (Mock)",
+      data: {
+        account_number: body?.account_number,
+        account_name: "AYOMIDE ENOCH OLABISI",
+      },
+    } as any;
+  }
+
+  if (endpoint.startsWith("/banks")) {
+    return {
+      status: "success",
+      data: DEFAULT_NIGERIAN_BANKS,
+    } as any;
+  }
+
+  if (endpoint.startsWith("/balances")) {
+    return {
+      status: "success",
+      data: [
+        {
+          currency: "NGN",
+          available_balance: 850000.0,
+          ledger_balance: 850000.0,
+        },
+      ],
+    } as any;
+  }
+
+  return { status: "success", data: {} } as any;
+}

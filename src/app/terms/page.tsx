@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 export const metadata = {
   title: "Terms of Service | CampusTrade",
@@ -17,10 +16,6 @@ export default function TermsPage() {
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
           </Link>
-          <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-200/80 text-xs font-semibold uppercase tracking-wider mb-2.5 inline-flex items-center gap-1.5 shadow-2xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            Legal Terms
-          </Badge>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-neutral-950 tracking-tight">
             Terms of Service
           </h1>

@@ -20,6 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
+import { useCurrentUser, useLogout } from "@/hooks/use-auth-query";
+import { SignoutModal } from "@/components/ui/SignoutModal";
+import { SignInAsBuyerButton } from "@/components/vendor/SignInAsBuyerButton";
+import { NotificationBell } from "./NotificationBell";
 
 interface NavbarProps {
   initialUser?: any;
@@ -30,25 +34,41 @@ export function Navbar({ initialUser }: NavbarProps) {
   const router = useRouter();
   const { totalCount } = useCart();
   const { savedCount } = useWishlist();
-  const [user, setUser] = React.useState(initialUser);
+
+  // Deduplicated TanStack Query cached auth state
+  const { data: authData } = useCurrentUser(initialUser);
+  const user = authData?.user ?? initialUser;
+  const logoutMutation = useLogout();
+
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [selectedCampus, setSelectedCampus] = React.useState<string>("all");
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
+  const isVendorInterface = pathname.startsWith("/dashboard");
 
   React.useEffect(() => {
-    setUser(initialUser);
-  }, [initialUser]);
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      setUser(null);
-      setUserDropdownOpen(false);
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      console.error("Logout error", err);
-    }
+  const handleLogout = () => {
+    setUserDropdownOpen(false);
+    setMobileMenuOpen(false);
+    setIsSigningOut(true);
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 400);
+      },
+      onError: () => {
+        setIsSigningOut(false);
+      },
+      onSettled: () => {
+        setTimeout(() => {
+          setIsSigningOut(false);
+        }, 600);
+      },
+    });
   };
 
   const navLinks = [
@@ -77,6 +97,11 @@ export function Navbar({ initialUser }: NavbarProps) {
               </span>
             </div>
           </Link>
+          {isVendorInterface && (
+            <Badge variant="dark" className="hidden sm:inline-flex text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">
+              VENDOR PORTAL
+            </Badge>
+          )}
 
           {/* Quick Campus Filter Pill - Only visible on the Campuses page */}
           {pathname === "/campuses" && (
@@ -107,7 +132,8 @@ export function Navbar({ initialUser }: NavbarProps) {
         </div>
 
         {/* Center Nav Links (Desktop) */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+        {!isVendorInterface && (
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -125,41 +151,49 @@ export function Navbar({ initialUser }: NavbarProps) {
             );
           })}
         </nav>
+        )}
 
         {/* Right Actions: Wishlist, Cart, Profile */}
         <div className="flex items-center gap-1 md:gap-2.5">
-          {/* Wishlist / Saved Items */}
-          <Link
-            href="/saved"
-            className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-            title="Saved Items"
-          >
-            <Heart className="w-5 h-5" />
-            {savedCount > 0 && (
-              <Badge
-                variant="accent"
-                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 text-white animate-in zoom-in-75"
-              >
-                {savedCount}
-              </Badge>
-            )}
-          </Link>
+          {/* Wishlist / Saved Items (Only visible after sign in on buyer interface) */}
+          {!isVendorInterface && user && (
+            <Link
+              href="/saved"
+              className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+              title="Saved Items"
+            >
+              <Heart className="w-5 h-5" />
+              {savedCount > 0 && (
+                <Badge
+                  variant="accent"
+                  className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-rose-500 text-white animate-in zoom-in-75"
+                >
+                  {savedCount}
+                </Badge>
+              )}
+            </Link>
+          )}
 
-          {/* Cart Icon */}
-          <Link
-            href="/cart"
-            className="relative w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-            title="Cart"
-          >
-            <ShoppingBag className="w-5 h-5" />
-            {totalCount > 0 && (
-              <Badge
-                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
-              >
-                {totalCount}
-              </Badge>
-            )}
-          </Link>
+          {/* Cart / Bag Icon (Only visible after sign in on buyer interface) */}
+          {!isVendorInterface && user && (
+            <Link
+              href="/cart"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+              title="Bag"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {totalCount > 0 && (
+                <Badge
+                  className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
+                >
+                  {totalCount}
+                </Badge>
+              )}
+            </Link>
+          )}
+
+          {/* Real-Time Notification Bell (Only visible when signed in) */}
+          {user && <NotificationBell currentUserId={user.id} />}
 
           {/* User Auth Section */}
           {user ? (
@@ -242,12 +276,17 @@ export function Navbar({ initialUser }: NavbarProps) {
 
                   <div className="border-t border-neutral-100 my-1"></div>
 
+                  {(user.role === "VENDOR" || isVendorInterface) && (
+                    <SignInAsBuyerButton variant="dropdown" />
+                  )}
+
                   <button
                     onClick={handleLogout}
+                    disabled={logoutMutation.isPending}
                     className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors text-left"
                   >
                     <LogOut className="w-4 h-4 text-rose-500" />
-                    Sign Out
+                    {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
                   </button>
                 </div>
               )}
@@ -255,7 +294,7 @@ export function Navbar({ initialUser }: NavbarProps) {
           ) : (
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-xs font-semibold">
+                <Button variant="ghost" size="sm" className="text-xs font-semibold px-2.5 sm:px-3">
                   Sign In
                 </Button>
               </Link>
@@ -267,19 +306,21 @@ export function Navbar({ initialUser }: NavbarProps) {
             </div>
           )}
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 transition-colors"
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          {/* Mobile Menu Button (Only visible on Home page on small screens) */}
+          {pathname === "/" && (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 transition-colors"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation */}
-      {mobileMenuOpen && (
+      {/* Mobile Drawer Navigation (Only on Home page on small screens) */}
+      {mobileMenuOpen && pathname === "/" && (
         <div className="md:hidden border-t border-neutral-100 bg-white px-4 py-4 space-y-3 animate-in slide-in-from-top-2">
           <div className="space-y-1">
             {navLinks.map((link) => (
@@ -332,6 +373,8 @@ export function Navbar({ initialUser }: NavbarProps) {
           </div>
         </div>
       )}
+      {/* Fullscreen Blocking Signout Modal */}
+      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} onClose={() => setIsSigningOut(false)} />
     </header>
   );
 }

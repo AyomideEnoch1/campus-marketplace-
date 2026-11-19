@@ -1,10 +1,11 @@
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
 import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowRight,
   Sparkles,
   Flame,
-  Star,
   GraduationCap,
   MapPin,
   Clock,
@@ -13,33 +14,24 @@ import {
   SlidersHorizontal,
   Layers,
   ThumbsUp,
-  ShieldCheck,
-  Zap,
-  Truck,
-  Headphones,
   Store,
-  Shirt,
-  Laptop,
-  Home as HomeIcon,
-  BookOpen,
-  Utensils,
-  Dumbbell,
-  Briefcase,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
+import { DesktopHeroSlider } from "@/components/marketplace/DesktopHeroSlider";
+import { DesktopReferenceLayout } from "@/components/marketplace/DesktopReferenceLayout";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
-import { getCategoryImage } from "@/lib/category-images";
+import { getCategoryImage, CATEGORY_IMAGES } from "@/lib/category-images";
 
 // Fetch dynamic data from database
 async function getHomepageData() {
   try {
-    const [categories, campuses, newArrivals, featuredProducts, vendors] = await Promise.all([
+    const [categories, campuses, newArrivals, allProducts, featuredProducts, vendors, siteSettings, totalProductCount] = await Promise.all([
       prisma.category.findMany({
         where: { parentId: null, isActive: true },
         take: 8,
@@ -73,6 +65,7 @@ async function getHomepageData() {
           category: { select: { name: true, slug: true } },
           vendor: {
             select: {
+              id: true,
               storeName: true,
               slug: true,
               whatsapp: true,
@@ -82,15 +75,44 @@ async function getHomepageData() {
         },
       }),
       prisma.product.findMany({
-        where: { status: "PUBLISHED", isFeatured: true },
-        take: 3,
+        where: { status: "PUBLISHED" },
+        take: 36,
+        orderBy: { createdAt: "desc" },
         include: {
           images: { orderBy: { position: "asc" } },
+          category: { select: { name: true, slug: true } },
           vendor: {
             select: {
+              id: true,
               storeName: true,
               slug: true,
+              whatsapp: true,
               campus: { select: { name: true, slug: true } },
+              sellerType: true,
+              verificationTier: true,
+              isTrustedSeller: true,
+              isRegisteredBusiness: true,
+            },
+          },
+        },
+      }),
+      prisma.product.findMany({
+        where: { status: "PUBLISHED", isFeatured: true },
+        take: 6,
+        include: {
+          images: { orderBy: { position: "asc" } },
+          category: { select: { name: true, slug: true } },
+          vendor: {
+            select: {
+              id: true,
+              storeName: true,
+              slug: true,
+              whatsapp: true,
+              campus: { select: { name: true, slug: true } },
+              sellerType: true,
+              verificationTier: true,
+              isTrustedSeller: true,
+              isRegisteredBusiness: true,
             },
           },
         },
@@ -103,17 +125,54 @@ async function getHomepageData() {
           _count: { select: { products: true } },
         },
       }),
+      prisma.siteSetting.findMany({
+        where: {
+          key: {
+            in: [
+              "hero_badge",
+              "hero_title",
+              "hero_subtitle",
+              "hero_cta_text",
+              "flash_sale_badge",
+              "flash_sale_title",
+              "flash_sale_subtitle",
+              "seller_promo_title",
+              "seller_promo_subtitle",
+            ],
+          },
+        },
+      }),
+      prisma.product.count({ where: { status: "PUBLISHED" } }),
     ]);
 
-    return { categories, campuses, newArrivals, featuredProducts, vendors };
+    const cmsSettings: Record<string, string> = {};
+    (siteSettings || []).forEach((s) => {
+      cmsSettings[s.key] = s.value;
+    });
+
+    return { categories, campuses, newArrivals, allProducts, featuredProducts, vendors, cmsSettings, totalProductCount };
   } catch (error) {
     console.error("Error loading homepage data:", error);
-    return { categories: [], campuses: [], newArrivals: [], featuredProducts: [], vendors: [] };
+    return {
+      categories: [],
+      campuses: [],
+      newArrivals: [],
+      allProducts: [],
+      featuredProducts: [],
+      vendors: [],
+      cmsSettings: {},
+      totalProductCount: 0,
+    };
   }
 }
 
 export default async function HomePage() {
-  const { categories, campuses, newArrivals, featuredProducts, vendors } =
+  const session = await getSession();
+  if (session?.role === "VENDOR") {
+    redirect("/dashboard");
+  }
+
+  const { categories, campuses, newArrivals, allProducts, featuredProducts, vendors, cmsSettings = {}, totalProductCount = 20 } =
     await getHomepageData();
 
   return (
@@ -219,47 +278,6 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 5. Trust Guarantee Micro-Pills (Mobile) */}
-        <div className="px-4">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">100% Student ID</p>
-                <p className="text-[9px] text-neutral-500 truncate">Verified Vendors</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">Secure Escrow</p>
-                <p className="text-[9px] text-neutral-500 truncate">Safe Payments</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">Campus Pickup</p>
-                <p className="text-[9px] text-neutral-500 truncate">Fast Hand-off</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-2.5 border border-neutral-100 flex items-center gap-2 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center shrink-0">
-                <Headphones className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-neutral-900 truncate">Direct WhatsApp</p>
-                <p className="text-[9px] text-neutral-500 truncate">Chat Vendor</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* 6. Recommended / Popular Products (Ref 1 & 2) */}
         <div className="px-4 pt-1">
@@ -290,13 +308,13 @@ export default async function HomePage() {
             <div className="flex items-center justify-between">
               <div className="space-y-1 z-10 max-w-[70%]">
                 <span className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200">
-                  Semester Rush Clearance
+                  {cmsSettings.flash_sale_badge || "Semester Rush Clearance"}
                 </span>
                 <h4 className="text-base font-black leading-snug">
-                  Up To 50% Off Campus Essentials
+                  {cmsSettings.flash_sale_title || "Up To 50% Off Campus Essentials"}
                 </h4>
                 <p className="text-[10px] text-amber-100">
-                  Verified deals from graduating students.
+                  {cmsSettings.flash_sale_subtitle || "Verified deals from graduating students."}
                 </p>
               </div>
               <Link
@@ -386,397 +404,20 @@ export default async function HomePage() {
       </div>
 
       {/* ========================================================= */}
-      {/* DESKTOP / LARGE SCREENS LAYOUT (Preserved Desktop View)    */}
+      {/* DESKTOP / LARGE SCREENS LAYOUT (Reference Design Match)    */}
       {/* ========================================================= */}
       <div className="hidden lg:block">
-        {/* 1. HERO SECTION (CampusTrade Mint Green, Blush Pink & Pastel Yellow Theme) */}
-        <section className="relative overflow-hidden bg-white pt-5 sm:pt-8 lg:pt-10 pb-8 sm:pb-10 lg:pb-12">
-        <div className="w-[92%] sm:w-[90%] max-w-[1720px] mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 xl:gap-14 items-center w-full">
-            {/* Left Column: Hero Text Content - Wide layout & vertically balanced */}
-            <div className="lg:col-span-6 xl:col-span-6 space-y-4 sm:space-y-6 lg:space-y-7 text-center lg:text-left w-full">
-              {/* Trending Pill Badge */}
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-neutral-100 border border-neutral-200/80 text-neutral-800 text-xs sm:text-sm font-semibold shadow-xs">
-                <span className="text-sm sm:text-base">🔥</span>
-                <span>Trending Across Nigerian Campuses</span>
-              </div>
-
-              {/* Main Headline - Responsive typography */}
-              <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-[62px] xl:text-[74px] 2xl:text-[82px] font-black text-neutral-950 tracking-tight leading-[1.08] sm:leading-[1.05] w-full">
-                Discover Campus <br className="hidden sm:inline" />
-                <span className="text-emerald-500">Products</span>
-              </h1>
-
-              {/* Subtitle - Spanning wide across the space without squeezing */}
-              <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-neutral-600 leading-relaxed font-normal w-full max-w-2xl lg:max-w-none">
-                The premier multi-vendor marketplace; built for students. Buy and sell textbooks, laptops, hostel gadgets, and thrift streetwear from verified peers across all universities and campuses.
-              </p>
-
-              {/* Desktop Search Bar */}
-              <div className="pt-1 max-w-xl mx-auto lg:mx-0">
-                <SearchBar
-                  size="lg"
-                  placeholder="Search textbooks, laptops, smartphones, sneakers..."
-                  className="w-full border-neutral-300 shadow-md"
-                />
-              </div>
-
-              {/* Call to Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 sm:gap-4 pt-1 w-full sm:w-auto">
-                <Link href="/shop" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 sm:px-9 py-3.5 sm:py-4 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
-                    Shop Now <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1" />
-                  </Button>
-                </Link>
-                <Link href="/vendor/register" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-2 border-emerald-500 text-neutral-950 font-bold px-6 sm:px-9 py-3.5 sm:py-4 hover:bg-emerald-50/70 hover:-translate-y-0.5 transition-all text-sm sm:text-base">
-                    Open Student Store
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Social Proof */}
-              <div className="pt-1 sm:pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-2.5 sm:gap-3">
-                <div className="flex -space-x-2 overflow-hidden">
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                  <img
-                    className="inline-block h-8 w-8 sm:h-9 sm:w-9 rounded-full ring-2 ring-white object-cover"
-                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80"
-                    alt="Student buyer"
-                  />
-                </div>
-                <div className="text-center sm:text-left">
-                  <div className="flex items-center justify-center sm:justify-start text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-xs sm:text-sm font-semibold text-neutral-700 mt-0.5">
-                    Loved by 15,000+ verified campus students
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Hero Visual - Horizontally Aligned on the same row */}
-            <div className="lg:col-span-6 xl:col-span-6 relative flex items-center justify-center lg:justify-end w-full">
-              <div className="relative w-full h-[250px] xs:h-[300px] sm:h-[400px] lg:h-[520px] xl:h-[580px] flex items-center justify-center lg:justify-end">
-                <Image
-                  src="/images/hero-shopping-items-transparent.png"
-                  alt="Curated student shopping items arranged for hero section"
-                  fill
-                  priority
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 860px"
-                  className="object-contain filter drop-shadow-[0_25px_50px_rgba(0,0,0,0.16)] hover:scale-[1.02] transition-transform duration-500"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. TRUST AND VALUE PROPOSITIONS BAR */}
-      <TrustBar />
-
-      {/* 3. SHOP BY CATEGORIES (NovaTrend Reference Layout) */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
-                Shop by Categories
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-                Curated departments tailored to campus lifestyles and student budgets
-              </p>
-            </div>
-            <Link
-              href="/shop"
-              className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
-            >
-              <span>View All</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-3.5">
-            {categories.map((cat: any) => {
-              const totalProducts =
-                (cat._count?.products || 0) +
-                (cat.children?.reduce((acc: number, c: any) => acc + (c._count?.products || 0), 0) || 0);
-
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/shop?category=${cat.slug}`}
-                  className="group relative rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-100 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="aspect-[4/5] relative w-full overflow-hidden">
-                    <Image
-                      src={getCategoryImage(cat.slug)}
-                      alt={cat.name}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 12vw"
-                      className="object-cover object-center group-hover:scale-108 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/85 via-neutral-950/30 to-transparent"></div>
-                    <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
-                      <h3 className="font-bold text-xs sm:text-sm leading-snug line-clamp-1">
-                        {cat.name}
-                      </h3>
-                      <p className="text-[10px] text-neutral-300 flex items-center justify-between mt-0.5">
-                        <span>{totalProducts} Items</span>
-                        <span className="text-emerald-400 group-hover:text-emerald-300 group-hover:translate-x-0.5 transition-all">
-                          &rarr;
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. FRESH CAMPUS DROPS / NEW ARRIVALS (Forma/NovaTrend Catalog) */}
-      <section className="py-14 bg-neutral-50/50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-purple-600 animate-ping"></span>
-                <span className="text-xs uppercase font-extrabold tracking-wider text-purple-700">
-                  Live Campus Catalog
-                </span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight mt-1">
-                New Arrivals
-              </h2>
-            </div>
-            <Link
-              href="/shop?sort=newest"
-              className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-700 flex items-center gap-1 group"
-            >
-              <span>View All New Drops</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {newArrivals.map((product) => (
-              <ProductCard key={product.id} product={product as any} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 5. DUAL PROMOTIONAL BANNERS (NovaTrend Reference Layout) */}
-      <section className="py-14 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Promo 1: Flash Sale with Countdown */}
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl shadow-orange-600/15">
-              <div className="relative z-10 space-y-3">
-                <Badge variant="dark" className="bg-white/20 backdrop-blur-md text-white border-0 text-xs font-bold">
-                  Semester Rush Deals
-                </Badge>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
-                  Up To 50% Off <br />
-                  Campus Essentials
-                </h3>
-                <p className="text-xs sm:text-sm text-amber-100 max-w-sm">
-                  Limited inventory discounts from student vendors wrapping up their clearance sales.
-                </p>
-
-                {/* Countdown Timer Block */}
-                <div className="flex items-center gap-1.5 sm:gap-2 pt-2">
-                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                    <span className="font-extrabold text-xs sm:text-base">02</span>
-                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Days</span>
-                  </div>
-                  <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                    <span className="font-extrabold text-xs sm:text-base">14</span>
-                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
-                  </div>
-                  <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                    <span className="font-extrabold text-xs sm:text-base">38</span>
-                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
-                  </div>
-                  <span className="font-bold">:</span>
-                  <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                    <span className="font-extrabold text-xs sm:text-base">45</span>
-                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative z-10 pt-5 sm:pt-6">
-                <Link href="/shop?filter=sale">
-                  <Button className="bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-5 sm:px-6 shadow-md text-xs sm:text-sm">
-                    Shop Flash Sale Now &rarr;
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Decorative Sneaker / Cutout */}
-              <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-25 lg:opacity-40 pointer-events-none">
-                <Image
-                  src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
-                  alt="Sneaker flash sale"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
-
-            {/* Promo 2: Student Entrepreneurship / Seller Spotlight */}
-            <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl">
-              <div className="relative z-10 space-y-3">
-                <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
-                  Student Seller Community
-                </Badge>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
-                  Turn Your Drip or Skills <br />
-                  Into Campus Income
-                </h3>
-                <p className="text-xs sm:text-sm text-neutral-400 max-w-sm">
-                  Launch your storefront in under 3 minutes. Pick your storefront layout, upload items, and receive WhatsApp orders.
-                </p>
-                <ul className="text-xs text-neutral-300 space-y-1.5 pt-1">
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span>Zero upfront listing fees for student sellers</span>
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-400" />
-                    <span>Choice of 4 custom storefront layouts</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="relative z-10 pt-6">
-                <Link href="/vendor/register">
-                  <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 shadow-md rounded-full">
-                    Register Your Store &rarr;
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Decorative Background */}
-              <div className="absolute inset-0 opacity-20 pointer-events-none">
-                <Image
-                  src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&q=80"
-                  alt="Student seller working"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. FEATURED STUDENT VENDORS (UNILAG, UI, OAU) */}
-      <section className="py-14 bg-neutral-50/70 border-t border-neutral-100">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
-                Featured Campus Stores
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-                Top rated student entrepreneurs with active storefronts
-              </p>
-            </div>
-            <Link
-              href="/vendors"
-              className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
-            >
-              <span>Explore All Vendors</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {vendors.map((v) => (
-              <Link
-                key={v.id}
-                href={`/store/${v.slug}`}
-                className="group rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all flex flex-col"
-              >
-                {/* Banner */}
-                <div className="h-24 w-full relative bg-neutral-200 overflow-hidden">
-                  {v.banner ? (
-                    <Image
-                      src={v.banner}
-                      alt={v.storeName}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-r from-emerald-500 via-teal-600 to-emerald-700"></div>
-                  )}
-                </div>
-
-                {/* Body with Logo Avatar */}
-                <div className="p-4 pt-0 relative flex-grow flex flex-col justify-between">
-                  <div>
-                    <div className="-mt-7 mb-2 relative">
-                      <div className="w-14 h-14 rounded-2xl border-2 border-white overflow-hidden shadow-md bg-white">
-                        {v.logo ? (
-                          <img
-                            src={v.logo}
-                            alt={v.storeName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg">
-                            {v.storeName[0]}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <h3 className="font-bold text-neutral-900 text-sm group-hover:text-emerald-600 transition-colors">
-                      {v.storeName}
-                    </h3>
-                    <p className="text-xs text-neutral-500 line-clamp-2 mt-1">
-                      {v.storeDescription || "Verified campus student storefront."}
-                    </p>
-                  </div>
-
-                  <div className="pt-3 mt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
-                    <span className="flex items-center gap-1 font-medium text-emerald-700">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                      {v.campus.name.split(" ")[0]}
-                    </span>
-                    <span className="text-[11px] font-semibold bg-neutral-100 px-2 py-0.5 rounded-full">
-                      {v._count.products} Listings
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+        <DesktopReferenceLayout
+          categories={categories as any}
+          campuses={campuses as any}
+          allProducts={allProducts as any}
+          recommendations={
+            featuredProducts.length >= 3
+              ? (featuredProducts as any)
+              : (allProducts.slice(0, 6) as any)
+          }
+          totalProductCount={totalProductCount || allProducts.length}
+        />
       </div>
     </div>
   );

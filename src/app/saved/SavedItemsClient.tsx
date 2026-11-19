@@ -11,16 +11,22 @@ import {
   MapPin,
   ExternalLink,
   Sparkles,
+  Lock,
 } from "lucide-react";
 import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
 import { formatNGN } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
+import { useCurrentUser } from "@/hooks/use-auth-query";
 
 export function SavedItemsClient() {
   const { savedItems, removeItem, clearWishlist } = useWishlist();
   const { addItem } = useCart();
   const [addedId, setAddedId] = React.useState<string | null>(null);
+
+  const { data: authData, isLoading: authLoading } = useCurrentUser();
+  const user = authData?.user;
 
   const handleMoveToBag = (item: any) => {
     addItem({
@@ -32,15 +38,53 @@ export function SavedItemsClient() {
       quantity: 1,
       condition: item.condition || "Good Condition",
       vendor: {
-        id: item.id, // fallback
-        storeName: item.vendorName || "Campus Vendor",
-        slug: item.slug,
+        id: item.vendorId || item.vendor?.id || item.id,
+        storeName: item.vendorName || item.vendor?.storeName || "Campus Vendor",
+        slug: item.vendor?.slug || item.slug,
       },
     });
 
     setAddedId(item.id);
     setTimeout(() => setAddedId(null), 2000);
   };
+
+  // While communicating with backend to verify credentials on initial cold boot
+  if (authLoading && !authData) {
+    return <Loader isModal={true} />;
+  }
+
+  // Require sign-in before accessing saved items page
+  if (!user) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center py-16 px-4 bg-neutral-50/50">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-8 text-center space-y-5">
+          <div className="w-16 h-16 rounded-3xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto shadow-xs">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-extrabold text-neutral-900">
+              Sign in to View Saved Items
+            </h2>
+            <p className="text-xs text-neutral-500 max-w-xs mx-auto">
+              Please sign in to keep track of your favorite campus drops, textbooks, and saved listings.
+            </p>
+          </div>
+          <div className="space-y-2 pt-2">
+            <Link href="/auth/login?redirect=/saved" className="block">
+              <Button size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-md">
+                Sign In to View Saved Items &rarr;
+              </Button>
+            </Link>
+            <Link href="/auth/register" className="block">
+              <Button variant="ghost" size="sm" className="w-full text-xs font-semibold text-neutral-600">
+                Create Free Account
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (savedItems.length === 0) {
     return (

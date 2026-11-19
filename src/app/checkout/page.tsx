@@ -23,30 +23,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
+import { useSafeMeetupPoints, SafeMeetupPoint, VendorMeta } from "@/hooks/use-meetup-points-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/react-query/query-keys";
 
 export const dynamic = "force-dynamic";
-
-interface SafeMeetupPoint {
-  id: string;
-  name: string;
-  description: string | null;
-  active: boolean;
-}
-
-interface VendorMeta {
-  id: string;
-  sellerType: "student" | "guest" | string;
-  verificationTier: number;
-  isTrustedSeller: boolean;
-  isRegisteredBusiness: boolean;
-  storeName: string;
-  campusId: string;
-  campus?: {
-    id: string;
-    name: string;
-    city: string;
-  };
-}
 
 function CheckoutForm() {
   const router = useRouter();
@@ -71,44 +53,22 @@ function CheckoutForm() {
   const selectedVendorId = vendorIdParam || vendorIds[0];
   const group = selectedVendorId ? itemsByVendor[selectedVendorId] : null;
 
-  // Remote vendor & safe meetup points state
-  const [vendorMeta, setVendorMeta] = React.useState<VendorMeta | null>(null);
-  const [meetupPoints, setMeetupPoints] = React.useState<SafeMeetupPoint[]>([]);
-  const [fetchingMeta, setFetchingMeta] = React.useState(false);
+  const queryClient = useQueryClient();
+
+  // Cached remote vendor & safe meetup points state via TanStack Query
+  const { data: meetupData, isLoading: fetchingMeta } = useSafeMeetupPoints(group?.vendor.id);
+  const vendorMeta = meetupData?.vendor || null;
+  const meetupPoints = meetupData?.meetupPoints || [];
 
   React.useEffect(() => {
-    if (!group?.vendor.id) return;
-
-    let cancelled = false;
-    setFetchingMeta(true);
-
-    fetch(`/api/safe-meetup-points?vendorId=${encodeURIComponent(group.vendor.id)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        if (data.vendor) {
-          setVendorMeta(data.vendor);
-          if (data.vendor.sellerType === "guest") {
-            setDeliveryMethod("SAFE_MEETUP_POINT");
-          }
-        }
-        if (Array.isArray(data.meetupPoints)) {
-          setMeetupPoints(data.meetupPoints);
-          if (data.meetupPoints.length > 0 && !selectedMeetupPointId) {
-            setSelectedMeetupPointId(data.meetupPoints[0].id);
-            setDeliveryAddress(`${data.meetupPoints[0].name} - ${data.meetupPoints[0].description || ""}`.trim());
-          }
-        }
-      })
-      .catch((err) => console.error("Failed to load meetup points", err))
-      .finally(() => {
-        if (!cancelled) setFetchingMeta(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [group?.vendor.id]);
+    if (vendorMeta?.sellerType === "guest") {
+      setDeliveryMethod("SAFE_MEETUP_POINT");
+    }
+    if (meetupPoints.length > 0 && !selectedMeetupPointId) {
+      setSelectedMeetupPointId(meetupPoints[0].id);
+      setDeliveryAddress(`${meetupPoints[0].name} - ${meetupPoints[0].description || ""}`.trim());
+    }
+  }, [vendorMeta, meetupPoints, selectedMeetupPointId]);
 
   const isGuestSeller =
     vendorMeta?.sellerType === "guest" || group?.vendor?.sellerType === "guest";
@@ -128,12 +88,32 @@ function CheckoutForm() {
     e.preventDefault();
     if (!group) return;
 
+    if (!buyerName.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    if (!buyerEmail.trim() || !buyerEmail.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (!buyerPhone.trim() || buyerPhone.trim().length < 7) {
+      setError("Please enter a valid contact phone number (at least 7 digits).");
+      return;
+    }
+
+    if (!isGuestSeller && !deliveryAddress.trim()) {
+      setError("Please enter your preferred meeting point or hostel room.");
+      return;
+    }
+
     if (isTier1Capped) {
       setError("Orders from Tier 1 Guest Vendors are capped at ₦10,000 for buyer security. Please adjust your order.");
       return;
     }
 
-    if (isGuestSeller && !selectedMeetupPointId) {
+    if (isGuestSeller && meetupPoints.length > 0 && !selectedMeetupPointId) {
       setError("Please select a safe campus meetup point for this guest seller order.");
       return;
     }
@@ -151,16 +131,17 @@ function CheckoutForm() {
           ? (deliveryAddress || (meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ?? "Campus Safe Point"))
           : deliveryAddress,
         meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
-        vendorId: group.vendor.id,
+        vendorId: group.vendor.id || group.vendor.slug,
         notes,
         items: group.items.map((i) => ({
           productId: i.id,
           quantity: i.quantity,
-          unitPrice: i.price,
+          variantDetails: (i as any).condition || undefined,
         })),
       };
 
-      const res = await fetch("/api/orders", {
+      // Call Flutterwave Escrow create-payment endpoint
+      const res = await fetch("/api/payments/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -168,16 +149,20 @@ function CheckoutForm() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to submit order request");
+        throw new Error(data.error || "Failed to initialize Flutterwave escrow payment");
       }
 
-      // Clear the items belonging to this vendor from the cart
+      // Clear the vendor's items from the cart
       clearVendorItems(group.vendor.id);
 
-      // Redirect to Order Success page
-      router.push(`/order-success/${data.order.orderNumber}`);
+      // Redirect directly to Flutterwave hosted checkout
+      if (data.paymentLink) {
+        window.location.href = data.paymentLink;
+      } else {
+        router.push(`/checkout/confirm?tx_ref=${data.txRef}`);
+      }
     } catch (err: any) {
-      setError(err.message || "Something went wrong while placing your order request.");
+      setError(err.message || "Something went wrong while initiating your escrow checkout.");
     } finally {
       setLoading(false);
     }
@@ -202,6 +187,7 @@ function CheckoutForm() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
+      {loading && <Loader isModal={true} />}
       <div className="flex items-center gap-2 mb-6 text-xs text-neutral-500">
         <Link href="/cart" className="hover:text-neutral-900 flex items-center gap-1 font-semibold">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Cart
@@ -289,6 +275,7 @@ function CheckoutForm() {
                 <label className="text-xs font-bold text-neutral-700">Your Full Name</label>
                 <Input
                   required
+                  maxLength={70}
                   placeholder="e.g. Demilade Johnson"
                   value={buyerName}
                   onChange={(e) => setBuyerName(e.target.value)}
@@ -301,6 +288,8 @@ function CheckoutForm() {
                   <Input
                     type="tel"
                     required
+                    minLength={7}
+                    maxLength={15}
                     placeholder="+234 801 234 5678"
                     value={buyerPhone}
                     onChange={(e) => setBuyerPhone(e.target.value)}
@@ -312,6 +301,7 @@ function CheckoutForm() {
                   <Input
                     type="email"
                     required
+                    maxLength={100}
                     placeholder="student@university.edu.ng"
                     value={buyerEmail}
                     onChange={(e) => setBuyerEmail(e.target.value)}
@@ -429,6 +419,7 @@ function CheckoutForm() {
                     </label>
                     <Input
                       required
+                      maxLength={200}
                       placeholder={
                         deliveryMethod === "PICKUP"
                           ? "e.g. UNILAG Library steps or UI Mellanby Hall front"
@@ -445,6 +436,7 @@ function CheckoutForm() {
                 <label className="text-xs font-bold text-neutral-700">Special Notes for Vendor (Optional)</label>
                 <textarea
                   rows={2}
+                  maxLength={300}
                   className="w-full rounded-xl border border-neutral-200 bg-white p-3 text-xs text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20"
                   placeholder="e.g. Available after 2 PM lectures on Tuesday..."
                   value={notes}
@@ -455,20 +447,30 @@ function CheckoutForm() {
               <div className="pt-4">
                 <Button
                   type="submit"
-                  disabled={loading || isTier1Capped}
-                  className={`w-full h-12 text-white font-bold rounded-2xl shadow-lg text-sm transition-all ${
+                  disabled={
+                    loading ||
+                    isTier1Capped ||
+                    !buyerName.trim() ||
+                    !buyerEmail.trim() ||
+                    !buyerPhone.trim() ||
+                    (!isGuestSeller && !deliveryAddress.trim()) ||
+                    (isGuestSeller && meetupPoints.length > 0 && !selectedMeetupPointId)
+                  }
+                  className={`w-full h-12 text-white font-bold rounded-2xl shadow-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     isGuestSeller
                       ? "bg-purple-700 hover:bg-purple-800 shadow-purple-700/25"
                       : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25"
                   }`}
                 >
+                  <ShieldCheck className="w-4 h-4 mr-1.5 inline" />
                   {loading
-                    ? "Submitting Order Request..."
-                    : `Submit Order Request (${formatNGN(group.subtotal)}) &rarr;`}
+                    ? "Securing Escrow Payment..."
+                    : `Pay Securely via Escrow (${formatNGN(group.subtotal)}) →`}
                 </Button>
-                <p className="text-center text-[11px] text-neutral-400 mt-2">
-                  No online payment is charged right now. You inspect items in person before finalizing.
-                </p>
+                <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-neutral-500 mt-2.5">
+                  <span>🔒</span>
+                  <span>100% Escrow Protected: Funds held until you verify delivery</span>
+                </div>
               </div>
             </form>
           </div>
@@ -511,23 +513,31 @@ function CheckoutForm() {
 
             <div className="pt-3 border-t border-neutral-200/80 space-y-1.5 text-xs">
               <div className="flex items-center justify-between text-neutral-500">
-                <span>Subtotal</span>
+                <span>Items Subtotal</span>
                 <span className="font-semibold text-neutral-800">{formatNGN(group.subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-neutral-500">
-                <span>Safe Campus Inspection</span>
+                <span>Safe Campus Meetup</span>
                 <span className="text-emerald-700 font-bold">FREE</span>
               </div>
               <div className="flex items-center justify-between text-neutral-500">
-                <span>Escrow Hold Fee</span>
-                <span className="text-emerald-700 font-bold">₦0</span>
+                <span>Escrow Protection Fee</span>
+                <span className="text-emerald-700 font-bold">₦0 (Covered by Platform)</span>
               </div>
               <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-base font-extrabold text-neutral-950">
-                <span>Total Due on Pickup</span>
+                <span>Total to Pay</span>
                 <span className={isGuestSeller ? "text-purple-700" : "text-emerald-600"}>
                   {formatNGN(group.subtotal)}
                 </span>
               </div>
+            </div>
+
+            {/* Payment provider badge */}
+            <div className="pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
+              <span className="flex items-center gap-1">
+                <span>💳</span> Powered by <strong>Flutterwave</strong>
+              </span>
+              <span>Cards &bull; Transfers &bull; USSD</span>
             </div>
           </div>
 
@@ -558,7 +568,7 @@ function CheckoutForm() {
 export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-neutral-50/50">
-      <React.Suspense fallback={<div className="p-12 text-center text-xs text-neutral-500">Loading checkout...</div>}>
+      <React.Suspense fallback={<Loader isModal={true} />}>
         <CheckoutForm />
       </React.Suspense>
     </div>

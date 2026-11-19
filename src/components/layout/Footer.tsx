@@ -1,7 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { GraduationCap, ShieldCheck, MapPin, Heart } from "lucide-react";
 
 export function Footer() {
+  const pathname = usePathname();
+
+  // Hide footer completely on chat / messages pages and admin dashboard
+  if (
+    pathname?.startsWith("/messages") ||
+    pathname?.startsWith("/dashboard/messages") ||
+    pathname?.startsWith("/admin")
+  ) {
+    return null;
+  }
   return (
     <footer className="bg-gradient-to-b from-neutral-50 via-emerald-50/25 to-neutral-100/80 text-neutral-600 pt-16 pb-24 md:pb-12 border-t border-neutral-200/80 transition-colors">
       <div className="container mx-auto px-4">

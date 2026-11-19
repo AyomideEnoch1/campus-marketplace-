@@ -22,11 +22,13 @@ import {
   AlertCircle,
   Award,
   RefreshCw,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
+import { Loader } from "@/components/ui/Loader";
 
 interface AdminVendorTableProps {
   initialVendors: any[];
@@ -140,7 +142,7 @@ export function AdminVendorTable({
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-neutral-900 border border-neutral-800 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 rounded-2xl bg-neutral-900 border border-neutral-800 text-xs">
         <div className="relative">
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
           <Input
@@ -193,22 +195,156 @@ export function AdminVendorTable({
         </select>
       </div>
 
-      {/* Vendors Table */}
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900 overflow-hidden">
+      {/* Mobile Card List (sm:hidden) */}
+      <div className="sm:hidden space-y-3">
+        {isRefreshing && filteredVendors.length === 0 ? (
+          <div className="py-12 text-center rounded-2xl bg-neutral-900 border border-neutral-800">
+            <Loader isModal={false} />
+          </div>
+        ) : filteredVendors.length === 0 ? (
+          <div className="py-8 text-center text-xs text-neutral-500 rounded-2xl bg-neutral-900 border border-neutral-800">
+            No vendors found matching the selected filters.
+          </div>
+        ) : (
+          filteredVendors.map((vendor) => {
+            const isGuest = vendor.sellerType === "guest";
+
+            return (
+              <div
+                key={vendor.id}
+                className="p-4 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-3.5 shadow-xs"
+              >
+                {/* Header: Logo, Name, Badges */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 overflow-hidden shrink-0 flex items-center justify-center font-bold text-emerald-400">
+                      {vendor.logo ? (
+                        <img src={vendor.logo} alt="" className="w-full h-full object-cover" />
+                      ) : isGuest ? (
+                        <Building2 className="w-5 h-5 text-indigo-400" />
+                      ) : (
+                        <GraduationCap className="w-5 h-5 text-emerald-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-bold text-white text-sm truncate">{vendor.storeName}</p>
+                        {vendor.isRegisteredBusiness && (
+                          <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-[9px] py-0 px-1 shrink-0">
+                            CAC
+                          </Badge>
+                        )}
+                        {vendor.isTrustedSeller && (
+                          <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-[9px] py-0 px-1 shrink-0">
+                            ★
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+                        {vendor.user.fullName} &bull; {vendor.user.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <Badge
+                    variant={
+                      vendor.status === "APPROVED"
+                        ? "default"
+                        : vendor.status === "PENDING"
+                        ? "warning"
+                        : "destructive"
+                    }
+                    className="text-[10px] px-2 py-0.5 shrink-0 whitespace-nowrap font-bold"
+                  >
+                    {vendor.status}
+                  </Badge>
+                </div>
+
+                {/* Badges & Meta Row */}
+                <div className="flex flex-wrap items-center gap-2 text-xs pt-1 border-t border-neutral-800/60">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      isGuest
+                        ? "bg-purple-950/80 text-purple-300 border border-purple-800/60"
+                        : "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
+                    }`}
+                  >
+                    {isGuest ? (
+                      <>
+                        <Building2 className="w-3 h-3" /> Guest
+                      </>
+                    ) : (
+                      <>
+                        <GraduationCap className="w-3 h-3" /> Student
+                      </>
+                    )}
+                  </span>
+
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0 whitespace-nowrap select-none">
+                    {`Tier ${vendor.verificationTier || 1}`}
+                  </span>
+
+                  <span className="text-[10px] text-neutral-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-800/80 shrink-0 whitespace-nowrap font-mono">
+                    <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
+                    {`${vendor.payoutDelayHours || (isGuest ? 72 : 48)}h Payout`}
+                  </span>
+
+                  <span className="text-[11px] text-neutral-300 flex items-center gap-1 shrink-0 ml-auto font-medium">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    {vendor.campus?.name.split(" ")[0]}
+                  </span>
+                </div>
+
+                {/* Actions Row */}
+                <div className="flex items-center gap-2 pt-2 border-t border-neutral-800/60">
+                  <a
+                    href={`https://wa.me/${vendor.whatsapp?.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 px-3 rounded-xl bg-neutral-950 border border-neutral-800 hover:border-emerald-700 text-emerald-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">WhatsApp</span>
+                  </a>
+
+                  <Button
+                    size="sm"
+                    onClick={() => setInspectVendor(vendor)}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold gap-1.5 py-2 h-auto"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Review Docs
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop / Tablet Vendors Table (hidden on mobile) */}
+      <div className="hidden sm:block rounded-2xl border border-neutral-800 bg-neutral-900 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[850px]">
             <thead className="bg-neutral-950/70 border-b border-neutral-800 text-neutral-400 uppercase tracking-wider font-semibold">
               <tr>
-                <th className="py-3 px-4">Vendor & Classification</th>
+                <th className="py-3 px-4">Vendor &amp; Account Type</th>
                 <th className="py-3 px-4">Campus & Location</th>
-                <th className="py-3 px-4">Tier & Payout</th>
+                <th className="py-3 px-4 min-w-[130px] whitespace-nowrap">Tier &amp; Payout</th>
                 <th className="py-3 px-4">Status & Badges</th>
                 <th className="py-3 px-4">Contact</th>
                 <th className="py-3 px-4 text-right">Verification Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800/80">
-              {filteredVendors.length === 0 ? (
+              {isRefreshing && filteredVendors.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center">
+                    <Loader isModal={false} />
+                  </td>
+                </tr>
+              ) : filteredVendors.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-neutral-500">
                     No vendors found matching the selected filters.
@@ -220,7 +356,7 @@ export function AdminVendorTable({
 
                   return (
                     <tr key={vendor.id} className="hover:bg-neutral-800/40 transition-colors">
-                      {/* Store & Classification */}
+                      {/* Store & Account Type */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 overflow-hidden shrink-0 flex items-center justify-center font-bold text-emerald-400">
@@ -271,12 +407,12 @@ export function AdminVendorTable({
                       </td>
 
                       {/* Campus & Location */}
-                      <td className="py-3.5 px-4 text-neutral-300">
-                        <p className="font-medium flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                      <td className="py-3.5 px-4 text-neutral-300 whitespace-nowrap">
+                        <p className="font-medium flex items-center gap-1 shrink-0 whitespace-nowrap">
+                          <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           {vendor.campus?.name.split(" ")[0]}
                         </p>
-                        <p className="text-[11px] text-neutral-500 truncate max-w-[150px]">
+                        <p className="text-[11px] text-neutral-500 truncate max-w-[160px]">
                           {isGuest
                             ? vendor.businessAddress || vendor.businessCategory || "Off-Campus"
                             : vendor.faculty || "Faculty Not Stated"}
@@ -284,18 +420,20 @@ export function AdminVendorTable({
                       </td>
 
                       {/* Tier & Escrow Payout */}
-                      <td className="py-3.5 px-4 text-neutral-300">
-                        <Badge variant="secondary" className="text-[10px] uppercase font-bold">
-                          Tier {vendor.verificationTier || 1}
-                        </Badge>
-                        <p className="text-[11px] text-neutral-400 mt-1 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-neutral-500" />
-                          {vendor.payoutDelayHours || (isGuest ? 72 : 48)}h Payout
-                        </p>
+                      <td className="py-3.5 px-4 text-neutral-300 min-w-[130px] whitespace-nowrap">
+                        <div className="flex flex-col gap-1 items-start whitespace-nowrap shrink-0">
+                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0 whitespace-nowrap select-none">
+                            {`Tier ${vendor.verificationTier || 1}`}
+                          </span>
+                          <p className="text-[11px] text-neutral-400 flex items-center gap-1 shrink-0 whitespace-nowrap font-mono">
+                            <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
+                            <span>{`${vendor.payoutDelayHours || (isGuest ? 72 : 48)}h Payout`}</span>
+                          </p>
+                        </div>
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <Badge
                           variant={
                             vendor.status === "APPROVED"
@@ -304,7 +442,7 @@ export function AdminVendorTable({
                               ? "warning"
                               : "destructive"
                           }
-                          className="text-[10px] px-2"
+                          className="text-[10px] px-2 shrink-0 whitespace-nowrap font-bold"
                         >
                           {vendor.status}
                         </Badge>
@@ -316,15 +454,15 @@ export function AdminVendorTable({
                       </td>
 
                       {/* Contact */}
-                      <td className="py-3.5 px-4 text-neutral-300">
+                      <td className="py-3.5 px-4 text-neutral-300 whitespace-nowrap">
                         <a
                           href={`https://wa.me/${vendor.whatsapp?.replace(/[^0-9]/g, "")}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+                          className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 shrink-0 whitespace-nowrap"
                         >
                           <MessageCircle className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{vendor.whatsapp}</span>
+                          <span>{vendor.whatsapp}</span>
                         </a>
                       </td>
 
@@ -350,27 +488,35 @@ export function AdminVendorTable({
 
       {/* Review & Verification Inspection Modal */}
       {inspectVendor && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 text-neutral-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-3xl w-full p-4 sm:p-6 lg:p-7 space-y-5 text-neutral-200 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-start justify-between border-b border-neutral-800 pb-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-black text-white">
+            <div className="flex items-start justify-between border-b border-neutral-800 pb-4 gap-3">
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg sm:text-xl font-black text-white truncate max-w-full">
                     {inspectVendor.storeName}
                   </h3>
-                  <Badge
-                    className={
-                      inspectVendor.sellerType === "guest"
-                        ? "bg-purple-900 text-purple-200"
-                        : "bg-emerald-900 text-emerald-200"
-                    }
-                  >
-                    {inspectVendor.sellerType === "guest" ? "Guest Vendor" : "Student Vendor"}
-                  </Badge>
-                  <Badge variant="secondary">Tier {inspectVendor.verificationTier || 1}</Badge>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Badge
+                      className={`text-[10px] sm:text-xs shrink-0 whitespace-nowrap ${
+                        inspectVendor.sellerType === "guest"
+                          ? "bg-purple-900 text-purple-200"
+                          : "bg-emerald-900 text-emerald-200"
+                      }`}
+                    >
+                      {inspectVendor.sellerType === "guest" ? "Guest Vendor" : "Student Vendor"}
+                    </Badge>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0 whitespace-nowrap select-none">
+                      {`Tier ${inspectVendor.verificationTier || 1}`}
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] text-neutral-400 flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-800/80 shrink-0 whitespace-nowrap font-mono">
+                      <Clock className="w-3 h-3 text-neutral-500 shrink-0" />
+                      {`${inspectVendor.payoutDelayHours || (inspectVendor.sellerType === "guest" ? 72 : 48)}h Payout`}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs text-neutral-400 break-words">
                   Applicant: <strong>{inspectVendor.user.fullName}</strong> ({inspectVendor.user.email} &bull; {inspectVendor.whatsapp})
                 </p>
               </div>
@@ -380,7 +526,7 @@ export function AdminVendorTable({
                   setShowRejectForm(false);
                   setShowRequestInfoForm(false);
                 }}
-                className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white"
+                className="w-8 h-8 rounded-full bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-neutral-400 hover:text-white shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -675,8 +821,8 @@ export function AdminVendorTable({
             )}
 
             {/* Moderation Actions Footer */}
-            <div className="pt-4 border-t border-neutral-800 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+            <div className="pt-4 border-t border-neutral-800 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
                   disabled={processingId === inspectVendor.id}
@@ -711,9 +857,9 @@ export function AdminVendorTable({
                 size="sm"
                 disabled={processingId === inspectVendor.id || inspectVendor.status === "APPROVED"}
                 onClick={() => handleUpdateStatus(inspectVendor.id, "APPROVE")}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6 h-10 shadow-md shadow-emerald-600/30 gap-1.5"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6 h-10 shadow-md shadow-emerald-600/30 gap-1.5 justify-center"
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
                 Approve & Activate Vendor
               </Button>
             </div>

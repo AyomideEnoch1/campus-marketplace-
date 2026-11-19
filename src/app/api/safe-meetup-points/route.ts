@@ -13,25 +13,34 @@ export async function GET(request: Request) {
     let vendorData: any = null;
 
     if (vendorId) {
-      const vendor = await prisma.vendorProfile.findUnique({
-        where: { id: vendorId },
-        select: {
-          id: true,
-          sellerType: true,
-          verificationTier: true,
-          isTrustedSeller: true,
-          isRegisteredBusiness: true,
-          storeName: true,
-          campusId: true,
-          campus: {
-            select: {
-              id: true,
-              name: true,
-              city: true,
-            },
+      const selectFields = {
+        id: true,
+        sellerType: true,
+        verificationTier: true,
+        isTrustedSeller: true,
+        isRegisteredBusiness: true,
+        storeName: true,
+        campusId: true,
+        campus: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
           },
         },
+      };
+
+      let vendor = await prisma.vendorProfile.findUnique({
+        where: { id: vendorId },
+        select: selectFields,
       });
+
+      if (!vendor) {
+        vendor = await prisma.vendorProfile.findUnique({
+          where: { slug: vendorId },
+          select: selectFields,
+        });
+      }
 
       if (vendor) {
         vendorData = vendor;

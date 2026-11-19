@@ -5,7 +5,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
-import { slugify } from "@/lib/utils";
+import { slugify, cleanPhoneNumber } from "@/lib/utils";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -76,10 +76,13 @@ export async function POST(request: Request) {
       vouchedBy,
     } = parsed.data;
 
-    const contactPhone = phone?.trim() || whatsapp?.trim();
+    // Clean whitespaces from phone numbers for database consistency
+    const rawContactPhone = phone?.trim() || whatsapp?.trim();
+    const cleanPhone = rawContactPhone ? cleanPhoneNumber(rawContactPhone) : null;
+    const cleanWhatsapp = whatsapp?.trim() ? cleanPhoneNumber(whatsapp.trim()) : cleanPhone;
 
     // In Guest flow, phone is required for Tier 1 OTP/Instant flow, email is optional
-    if (role === "VENDOR" && sellerType === "guest" && !contactPhone) {
+    if (role === "VENDOR" && sellerType === "guest" && !cleanPhone) {
       return NextResponse.json(
         { error: "Phone number is required for guest vendor registration" },
         { status: 400 }
@@ -89,9 +92,9 @@ export async function POST(request: Request) {
     // Determine email
     let userEmail = email?.toLowerCase().trim();
     if (!userEmail) {
-      if (contactPhone) {
-        const cleanPhone = contactPhone.replace(/[^0-9]/g, "");
-        userEmail = `${cleanPhone}@guest.campustrade.ng`;
+      if (cleanPhone) {
+        const digitsOnly = cleanPhone.replace(/[^0-9]/g, "");
+        userEmail = `${digitsOnly}@guest.campustrade.ng`;
       } else {
         return NextResponse.json(
           { error: "Email address or phone number is required" },
@@ -100,26 +103,40 @@ export async function POST(request: Request) {
       }
     }
 
-    // Duplicate Phone Check across all users & vendors
-    if (contactPhone) {
+    // Duplicate Phone Check scoped strictly to the selected role/account type
+    if (cleanPhone) {
       const existingPhone = await prisma.user.findFirst({
-        where: { phone: contactPhone },
+        where: {
+          phone: cleanPhone,
+          role,
+        },
       });
       if (existingPhone) {
         return NextResponse.json(
-          { error: "This phone number is already registered to an existing account. Please sign in or use another number." },
+          {
+            error: `This phone number is already registered to an existing ${
+              role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
+            } account. Please sign in or use another number.`,
+          },
           { status: 409 }
         );
       }
     }
 
-    // Check if email already exists
-    const existingEmail = await prisma.user.findUnique({
-      where: { email: userEmail },
+    // Duplicate Email Check scoped strictly to the selected role/account type
+    const existingEmail = await prisma.user.findFirst({
+      where: {
+        email: userEmail,
+        role,
+      },
     });
     if (existingEmail) {
       return NextResponse.json(
-        { error: "An account with this email address already exists" },
+        {
+          error: `An account with this email address already exists for a ${
+            role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
+          }. Please sign in or use another email.`,
+        },
         { status: 409 }
       );
     }
@@ -206,104 +223,128 @@ export async function POST(request: Request) {
     // Payout delay: 72 hours for guest sellers (students get 48 hours)
     const payoutDelayHours = sellerType === "guest" ? 72 : 48;
 
-    // Create user and vendor profile in a transaction
-    const newUser = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          fullName,
-          email: userEmail,
-          passwordHash,
-          phone: contactPhone || null,
-          role,
-        },
+    let finalCampusId: string | null = null;
+    let finalStoreName = "";
+    let uniqueSlug = "";
+    let finalWhatsapp = "";
+
+    if (role === "VENDOR") {
+      finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
+      finalWhatsapp = cleanWhatsapp || cleanPhone || whatsapp?.trim() || rawContactPhone || "";
+
+      if (!finalWhatsapp) {
+        return NextResponse.json(
+          { error: "A WhatsApp phone number is required for vendors to coordinate customer meetups" },
+          { status: 400 }
+        );
+      }
+
+      // Validate campusId against database before opening transaction
+      let targetCampus = campusId
+        ? await prisma.campus.findUnique({ where: { id: campusId } })
+        : null;
+
+      if (!targetCampus) {
+        targetCampus = await prisma.campus.findFirst({
+          where: { isActive: true },
+          orderBy: { name: "asc" },
+        });
+      }
+
+      if (!targetCampus) {
+        return NextResponse.json(
+          { error: "No active campus found in the system" },
+          { status: 400 }
+        );
+      }
+      finalCampusId = targetCampus.id;
+
+      // Compute unique slug in one fast query before transaction
+      const baseSlug = slugify(finalStoreName);
+      const existingVendors = await prisma.vendorProfile.findMany({
+        where: { slug: { startsWith: baseSlug } },
+        select: { slug: true },
       });
+      const existingSlugs = new Set(existingVendors.map((v) => v.slug));
+      uniqueSlug = baseSlug;
+      let counter = 1;
+      while (existingSlugs.has(uniqueSlug)) {
+        uniqueSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+    }
 
-      if (role === "VENDOR") {
-        const finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
-
-        // Validate campusId against database
-        let targetCampus = campusId
-          ? await tx.campus.findUnique({ where: { id: campusId } })
-          : null;
-
-        if (!targetCampus) {
-          targetCampus = await tx.campus.findFirst({
-            where: { isActive: true },
-            orderBy: { name: "asc" },
-          });
-        }
-
-        if (!targetCampus) {
-          throw new Error("No active campus found in the system");
-        }
-
-        const finalCampusId = targetCampus.id;
-        const finalWhatsapp = whatsapp?.trim() || contactPhone || "";
-
-        if (!finalWhatsapp) {
-          throw new Error("A WhatsApp phone number is required for vendors to coordinate customer meetups");
-        }
-
-        const baseSlug = slugify(finalStoreName);
-        let uniqueSlug = baseSlug;
-        let counter = 1;
-        while (await tx.vendorProfile.findUnique({ where: { slug: uniqueSlug } })) {
-          uniqueSlug = `${baseSlug}-${counter}`;
-          counter++;
-        }
-
-        const vendorProfile = await tx.vendorProfile.create({
+    // Create user and vendor profile in a transaction with extended timeout for cloud Supabase
+    const newUser = await prisma.$transaction(
+      async (tx) => {
+        const user = await tx.user.create({
           data: {
-            userId: user.id,
-            storeName: finalStoreName,
-            slug: uniqueSlug,
-            campusId: finalCampusId,
-            whatsapp: finalWhatsapp,
-            storeDescription: storeDescription || null,
-            sellerType,
-            verificationTier,
-            payoutDelayHours,
-            // Student fields
-            faculty: faculty || null,
-            department: department || null,
-            studentIdUrl: studentIdUrl || null,
-            // Guest fields
-            businessName: businessName || finalStoreName,
-            businessCategory: businessCategory || null,
-            businessAddress: businessAddress || null,
-            businessPhotoPath: businessPhotoPath || null,
-            cacNumber: cacNumber || null,
-            cacDocumentPath: cacDocumentPath || null,
-            isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
-            governmentIdType: governmentIdType || null,
-            governmentIdHash: governmentIdHash || null,
-            idDocumentPath: idDocumentPath || null,
-            selfieDocumentPath: selfieDocumentPath || null,
-            vouchedBy: vouchedBy || null,
-            status: vendorStatus as any,
+            fullName,
+            email: userEmail,
+            passwordHash,
+            phone: cleanPhone || rawContactPhone || null,
+            role,
           },
         });
 
-        // If vouched by an existing user/vendor, record vouch entry
-        if (vouchedBy) {
-          const voucherUser = await tx.user.findUnique({
-            where: { id: vouchedBy },
+        if (role === "VENDOR" && finalCampusId) {
+          const vendorProfile = await tx.vendorProfile.create({
+            data: {
+              userId: user.id,
+              storeName: finalStoreName,
+              slug: uniqueSlug,
+              campusId: finalCampusId,
+              whatsapp: finalWhatsapp,
+              storeDescription: storeDescription || null,
+              sellerType,
+              verificationTier,
+              payoutDelayHours,
+              // Student fields
+              faculty: faculty || null,
+              department: department || null,
+              studentIdUrl: studentIdUrl || null,
+              // Guest fields
+              businessName: businessName || finalStoreName,
+              businessCategory: businessCategory || null,
+              businessAddress: businessAddress || null,
+              businessPhotoPath: businessPhotoPath || null,
+              cacNumber: cacNumber || null,
+              cacDocumentPath: cacDocumentPath || null,
+              isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
+              governmentIdType: governmentIdType || null,
+              governmentIdHash: governmentIdHash || null,
+              idDocumentPath: idDocumentPath || null,
+              selfieDocumentPath: selfieDocumentPath || null,
+              vouchedBy: vouchedBy || null,
+              status: vendorStatus as any,
+            },
           });
-          if (voucherUser) {
-            await tx.vouch.create({
-              data: {
-                voucherId: voucherUser.id,
-                guestId: vendorProfile.id,
-                status: "ACCEPTED",
-                notes: `Vouched at registration for ${finalStoreName}`,
-              },
+
+          // If vouched by an existing user/vendor, record vouch entry
+          if (vouchedBy) {
+            const voucherUser = await tx.user.findUnique({
+              where: { id: vouchedBy },
             });
+            if (voucherUser) {
+              await tx.vouch.create({
+                data: {
+                  voucherId: voucherUser.id,
+                  guestId: vendorProfile.id,
+                  status: "ACCEPTED",
+                  notes: `Vouched at registration for ${finalStoreName}`,
+                },
+              });
+            }
           }
         }
-      }
 
-      return user;
-    });
+        return user;
+      },
+      {
+        maxWait: 15000,
+        timeout: 30000,
+      }
+    );
 
     const token = signToken({
       userId: newUser.id,
@@ -337,7 +378,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error("Registration API error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to complete registration" },
+      { error: "Something went wrong. Please try again later." },
       { status: 500 }
     );
   }
