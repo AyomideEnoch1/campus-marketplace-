@@ -10,7 +10,7 @@ import {
   Trash2,
   ExternalLink,
   Users,
-  Store,
+  ShoppingBag,
   GraduationCap,
   ShieldAlert,
   ShieldCheck,
@@ -395,7 +395,7 @@ export function AdminCampusManager({
                       <span><strong>{campus.studentCount ?? 0}</strong> Students</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-neutral-300">
-                      <Store className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                      <ShoppingBag className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                       <span>
                         <strong>{guestCount}</strong> / {guestCap} Guests
                       </span>

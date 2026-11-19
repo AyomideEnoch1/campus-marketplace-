@@ -14,7 +14,7 @@ import {
   SlidersHorizontal,
   Layers,
   ThumbsUp,
-  Store,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -328,7 +328,7 @@ export default async function HomePage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
-                  <Store className="w-4 h-4" />
+                  <ShoppingBag className="w-4 h-4" />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-neutral-900 leading-tight">Featured Campus Stores</h4>

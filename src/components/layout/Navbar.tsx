@@ -8,7 +8,6 @@ import {
   Heart,
   User,
   GraduationCap,
-  Store,
   LogOut,
   ShieldAlert,
   ShieldCheck,
@@ -123,7 +122,7 @@ export function Navbar({ initialUser }: NavbarProps) {
     { name: "Home", href: "/", icon: GraduationCap },
     { name: "Shop", href: "/shop", icon: Compass },
     { name: "Campuses", href: "/campuses", icon: GraduationCap },
-    { name: "Vendors", href: "/vendors", icon: Store },
+    { name: "Vendors", href: "/vendors", icon: ShoppingBag },
     { name: "About", href: "/about", icon: Sparkles },
   ];
 
@@ -295,7 +294,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                       onClick={() => setUserDropdownOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-700 hover:bg-emerald-50 font-bold transition-colors"
                     >
-                      <Store className="w-4 h-4 text-emerald-600" />
+                      <ShoppingBag className="w-4 h-4 text-emerald-600" />
                       Vendor Dashboard
                     </Link>
                   )}
@@ -436,7 +435,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                   className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-sm font-bold bg-emerald-600 text-white shadow-xs"
                 >
                   <span className="flex items-center gap-2.5">
-                    <Store className="w-4 h-4" />
+                    <ShoppingBag className="w-4 h-4" />
                     Vendor Dashboard
                   </span>
                   <span>&rarr;</span>
@@ -498,7 +497,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                 className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-amber-50 border border-emerald-200/90 text-emerald-950 font-bold text-xs shadow-xs group"
               >
                 <span className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
+                  <ShoppingBag className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
                   Become a Student Seller
                 </span>
                 <span className="text-emerald-700">&rarr;</span>

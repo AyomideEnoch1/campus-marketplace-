@@ -9,7 +9,6 @@ import {
   Package,
   ShieldCheck,
   ChevronRight,
-  Store,
 } from "lucide-react";
 import { ChatRoom, ChatMessageItem, ConversationDetails } from "./ChatRoom";
 import { Input } from "@/components/ui/input";

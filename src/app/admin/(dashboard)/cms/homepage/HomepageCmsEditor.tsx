@@ -12,7 +12,7 @@ import {
   Monitor,
   Smartphone,
   Eye,
-  Store,
+  ShoppingBag,
   Layers,
   Clock,
   RotateCcw,
@@ -389,7 +389,7 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                   {/* Desktop Floating Badges & Visual Graphic */}
                   <div className="hidden md:flex flex-col items-center justify-center absolute right-12 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
                     <div className="w-44 h-44 rounded-full bg-gradient-to-tr from-emerald-500/30 to-teal-400/20 border border-emerald-400/30 flex items-center justify-center relative shadow-2xl">
-                      <Store className="w-16 h-16 text-emerald-300" />
+                      <ShoppingBag className="w-16 h-16 text-emerald-300" />
                       <div className="absolute -top-3 -right-2 bg-gradient-to-r from-amber-400 to-orange-500 text-neutral-950 font-black text-[10px] px-2.5 py-1 rounded-full shadow-lg">
                         UP TO 50% OFF
                       </div>

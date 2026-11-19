@@ -12,7 +12,7 @@ import {
   ArrowUpDown,
   Tag,
   DollarSign,
-  Store,
+  ShoppingBag,
   ShieldCheck,
   ArrowLeft,
 } from "lucide-react";
@@ -700,7 +700,7 @@ export function MobileShopFilters({
                 <div className="space-y-2.5 pt-1 border-t border-neutral-100">
                   <label className="text-xs font-bold uppercase tracking-wider text-neutral-900 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
-                      <Store className="w-3.5 h-3.5 text-emerald-600" />
+                      <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
                       Student Storefronts
                     </span>
                     {draftVendor && (

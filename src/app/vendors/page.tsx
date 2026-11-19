@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Store, MapPin, Package, ShieldCheck, ArrowRight, MessageCircle, MessageSquare } from "lucide-react";
+import { ShoppingBag, MapPin, Package, ShieldCheck, ArrowRight, MessageCircle, MessageSquare } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

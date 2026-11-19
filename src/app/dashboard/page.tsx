@@ -8,7 +8,6 @@ import {
   TrendingUp,
   PlusCircle,
   ExternalLink,
-  Store,
   Palette,
   MapPin,
   Clock,
@@ -141,7 +140,7 @@ export default async function VendorDashboardPage() {
           </Link>
           <Link href={`/store/${vendor.slug}`} target="_blank">
             <Button variant="outline" size="sm" className="font-semibold gap-1.5 text-xs">
-              <Store className="w-4 h-4" /> Live Store
+              <ShoppingBag className="w-4 h-4" /> Live Store
             </Button>
           </Link>
         </div>

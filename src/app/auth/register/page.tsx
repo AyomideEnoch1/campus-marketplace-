@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Store,
   ShoppingBag,
   CheckCircle2,
   ShieldCheck,
@@ -303,7 +302,7 @@ function RegisterContent() {
                 className="w-full group p-5 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-neutral-200/90 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-lg hover:shadow-emerald-600/5 relative flex items-start gap-4 cursor-pointer"
               >
                 <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 group-hover:border-emerald-300 text-neutral-700 group-hover:text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                  <Store className="w-6 h-6" />
+                  <ShoppingBag className="w-6 h-6" />
                 </div>
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -362,7 +361,7 @@ function RegisterContent() {
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
                   {role === "VENDOR" ? (
                     <>
-                      <Store className="w-3.5 h-3.5 text-emerald-600" />
+                      <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
                       <span>Vendor Flow</span>
                     </>
                   ) : (
@@ -664,7 +663,7 @@ function RegisterContent() {
                       Store Name <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
-                      <Store className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <ShoppingBag className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                       <Input
                         type="text"
                         required

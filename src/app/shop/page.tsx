@@ -17,7 +17,7 @@ import {
   Dumbbell,
   Briefcase,
   LayoutGrid,
-  Store,
+  ShoppingBag,
   ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -813,7 +813,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             {matchingVendors.length > 0 && (
               <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/40 to-white border border-emerald-200/90 shadow-2xs space-y-2.5">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                  <Store className="w-4 h-4 text-emerald-600" />
+                  <ShoppingBag className="w-4 h-4 text-emerald-600" />
                   <span>Matching Vendor Store{matchingVendors.length > 1 ? "s" : ""} ({matchingVendors.length})</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
