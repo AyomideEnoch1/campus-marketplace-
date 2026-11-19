@@ -15,8 +15,16 @@ export function Footer() {
   ) {
     return null;
   }
+
+  // Remove footer on mobile screen for vendor dashboard pages (e.g. overview page)
+  const isDashboard = pathname?.startsWith("/dashboard");
+
   return (
-    <footer className="bg-gradient-to-b from-neutral-50 via-emerald-50/25 to-neutral-100/80 text-neutral-600 pt-16 pb-24 md:pb-12 border-t border-neutral-200/80 transition-colors">
+    <footer
+      className={`bg-gradient-to-b from-neutral-50 via-emerald-50/25 to-neutral-100/80 text-neutral-600 pt-16 pb-24 md:pb-12 border-t border-neutral-200/80 transition-colors ${
+        isDashboard ? "hidden md:block" : ""
+      }`}
+    >
       <div className="container mx-auto px-4">
         {/* Main Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">

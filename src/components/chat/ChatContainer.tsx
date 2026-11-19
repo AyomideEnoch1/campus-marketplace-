@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   MessageSquare,
@@ -53,55 +53,135 @@ interface ChatContainerProps {
   initialConversations: ConversationListItem[];
   currentUserId: string;
   isVendorPortal?: boolean;
+  initialMessages?: ChatMessageItem[];
+  initialActiveConversationId?: string | null;
 }
 
 export function ChatContainer({
   initialConversations,
   currentUserId,
   isVendorPortal = false,
+  initialMessages = [],
+  initialActiveConversationId,
 }: ChatContainerProps) {
   const [conversations, setConversations] = useState<ConversationListItem[]>(
     initialConversations
   );
+
+  const initialTargetId =
+    initialActiveConversationId ||
+    (initialConversations.length > 0 ? initialConversations[0].id : null);
+
   const [activeConversationId, setActiveConversationId] = useState<string | null>(
-    initialConversations[0]?.id || null
+    initialTargetId
   );
+
+  const initialActiveConv =
+    initialConversations.find((c) => c.id === initialTargetId) ||
+    initialConversations[0] ||
+    null;
+
   const [activeConversation, setActiveConversation] =
     useState<ConversationDetails | null>(
-      initialConversations[0]
-        ? (initialConversations[0] as unknown as ConversationDetails)
-        : null
+      initialActiveConv ? (initialActiveConv as unknown as ConversationDetails) : null
     );
-  const [messages, setMessages] = useState<ChatMessageItem[]>([]);
+
+  const [messages, setMessages] = useState<ChatMessageItem[]>(initialMessages);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
 
-  // Load messages when selecting a conversation
+  // Load messages whenever activeConversationId changes
+  useEffect(() => {
+    if (!activeConversationId) return;
+
+    let isMounted = true;
+
+    // If initialMessages already belongs to this conversation on first render, don't re-fetch immediately
+    if (
+      messages.length > 0 &&
+      messages[0].conversationId === activeConversationId
+    ) {
+      return;
+    }
+
+    setLoadingMessages(true);
+
+    fetch(`/api/conversations/${activeConversationId}/messages`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.messages) {
+          setMessages(data.messages);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load messages for conversation:", err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoadingMessages(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeConversationId]);
+
+  // Handle selecting a conversation
   const handleSelectConversation = async (conv: ConversationListItem) => {
     setActiveConversationId(conv.id);
     setActiveConversation(conv as unknown as ConversationDetails);
     setShowMobileChat(true);
-    setLoadingMessages(true);
 
+    // Reset unread counter locally
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === conv.id ? { ...c, _count: { messages: 0 } } : c
+      )
+    );
+
+    setLoadingMessages(true);
     try {
       const res = await fetch(`/api/conversations/${conv.id}/messages`);
       if (res.ok) {
         const data = await res.json();
         setMessages(data.messages || []);
-        // Reset unread counter locally
-        setConversations((prev) =>
-          prev.map((c) =>
-            c.id === conv.id ? { ...c, _count: { messages: 0 } } : c
-          )
-        );
       }
     } catch (e) {
-      console.error("Failed to load messages", e);
+      console.error("Failed to load messages:", e);
     } finally {
       setLoadingMessages(false);
     }
   };
+
+  // Callback when a new message is successfully sent
+  const handleMessageSent = useCallback((newMessage: ChatMessageItem) => {
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === newMessage.id)) return prev;
+      return [...prev, newMessage];
+    });
+
+    setConversations((prev) => {
+      const updated = prev.map((c) => {
+        if (c.id === newMessage.conversationId) {
+          return {
+            ...c,
+            lastMessage: newMessage.content,
+            lastMessageAt: newMessage.createdAt,
+          };
+        }
+        return c;
+      });
+
+      // Move the active conversation with the newest message to the top
+      return updated.sort(
+        (a, b) =>
+          new Date(b.lastMessageAt).getTime() -
+          new Date(a.lastMessageAt).getTime()
+      );
+    });
+  }, []);
 
   const filteredConversations = conversations.filter((c) => {
     const isMeBuyer = currentUserId === c.buyerId;
@@ -230,6 +310,7 @@ export function ChatContainer({
             initialMessages={messages}
             currentUserId={currentUserId}
             onBack={() => setShowMobileChat(false)}
+            onMessageSent={handleMessageSent}
           />
         ) : (
           <div className="w-full h-full bg-white border border-neutral-200/80 rounded-3xl flex flex-col items-center justify-center p-8 text-center text-neutral-500 shadow-xs">

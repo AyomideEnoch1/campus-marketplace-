@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ChatContainer, ConversationListItem } from "@/components/chat/ChatContainer";
+import { ChatMessageItem } from "@/components/chat/ChatRoom";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,13 @@ export default async function MessagesPage({
       });
 
       if (vendor && vendor.userId !== session.id) {
+        // Reuse existing conversation thread between this buyer & vendor to prevent clearing history
         let existing = await prisma.conversation.findFirst({
           where: {
             buyerId: session.id,
             vendorId: vendor.id,
-            productId: searchParams.product || null,
           },
+          orderBy: { lastMessageAt: "desc" },
         });
 
         if (!existing) {
@@ -43,6 +45,15 @@ export default async function MessagesPage({
               vendorId: vendor.id,
               productId: searchParams.product || null,
               lastMessage: "Started inquiry",
+              lastMessageAt: new Date(),
+            },
+          });
+        } else if (searchParams.product && existing.productId !== searchParams.product) {
+          // Update the context product without clearing chat history
+          await prisma.conversation.update({
+            where: { id: existing.id },
+            data: {
+              productId: searchParams.product,
               lastMessageAt: new Date(),
             },
           });
@@ -105,12 +116,56 @@ export default async function MessagesPage({
     _count: c._count,
   }));
 
+  // Identify targeted active conversation
+  let targetConversationId = conversations[0]?.id || null;
+  if (searchParams?.vendor) {
+    const matched = conversations.find(
+      (c) =>
+        c.vendorId === searchParams.vendor ||
+        c.vendor.slug === searchParams.vendor ||
+        c.vendor.id === searchParams.vendor
+    );
+    if (matched) {
+      targetConversationId = matched.id;
+    }
+  }
+
+  // Prefetch messages for the active conversation so history displays instantly
+  let initialMessages: ChatMessageItem[] = [];
+  if (targetConversationId) {
+    const rawMessages = await prisma.chatMessage.findMany({
+      where: { conversationId: targetConversationId },
+      orderBy: { createdAt: "asc" },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            fullName: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    initialMessages = rawMessages.map((m) => ({
+      id: m.id,
+      conversationId: m.conversationId,
+      senderId: m.senderId,
+      content: m.content,
+      isRead: m.isRead,
+      createdAt: m.createdAt.toISOString(),
+      sender: m.sender,
+    }));
+  }
+
   return (
     <div className="h-[calc(100dvh-64px)] md:h-[calc(100dvh-113px)] flex flex-col p-2 sm:p-4 max-w-7xl mx-auto w-full overflow-hidden -mb-16 md:mb-0">
       <ChatContainer
         initialConversations={conversations}
         currentUserId={session.id}
         isVendorPortal={false}
+        initialMessages={initialMessages}
+        initialActiveConversationId={targetConversationId}
       />
     </div>
   );
