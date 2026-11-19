@@ -37,6 +37,8 @@ interface OrderMilestoneTrackerProps {
     updatedAt?: string | Date;
     deliveryMethod?: string;
     deliveryAddress?: string;
+    paid_at?: string | Date | null;
+    escrow_status?: string | null;
     meetupPoint?: {
       name: string;
       description?: string | null;
@@ -73,6 +75,7 @@ export function buildTrackingMilestones(order: {
   status: string;
   createdAt: string | Date;
   updatedAt?: string | Date;
+  isUnpaid?: boolean;
 }): TrackingMilestone[] {
   const baseTime = new Date(order.createdAt).getTime() || Date.now();
   const updateTime = order.updatedAt
@@ -151,7 +154,7 @@ export function buildTrackingMilestones(order: {
     {
       id: "step-2",
       stepNumber: 2,
-      title: "Pending Confirmation",
+      title: order.isUnpaid ? "Payment Pending" : "Pending Confirmation",
       date: s2 === "completed" ? f2.date : undefined,
       time: s2 === "completed" ? f2.time : undefined,
       rawDate: s2 === "completed" ? t2 : undefined,
@@ -228,13 +231,19 @@ function renderMilestoneIcon(
 }
 
 export function OrderMilestoneTracker({ order }: OrderMilestoneTrackerProps) {
+  const isUnpaid =
+    !order.paid_at &&
+    order.escrow_status === "pending" &&
+    order.status !== "CANCELLED";
+
   const milestones = React.useMemo(() => {
     return buildTrackingMilestones({
       status: order.status,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+      isUnpaid,
     });
-  }, [order.status, order.createdAt, order.updatedAt]);
+  }, [order.status, order.createdAt, order.updatedAt, isUnpaid]);
 
   const completedCount = milestones.filter(
     (m) => m.status === "completed",

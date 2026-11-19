@@ -82,6 +82,7 @@ export default async function VendorDashboardPage() {
       sub: `${publishedProducts} live on shop`,
       icon: Package,
       color: "text-emerald-600 bg-emerald-50",
+      href: "/dashboard/products",
     },
     {
       label: "Listing Views",
@@ -89,6 +90,7 @@ export default async function VendorDashboardPage() {
       sub: "Student impressions",
       icon: Eye,
       color: "text-blue-600 bg-blue-50",
+      href: "/dashboard/products",
     },
     {
       label: "Order Requests",
@@ -96,6 +98,7 @@ export default async function VendorDashboardPage() {
       sub: "Direct buyer inquiries",
       icon: ShoppingBag,
       color: "text-amber-600 bg-amber-50",
+      href: "/dashboard/orders",
     },
     {
       label: "Store Layout",
@@ -103,6 +106,7 @@ export default async function VendorDashboardPage() {
       sub: "Switchable in customizer",
       icon: Palette,
       color: "text-purple-600 bg-purple-50",
+      href: "/dashboard/customize",
     },
   ];
 
@@ -146,23 +150,24 @@ export default async function VendorDashboardPage() {
         {stats.map((s, i) => {
           const Icon = s.icon;
           return (
-            <div
+            <Link
               key={i}
-              className="p-3 sm:p-5 rounded-2xl bg-white border border-neutral-200/80 shadow-xs flex items-center justify-between gap-2"
+              href={s.href}
+              className="p-3 sm:p-5 rounded-2xl bg-white border border-neutral-200/80 shadow-xs flex items-center justify-between gap-2 hover:border-emerald-300 hover:shadow-md transition-all group cursor-pointer"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider truncate">
+                <p className="text-[10px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider truncate group-hover:text-neutral-700 transition-colors">
                   {s.label}
                 </p>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-neutral-900 mt-0.5 sm:mt-1">
+                <h3 className="text-xl sm:text-2xl font-extrabold text-neutral-900 mt-0.5 sm:mt-1 group-hover:text-emerald-600 transition-colors">
                   {s.value}
                 </h3>
                 <p className="text-[10px] sm:text-xs text-neutral-400 mt-0.5 truncate">{s.sub}</p>
               </div>
-              <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${s.color}`}>
+              <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${s.color} group-hover:scale-105 transition-transform`}>
                 <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

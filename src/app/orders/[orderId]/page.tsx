@@ -11,11 +11,14 @@ import {
   CheckCircle2,
   AlertTriangle,
   MessageCircle,
+  MessageSquare,
   Copy,
   Check,
   ArrowLeft,
   X,
   AlertCircle,
+  CreditCard,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +35,40 @@ export default function OrderTrackingPage() {
   const [codeCopied, setCodeCopied] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [paying, setPaying] = React.useState(false);
+  const [paymentError, setPaymentError] = React.useState<string | null>(null);
+
+  const handleCompletePayment = async () => {
+    if (!order) return;
+    try {
+      setPaying(true);
+      setPaymentError(null);
+      const res = await fetch("/api/payments/pay-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to initiate payment");
+      }
+      if (data.paymentLink) {
+        window.location.href = data.paymentLink;
+      } else {
+        throw new Error("No payment link returned from server");
+      }
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      setPaymentError(
+        err.message || "Failed to start payment. Please try again."
+      );
+    } finally {
+      setPaying(false);
+    }
+  };
 
   // Dispute modal state
   const [disputeModalOpen, setDisputeModalOpen] = React.useState(false);
@@ -145,6 +182,10 @@ export default function OrderTrackingPage() {
   }
 
   const escrowStatus = order.escrow_status || "pending";
+  const isUnpaid =
+    !order.paid_at &&
+    escrowStatus === "pending" &&
+    order.status !== "CANCELLED";
   const isPaidHeld = escrowStatus === "paid_held";
   const isDelivered = escrowStatus === "delivered";
   const isConfirmed = escrowStatus === "confirmed" || escrowStatus === "payout_pending" || escrowStatus === "released";
@@ -163,6 +204,11 @@ export default function OrderTrackingPage() {
             </Link>
             <h1 className="text-2xl sm:text-3xl font-black text-neutral-950 tracking-tight flex items-center gap-3">
               <span>Order #{order.orderNumber}</span>
+              {isUnpaid && (
+                <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs font-bold">
+                  Payment Pending
+                </Badge>
+              )}
               {isPaidHeld && (
                 <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold">
                   Funds Held in Escrow
@@ -184,18 +230,93 @@ export default function OrderTrackingPage() {
             </p>
           </div>
 
-          {order.vendor?.whatsapp && (
-            <a
-              href={`https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi%20${encodeURIComponent(order.vendor.storeName)},%20I%20am%20chatting%20regarding%20my%20CampusTrade%20Order%20${encodeURIComponent(order.orderNumber)}.`}
-              target="_blank"
-              rel="noopener noreferrer"
+          <div className="flex items-center gap-2">
+            {isUnpaid && (
+              <Button
+                size="sm"
+                onClick={handleCompletePayment}
+                disabled={paying}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl gap-1.5 shadow-md shadow-emerald-600/30"
+              >
+                {paying ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Connecting...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>Complete Order &amp; Pay</span>
+                  </>
+                )}
+              </Button>
+            )}
+
+            <Link
+              href={`/messages?vendor=${order.vendor?.slug || order.vendor?.id || ""}${order.items?.[0]?.productId ? `&product=${order.items[0].productId}` : ""}`}
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all shrink-0"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>Chat Vendor on WhatsApp</span>
-            </a>
-          )}
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat with Vendor</span>
+            </Link>
+          </div>
         </div>
+
+        {paymentError && (
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{paymentError}</span>
+            </div>
+            <button
+              onClick={() => setPaymentError(null)}
+              className="text-rose-500 hover:text-rose-800 text-xs font-bold underline shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {isUnpaid && (
+          <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-amber-950">
+                    Payment Pending for Order #{order.orderNumber}
+                  </h3>
+                  <Badge className="bg-amber-200/90 text-amber-950 border-amber-400 text-[10px] font-black uppercase">
+                    Action Required
+                  </Badge>
+                </div>
+                <p className="text-xs text-amber-800/90 leading-relaxed max-w-xl">
+                  This order was created without completing payment. Complete your payment of <strong>{formatNGN(order.totalAmount)}</strong> now so funds are secured in platform escrow and the vendor can deliver your order.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleCompletePayment}
+              disabled={paying}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl h-11 px-5 shadow-lg shadow-emerald-600/30 shrink-0 w-full sm:w-auto gap-2"
+            >
+              {paying ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Connecting to Flutterwave...</span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4" />
+                  <span>Complete Order &amp; Pay Now &rarr;</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* 1. Escrow Status Timeline */}
         <div className="bg-white rounded-3xl border border-neutral-200/90 shadow-xs p-6 sm:p-8 space-y-6">

@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   ShoppingBag,
   MessageCircle,
+  MessageSquare,
   Clock,
   CheckCircle,
   XCircle,
@@ -121,19 +123,13 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                 </span>
               </div>
 
-              <a
-                href={`https://wa.me/${order.buyerPhone.replace(/[^0-9]/g, "")}?text=Hi%20${encodeURIComponent(
-                  order.buyerName
-                )},%20I%20am%20following%20up%20on%20your%20order%20#${
-                  order.orderNumber
-                }%20on%20CampusTrade`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`/dashboard/messages${order.buyerId ? `?buyer=${order.buyerId}` : ""}`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs mt-2"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
-                Contact on WhatsApp
-              </a>
+                <MessageSquare className="w-3.5 h-3.5" />
+                Chat with Customer
+              </Link>
             </div>
           </div>
 

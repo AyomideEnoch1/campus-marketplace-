@@ -1,7 +1,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle, ShoppingBag, Sparkles, ArrowRight } from "lucide-react";
+import { MessageCircle, MessageSquare, ShoppingBag, Sparkles, ArrowRight } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -64,19 +64,13 @@ export function ShowcaseLayout({ vendor, products }: LayoutProps) {
                 </Button>
               </Link>
 
-              {vendor.whatsapp && (
-                <a
-                  href={`https://wa.me/${vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20want%20to%20order%20the%20featured%20"${encodeURIComponent(
-                    featured.title
-                  )}"%20from%20your%20store`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-neutral-900 bg-white hover:bg-neutral-100 transition-colors shadow-sm"
-                >
-                  <MessageCircle className="w-4 h-4 text-emerald-600" />
-                  Order on WhatsApp
-                </a>
-              )}
+              <Link
+                href={`/messages?vendor=${vendor.slug || vendor.id}&product=${featured.id}`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-neutral-900 bg-white hover:bg-neutral-100 transition-colors shadow-sm"
+              >
+                <MessageSquare className="w-4 h-4 text-emerald-600" />
+                Chat with Vendor
+              </Link>
             </div>
           </div>
 

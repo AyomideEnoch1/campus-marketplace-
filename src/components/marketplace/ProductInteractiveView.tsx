@@ -437,33 +437,15 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
               </button>
             </div>
 
-            {/* Direct Chat & WhatsApp Action */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Direct In-App Chat Action */}
+            <div>
               <Link
                 href={`/messages?vendor=${product.vendor.id}&product=${product.id}`}
-                className="w-full h-12 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
+                className="w-full h-12 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01]"
               >
                 <MessageSquare className="w-4 h-4 text-emerald-400" />
-                Chat with Seller
+                <span>Chat with Seller</span>
               </Link>
-
-              {product.vendor.whatsapp ? (
-                <a
-                  href={`https://wa.me/${product.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20"${encodeURIComponent(
-                    product.title
-                  )}"%20listed%20for%20${formatNGN(product.price)}%20on%20CampusTrade`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all hover:scale-[1.01]"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Chat on WhatsApp
-                </a>
-              ) : (
-                <div className="w-full h-12 rounded-2xl bg-neutral-100 text-neutral-500 font-medium text-xs flex items-center justify-center">
-                  Chat with Seller Only
-                </div>
-              )}
             </div>
           </div>
         </div>

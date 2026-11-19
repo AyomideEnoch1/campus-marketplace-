@@ -6,7 +6,11 @@ import { ChatMessageItem } from "@/components/chat/ChatRoom";
 
 export const dynamic = "force-dynamic";
 
-export default async function VendorMessagesPage() {
+export default async function VendorMessagesPage({
+  searchParams,
+}: {
+  searchParams?: { buyer?: string; conversation?: string; product?: string };
+}) {
   const session = await getSession();
   if (!session) {
     redirect("/auth/login?redirect=/dashboard/messages");
@@ -18,6 +22,35 @@ export default async function VendorMessagesPage() {
 
   if (!vendor) {
     redirect("/vendor/register");
+  }
+
+  if (searchParams?.buyer) {
+    try {
+      const buyerUser = await prisma.user.findUnique({
+        where: { id: searchParams.buyer },
+      });
+      if (buyerUser) {
+        const existing = await prisma.conversation.findFirst({
+          where: {
+            buyerId: buyerUser.id,
+            vendorId: vendor.id,
+          },
+        });
+        if (!existing) {
+          await prisma.conversation.create({
+            data: {
+              buyerId: buyerUser.id,
+              vendorId: vendor.id,
+              productId: searchParams.product || null,
+              lastMessage: "Vendor initiated chat",
+              lastMessageAt: new Date(),
+            },
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Vendor auto init chat error:", e);
+    }
   }
 
   const rawConversations = await prisma.conversation.findMany({
@@ -69,9 +102,16 @@ export default async function VendorMessagesPage() {
     _count: c._count,
   }));
 
-  // Prefetch messages for vendor's first active conversation
+  // Prefetch messages for vendor's active conversation
   let initialMessages: ChatMessageItem[] = [];
-  const targetConvId = conversations[0]?.id || null;
+  let targetConvId = conversations[0]?.id || null;
+  if (searchParams?.conversation) {
+    const found = conversations.find((c) => c.id === searchParams.conversation);
+    if (found) targetConvId = found.id;
+  } else if (searchParams?.buyer) {
+    const found = conversations.find((c) => c.buyerId === searchParams.buyer);
+    if (found) targetConvId = found.id;
+  }
   if (targetConvId) {
     const rawMessages = await prisma.chatMessage.findMany({
       where: { conversationId: targetConvId },

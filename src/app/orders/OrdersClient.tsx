@@ -8,6 +8,7 @@ import {
   ShoppingBag,
   Search,
   MessageCircle,
+  MessageSquare,
   ExternalLink,
   Calendar,
   MapPin,
@@ -20,6 +21,8 @@ import {
   ChevronRight,
   ShieldCheck,
   Truck,
+  CreditCard,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +64,10 @@ interface OrderData {
     description: string | null;
   } | null;
   notes?: string | null;
+  paid_at?: string | Date | null;
+  escrow_status?: string | null;
+  escrow_mode?: string | null;
+  tx_ref?: string | null;
   createdAt: string | Date;
   updatedAt?: string | Date;
   vendor: {
@@ -102,6 +109,34 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
   const orders = localOrders;
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedStatus, setSelectedStatus] = React.useState<string>("ALL");
+  const [payingOrderId, setPayingOrderId] = React.useState<string | null>(null);
+  const [paymentError, setPaymentError] = React.useState<string | null>(null);
+
+  const handleCompletePayment = async (orderId: string) => {
+    try {
+      setPayingOrderId(orderId);
+      setPaymentError(null);
+      const res = await fetch("/api/payments/pay-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to initiate payment");
+      }
+      if (data.paymentLink) {
+        window.location.href = data.paymentLink;
+      } else {
+        throw new Error("No payment link returned from server");
+      }
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      setPaymentError(err.message || "Failed to start payment. Please try again.");
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
 
   // Review modal state
   const [reviewModalData, setReviewModalData] = React.useState<{
@@ -112,10 +147,23 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
     sellerStoreName: string;
   } | null>(null);
 
+  const unpaidOrdersCount = orders.filter(
+    (o) => !o.paid_at && o.escrow_status === "pending" && o.status !== "CANCELLED"
+  ).length;
+
   const filteredOrders = React.useMemo(() => {
     return orders.filter((order) => {
+      const isUnpaid =
+        !order.paid_at &&
+        order.escrow_status === "pending" &&
+        order.status !== "CANCELLED";
+
       // Status filter
-      if (selectedStatus !== "ALL" && order.status !== selectedStatus) {
+      if (selectedStatus === "UNPAID") {
+        if (!isUnpaid) return false;
+      } else if (selectedStatus === "PENDING") {
+        if (order.status !== "PENDING" || isUnpaid) return false;
+      } else if (selectedStatus !== "ALL" && order.status !== selectedStatus) {
         return false;
       }
 
@@ -158,8 +206,22 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
     router.refresh();
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
+  const getStatusBadge = (order: OrderData) => {
+    const isUnpaid =
+      !order.paid_at &&
+      order.escrow_status === "pending" &&
+      order.status !== "CANCELLED";
+
+    if (isUnpaid) {
+      return (
+        <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs font-semibold flex items-center gap-1 shadow-2xs">
+          <Clock className="w-3.5 h-3.5 text-amber-700 animate-pulse" />
+          Payment Pending
+        </Badge>
+      );
+    }
+
+    switch (order.status) {
       case "CONFIRMED":
         return (
           <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-xs font-semibold flex items-center gap-1">
@@ -194,10 +256,17 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
 
   const statuses = [
     { label: "All Orders", value: "ALL", count: orders.length },
+    ...(unpaidOrdersCount > 0
+      ? [{ label: "Payment Pending", value: "UNPAID", count: unpaidOrdersCount }]
+      : []),
     {
-      label: "Pending",
+      label: "Pending Vendor",
       value: "PENDING",
-      count: orders.filter((o) => o.status === "PENDING").length,
+      count: orders.filter(
+        (o) =>
+          o.status === "PENDING" &&
+          !(!o.paid_at && o.escrow_status === "pending")
+      ).length,
     },
     {
       label: "Confirmed",
@@ -231,7 +300,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
               </Badge>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-              Track incoming orders, coordinate meetups on WhatsApp, and leave verified reviews.
+              Track incoming orders, coordinate meetups with vendors, and leave verified reviews.
             </p>
           </div>
 
@@ -243,6 +312,22 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
             </Link>
           </div>
         </div>
+
+        {/* Payment Error Alert */}
+        {paymentError && (
+          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium flex items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{paymentError}</span>
+            </div>
+            <button
+              onClick={() => setPaymentError(null)}
+              className="text-rose-500 hover:text-rose-800 text-xs font-bold underline shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Filter and Search Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -305,6 +390,11 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
         ) : (
           <div className="space-y-6">
             {filteredOrders.map((order) => {
+              const isUnpaid =
+                !order.paid_at &&
+                order.escrow_status === "pending" &&
+                order.status !== "CANCELLED";
+
               const whatsappMsg = `Hi ${order.vendor.storeName}, regarding my CampusTrade order #${order.orderNumber} for ${formatNGN(order.totalAmount)}. Let's coordinate pickup/delivery at: ${order.deliveryAddress}.`;
               const whatsappUrl = order.vendor.whatsapp
                 ? `https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(whatsappMsg)}`
@@ -325,7 +415,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                         <span className="font-mono font-black text-sm sm:text-base text-neutral-950">
                           #{order.orderNumber}
                         </span>
-                        {getStatusBadge(order.status)}
+                        {getStatusBadge(order)}
                       </div>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
                         <span className="flex items-center gap-1.5">
@@ -363,28 +453,51 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      {/* Complete Order / Pay Now Button */}
+                      {isUnpaid && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleCompletePayment(order.id)}
+                          disabled={payingOrderId === order.id}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl gap-1.5 shadow-sm shadow-emerald-600/30 cursor-pointer transition-all hover:scale-[1.02] border border-emerald-500"
+                        >
+                          {payingOrderId === order.id ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Opening Checkout...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>Complete Order &amp; Pay</span>
+                            </>
+                          )}
+                        </Button>
+                      )}
+
                       {/* Track My Item Button */}
                       <Link href={`/orders/track/${order.orderNumber}`}>
                         <Button
                           size="sm"
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer transition-all hover:scale-[1.02]"
+                          variant={isUnpaid ? "outline" : "default"}
+                          className={
+                            isUnpaid
+                              ? "border-neutral-200 text-neutral-700 text-xs font-bold rounded-xl gap-1.5 hover:bg-neutral-100"
+                              : "bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl gap-1.5 shadow-sm shadow-emerald-600/20 cursor-pointer transition-all hover:scale-[1.02]"
+                          }
                         >
                           <Truck className="w-3.5 h-3.5" />
                           <span>Track My Item</span>
                         </Button>
                       </Link>
 
-                      {whatsappUrl && (
-                        <a
-                          href={whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-3 py-2 rounded-xl border border-neutral-200/80 transition-colors"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Chat Seller</span>
-                        </a>
-                      )}
+                      <Link
+                        href={`/messages?vendor=${order.vendor.slug || order.vendor.id}${order.items[0]?.productId ? `&product=${order.items[0].productId}` : ""}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-3 py-2 rounded-xl border border-neutral-200/80 transition-colors"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Chat Seller</span>
+                      </Link>
 
                       <Link href={`/order-success/${order.orderNumber}`}>
                         <Button
@@ -398,6 +511,48 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                       </Link>
                     </div>
                   </div>
+
+                  {/* Payment Action Required Banner */}
+                  {isUnpaid && (
+                    <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-50/90 to-orange-50/90 border-b border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs sm:text-sm font-bold text-amber-950">
+                              Order Placed &bull; Payment Incomplete
+                            </h4>
+                            <span className="text-[10px] uppercase tracking-wider bg-amber-200/80 text-amber-900 font-extrabold px-1.5 py-0.5 rounded-md">
+                              Action Required
+                            </span>
+                          </div>
+                          <p className="text-xs text-amber-800/90 leading-snug">
+                            This order was placed without payment. Complete your payment of <strong>{formatNGN(order.totalAmount)}</strong> now so the vendor can prepare your order under Flutterwave Escrow protection.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleCompletePayment(order.id)}
+                        disabled={payingOrderId === order.id}
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md gap-1.5 shrink-0 w-full sm:w-auto h-9 px-4"
+                      >
+                        {payingOrderId === order.id ? (
+                          <>
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Opening Checkout...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-3.5 h-3.5" />
+                            <span>Pay {formatNGN(order.totalAmount)} Now &rarr;</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Items in this Order */}
                   <div className="p-5 sm:p-6 space-y-4">

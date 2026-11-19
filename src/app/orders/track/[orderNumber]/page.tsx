@@ -89,6 +89,10 @@ export default async function OrderTrackingPage({
     deliveryAddress: order.deliveryAddress,
     meetupPoint: order.meetupPoint,
     notes: order.notes,
+    paid_at: order.paid_at ? order.paid_at.toISOString() : null,
+    escrow_status: order.escrow_status,
+    escrow_mode: order.escrow_mode,
+    tx_ref: order.tx_ref,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     vendor: {

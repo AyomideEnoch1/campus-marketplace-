@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   CheckCircle2,
   MessageCircle,
+  MessageSquare,
   Package,
   Calendar,
   MapPin,
@@ -154,27 +155,23 @@ export default async function OrderSuccessPage({
           </div>
         </div>
 
-        {/* WhatsApp Follow-up Action */}
-        {whatsappUrl && (
-          <div className="space-y-3">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`inline-flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl text-white font-extrabold text-sm sm:text-base shadow-xl transition-all hover:scale-[1.01] ${
-                isGuestSeller
-                  ? "bg-purple-700 hover:bg-purple-800 shadow-purple-700/30"
-                  : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30"
-              }`}
-            >
-              <MessageCircle className="w-5 h-5" />
-              Chat Seller on WhatsApp to Confirm Meetup &rarr;
-            </a>
-            <p className="text-[11px] text-neutral-400">
-              Clicking above opens WhatsApp with your order reference and meetup point prefilled.
-            </p>
-          </div>
-        )}
+        {/* In-App Chat Follow-up Action */}
+        <div className="space-y-3">
+          <Link
+            href={`/messages?vendor=${order.vendor.slug || order.vendor.id}${order.items[0]?.productId ? `&product=${order.items[0].productId}` : ""}`}
+            className={`inline-flex items-center justify-center gap-2.5 w-full h-14 rounded-2xl text-white font-extrabold text-sm sm:text-base shadow-xl transition-all hover:scale-[1.01] ${
+              isGuestSeller
+                ? "bg-purple-700 hover:bg-purple-800 shadow-purple-700/30"
+                : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30"
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            Chat with Seller in App &rarr;
+          </Link>
+          <p className="text-[11px] text-neutral-400">
+            Open the in-app chat room to coordinate pickup or delivery details directly with {order.vendor.storeName}.
+          </p>
+        </div>
 
         {/* Action Navigation */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
