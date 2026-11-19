@@ -255,7 +255,7 @@ export function ProductCard({ product }: ProductCardProps) {
               </h3>
             </Link>
 
-            {/* Rating / New Badge & Condition Tag */}
+            {/* Rating & Condition Tag */}
             <div className="flex items-center gap-1.5 mt-1.5 text-[11px] flex-wrap">
               {product.reviewCount && product.reviewCount >= 3 ? (
                 <>
@@ -269,11 +269,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     ({product.reviewCount})
                   </span>
                 </>
-              ) : (
-                <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 px-1.5 py-0.5 rounded-md leading-none">
-                  New
-                </span>
-              )}
+              ) : null}
 
               {product.condition && (
                 <span className="inline-flex items-center text-[9px] sm:text-[10px] font-medium text-neutral-600 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap leading-none">
