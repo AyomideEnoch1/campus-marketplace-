@@ -307,11 +307,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </div>
 
       {/* 3. MAIN CATALOG WITH SIDEBAR FILTERS (Reference Image 1 Layout) */}
-      <div className="w-full max-w-full overflow-hidden px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="w-full max-w-full flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8">
           {/* Left Sidebar Filter Panel (Fixed/Sticky on large screens while products scroll) */}
           <aside className="hidden lg:block lg:w-64 xl:w-72 shrink-0 lg:self-stretch relative">
-            <div className="sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto p-5 rounded-3xl border border-neutral-200/80 bg-white pr-2 pb-6 space-y-5 shadow-xs">
+            <div className="sticky top-32 z-20 max-h-[calc(100vh-9.5rem)] overflow-y-auto p-5 rounded-3xl border border-neutral-200/80 bg-white pr-2 pb-6 space-y-5 shadow-xs">
               {/* Filter Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-200/60">
                 <span className="font-extrabold text-sm uppercase tracking-wider text-neutral-900 flex items-center gap-2">
