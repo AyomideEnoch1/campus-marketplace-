@@ -13,7 +13,6 @@ import {
   Store,
   Wallet,
   TrendingUp,
-  Sparkles,
   ArrowUpRight,
   Building,
   CheckCircle2,
@@ -358,10 +357,6 @@ export function AmbassadorDashboardClient({
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-600/40 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-3 backdrop-blur-sm border border-emerald-500/30">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                Verified Campus Ambassador
-              </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                 Ambassador Hub — {ambassador.campus.name}
               </h1>
