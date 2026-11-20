@@ -128,12 +128,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="group relative flex flex-col rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
+      <div className="group relative flex flex-col w-full max-w-full rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
         {/* Product Image Box */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100">
+        <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
           <Link
             href={`/product/${product.slug}`}
-            className="block w-full h-full"
+            className="block relative w-full h-full"
           >
             <Image
               src={primaryImage}
@@ -145,24 +145,23 @@ export function ProductCard({ product }: ProductCardProps) {
           </Link>
 
           {/* Top Badges */}
-          <div className="absolute top-2.5 left-2.5 flex flex-col items-start gap-1 z-10 max-w-[70%]">
+          <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 flex flex-col items-start gap-1 z-10 max-w-[calc(100%-36px)] pointer-events-none">
             {product.vendor?.sellerType === "guest" ? (
-              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
                 Guest Vendor
               </Badge>
             ) : (
-              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap inline-flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
                 Student Vendor
               </Badge>
             )}
             {discountPercent && (
-              <Badge className="bg-amber-300 text-amber-950 border border-amber-400/60 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
+              <Badge className="bg-amber-300 text-amber-950 border border-amber-400/60 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
                 -{discountPercent}%
               </Badge>
             )}
             {product.isFeatured && (
-              <Badge className="bg-rose-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap shadow-xs">
+              <Badge className="bg-rose-500 text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap shadow-xs">
                 Hot Drop
               </Badge>
             )}
@@ -170,6 +169,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Wishlist Heart Button */}
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -186,15 +186,15 @@ export function ProductCard({ product }: ProductCardProps) {
                 vendorCampus: product.vendor?.campus?.name,
               });
             }}
-            className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10 ${
+            className={`absolute top-2 right-2 sm:top-2.5 sm:right-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all z-10 ${
               isFavorite
                 ? "bg-rose-50 text-rose-500 shadow-md"
-                : "bg-white/85 backdrop-blur-xs text-neutral-600 hover:text-rose-500 hover:bg-white shadow-xs"
+                : "bg-white/90 backdrop-blur-xs text-neutral-600 hover:text-rose-500 hover:bg-white shadow-xs"
             }`}
             aria-label="Add to wishlist"
           >
             <Heart
-              className={`w-4 h-4 transition-transform active:scale-125 ${
+              className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform active:scale-125 ${
                 isFavorite ? "fill-rose-500" : ""
               }`}
             />
@@ -228,75 +228,66 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Content Details */}
-        <div className="p-3.5 flex flex-col flex-grow justify-between gap-2">
-          <div>
+        <div className="p-2.5 sm:p-3 flex flex-col flex-1 justify-between gap-1.5 sm:gap-2">
+          <div className="space-y-1">
             {/* Vendor & Campus Meta */}
             {product.vendor && (
-              <div className="flex items-center justify-between text-[11px] text-neutral-500 mb-1">
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 gap-1">
                 <Link
                   href={`/store/${product.vendor.slug}`}
-                  className="hover:text-emerald-700 hover:underline truncate max-w-[120px] font-medium"
+                  className="hover:text-emerald-700 hover:underline truncate flex-1 min-w-0 font-medium"
                 >
                   {product.vendor.storeName}
                 </Link>
                 {product.vendor.campus && (
-                  <span className="flex items-center gap-0.5 text-neutral-400 font-medium shrink-0">
-                    <MapPin className="w-3 h-3 text-emerald-600" />
-                    {product.vendor.campus.name.split(" ")[0]}
+                  <span className="flex items-center gap-0.5 text-neutral-400 font-medium shrink-0 text-[9px] sm:text-[10px]">
+                    <MapPin className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                    <span>{product.vendor.campus.name.split(" ")[0]}</span>
                   </span>
                 )}
               </div>
             )}
 
-            {/* Title */}
-            <Link href={`/product/${product.slug}`}>
-              <h3 className="font-semibold text-neutral-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
+            {/* Title - Consistent 2-line height prevents uneven card heights */}
+            <Link href={`/product/${product.slug}`} className="block">
+              <h3 className="font-bold text-neutral-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors h-8 sm:h-9">
                 {product.title}
               </h3>
             </Link>
 
-            {/* Rating / New Badge & Condition Tag */}
-            <div className="flex items-center gap-1.5 mt-1.5 text-[11px] flex-wrap">
+            {/* Rating & Condition Tag */}
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] h-4.5 overflow-hidden">
               {product.reviewCount && product.reviewCount >= 3 ? (
-                <>
-                  <div className="flex items-center gap-0.5 text-amber-500 font-bold">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span>
-                      {product.avgRating ? product.avgRating.toFixed(1) : "5.0"}
-                    </span>
-                  </div>
-                  <span className="text-neutral-400">
+                <div className="flex items-center gap-0.5 text-amber-500 font-bold shrink-0">
+                  <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400 text-amber-400" />
+                  <span>
+                    {product.avgRating ? product.avgRating.toFixed(1) : "5.0"}
+                  </span>
+                  <span className="text-neutral-400 font-normal">
                     ({product.reviewCount})
                   </span>
-                </>
-              ) : (
-                <span className="text-[10px] font-bold text-pink-700 bg-pink-50 border border-pink-200/80 px-1.5 py-0.5 rounded-md leading-none">
-                  New
-                </span>
-              )}
+                </div>
+              ) : null}
 
               {product.condition && (
-                <span className="inline-flex items-center text-[9px] sm:text-[10px] font-medium text-neutral-600 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded-md shrink-0 whitespace-nowrap leading-none">
+                <span className="inline-flex items-center text-[8.5px] sm:text-[10px] font-medium text-neutral-600 bg-neutral-100 border border-neutral-200/60 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap leading-none truncate max-w-[100px]">
                   {conditionLabels[product.condition] || product.condition}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Pricing & Add to Bag */}
-          <div className="pt-2 flex items-center justify-between gap-2 border-t border-neutral-100">
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="font-extrabold text-sm sm:text-base text-neutral-900 leading-tight">
-                  {formatNGN(product.price)}
+          {/* Pricing & Add to Bag - Pinned to bottom with mt-auto */}
+          <div className="pt-2 sm:pt-2.5 mt-auto flex items-center justify-between gap-1.5 border-t border-neutral-100">
+            <div className="flex flex-col min-w-0 flex-1 justify-center min-h-[28px]">
+              <span className="font-black text-xs sm:text-sm text-neutral-900 leading-none truncate">
+                {formatNGN(product.price)}
+              </span>
+              {product.comparePrice && product.comparePrice > product.price && (
+                <span className="text-[9px] sm:text-[10px] text-neutral-400 line-through leading-none mt-1 truncate">
+                  {formatNGN(product.comparePrice)}
                 </span>
-                {product.comparePrice &&
-                  product.comparePrice > product.price && (
-                    <span className="text-[10px] sm:text-[11px] text-neutral-400 line-through">
-                      {formatNGN(product.comparePrice)}
-                    </span>
-                  )}
-              </div>
+              )}
             </div>
 
             {/* Add to Bag Button with Plus Icon */}
@@ -305,16 +296,16 @@ export function ProductCard({ product }: ProductCardProps) {
               onClick={handleAddToCart}
               aria-label={`Add ${product.title} to shopping bag`}
               title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
-              className={`w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
                 isAdded
                   ? "bg-emerald-600 text-white scale-105 shadow-emerald-200/50"
                   : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md hover:scale-105"
               }`}
             >
               {isAdded ? (
-                <Check className="w-4 h-4 animate-in zoom-in-75 duration-150" />
+                <Check className="w-3.5 h-3.5 animate-in zoom-in-75 duration-150" />
               ) : (
-                <Plus className="w-4 h-4 transition-transform duration-200" />
+                <Plus className="w-3.5 h-3.5 transition-transform duration-200" />
               )}
             </button>
           </div>

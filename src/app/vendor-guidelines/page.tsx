@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, ShieldCheck, MessageCircle, ArrowRight, Store } from "lucide-react";
+import { CheckCircle2, ShieldCheck, MessageCircle, ArrowRight, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
 
@@ -75,7 +75,7 @@ export default function VendorGuidelinesPage() {
           </div>
           <Link href="/vendor/register">
             <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6 h-11 shadow-sm gap-2">
-              <Store className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4" />
               <span>Continue Registration</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>

@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
+import { attributeReferral } from "@/lib/referral";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -13,6 +14,7 @@ const registerSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   phone: z.string().optional().or(z.literal("")),
   role: z.enum(["BUYER", "VENDOR"]).default("BUYER"),
+  buyerType: z.enum(["student", "guest"]).optional(),
   // Vendor specific fields
   sellerType: z.enum(["student", "guest"]).default("student"),
   storeName: z.string().optional(),
@@ -35,6 +37,7 @@ const registerSchema = z.object({
   idDocumentPath: z.string().optional(),
   selfieDocumentPath: z.string().optional(),
   vouchedBy: z.string().optional(),
+  referralCode: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -74,12 +77,26 @@ export async function POST(request: Request) {
       idDocumentPath,
       selfieDocumentPath,
       vouchedBy,
+      referralCode,
     } = parsed.data;
 
     // Clean whitespaces from phone numbers for database consistency
     const rawContactPhone = phone?.trim() || whatsapp?.trim();
     const cleanPhone = rawContactPhone ? cleanPhoneNumber(rawContactPhone) : null;
     const cleanWhatsapp = whatsapp?.trim() ? cleanPhoneNumber(whatsapp.trim()) : cleanPhone;
+
+    // In Student flow, mandatory student ID photo verification holding ID next to face
+    if (role === "VENDOR" && sellerType === "student") {
+      if (!studentIdUrl || !studentIdUrl.trim()) {
+        return NextResponse.json(
+          {
+            error:
+              "Student ID verification photo is mandatory. Please upload a clear photo of yourself holding your student ID card next to your face.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // In Guest flow, phone is required for Tier 1 OTP/Instant flow, email is optional
     if (role === "VENDOR" && sellerType === "guest" && !cleanPhone) {
@@ -345,6 +362,17 @@ export async function POST(request: Request) {
         timeout: 30000,
       }
     );
+
+    // Attribute referral to campus ambassador if code or cookie present
+    try {
+      await attributeReferral({
+        newUserId: newUser.id,
+        role: newUser.role as "BUYER" | "VENDOR",
+        explicitCode: referralCode || null,
+      });
+    } catch (refErr) {
+      console.error("Referral attribution error:", refErr);
+    }
 
     const token = signToken({
       userId: newUser.id,

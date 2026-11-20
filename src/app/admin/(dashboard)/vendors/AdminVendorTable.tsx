@@ -668,7 +668,7 @@ export function AdminVendorTable({
 
                   <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
                     <span className="font-bold text-neutral-300 block">
-                      Student ID Card Document
+                      Student ID Verification Photo (Selfie holding ID next to face)
                     </span>
                     {inspectVendor.studentIdUrl ? (
                       <a
@@ -679,7 +679,7 @@ export function AdminVendorTable({
                       >
                         <img
                           src={inspectVendor.studentIdUrl}
-                          alt="Student ID"
+                          alt="Selfie with Student ID"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-bold transition-opacity">

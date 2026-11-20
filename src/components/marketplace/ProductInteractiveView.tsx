@@ -473,8 +473,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
                       Guest Vendor
                     </Badge>
                   ) : (
-                    <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-[10px] font-semibold inline-flex items-center gap-1 shadow-2xs">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-[10px] font-semibold shadow-2xs">
                       Student Vendor
                     </Badge>
                   )}

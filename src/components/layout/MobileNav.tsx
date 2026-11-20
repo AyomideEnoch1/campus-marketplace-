@@ -78,10 +78,10 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
     ];
   }, [isVendor, isAdmin, user, savedCount, totalCount]);
 
-  // Don't show public bottom nav inside admin dashboard, vendor dashboard, or chat room (must be after all hooks)
+  // Don't show bottom nav inside admin or chat rooms (to preserve chat viewport)
   if (
     pathname.startsWith("/admin") ||
-    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/dashboard/messages") ||
     pathname.startsWith("/messages")
   ) {
     return null;

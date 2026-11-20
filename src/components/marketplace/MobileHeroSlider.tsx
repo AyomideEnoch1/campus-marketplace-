@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Flame, Sparkles, Store } from "lucide-react";
+import { Flame, Sparkles, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SlideItem {
@@ -59,7 +59,7 @@ const slides: SlideItem[] = [
   {
     badge: {
       text: "Student Sellers",
-      icon: Store,
+      icon: ShoppingBag,
       pillBg: "bg-white/20",
       pillText: "text-emerald-200",
     },

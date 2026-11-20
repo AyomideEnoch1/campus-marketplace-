@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   GraduationCap,
-  Store,
   ShoppingBag,
   Mail,
   Lock,
@@ -183,24 +182,23 @@ function LoginForm() {
         </Button>
       </form>
 
-      {/* Footer Registration Link */}
-      <div className="pt-2 text-center text-xs text-neutral-500 border-t border-neutral-100 flex flex-col sm:flex-row items-center justify-center gap-2">
-        <span>Don&apos;t have an account yet?</span>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/auth/register"
-            className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
-          >
-            Create student account
-          </Link>
-          <span className="text-neutral-300">•</span>
-          <Link
-            href="/vendor/register"
-            className="font-bold text-neutral-700 hover:text-emerald-600 hover:underline"
-          >
-            Become a seller
-          </Link>
-        </div>
+      {/* Terms of Use and Privacy Policy */}
+      <div className="pt-3 text-center text-xs text-neutral-500 border-t border-neutral-100 leading-relaxed">
+        By signing in, you agree to our{" "}
+        <Link
+          href="/terms"
+          className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+        >
+          Terms of Use
+        </Link>{" "}
+        and{" "}
+        <Link
+          href="/privacy"
+          className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+        >
+          Privacy Policy
+        </Link>
+        .
       </div>
     </div>
   );

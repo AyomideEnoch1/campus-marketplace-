@@ -1,0 +1,80 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+import { prisma } from "@/lib/prisma";
+import { AdminAmbassadorTable } from "./AdminAmbassadorTable";
+
+export default async function AdminAmbassadorsPage() {
+  const [ambassadors, campuses] = await Promise.all([
+    prisma.ambassadorProfile.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, fullName: true, email: true, phone: true } },
+        campus: { select: { id: true, name: true, city: true } },
+        _count: { select: { referrals: true, payouts: true } },
+        referrals: {
+          select: {
+            id: true,
+            roleAtSignup: true,
+            isQualified: true,
+            rewardAmount: true,
+            rewardStatus: true,
+          },
+        },
+      },
+    }),
+    prisma.campus.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  const formatted = ambassadors.map((a) => {
+    const vendorCount = a.referrals.filter((r) => r.roleAtSignup === "VENDOR").length;
+    const qualifiedVendors = a.referrals.filter((r) => r.roleAtSignup === "VENDOR" && r.isQualified).length;
+    const buyerCount = a.referrals.filter((r) => r.roleAtSignup === "BUYER").length;
+
+    return {
+      id: a.id,
+      userId: a.userId,
+      fullName: a.user.fullName,
+      email: a.user.email,
+      phone: a.user.phone,
+      referralCode: a.referralCode,
+      status: a.status,
+      campusName: a.campus.name,
+      campusId: a.campusId,
+      totalClicks: a.totalClicks,
+      totalReferrals: a._count.referrals,
+      vendorCount,
+      qualifiedVendors,
+      buyerCount,
+      pendingEarnings: a.pendingEarnings,
+      paidEarnings: a.paidEarnings,
+      totalEarnings: a.totalEarnings,
+      bankAccountName: a.bankAccountName,
+      bankAccountNumber: a.bankAccountNumber,
+      bankName: a.bankName,
+      bankVerified: a.bankVerified,
+      createdAt: a.createdAt.toISOString(),
+    };
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-neutral-800">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Campus Ambassadors & Referral Management
+          </h1>
+          <p className="text-xs sm:text-sm text-neutral-400 mt-1">
+            Monitor student representatives advocating across Nigerian universities. Track vendor recruitment, clicks, and management commission payouts.
+          </p>
+        </div>
+      </div>
+
+      <AdminAmbassadorTable initialAmbassadors={formatted} campuses={campuses} />
+    </div>
+  );
+}

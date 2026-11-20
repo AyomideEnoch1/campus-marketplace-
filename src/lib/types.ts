@@ -1,5 +1,7 @@
-export type Role = "ADMIN" | "VENDOR" | "BUYER";
+export type Role = "ADMIN" | "VENDOR" | "BUYER" | "AMBASSADOR";
 export type VendorStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+export type AmbassadorStatus = "ACTIVE" | "PENDING" | "SUSPENDED";
+export type ReferralRewardStatus = "PENDING" | "APPROVED" | "PAID" | "REJECTED";
 export type ProductCondition = "NEW" | "USED_LIKE_NEW" | "USED_GOOD" | "USED_FAIR";
 export type ProductStatus = "DRAFT" | "PUBLISHED" | "HIDDEN" | "FLAGGED";
 export type OrderStatus = "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
@@ -11,6 +13,8 @@ export interface SessionUser {
   email: string;
   fullName: string;
   role: Role;
+  activeRole?: Role;
+  canSwitchRole?: boolean;
   avatarUrl?: string | null;
   vendorProfile?: {
     id: string;
@@ -19,6 +23,16 @@ export interface SessionUser {
     status: VendorStatus;
     campusId: string;
     layout: string;
+  } | null;
+  ambassadorProfile?: {
+    id: string;
+    referralCode: string;
+    status: AmbassadorStatus;
+    campusId: string;
+    campusName?: string;
+    totalEarnings: number;
+    pendingEarnings: number;
+    paidEarnings: number;
   } | null;
 }
 

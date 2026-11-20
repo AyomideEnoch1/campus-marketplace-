@@ -11,7 +11,6 @@ import {
   ShieldCheck,
   Building,
   GraduationCap,
-  Store,
   Truck,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";

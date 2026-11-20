@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
         vendor: {
           select: {
             id: true,
+            userId: true,
             storeName: true,
             sellerType: true,
             verificationTier: true,
@@ -61,6 +62,14 @@ export async function POST(req: NextRequest) {
 
     const primaryVendor = dbProducts[0].vendor;
     const vendorId = primaryVendor.id;
+
+    // Disallow vendors from buying their own items
+    if (session?.id && primaryVendor.userId === session.id) {
+      return NextResponse.json(
+        { error: "You cannot purchase products from your own store." },
+        { status: 400 }
+      );
+    }
 
     let subtotal = 0;
     const orderItemsData: any[] = [];

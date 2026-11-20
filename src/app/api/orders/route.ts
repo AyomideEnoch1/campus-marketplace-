@@ -197,6 +197,16 @@ export async function POST(request: Request) {
       );
     }
 
+    const session = await getSession();
+
+    // Disallow vendors from buying their own items
+    if (session?.id && vendor.userId === session.id) {
+      return NextResponse.json(
+        { error: "You cannot purchase products from your own storefront." },
+        { status: 400 }
+      );
+    }
+
     // Compute total amount
     const totalAmount = items.reduce(
       (sum, item) => sum + item.unitPrice * item.quantity,
@@ -243,9 +253,6 @@ export async function POST(request: Request) {
         }
       }
     }
-
-    // Optional user session if logged in
-    const session = await getSession();
 
     // Generate unique human-readable order number e.g. ORD-202611-7391
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);

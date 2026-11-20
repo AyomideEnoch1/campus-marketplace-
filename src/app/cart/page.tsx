@@ -9,7 +9,6 @@ import {
   ArrowRight,
   ShieldCheck,
   MapPin,
-  Store,
   ChevronRight,
   MessageCircle,
   Lock,
@@ -115,7 +114,7 @@ export default function CartPage() {
         {/* Multi-Vendor Explanation Notice */}
         {vendorIds.length > 1 && (
           <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200/80 text-xs text-amber-900 flex items-start gap-3">
-            <Store className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <ShoppingBag className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">Multi-Vendor Bag Notice:</p>
               <p className="text-amber-800 leading-snug mt-0.5">
@@ -139,7 +138,7 @@ export default function CartPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-neutral-100">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
-                    <Store className="w-4 h-4" />
+                    <ShoppingBag className="w-4 h-4" />
                   </div>
                   <div>
                     <Link

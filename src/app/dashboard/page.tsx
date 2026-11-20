@@ -8,11 +8,12 @@ import {
   TrendingUp,
   PlusCircle,
   ExternalLink,
-  Store,
   Palette,
   MapPin,
   Clock,
   Sparkles,
+  ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -139,7 +140,7 @@ export default async function VendorDashboardPage() {
           </Link>
           <Link href={`/store/${vendor.slug}`} target="_blank">
             <Button variant="outline" size="sm" className="font-semibold gap-1.5 text-xs">
-              <Store className="w-4 h-4" /> Live Store
+              <ShoppingBag className="w-4 h-4" /> Live Store
             </Button>
           </Link>
         </div>
@@ -284,6 +285,109 @@ export default async function VendorDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Recent Order Requests Section */}
+      <div className="p-6 rounded-2xl bg-white border border-neutral-200/80 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+          <div>
+            <h3 className="font-bold text-base text-neutral-900">Recent Order Requests</h3>
+            <p className="text-xs text-neutral-500">Incoming buyer orders and escrow payment status</p>
+          </div>
+          <Link
+            href="/dashboard/orders"
+            className="text-xs font-bold text-emerald-600 hover:underline"
+          >
+            View all ({totalOrders}) &rarr;
+          </Link>
+        </div>
+
+        {vendor.orders.length === 0 ? (
+          <div className="py-12 text-center space-y-3">
+            <ShoppingBag className="w-10 h-10 text-neutral-300 mx-auto" />
+            <p className="text-sm font-semibold text-neutral-700">No order requests yet</p>
+            <p className="text-xs text-neutral-400 max-w-xs mx-auto">
+              When students order from your catalog, their order and escrow payment status will show here.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-neutral-100">
+            {vendor.orders.map((ord) => {
+              const isPaid =
+                Boolean(ord.paid_at) ||
+                ["paid_held", "confirmed", "delivered", "released"].includes(ord.escrow_status);
+
+              return (
+                <div
+                  key={ord.id}
+                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-50/60 px-2 rounded-xl transition-colors text-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0 text-neutral-700 font-bold">
+                      <ShoppingBag className="w-5 h-5 text-neutral-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-neutral-900">
+                          #{ord.orderNumber}
+                        </span>
+                        <span className="text-neutral-500">
+                          by <strong className="text-neutral-800">{ord.buyerName}</strong>
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                        {formatDate(ord.createdAt)} &bull; {ord.items.length} item(s)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                    {/* Payment Status Badge */}
+                    {isPaid ? (
+                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold flex items-center gap-1 py-0.5 px-2">
+                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                        <span>Paid &bull; Escrow</span>
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold flex items-center gap-1 py-0.5 px-2">
+                        <Clock className="w-3 h-3 text-amber-700" />
+                        <span>Unpaid</span>
+                      </Badge>
+                    )}
+
+                    {/* Order Fulfillment Badge */}
+                    <Badge
+                      variant={
+                        ord.status === "DELIVERED"
+                          ? "default"
+                          : ord.status === "CONFIRMED"
+                          ? "campus"
+                          : ord.status === "PENDING"
+                          ? "warning"
+                          : "destructive"
+                      }
+                      className="text-[10px] uppercase font-bold"
+                    >
+                      {ord.status}
+                    </Badge>
+
+                    {/* Order Amount */}
+                    <span className="font-extrabold text-sm text-neutral-900 min-w-[70px] text-right">
+                      {formatNGN(ord.totalAmount)}
+                    </span>
+
+                    <Link
+                      href="/dashboard/orders"
+                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 px-2.5 py-1 rounded-lg border border-neutral-200 hover:bg-neutral-100"
+                    >
+                      Manage
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, ShieldCheck, Heart, Store, Truck, Sparkles, ArrowRight } from "lucide-react";
+import { GraduationCap, ShieldCheck, Heart, ShoppingBag, Truck, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 
@@ -76,7 +76,7 @@ export default function AboutPage() {
 
           <div className="p-8 rounded-3xl bg-neutral-50 border border-neutral-100 space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200/80 text-amber-600 shadow-2xs flex items-center justify-center">
-              <Store className="w-6 h-6" />
+              <ShoppingBag className="w-6 h-6" />
             </div>
             <h3 className="font-extrabold text-lg text-neutral-900">Student Entrepreneurship</h3>
             <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">

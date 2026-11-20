@@ -1,16 +1,35 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { SlidersHorizontal, ArrowUpDown, X, RotateCcw, MapPin, Tag } from "lucide-react";
+import {
+  SlidersHorizontal,
+  ArrowUpDown,
+  X,
+  RotateCcw,
+  MapPin,
+  Tag,
+  Shirt,
+  Laptop,
+  Home,
+  BookOpen,
+  Sparkles,
+  Utensils,
+  Dumbbell,
+  Briefcase,
+  LayoutGrid,
+  ShoppingBag,
+  ArrowRight,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCategoryImage } from "@/lib/category-images";
 import { ProductCard } from "@/components/marketplace/ProductCard";
+import { HorizontalProductRow } from "@/components/marketplace/HorizontalProductRow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrustBar } from "@/components/marketplace/TrustBar";
 import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
+import { ShopHeroBanner } from "@/components/marketplace/ShopHeroBanner";
 
 interface ShopPageProps {
   searchParams: {
@@ -24,6 +43,20 @@ interface ShopPageProps {
     vendor?: string;
     sellerType?: string;
   };
+}
+
+function getCategoryIcon(slug?: string, name?: string) {
+  const s = (slug || "").toLowerCase();
+  const n = (name || "").toLowerCase();
+  if (s.includes("beauty") || n.includes("beauty") || s.includes("fragrance") || s.includes("care") || s.includes("grooming")) return Sparkles;
+  if (s.includes("fashion") || n.includes("fashion") || s.includes("wear") || s.includes("apparel") || s.includes("shoe")) return Shirt;
+  if (s.includes("electron") || n.includes("gadget") || s.includes("phone") || s.includes("laptop") || s.includes("tech")) return Laptop;
+  if (s.includes("hostel") || n.includes("hostel") || s.includes("living") || s.includes("home") || s.includes("appliance")) return Home;
+  if (s.includes("book") || n.includes("book") || s.includes("academic") || s.includes("textbook")) return BookOpen;
+  if (s.includes("food") || n.includes("food") || s.includes("grocer")) return Utensils;
+  if (s.includes("sport") || n.includes("sport") || s.includes("fit")) return Dumbbell;
+  if (s.includes("service") || n.includes("service")) return Briefcase;
+  return Tag;
 }
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
@@ -86,10 +119,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const rawQ = q?.trim() || "";
   if (rawQ) {
     where.OR = [
-      { title: { contains: rawQ } },
-      { description: { contains: rawQ } },
-      { tags: { contains: rawQ } },
-      { category: { name: { contains: rawQ } } },
+      { title: { contains: rawQ, mode: "insensitive" } },
+      { description: { contains: rawQ, mode: "insensitive" } },
+      { tags: { contains: rawQ, mode: "insensitive" } },
+      { category: { name: { contains: rawQ, mode: "insensitive" } } },
+      { vendor: { storeName: { contains: rawQ, mode: "insensitive" } } },
+      { vendor: { slug: { contains: rawQ, mode: "insensitive" } } },
+      { vendor: { user: { fullName: { contains: rawQ, mode: "insensitive" } } } },
     ];
   }
 
@@ -161,40 +197,23 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     Boolean
   ).length;
 
+  const matchingVendors = rawQ
+    ? vendors.filter(
+        (v) =>
+          v.storeName.toLowerCase().includes(rawQ.toLowerCase()) ||
+          v.slug.toLowerCase().includes(rawQ.toLowerCase())
+      )
+    : [];
+
   const getCategoryCount = (cat: any) =>
     (cat._count?.products || 0) +
     (cat.children?.reduce((acc: number, ch: any) => acc + (ch._count?.products || 0), 0) || 0);
 
   return (
     <div className="bg-white min-h-screen">
-      {/* 1. TOP HERO HEADER (Desktop/Tablet only) */}
-      <section className="hidden md:block bg-gradient-to-b from-emerald-50/80 via-emerald-50/30 to-white text-neutral-950 py-8 sm:py-12 px-4 border-b border-neutral-100">
-        <div className="container mx-auto">
-          <div className="max-w-3xl space-y-2.5 sm:space-y-3">
-            <div className="flex items-center gap-3">
-              <SmartBackButton
-                fallbackUrl="/"
-                fallbackLabel="Back to Home"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 transition-colors"
-              />
-            </div>
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-neutral-950">
-              Explore Campus Drops &amp; Goods
-            </h1>
-            <p className="text-xs sm:text-sm md:text-base text-neutral-600 leading-relaxed">
-              Browse textbooks, tech, hostel living gear, and thrift fashion directly from fellow students. Filter by campus or search for what you need.
-            </p>
-
-            {/* Search Input Bar */}
-            <div className="pt-1.5 sm:pt-2 max-w-xl">
-              <SearchBar
-                defaultValue={rawQ}
-                placeholder="Search textbooks, smartphones, sneakers..."
-                className="w-full shadow-xs"
-              />
-            </div>
-          </div>
-        </div>
+      {/* 1. TOP HERO BANNER SLIDER (Matches Home Page Reference Banner on Desktop & Mobile) */}
+      <section className="w-full border-b border-neutral-100">
+        <ShopHeroBanner />
       </section>
 
       {/* Mobile Top Search Bar with Visible Back Button */}
@@ -215,33 +234,42 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </div>
 
       {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
-      <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-2.5 sm:py-3 shadow-xs">
-        <div className="container mx-auto px-4 space-y-2">
+      <div className="border-b border-neutral-200/80 bg-white/95 backdrop-blur-md sticky top-16 z-30 py-2.5 sm:py-3 shadow-xs transition-all">
+        <div className="w-full px-4 sm:px-6 lg:px-8 space-y-2">
           {/* Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Link
               href="/shop"
-              className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
+              className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !category
                   ? "bg-emerald-500 text-white shadow-xs"
                   : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
               }`}
             >
-              All Items ({products.length})
+              <span
+                className={`hidden lg:inline-flex items-center justify-center shrink-0 ${
+                  !category ? "text-white" : "text-emerald-700"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </span>
+              <span>All Items ({products.length})</span>
             </Link>
             {categories.map((cat: any) => {
               const isSelected = category === cat.slug;
+              const IconComponent = getCategoryIcon(cat.slug, cat.name);
               return (
                 <Link
                   key={cat.id}
                   href={`/shop?category=${cat.slug}${campus ? `&campus=${campus}` : ""}`}
-                  className={`inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 pl-2 sm:pl-2.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
                       ? "bg-emerald-500 text-white shadow-xs"
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
-                  <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/60 flex items-center justify-center">
+                  {/* Image only on mobile & tablet screens */}
+                  <div className="lg:hidden w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-white/60 flex items-center justify-center">
                     <Image
                       src={getCategoryImage(cat.slug)}
                       alt={cat.name}
@@ -250,6 +278,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       className="object-cover object-center"
                     />
                   </div>
+
+                  {/* SVG Icon ONLY on large screens */}
+                  <span
+                    className={`hidden lg:inline-flex items-center justify-center shrink-0 ${
+                      isSelected ? "text-white" : "text-emerald-700"
+                    }`}
+                  >
+                    <IconComponent className="w-3.5 h-3.5" />
+                  </span>
+
                   <span>{cat.name}</span>
                   <span className={`text-[10px] ${isSelected ? "text-emerald-100" : "text-neutral-400"}`}>
                     ({getCategoryCount(cat)})
@@ -269,11 +307,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </div>
 
       {/* 3. MAIN CATALOG WITH SIDEBAR FILTERS (Reference Image 1 Layout) */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Sidebar Filter Panel */}
-          <aside className="hidden lg:block lg:col-span-1 space-y-6">
-            <div className="p-5 rounded-2xl border border-neutral-100 bg-neutral-50/60 sticky top-36 space-y-6">
+      <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="w-full max-w-full flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8">
+          {/* Left Sidebar Filter Panel (Fixed/Sticky on large screens while products scroll) */}
+          <aside className="hidden lg:block lg:w-64 xl:w-72 shrink-0 lg:self-stretch relative">
+            <div className="sticky top-32 z-20 max-h-[calc(100vh-9.5rem)] overflow-y-auto p-5 rounded-3xl border border-neutral-200/80 bg-white pr-2 pb-6 space-y-5 shadow-xs">
               {/* Filter Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-200/60">
                 <span className="font-extrabold text-sm uppercase tracking-wider text-neutral-900 flex items-center gap-2">
@@ -597,7 +635,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </aside>
 
           {/* Right Product Grid Area */}
-          <main className="lg:col-span-3 space-y-6">
+          <main className="w-full max-w-full flex-1 min-w-0 space-y-6">
             {/* Header: Found count + Sorting dropdown */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
               <div>
@@ -747,6 +785,56 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               </div>
             )}
 
+            {/* Matching Vendors Banner when query matches a store */}
+            {matchingVendors.length > 0 && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/40 to-white border border-emerald-200/90 shadow-2xs space-y-2.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wider">
+                  <ShoppingBag className="w-4 h-4 text-emerald-600" />
+                  <span>Matching Vendor Store{matchingVendors.length > 1 ? "s" : ""} ({matchingVendors.length})</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {matchingVendors.map((v) => (
+                    <Link
+                      key={v.id}
+                      href={`/store/${v.slug}`}
+                      className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-neutral-200/90 hover:border-emerald-500 hover:shadow-xs transition-all group"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-black uppercase shrink-0">
+                        {v.storeName ? v.storeName[0] : "V"}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-neutral-900 group-hover:text-emerald-700 transition-colors truncate max-w-[160px] sm:max-w-[200px]">
+                          {v.storeName}
+                        </span>
+                        {v.campus && (
+                          <span className="text-[10px] text-neutral-500 truncate">
+                            {v.campus.name}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1">
+                        Visit Store
+                        <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Horizontal Scrollable Row for Featured / Trending Products */}
+            {products.length >= 4 && !rawQ && (
+              <HorizontalProductRow
+                title="⚡ Trending Campus Drops"
+                subtitle="Scroll horizontally to explore top campus student gear & drops"
+                products={
+                  products.filter((p) => p.isFeatured).length >= 3
+                    ? products.filter((p) => p.isFeatured)
+                    : products.slice(0, 8)
+                }
+              />
+            )}
+
             {/* Product Grid (Matching Reference Image 1) */}
             {products.length === 0 ? (
               <div className="py-20 text-center rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/50 p-8 space-y-4">
@@ -768,7 +856,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+              <div className="w-full max-w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product as any} />
                 ))}
@@ -777,9 +865,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </main>
         </div>
       </div>
-
-      {/* Trust bar at bottom */}
-      <TrustBar />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Shield, User, ShoppingBag, Store, Trash2, Loader2, ArrowLeftRight } from "lucide-react";
+import { Search, Shield, User, ShoppingBag, Trash2, Loader2, ArrowLeftRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 

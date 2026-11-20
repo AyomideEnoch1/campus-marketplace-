@@ -11,7 +11,6 @@ import {
   ExternalLink,
   MapPin,
   Calendar,
-  Store,
   ShieldCheck,
   Package,
   Clock,

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  Store,
+  ShoppingBag,
   ExternalLink,
   MapPin,
   AlertCircle,
@@ -224,7 +224,7 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
                 className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 text-emerald-900 text-xs font-bold transition-colors"
               >
                 <span className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-emerald-700" />
+                  <ShoppingBag className="w-4 h-4 text-emerald-700" />
                   View Public Store
                 </span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -431,7 +431,7 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
                 title="View Public Store"
                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 text-emerald-800 transition-colors cursor-pointer"
               >
-                <Store className="w-4 h-4 text-emerald-700" />
+                <ShoppingBag className="w-4 h-4 text-emerald-700" />
                 <span className="sr-only">View Public Store</span>
               </Link>
               <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 hidden group-hover:flex items-center">
@@ -448,20 +448,20 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
               className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 text-emerald-900 text-xs font-bold transition-colors"
             >
               <span className="flex items-center gap-2">
-                <Store className="w-4 h-4 text-emerald-700" />
+                <ShoppingBag className="w-4 h-4 text-emerald-700" />
                 View Public Store
               </span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
           )}
 
-          {/* Sign in as a Buyer */}
+          {/* Switch to Buyer Mode */}
           <div className={collapsed ? "relative group flex justify-center w-full" : "w-full"}>
             <SignInAsBuyerButton collapsed={collapsed} />
             {collapsed && (
               <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 hidden group-hover:flex items-center">
                 <div className="bg-neutral-900 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
-                  Sign in as a Buyer
+                  Switch to Buyer Mode
                 </div>
               </div>
             )}

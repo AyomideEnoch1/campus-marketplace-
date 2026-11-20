@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   GraduationCap,
-  Store,
+  ShoppingBag,
   ShieldCheck,
   Building2,
   UploadCloud,
@@ -72,6 +72,19 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   const [phone, setPhone] = React.useState("+234 ");
   const [whatsapp, setWhatsapp] = React.useState("+234 ");
   const [campusId, setCampusId] = React.useState(campuses[0]?.id || "");
+
+  // Ambassador Referral Code
+  const [referralCode, setReferralCode] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const urlRef = searchParams.get("ref") || searchParams.get("ambassador");
+    if (urlRef) {
+      setReferralCode(urlRef.trim().toUpperCase());
+    } else {
+      const stored = localStorage.getItem("campus_ref");
+      if (stored) setReferralCode(stored.trim().toUpperCase());
+    }
+  }, [searchParams]);
 
   React.useEffect(() => {
     if (!campusId && campuses.length > 0) {
@@ -201,6 +214,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         setError("Please enter a store name.");
         return;
       }
+      if (!studentIdUrl || !studentIdUrl.trim()) {
+        setError("Student ID photo is mandatory. Please upload a clear photo of yourself holding your student ID card next to your face.");
+        return;
+      }
     }
     // Validate Guest specifics
     if (sellerType === "guest") {
@@ -236,6 +253,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         storeName: storeName || businessName,
         campusId,
         storeDescription,
+        referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
       };
 
       if (sellerType === "student") {
@@ -288,7 +306,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2 mb-2">
             <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-              <Store className="w-5 h-5" />
+              <ShoppingBag className="w-5 h-5" />
             </div>
             <span className="font-extrabold text-2xl tracking-tight text-neutral-900">
               Campus<span className="text-emerald-600">Trade</span>
@@ -717,17 +735,45 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
             {sellerType === "student" ? (
               /* Student Verification */
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-neutral-700 block">
-                  Student ID Card Photo (Optional for Tier 1, Required for Tier 2)
-                </label>
-                <SingleImageUpload
-                  value={studentIdUrl}
-                  onChange={setStudentIdUrl}
-                  folder="stores"
-                  label="Upload Student ID Card"
-                  hint="Provide a clear photo of your current university student identity card"
-                />
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-amber-200/80 text-amber-900">
+                      <Camera className="w-4 h-4" />
+                    </span>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-2">
+                      Mandatory Verification Requirement
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-200 text-amber-950 font-extrabold">
+                        Required
+                      </span>
+                    </h3>
+                  </div>
+
+                  <p className="text-xs text-amber-950 leading-relaxed font-semibold">
+                    You must upload a clear photo of yourself <strong>holding your university student ID card next to your face</strong> (selfie holding student ID).
+                  </p>
+
+                  <ul className="text-[11px] text-amber-900/90 space-y-1 list-disc list-inside">
+                    <li>Hold your physical student ID card right beside your face.</li>
+                    <li>Both your face and all card details (full name, matriculation number, photo) must be distinctly visible and unblurred.</li>
+                    <li>Do not cover your face, sunglasses, or digital crops.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-1.5">
+                  <SingleImageUpload
+                    value={studentIdUrl}
+                    onChange={setStudentIdUrl}
+                    folder="stores"
+                    label="Upload Photo: Holding Student ID Next to Face *"
+                    hint="Selfie holding your university student ID card next to your face (PNG, JPG, or WEBP)"
+                  />
+                  {!studentIdUrl && (
+                    <p className="text-[11px] font-semibold text-rose-500">
+                      * This photo is mandatory to verify that you are a genuine campus student seller.
+                    </p>
+                  )}
+                </div>
               </div>
             ) : (
               /* Guest Verification (Government ID, Selfie, Shop Photo, Optional CAC) */

@@ -15,7 +15,6 @@ import {
   AlertTriangle,
   Building,
   GraduationCap,
-  Store,
   Clock,
 } from "lucide-react";
 import { useCart } from "@/lib/cart";
@@ -204,7 +203,7 @@ function CheckoutForm() {
               <div className="flex flex-wrap items-center gap-2">
                 {isGuestSeller ? (
                   <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs font-bold flex items-center gap-1">
-                    <Store className="w-3 h-3" />
+                    <ShoppingBag className="w-3 h-3" />
                     Guest Vendor Order
                   </Badge>
                 ) : (

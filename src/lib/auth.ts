@@ -15,13 +15,13 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: { userId: string; role: string; email: string }): string {
+export function signToken(payload: { userId: string; role: string; email: string; activeRole?: string }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 }
 
-export function verifyToken(token: string): { userId: string; role: string; email: string } | null {
+export function verifyToken(token: string): { userId: string; role: string; email: string; activeRole?: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; role: string; email: string };
+    return jwt.verify(token, JWT_SECRET) as { userId: string; role: string; email: string; activeRole?: string };
   } catch {
     return null;
   }
@@ -50,17 +50,36 @@ export async function getSession(): Promise<SessionUser | null> {
               layout: true,
             },
           },
+          ambassadorProfile: {
+            select: {
+              id: true,
+              referralCode: true,
+              status: true,
+              campusId: true,
+              totalEarnings: true,
+              pendingEarnings: true,
+              paidEarnings: true,
+              campus: {
+                select: { name: true },
+              },
+            },
+          },
         },
       });
 
       if (!user) return null;
+
+      const hasVendorProfile = Boolean(user.vendorProfile || user.role === "VENDOR");
+      const activeRole = (decoded.activeRole || user.role) as Role;
 
       return {
         id: user.id,
         userId: user.id,
         email: user.email,
         fullName: user.fullName,
-        role: user.role as Role,
+        role: activeRole,
+        activeRole: activeRole,
+        canSwitchRole: hasVendorProfile,
         avatarUrl: user.avatarUrl,
         vendorProfile: user.vendorProfile
           ? {
@@ -72,15 +91,30 @@ export async function getSession(): Promise<SessionUser | null> {
               layout: user.vendorProfile.layout,
             }
           : null,
+        ambassadorProfile: user.ambassadorProfile
+          ? {
+              id: user.ambassadorProfile.id,
+              referralCode: user.ambassadorProfile.referralCode,
+              status: user.ambassadorProfile.status as any,
+              campusId: user.ambassadorProfile.campusId,
+              campusName: user.ambassadorProfile.campus?.name,
+              totalEarnings: user.ambassadorProfile.totalEarnings,
+              pendingEarnings: user.ambassadorProfile.pendingEarnings,
+              paidEarnings: user.ambassadorProfile.paidEarnings,
+            }
+          : null,
       };
     } catch (dbError) {
       console.warn("Database lookup warning during getSession, using verified JWT token fallback:", dbError);
+      const activeRole = (decoded.activeRole || decoded.role) as Role;
       return {
         id: decoded.userId,
         userId: decoded.userId,
         email: decoded.email,
-        fullName: decoded.role === "VENDOR" ? "Campus Vendor" : "Student Buyer",
-        role: decoded.role as Role,
+        fullName: activeRole === "VENDOR" ? "Campus Vendor" : "Student Buyer",
+        role: activeRole,
+        activeRole: activeRole,
+        canSwitchRole: decoded.role === "VENDOR",
         avatarUrl: null,
         vendorProfile: null,
       };
