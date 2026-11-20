@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, ShieldCheck, MapPin, Heart } from "lucide-react";
+import { ShoppingCart, ShieldCheck, Heart } from "lucide-react";
 
 export function Footer() {
   const pathname = usePathname();
@@ -41,17 +41,6 @@ export function Footer() {
             <p className="text-sm text-neutral-600 max-w-sm leading-relaxed">
               The premier student-to-student marketplace across Nigerian universities. Buy and sell textbooks, fashion, tech gadgets, and hostel essentials with zero stress.
             </p>
-            <div className="flex flex-wrap gap-2 pt-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-white text-emerald-800 border border-emerald-100 font-medium shadow-2xs">
-                <MapPin className="w-3 h-3 text-emerald-600" /> UNILAG Akoka
-              </span>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-white text-emerald-800 border border-emerald-100 font-medium shadow-2xs">
-                <MapPin className="w-3 h-3 text-emerald-600" /> UI Ibadan
-              </span>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-white text-emerald-800 border border-emerald-100 font-medium shadow-2xs">
-                <MapPin className="w-3 h-3 text-emerald-600" /> OAU Ile-Ife
-              </span>
-            </div>
           </div>
 
           {/* Marketplace Categories */}
