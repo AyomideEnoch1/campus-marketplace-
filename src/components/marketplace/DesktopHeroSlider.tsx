@@ -280,7 +280,7 @@ export function DesktopHeroSlider({
               </p>
 
               {/* Dual CTA Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-2">
                 <Link href={slide.primaryCta.href}>
                   <Button
                     size="lg"
@@ -298,15 +298,26 @@ export function DesktopHeroSlider({
                     {slide.secondaryCta.label}
                   </Button>
                 </Link>
-                {slide.tertiaryLink && (
+              </div>
+
+              {/* Tertiary Seller / Partner On-Ramp (Presentable & Elegantly Positioned) */}
+              {slide.tertiaryLink && (
+                <div className="pt-1">
                   <Link
                     href={slide.tertiaryLink.href}
-                    className="ml-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-4 cursor-pointer"
+                    className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-neutral-100/80 hover:bg-emerald-50 border border-neutral-200/90 hover:border-emerald-300 transition-all text-xs text-neutral-600 hover:text-emerald-900 group shadow-2xs cursor-pointer"
                   >
-                    {slide.tertiaryLink.label}
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-transform shrink-0" />
+                    <span className="text-neutral-500 font-medium">
+                      {slide.id === "student-sellers" ? "Looking for vendors?" : "Have items to declutter or sell?"}
+                    </span>
+                    <span className="font-bold text-emerald-600 group-hover:text-emerald-700 flex items-center gap-0.5">
+                      {slide.tertiaryLink.label.replace(" →", "")}
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
                   </Link>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Right Column: Hero Visual with Circular Spotlight Disc (Enlarged) */}
