@@ -172,18 +172,18 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ========================================================= */}
-      {/* MOBILE / SMALL SCREENS LAYOUT (Inspired by Reference UI)   */}
+      {/* MOBILE & TABLET SCREENS LAYOUT (Responsive < 1024px)       */}
       {/* ========================================================= */}
-      <div className="lg:hidden bg-neutral-50/50 pb-10 space-y-4">
-        {/* 1. Mobile Search Bar & Filter (Ref 1 & 2) */}
-        <div className="px-4 pt-3">
-          <div className="flex items-center gap-2">
+      <div className="lg:hidden bg-neutral-50/50 pb-10 md:pb-12 space-y-4 sm:space-y-6">
+        {/* 1. Mobile & Tablet Search Bar & Filter */}
+        <div className="px-4 sm:px-6 md:px-8 pt-3 sm:pt-4">
+          <div className="flex items-center gap-2 max-w-2xl mx-auto">
             <div className="flex-1">
               <SearchBar placeholder="What are you looking for?" />
             </div>
             <Link
               href="/shop"
-              className="w-10 h-10 rounded-2xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shadow-xs hover:border-emerald-500 transition-colors shrink-0"
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shadow-xs hover:border-emerald-500 transition-colors shrink-0"
               title="Filters"
             >
               <SlidersHorizontal className="w-4 h-4 text-neutral-700" />
@@ -191,17 +191,17 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 2. Mobile Hero Promo Banner Slider (100% Viewport Width Full Bleed) */}
+        {/* 2. Hero Promo Banner Slider (Full Width with Enhanced Height on Tablets) */}
         <div className="w-full -mt-2">
           <MobileHeroSlider />
         </div>
 
-        {/* 3. Category Filter Chips (Ref 2) */}
-        <div className="px-4">
+        {/* 3. Category Filter Chips */}
+        <div className="px-4 sm:px-6 md:px-8">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
             <Link
               href="/shop"
-              className="px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500 text-white shadow-xs shrink-0"
+              className="px-4 py-1.5 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm font-bold bg-emerald-500 text-white shadow-xs shrink-0"
             >
               All
             </Link>
@@ -209,14 +209,14 @@ export default async function HomePage() {
               <Link
                 key={cat.id}
                 href={`/shop?category=${cat.slug}`}
-                className="inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 rounded-full text-xs font-semibold bg-white border border-neutral-200/80 text-neutral-700 hover:border-emerald-500 hover:text-emerald-700 transition-colors shrink-0 shadow-2xs"
+                className="inline-flex items-center gap-1.5 pl-1.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold bg-white border border-neutral-200/80 text-neutral-700 hover:border-emerald-500 hover:text-emerald-700 transition-colors shrink-0 shadow-2xs"
               >
-                <div className="w-5 h-5 rounded-full overflow-hidden relative shrink-0 border border-neutral-200/80 flex items-center justify-center">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden relative shrink-0 border border-neutral-200/80 flex items-center justify-center">
                   <Image
                     src={getCategoryImage(cat.slug)}
                     alt={cat.name}
                     fill
-                    sizes="20px"
+                    sizes="24px"
                     className="object-cover object-center"
                   />
                 </div>
@@ -226,24 +226,24 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 4. Categories Visual Grid with Real Contextual Images (Well Centralized) */}
-        <div className="px-4 pt-1">
-          <div className="bg-white rounded-3xl p-4 border border-neutral-100 shadow-xs">
-            <div className="flex items-center justify-between mb-3.5">
+        {/* 4. Categories Visual Grid with Real Contextual Images */}
+        <div className="px-4 sm:px-6 md:px-8 pt-1">
+          <div className="bg-white rounded-3xl p-4 sm:p-6 border border-neutral-100 shadow-xs">
+            <div className="flex items-center justify-between mb-3.5 sm:mb-5">
               <div className="flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-emerald-600" />
-                <h3 className="font-bold text-sm text-neutral-900">Categories</h3>
+                <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                <h3 className="font-bold text-sm sm:text-base text-neutral-900">Categories</h3>
               </div>
               <Link
                 href="/shop"
-                className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+                className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
               >
                 <span>See All</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-y-4 sm:gap-y-6 gap-x-2 sm:gap-x-4">
               {categories.slice(0, 8).map((cat: any) => {
                 const img = getCategoryImage(cat.slug);
                 return (
@@ -252,17 +252,17 @@ export default async function HomePage() {
                     href={`/shop?category=${cat.slug}`}
                     className="flex flex-col items-center justify-center group text-center"
                   >
-                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl overflow-hidden bg-neutral-100 shadow-2xs border border-neutral-200/80 group-hover:border-emerald-500 group-hover:scale-105 transition-all duration-300 flex items-center justify-center">
+                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 mx-auto rounded-2xl overflow-hidden bg-neutral-100 shadow-2xs border border-neutral-200/80 group-hover:border-emerald-500 group-hover:scale-105 transition-all duration-300 flex items-center justify-center">
                       <Image
                         src={img}
                         alt={cat.name}
                         fill
-                        sizes="64px"
+                        sizes="72px"
                         className="object-cover object-center group-hover:scale-110 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-neutral-950/5 group-hover:bg-transparent transition-colors" />
                     </div>
-                    <span className="text-[11px] font-semibold text-neutral-800 group-hover:text-emerald-700 mt-1.5 leading-tight text-center line-clamp-1 w-full px-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-neutral-800 group-hover:text-emerald-700 mt-1.5 leading-tight text-center line-clamp-1 w-full px-1">
                       {cat.name.split(" ")[0]}
                     </span>
                   </Link>
@@ -272,57 +272,56 @@ export default async function HomePage() {
           </div>
         </div>
 
-
-        {/* 6. Recommended / Popular Products (Ref 1 & 2) */}
-        <div className="px-4 pt-1">
-          <div className="flex items-center justify-between mb-3">
+        {/* 6. Recommended / Popular Products */}
+        <div className="px-4 sm:px-6 md:px-8 pt-1">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-1.5">
-              <ThumbsUp className="w-4 h-4 text-emerald-600" />
-              <h3 className="font-bold text-sm text-neutral-900">Recommended For You</h3>
+              <ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+              <h3 className="font-bold text-sm sm:text-base text-neutral-900">Recommended For You</h3>
             </div>
             <Link
               href="/shop?sort=newest"
-              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
+              className="text-xs sm:text-sm font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5"
             >
               <span>See more</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {newArrivals.slice(0, 6).map((product) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+            {newArrivals.slice(0, 8).map((product) => (
               <ProductCard key={product.id} product={product as any} />
             ))}
           </div>
         </div>
 
-        {/* 7. Secondary Middle Promo Banner (Ref 2) */}
-        <div className="px-4 pt-2">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white p-4 xs:p-5 shadow-md">
+        {/* 7. Secondary Middle Promo Banner */}
+        <div className="px-4 sm:px-6 md:px-8 pt-2">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white p-4 xs:p-5 sm:p-7 md:p-8 shadow-md">
             <div className="flex items-center justify-between">
-              <div className="space-y-1 z-10 max-w-[70%]">
-                <span className="text-[10px] uppercase font-extrabold tracking-wider text-amber-200">
+              <div className="space-y-1 sm:space-y-2 z-10 max-w-[70%]">
+                <span className="text-[10px] sm:text-xs uppercase font-extrabold tracking-wider text-amber-200">
                   {cmsSettings.flash_sale_badge || "Semester Rush Clearance"}
                 </span>
-                <h4 className="text-base font-black leading-snug">
+                <h4 className="text-base sm:text-2xl md:text-3xl font-black leading-snug">
                   {cmsSettings.flash_sale_title || "Up To 50% Off Campus Essentials"}
                 </h4>
-                <p className="text-[10px] text-amber-100">
+                <p className="text-[10px] sm:text-xs md:text-sm text-amber-100 max-w-lg">
                   {cmsSettings.flash_sale_subtitle || "Verified deals from graduating students."}
                 </p>
               </div>
               <Link
                 href="/shop?filter=sale"
-                className="w-10 h-10 rounded-full bg-white text-neutral-950 flex items-center justify-center font-bold shadow-md hover:scale-105 active:scale-95 transition-transform z-10 shrink-0"
+                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white text-neutral-950 flex items-center justify-center font-bold shadow-md hover:scale-105 active:scale-95 transition-transform z-10 shrink-0"
               >
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
               </Link>
             </div>
           </div>
         </div>
 
-        {/* 8. Vendor Spotlight Card (Mobile - Bright & Clean Swipeable Layout) */}
-        <div className="px-4 pt-1 pb-2">
+        {/* 8. Vendor Spotlight Card (Bright & Clean Swipeable Layout) */}
+        <div className="px-4 sm:px-6 md:px-8 pt-1 pb-2">
           <div className="bg-white rounded-3xl p-4 border border-neutral-100 shadow-xs space-y-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -699,36 +698,6 @@ export default async function HomePage() {
         </section>
 
       </div>
-
-      {/* 7. CAMPUS AMBASSADOR PROGRAM HERO BANNER (Visible across all devices) */}
-      <section className="py-12 bg-neutral-50 border-t border-neutral-200/80">
-        <div className="container mx-auto px-4">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-900 text-white p-6 sm:p-10 md:p-12 shadow-xl">
-            <div className="relative z-10 max-w-2xl space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                Earn Up to ₦50,000/Month
-              </div>
-              <h3 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-                Represent CampusTrade as an Ambassador on Your Campus
-              </h3>
-              <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed max-w-xl">
-                Get your own custom QR flyer and referral link. Help fellow students buy and sell safely with escrow, and earn ₦500 on every verified vendor you onboard directly into your bank account.
-              </p>
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <Link href="/ambassador">
-                  <Button className="bg-white text-emerald-950 hover:bg-emerald-50 font-bold px-6 py-2.5 rounded-xl shadow-md text-sm">
-                    Open Ambassador Hub &rarr;
-                  </Button>
-                </Link>
-                <span className="text-xs text-emerald-200">
-                  • Custom QR code • Live analytics • Direct bank payouts
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

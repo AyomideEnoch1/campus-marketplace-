@@ -144,32 +144,32 @@ export function MobileHeroSlider() {
             return (
               <div
                 key={idx}
-                className={`min-w-full w-full ${slide.bgGradient} px-5 pt-4 pb-6 xs:px-6 xs:pt-5 xs:pb-7 text-white relative flex flex-col justify-between`}
+                className={`min-w-full w-full ${slide.bgGradient} px-5 pt-4 pb-6 xs:px-6 xs:pt-5 xs:pb-7 sm:px-10 sm:py-9 md:px-16 md:py-14 text-white relative flex flex-col justify-between`}
               >
                 {/* Background subtle ambient blob */}
-                <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 blur-xl pointer-events-none" />
+                <div className="absolute -top-10 -right-10 w-44 h-44 sm:w-80 sm:h-80 md:w-[500px] md:h-[500px] rounded-full bg-white/10 blur-xl md:blur-3xl pointer-events-none" />
 
-                <div className="flex items-center justify-between relative z-10 min-h-[160px] xs:min-h-[175px]">
+                <div className="flex items-center justify-between relative z-10 min-h-[160px] xs:min-h-[175px] sm:min-h-[300px] md:min-h-[420px]">
                   {/* Left Column Text */}
-                  <div className="w-[62%] space-y-1.5 xs:space-y-2 pr-1">
+                  <div className="w-[62%] sm:w-[58%] md:w-[54%] space-y-1.5 xs:space-y-2 sm:space-y-3.5 md:space-y-5 pr-1 sm:pr-4 md:pr-6">
                     <span
-                      className={`inline-flex items-center gap-1 ${slide.badge.pillBg} backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold ${slide.badge.pillText}`}
+                      className={`inline-flex items-center gap-1 sm:gap-1.5 ${slide.badge.pillBg} backdrop-blur-md px-2.5 py-0.5 sm:px-4 sm:py-1 rounded-full text-[10px] sm:text-xs md:text-sm font-bold ${slide.badge.pillText}`}
                     >
-                      <BadgeIcon className="w-3 h-3" />
+                      <BadgeIcon className="w-3 h-3 sm:w-4 sm:h-4 md:w-4 md:h-4" />
                       {slide.badge.text}
                     </span>
-                    <h2 className="text-lg xs:text-xl font-black leading-tight tracking-tight text-white">
+                    <h2 className="text-lg xs:text-xl sm:text-3xl md:text-5xl lg:text-[54px] font-black leading-tight sm:leading-tight md:leading-[1.08] tracking-tight text-white">
                       {slide.title} <br />
                       <span className="text-amber-300">{slide.highlightText}</span>
                     </h2>
-                    <p className="text-[11px] text-white/90 line-clamp-2 leading-relaxed font-normal">
+                    <p className="text-[11px] sm:text-sm md:text-base lg:text-lg text-white/95 line-clamp-2 sm:line-clamp-3 md:line-clamp-none leading-relaxed font-normal max-w-xl">
                       {slide.description}
                     </p>
-                    <div className="pt-1">
+                    <div className="pt-1 sm:pt-2 md:pt-3">
                       <Link href={slide.buttonHref}>
                         <Button
                           size="sm"
-                          className="bg-white text-emerald-950 hover:bg-neutral-100 font-bold text-xs px-4 py-1.5 h-8 rounded-full shadow-md active:scale-95 transition-all"
+                          className="bg-white text-emerald-950 hover:bg-neutral-100 font-bold text-xs sm:text-sm md:text-base px-4 py-1.5 sm:px-6 sm:py-2.5 sm:h-10 md:h-12 md:px-8 rounded-full shadow-lg active:scale-95 transition-all cursor-pointer"
                         >
                           {slide.buttonText}
                         </Button>
@@ -177,15 +177,15 @@ export function MobileHeroSlider() {
                     </div>
                   </div>
 
-                  {/* Right Column Visual (Shopping Cart on Mobile) */}
-                  <div className="w-[38%] h-32 xs:h-36 relative flex items-center justify-center shrink-0">
+                  {/* Right Column Visual (Shopping Cart / Promo image) */}
+                  <div className="w-[38%] sm:w-[42%] md:w-[46%] h-32 xs:h-36 sm:h-64 md:h-[360px] relative flex items-center justify-center shrink-0">
                     <Image
                       src={slide.imageSrc}
                       alt={slide.imageAlt}
                       fill
                       priority={idx === 0}
-                      sizes="160px"
-                      className="object-contain filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.28)]"
+                      sizes="(max-width: 640px) 160px, (max-width: 1024px) 440px, 500px"
+                      className="object-contain filter drop-shadow-[0_16px_32px_rgba(0,0,0,0.32)]"
                     />
                   </div>
                 </div>
@@ -195,15 +195,15 @@ export function MobileHeroSlider() {
         </div>
 
         {/* Overlay Pagination Dots */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 pointer-events-none">
+        <div className="absolute bottom-2 sm:bottom-3.5 md:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 sm:gap-2 pointer-events-none">
           {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
               className={`transition-all duration-300 rounded-full pointer-events-auto ${
                 current === i
-                  ? "w-5 h-1.5 bg-white shadow-xs"
-                  : "w-1.5 h-1.5 bg-white/45 hover:bg-white/70"
+                  ? "w-5 sm:w-7 md:w-8 h-1.5 sm:h-2 bg-white shadow-xs"
+                  : "w-1.5 sm:w-2 md:w-2.5 h-1.5 sm:h-2 md:h-2.5 bg-white/45 hover:bg-white/70"
               }`}
               aria-label={`Go to slide ${i + 1}`}
             />
