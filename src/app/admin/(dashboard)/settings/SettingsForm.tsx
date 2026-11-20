@@ -10,7 +10,7 @@ interface Props {
 
 export function SettingsForm({ initialSettings }: Props) {
   const [formData, setFormData] = useState({
-    site_name: initialSettings.site_name || "CampusTrade Nigeria",
+    site_name: initialSettings.site_name || "ọjà Nigeria",
     brand_primary_color: initialSettings.brand_primary_color || "#059669",
     support_phone: initialSettings.support_phone || "+234 812 345 6789",
     support_email: initialSettings.support_email || "support@campustrade.ng",
@@ -18,7 +18,7 @@ export function SettingsForm({ initialSettings }: Props) {
     commission_percent: initialSettings.commission_percent || "5.0",
     seo_meta_title:
       initialSettings.seo_meta_title ||
-      "CampusTrade — Multi-Campus Student Marketplace",
+      "ọjà — Multi-Campus Student Marketplace",
     seo_meta_description:
       initialSettings.seo_meta_description ||
       "Buy & sell textbooks, electronics, dorm essentials, and fashion on Nigerian university campuses with instant WhatsApp checkout.",

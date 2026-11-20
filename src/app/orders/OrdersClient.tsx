@@ -395,7 +395,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                 order.escrow_status === "pending" &&
                 order.status !== "CANCELLED";
 
-              const whatsappMsg = `Hi ${order.vendor.storeName}, regarding my CampusTrade order #${order.orderNumber} for ${formatNGN(order.totalAmount)}. Let's coordinate pickup/delivery at: ${order.deliveryAddress}.`;
+              const whatsappMsg = `Hi ${order.vendor.storeName}, regarding my ọjà order #${order.orderNumber} for ${formatNGN(order.totalAmount)}. Let's coordinate pickup/delivery at: ${order.deliveryAddress}.`;
               const whatsappUrl = order.vendor.whatsapp
                 ? `https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(whatsappMsg)}`
                 : null;

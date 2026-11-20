@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Student Vendors Directory | CampusTrade",
+  title: "Student Vendors Directory | ọjà",
   description: "Browse verified student-run businesses and independent campus sellers.",
 };
 

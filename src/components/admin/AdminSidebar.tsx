@@ -99,15 +99,15 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
       {/* Mobile Top Header */}
       <div className="md:hidden flex items-center justify-between bg-neutral-900 border-b border-neutral-800 px-4 py-3 sticky top-0 z-30 shadow-md">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md">
-            CT
+          <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-xs shadow-md lowercase">
+            ọjà
           </div>
           <div>
             <h2 className="font-extrabold text-sm tracking-tight text-white leading-none">
               Admin <span className="text-emerald-400">CMS</span>
             </h2>
             <span className="text-[9px] text-neutral-400 font-semibold uppercase tracking-wider">
-              CampusTrade HQ
+              ọjà HQ
             </span>
           </div>
         </Link>
@@ -142,14 +142,14 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
                   className="flex items-center gap-2.5"
                 >
                   <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md">
-                    CT
+                    ọjà
                   </div>
                   <div>
                     <h2 className="font-extrabold text-sm tracking-tight text-white leading-none">
                       Admin <span className="text-emerald-400">CMS</span>
                     </h2>
                     <span className="text-[9px] text-neutral-400 font-semibold uppercase tracking-wider">
-                      CampusTrade HQ
+                      ọjà HQ
                     </span>
                   </div>
                 </Link>
@@ -280,15 +280,15 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
           ) : (
             <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
               <Link href="/admin" className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold shadow-md">
-                  CT
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-xs shadow-md lowercase">
+                  ọjà
                 </div>
                 <div>
                   <h2 className="font-extrabold text-base tracking-tight text-white leading-none">
                     Admin <span className="text-emerald-400">CMS</span>
                   </h2>
                   <span className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider">
-                    CampusTrade HQ
+                    ọjà HQ
                   </span>
                 </div>
               </Link>

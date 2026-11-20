@@ -18,6 +18,7 @@ import {
   User,
   MapPin,
   Building,
+  ShoppingCart,
   GraduationCap,
   Store,
   UserCheck,
@@ -269,15 +270,34 @@ function RegisterContent() {
             {/* Header */}
             <div className="text-center space-y-2">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100 shadow-sm">
-                <GraduationCap className="w-6 h-6" />
+                <ShoppingCart className="w-6 h-6" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
-                Join CampusTrade
+                Join ọjà
               </h1>
               <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
-                Connect directly with verified students and trusted campus merchants. How would you like to use CampusTrade?
+                Connect directly with verified students and trusted campus merchants. How would you like to use ọjà?
               </p>
             </div>
+
+            {/* Referral / Ambassador Endorsement Banner if detected */}
+            {referralCode && (
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs shadow-xs">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Invited by Campus Ambassador: <strong className="font-mono font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded">{referralCode}</strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReferralCode("")}
+                  className="text-neutral-400 hover:text-neutral-600 text-[11px] underline"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
 
             {/* Error Notification if any */}
             {error && (
@@ -533,6 +553,32 @@ function RegisterContent() {
                   </div>
                   <p className="text-[11px] text-neutral-400">
                     Type or paste 10 or 11 digits. &apos;+234&apos; is automatically formatted.
+                  </p>
+                </div>
+
+                {/* Ambassador / Referral Code (Optional) */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-xs font-bold text-neutral-700 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                      Campus Ambassador Code <span className="text-neutral-400 font-normal">(Optional)</span>
+                    </span>
+                    {referralCode && (
+                      <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Active
+                      </span>
+                    )}
+                  </label>
+                  <Input
+                    type="text"
+                    maxLength={12}
+                    placeholder="e.g. UNILAG-AYO"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    className="h-11 rounded-xl text-xs font-mono uppercase bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                  />
+                  <p className="text-[11px] text-neutral-400">
+                    Have an ambassador code from a student rep? Enter it here to link to your campus hub.
                   </p>
                 </div>
 

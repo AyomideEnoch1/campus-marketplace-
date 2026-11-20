@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { GraduationCap, ShieldCheck, Heart, ShoppingBag, Truck, Sparkles, ArrowRight } from "lucide-react";
+import { ShoppingCart, GraduationCap, ShieldCheck, Heart, ShoppingBag, Truck, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 
 export const metadata = {
-  title: "About CampusTrade | University Student Marketplace",
-  description: "Learn more about CampusTrade, our mission to empower student sellers, and our safe campus trading network.",
+  title: "About ọjà | University Student Marketplace",
+  description: "Learn more about ọjà, our mission to empower student sellers, and our safe campus trading network.",
 };
 
 export default function AboutPage() {
@@ -25,7 +25,7 @@ export default function AboutPage() {
             Empowering Student Commerce Across Nigerian Campuses
           </h1>
           <p className="text-base sm:text-lg text-neutral-600 leading-relaxed">
-            CampusTrade is built from the ground up for university students. We solve the friction of buying and selling textbooks, tech gadgets, hostel essentials, and thrift fashion with zero middlemen and verified campus safety.
+            ọjà is built from the ground up for university students. We solve the friction of buying and selling textbooks, tech gadgets, hostel essentials, and thrift fashion with zero middlemen and verified campus safety.
           </p>
         </div>
       </section>
@@ -46,7 +46,7 @@ export default function AboutPage() {
       <section className="py-16 container mx-auto px-4">
         <div className="text-center max-w-xl mx-auto mb-12 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-950">
-            Why Students Choose CampusTrade
+            Why Students Choose ọjà
           </h2>
           <p className="text-xs sm:text-sm text-neutral-500">
             Designed specifically around the unique dynamics of Nigerian university life.
@@ -92,12 +92,12 @@ export default function AboutPage() {
       {/* CTA Box */}
       <section className="py-16 container mx-auto px-4">
         <div className="p-10 rounded-3xl bg-gradient-to-tr from-emerald-600 to-teal-700 text-white text-center max-w-3xl mx-auto space-y-5 shadow-xl shadow-emerald-600/20">
-          <GraduationCap className="w-12 h-12 mx-auto text-emerald-200" />
+          <ShoppingCart className="w-12 h-12 mx-auto text-emerald-200" />
           <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
             Ready to Start Trading on Your Campus?
           </h2>
           <p className="text-xs sm:text-sm text-emerald-100 max-w-lg mx-auto">
-            Whether you want to discover deals on textbooks and gadgets or start selling your own products, CampusTrade is here for you.
+            Whether you want to discover deals on textbooks and gadgets or start selling your own products, ọjà is here for you.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Link href="/shop">

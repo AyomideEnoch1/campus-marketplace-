@@ -7,7 +7,7 @@ import { AmbassadorOnboarding } from "./AmbassadorOnboarding";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Ambassador Hub | CampusTrade",
+  title: "Ambassador Hub | ọjà",
   description: "Track your campus referrals, view QR code flyer, monitor earnings, and manage bank payouts.",
 };
 

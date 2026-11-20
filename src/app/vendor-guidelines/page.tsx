@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
 
 export const metadata = {
-  title: "Seller Code of Conduct | CampusTrade",
+  title: "Seller Code of Conduct | ọjà",
 };
 
 export default function VendorGuidelinesPage() {

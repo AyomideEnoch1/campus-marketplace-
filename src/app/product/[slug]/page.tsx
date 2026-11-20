@@ -25,11 +25,11 @@ export async function generateMetadata({
   });
 
   if (!product) {
-    return { title: "Product Not Found | CampusTrade" };
+    return { title: "Product Not Found | ọjà" };
   }
 
   return {
-    title: `${product.title} - ₦${product.price.toLocaleString()} | CampusTrade`,
+    title: `${product.title} - ₦${product.price.toLocaleString()} | ọjà`,
     description: product.description.slice(0, 160),
     openGraph: {
       title: product.title,

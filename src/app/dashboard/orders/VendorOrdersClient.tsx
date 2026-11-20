@@ -276,7 +276,7 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                     <div className="flex-1">
                       <p className="font-bold text-emerald-950">Payment Verified & Secured</p>
                       <p className="text-[11px] text-emerald-800/90 mt-0.5 leading-relaxed">
-                        The buyer has deposited the funds into CampusTrade Escrow. Prepare the items and hand them over. Once the buyer enters their 6-digit verification code, the payment will be released directly to your bank account.
+                        The buyer has deposited the funds into ọjà Escrow. Prepare the items and hand them over. Once the buyer enters their 6-digit verification code, the payment will be released directly to your bank account.
                       </p>
                     </div>
                   </div>

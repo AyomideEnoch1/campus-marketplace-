@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ShoppingBag,
+  ShoppingCart,
+  Home,
   Heart,
   User,
   GraduationCap,
@@ -95,10 +97,10 @@ export function Navbar({ initialUser }: NavbarProps) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-xs">
-              <GraduationCap className="w-4 h-4" />
+              <ShoppingCart className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-lg text-neutral-900 tracking-tight">
-              Campus<span className="text-emerald-500">Trade</span>
+            <span className="font-extrabold text-xl text-neutral-900 tracking-tight lowercase">
+              ọ<span className="text-emerald-500">jà</span>
             </span>
           </Link>
 
@@ -120,7 +122,7 @@ export function Navbar({ initialUser }: NavbarProps) {
 
   // 2. Standard Public Marketplace Header
   const navLinks = [
-    { name: "Home", href: "/", icon: GraduationCap },
+    { name: "Home", href: "/", icon: Home },
     { name: "Shop", href: "/shop", icon: Compass },
     { name: "Campuses", href: "/campuses", icon: GraduationCap },
     { name: "Vendors", href: "/vendors", icon: ShoppingBag },
@@ -134,11 +136,11 @@ export function Navbar({ initialUser }: NavbarProps) {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
-              <GraduationCap className="w-5 h-5 md:w-6 md:h-6" />
+              <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-xl md:text-2xl tracking-tight text-neutral-900 leading-none">
-                Campus<span className="text-emerald-500">Trade</span>
+              <span className="font-black text-2xl md:text-3xl tracking-tight text-neutral-900 leading-none lowercase">
+                ọ<span className="text-emerald-500">jà</span>
               </span>
               <span className="text-[10px] font-semibold text-neutral-400 tracking-tight hidden sm:inline-block">
                 Shop &bull; Sell &bull; Connect
@@ -387,7 +389,7 @@ export function Navbar({ initialUser }: NavbarProps) {
           {/* Main Navigation Links */}
           <div className="space-y-1">
             <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-3 pb-1">
-              Explore CampusTrade
+              Explore ọjà
             </p>
             {navLinks.map((link) => {
               const Icon = link.icon;

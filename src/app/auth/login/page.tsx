@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  ShoppingCart,
   GraduationCap,
   ShoppingBag,
   Mail,
@@ -78,10 +79,10 @@ function LoginForm() {
       {/* Brand Header */}
       <div className="text-center space-y-2">
         <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/25">
-          <GraduationCap className="w-7 h-7" />
+          <ShoppingCart className="w-7 h-7" />
         </div>
         <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-          Welcome to CampusTrade
+          Welcome to ọjà
         </h1>
         <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
           Sign in to access your orders, saved listings, or vendor store

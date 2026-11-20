@@ -68,7 +68,7 @@ export function AmbassadorOnboarding({
             Campus Ambassador Program
           </div>
           <h1 className="text-3xl font-extrabold text-neutral-900 tracking-tight sm:text-4xl">
-            Represent CampusTrade on Your Campus
+            Represent ọjà on Your Campus
           </h1>
           <p className="text-neutral-600 text-sm sm:text-base max-w-lg mx-auto">
             Empower fellow students in your hostel, faculty, and department to buy and sell safely. Earn cash bounties on every student and vendor you onboard.

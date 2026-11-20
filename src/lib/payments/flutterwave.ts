@@ -190,13 +190,13 @@ export async function createPayment(order: CreatePaymentInput): Promise<CreatePa
       phonenumber: order.customer.phoneNumber || "",
     },
     customizations: {
-      title: order.customizations?.title || "CampusTrade Escrow Payment",
+      title: order.customizations?.title || "ọjà Escrow Payment",
       description: order.customizations?.description || `Escrow Order Ref: ${order.txRef}`,
       logo: order.customizations?.logo || "https://campustrade.ng/icons/icon-192x192.png",
     },
     meta: {
       ...order.meta,
-      platform: "CampusTrade",
+      platform: "ọjà",
       protection: "Escrow Held",
     },
   };
@@ -295,7 +295,7 @@ export async function sendPayout(
     account_bank: seller.bankCode,
     account_number: seller.accountNumber,
     amount: amount,
-    narration: `CampusTrade Payout ${reference}`,
+    narration: `ọjà Payout ${reference}`,
     currency: "NGN",
     reference: reference,
     callback_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://campustrade.ng"}/api/payments/webhook`,

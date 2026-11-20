@@ -292,7 +292,7 @@ export function AmbassadorDashboardClient({
       // Instructions
       ctx.fillStyle = "#6b7280";
       ctx.font = "18px sans-serif";
-      ctx.fillText("Scan this code to join CampusTrade & browse verified student stores", 400, 265);
+      ctx.fillText("Scan this code to join ọjà & browse verified student stores", 400, 265);
 
       // QR Code Background Border
       ctx.fillStyle = "#f9fafb";
@@ -327,7 +327,7 @@ export function AmbassadorDashboardClient({
 
       // Trigger Download
       const link = document.createElement("a");
-      link.download = `CampusTrade-${ambassador.referralCode}-Flyer.png`;
+      link.download = `ọjà-${ambassador.referralCode}-Flyer.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
 

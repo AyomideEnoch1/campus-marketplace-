@@ -342,7 +342,7 @@ export function DesktopReferenceLayout({
                 <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search on CampusTrade..."
+                  placeholder="Search on ọjà..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200/90 rounded-full text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all"
@@ -868,7 +868,7 @@ export function DesktopReferenceLayout({
           {/* Right: Description & Platform Info */}
           <div className="max-w-md space-y-2 text-right md:text-left">
             <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-              CampusTrade for Students &amp; Campus Needs
+              ọjà for Students &amp; Campus Needs
             </p>
             <p className="text-xs text-neutral-300 leading-relaxed">
               We listen to student needs, connect you with verified sellers on your campus, and protect every single order with instant escrow release.

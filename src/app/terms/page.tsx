@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Terms of Service | CampusTrade",
+  title: "Terms of Service | ọjà",
 };
 
 export default function TermsPage() {
@@ -26,7 +26,7 @@ export default function TermsPage() {
           <section className="space-y-2">
             <h2 className="font-bold text-base text-neutral-900">1. Acceptance of Terms</h2>
             <p>
-              By accessing and using CampusTrade, you acknowledge that you are an active student, vendor, or authorized visitor, and agree to adhere to these terms and university campus rules.
+              By accessing and using ọjà, you acknowledge that you are an active student, vendor, or authorized visitor, and agree to adhere to these terms and university campus rules.
             </p>
           </section>
 
@@ -40,7 +40,7 @@ export default function TermsPage() {
           <section className="space-y-2">
             <h2 className="font-bold text-base text-neutral-900">3. In-Person Handshakes & Fulfillment</h2>
             <p>
-              CampusTrade facilitates peer discovery. The fulfillment of transactions, physical condition inspection, and payments are conducted between buyer and vendor in designated public campus locations.
+              ọjà facilitates peer discovery. The fulfillment of transactions, physical condition inspection, and payments are conducted between buyer and vendor in designated public campus locations.
             </p>
           </section>
         </div>

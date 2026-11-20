@@ -4,8 +4,8 @@ import { VendorRegisterClient } from "./VendorRegisterClient";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Vendor Onboarding | Student & Guest Vendor Registration | CampusTrade",
-  description: "Register as a student or guest vendor on CampusTrade Nigeria. Tiered identity verification and safe campus escrow sales.",
+  title: "Vendor Onboarding | Student & Guest Vendor Registration | ọjà",
+  description: "Register as a student or guest vendor on ọjà Nigeria. Tiered identity verification and safe campus escrow sales.",
 };
 
 export default async function VendorRegisterPage() {

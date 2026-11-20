@@ -74,7 +74,7 @@ export function StorefrontRenderer({
       if (navigator.share) {
         await navigator.share({
           title: vendor.storeName,
-          text: `Check out ${vendor.storeName} on CampusTrade!`,
+          text: `Check out ${vendor.storeName} on ọjà!`,
           url: window.location.href,
         });
       } else {

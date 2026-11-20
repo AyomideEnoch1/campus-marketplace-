@@ -112,7 +112,7 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
     }
   };
 
-  const whatsappMsg = `Hi ${order.vendor.storeName}, I am tracking my CampusTrade order #${order.orderNumber}. Can you give me an update on delivery to: ${order.deliveryAddress}?`;
+  const whatsappMsg = `Hi ${order.vendor.storeName}, I am tracking my ọjà order #${order.orderNumber}. Can you give me an update on delivery to: ${order.deliveryAddress}?`;
   const whatsappUrl = order.vendor.whatsapp
     ? `https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(whatsappMsg)}`
     : null;

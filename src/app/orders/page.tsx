@@ -7,7 +7,7 @@ import { OrdersClient } from "./OrdersClient";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "My Orders | CampusTrade Marketplace",
+  title: "My Orders | ọjà Marketplace",
   description:
     "Track your campus purchases, coordinate delivery with student vendors, and leave verified reviews.",
 };

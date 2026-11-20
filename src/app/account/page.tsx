@@ -6,7 +6,7 @@ import { AccountClient } from "./AccountClient";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "My Account | CampusTrade Marketplace",
+  title: "My Account | ọjà Marketplace",
   description: "Manage your campus account profile, contact information, and order history.",
 };
 

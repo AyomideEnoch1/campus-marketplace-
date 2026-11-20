@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight">Admin CMS Portal</h1>
           <p className="text-xs text-neutral-400">
-            Secure administrative control system for CampusTrade
+            Secure administrative control system for ọjà
           </p>
         </div>
 

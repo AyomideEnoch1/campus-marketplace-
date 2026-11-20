@@ -14,7 +14,7 @@ export async function generateMetadata({
   params,
 }: OrderTrackingPageProps): Promise<Metadata> {
   return {
-    title: `Track Order #${params.orderNumber} | CampusTrade`,
+    title: `Track Order #${params.orderNumber} | ọjà`,
     description: `Real-time milestone tracking and campus delivery status for order #${params.orderNumber}.`,
   };
 }

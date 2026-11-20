@@ -35,15 +35,15 @@ export function VendorStatusEmail({
       <Head />
       <Preview>
         {isApproved
-          ? `Congratulations! Your store ${storeName} is approved on CampusTrade!`
-          : `Update regarding your CampusTrade vendor application`}
+          ? `Congratulations! Your store ${storeName} is approved on ọjà!`
+          : `Update regarding your ọjà vendor application`}
       </Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              Campus<span style={{ color: "#10b981" }}>Trade</span>
+              ọ<span style={{ color: "#10b981" }}>jà</span>
             </Text>
             <Text style={headerSub}>Vendor Verification Desk</Text>
           </Section>
@@ -66,7 +66,7 @@ export function VendorStatusEmail({
               <Section style={approvedBox}>
                 <Text style={approvedTitle}>Verified &bull; Tier {tier} Active</Text>
                 <Text style={approvedText}>
-                  Your campus credentials have been verified. Your store is now active and student shoppers can discover your products on CampusTrade!
+                  Your campus credentials have been verified. Your store is now active and student shoppers can discover your products on ọjà!
                 </Text>
               </Section>
             )}
@@ -108,7 +108,7 @@ export function VendorStatusEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              CampusTrade Verification &bull; NDPA Compliant Student Marketplace
+              ọjà Verification &bull; NDPA Compliant Student Marketplace
             </Text>
           </Section>
         </Container>

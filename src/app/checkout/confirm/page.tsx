@@ -151,7 +151,7 @@ function CheckoutConfirmContent() {
                 Order Paid &amp; Protected!
               </h1>
               <p className="text-xs text-neutral-600 leading-relaxed pt-1">
-                Your payment has been received and is safely held in CampusTrade Escrow. The vendor will <strong>not</strong> receive payment until you meet, inspect, and confirm your delivery code.
+                Your payment has been received and is safely held in ọjà Escrow. The vendor will <strong>not</strong> receive payment until you meet, inspect, and confirm your delivery code.
               </p>
             </div>
 

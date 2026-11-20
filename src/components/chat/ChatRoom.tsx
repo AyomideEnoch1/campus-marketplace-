@@ -327,7 +327,7 @@ export function ChatRoom({
                   {conversation.vendor.campus.name}
                 </>
               ) : (
-                "Verified CampusTrade Chat"
+                "Verified ọjà Chat"
               )}
             </p>
           </div>
@@ -390,7 +390,7 @@ export function ChatRoom({
         <div className="bg-white border border-neutral-200/80 rounded-2xl p-3 text-center text-xs text-neutral-600 max-w-md mx-auto shadow-xs">
           <p className="font-bold text-neutral-900 flex items-center justify-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            CampusTrade Safety Tip
+            ọjà Safety Tip
           </p>
           <p className="text-[11px] mt-0.5 text-neutral-500">
             Always meet in designated daytime campus spots. Never release your delivery code until items are inspected.
