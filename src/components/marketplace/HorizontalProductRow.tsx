@@ -93,13 +93,13 @@ export function HorizontalProductRow({
       <div
         ref={scrollContainerRef}
         onScroll={checkScroll}
-        className="flex gap-3 sm:gap-3.5 overflow-x-auto no-scrollbar scroll-smooth pb-1 pt-1 -mx-2 px-2 snap-x snap-mandatory"
+        className="flex gap-3 sm:gap-3.5 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1 -mx-2 px-2 snap-x snap-mandatory"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {products.map((product) => (
           <div
             key={`row-${product.id}`}
-            className="w-[165px] xs:w-[185px] sm:w-[215px] md:w-[230px] lg:w-[245px] shrink-0 snap-start h-auto flex flex-col"
+            className="w-[160px] xs:w-[175px] sm:w-[200px] md:w-[215px] shrink-0 snap-start"
           >
             <ProductCard product={product} />
           </div>

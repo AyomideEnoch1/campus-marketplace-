@@ -128,12 +128,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="group relative flex flex-col h-full rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
+      <div className="group relative flex flex-col rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
         {/* Product Image Box */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-neutral-100 shrink-0">
+        <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
           <Link
             href={`/product/${product.slug}`}
-            className="block w-full h-full"
+            className="block relative w-full h-full"
           >
             <Image
               src={primaryImage}
@@ -145,7 +145,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </Link>
 
           {/* Top Badges */}
-          <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 flex flex-col items-start gap-1 z-10 max-w-[calc(100%-34px)]">
+          <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 flex flex-col items-start gap-1 z-10 max-w-[calc(100%-36px)] pointer-events-none">
             {product.vendor?.sellerType === "guest" ? (
               <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
                 Guest Vendor
@@ -169,6 +169,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Wishlist Heart Button */}
           <button
+            type="button"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -247,9 +248,9 @@ export function ProductCard({ product }: ProductCardProps) {
               </div>
             )}
 
-            {/* Title - Consistent 2-line min-height prevents uneven card heights */}
+            {/* Title - Consistent 2-line height prevents uneven card heights */}
             <Link href={`/product/${product.slug}`} className="block">
-              <h3 className="font-bold text-neutral-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors min-h-[2rem] sm:min-h-[2.3rem]">
+              <h3 className="font-bold text-neutral-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors h-8 sm:h-9">
                 {product.title}
               </h3>
             </Link>
@@ -278,7 +279,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Pricing & Add to Bag - Pinned to bottom with mt-auto */}
           <div className="pt-2 sm:pt-2.5 mt-auto flex items-center justify-between gap-1.5 border-t border-neutral-100">
-            <div className="flex flex-col min-w-0 flex-1">
+            <div className="flex flex-col min-w-0 flex-1 justify-center min-h-[28px]">
               <span className="font-black text-xs sm:text-sm text-neutral-900 leading-none truncate">
                 {formatNGN(product.price)}
               </span>
