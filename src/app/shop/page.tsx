@@ -26,7 +26,6 @@ import { ProductCard } from "@/components/marketplace/ProductCard";
 import { HorizontalProductRow } from "@/components/marketplace/HorizontalProductRow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrustBar } from "@/components/marketplace/TrustBar";
 import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
@@ -872,9 +871,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </main>
         </div>
       </div>
-
-      {/* Trust bar at bottom */}
-      <TrustBar />
     </div>
   );
 }

@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrustBar } from "@/components/marketplace/TrustBar";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
 import { DesktopHeroSlider } from "@/components/marketplace/DesktopHeroSlider";
