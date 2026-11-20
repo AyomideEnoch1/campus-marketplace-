@@ -182,7 +182,7 @@ export default async function HomePage() {
               <SearchBar placeholder="What are you looking for?" />
             </div>
             <Link
-              href="/shop"
+              href="/shop?openFilters=true"
               className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 rounded-2xl bg-white border border-neutral-200/80 flex items-center justify-center text-neutral-700 shadow-xs hover:border-emerald-500 transition-colors shrink-0"
               title="Filters"
             >
