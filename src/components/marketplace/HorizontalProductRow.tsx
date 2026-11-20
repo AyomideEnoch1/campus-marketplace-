@@ -99,7 +99,7 @@ export function HorizontalProductRow({
         {products.map((product) => (
           <div
             key={`row-${product.id}`}
-            className="w-[185px] sm:w-[215px] md:w-[230px] lg:w-[245px] shrink-0 snap-start"
+            className="w-[165px] xs:w-[185px] sm:w-[215px] md:w-[230px] lg:w-[245px] shrink-0 snap-start h-auto flex flex-col"
           >
             <ProductCard product={product} />
           </div>
