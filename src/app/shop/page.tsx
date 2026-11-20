@@ -29,8 +29,7 @@ import { Button } from "@/components/ui/button";
 import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
-import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
-import { DesktopHeroSlider } from "@/components/marketplace/DesktopHeroSlider";
+import { ShopHeroBanner } from "@/components/marketplace/ShopHeroBanner";
 
 interface ShopPageProps {
   searchParams: {
@@ -212,9 +211,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* 1. TOP HERO BANNER SLIDER (Desktop/Tablet/Large Screen - Matches Home Page) */}
-      <section className="hidden md:block border-b border-neutral-100">
-        <DesktopHeroSlider />
+      {/* 1. TOP HERO BANNER SLIDER (Matches Home Page Reference Banner on Desktop & Mobile) */}
+      <section className="w-full border-b border-neutral-100">
+        <ShopHeroBanner />
       </section>
 
       {/* Mobile Top Search Bar with Visible Back Button */}
@@ -232,11 +231,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             className="w-full shadow-xs"
           />
         </div>
-      </div>
-
-      {/* Mobile Hero Banner Slider (Matches Home Page Mobile Hero Slider) */}
-      <div className="md:hidden px-4 pt-2 pb-1.5">
-        <MobileHeroSlider />
       </div>
 
       {/* 2. HORIZONTAL CATEGORY PILL SLIDER & MOBILE FILTERS */}
