@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Navbar } from "@/components/layout/Navbar";
@@ -9,6 +10,7 @@ import { QueryProvider } from "@/lib/react-query/query-provider";
 import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { RouteNavigationLoader } from "@/components/common/RouteNavigationLoader";
+import { ReferralTracker } from "@/components/ambassador/ReferralTracker";
 
 export const metadata: Metadata = {
   title: "CampusTrade | Multi-Vendor Marketplace for Nigerian University Students",
@@ -37,6 +39,9 @@ export default async function RootLayout({
         <QueryProvider>
           <CartProvider initialUser={sessionUser}>
             <WishlistProvider>
+              <Suspense fallback={null}>
+                <ReferralTracker />
+              </Suspense>
               <RouteNavigationLoader />
               <AnnouncementBar />
               <Navbar initialUser={sessionUser} />

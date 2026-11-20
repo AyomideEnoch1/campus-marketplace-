@@ -50,6 +50,20 @@ export async function getSession(): Promise<SessionUser | null> {
               layout: true,
             },
           },
+          ambassadorProfile: {
+            select: {
+              id: true,
+              referralCode: true,
+              status: true,
+              campusId: true,
+              totalEarnings: true,
+              pendingEarnings: true,
+              paidEarnings: true,
+              campus: {
+                select: { name: true },
+              },
+            },
+          },
         },
       });
 
@@ -75,6 +89,18 @@ export async function getSession(): Promise<SessionUser | null> {
               status: user.vendorProfile.status as any,
               campusId: user.vendorProfile.campusId,
               layout: user.vendorProfile.layout,
+            }
+          : null,
+        ambassadorProfile: user.ambassadorProfile
+          ? {
+              id: user.ambassadorProfile.id,
+              referralCode: user.ambassadorProfile.referralCode,
+              status: user.ambassadorProfile.status as any,
+              campusId: user.ambassadorProfile.campusId,
+              campusName: user.ambassadorProfile.campus?.name,
+              totalEarnings: user.ambassadorProfile.totalEarnings,
+              pendingEarnings: user.ambassadorProfile.pendingEarnings,
+              paidEarnings: user.ambassadorProfile.paidEarnings,
             }
           : null,
       };

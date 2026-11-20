@@ -70,6 +70,19 @@ function RegisterContent() {
   const [department, setDepartment] = React.useState("");
   const [storeDescription, setStoreDescription] = React.useState("");
 
+  // Referral / Ambassador code
+  const [referralCode, setReferralCode] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const urlRef = searchParams.get("ref") || searchParams.get("ambassador");
+    if (urlRef) {
+      setReferralCode(urlRef.trim().toUpperCase());
+    } else {
+      const stored = localStorage.getItem("campus_ref");
+      if (stored) setReferralCode(stored.trim().toUpperCase());
+    }
+  }, [searchParams]);
+
   // Campuses for vendor selection
   const { data: campusData } = useCampuses();
   const campuses = campusData?.campuses || [];
@@ -179,6 +192,7 @@ function RegisterContent() {
         phone: cleanPhone,
         role,
         buyerType: role === "BUYER" ? buyerType : undefined,
+        referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
       };
 
       if (role === "VENDOR") {

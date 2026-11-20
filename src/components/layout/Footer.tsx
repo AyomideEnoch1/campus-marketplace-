@@ -109,6 +109,11 @@ export function Footer() {
                   Seller Code of Conduct
                 </Link>
               </li>
+              <li>
+                <Link href="/ambassador" className="hover:text-emerald-700 transition-colors font-medium text-emerald-600">
+                  Campus Ambassador Hub &rarr;
+                </Link>
+              </li>
             </ul>
           </div>
 

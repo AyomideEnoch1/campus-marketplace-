@@ -17,6 +17,7 @@ import {
   ExternalLink,
   ShieldCheck,
   Star,
+  Sparkles,
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
@@ -28,6 +29,7 @@ import { VendorLogoutButton } from "@/components/vendor/VendorLogoutButton";
 const adminNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Vendors & Approval", href: "/admin/vendors", icon: Users },
+  { label: "Campus Ambassadors", href: "/admin/ambassadors", icon: Sparkles },
   { label: "Product Moderation", href: "/admin/products", icon: Package },
   { label: "Categories", href: "/admin/categories", icon: Layers },
   { label: "Campuses", href: "/admin/campuses", icon: MapPin },

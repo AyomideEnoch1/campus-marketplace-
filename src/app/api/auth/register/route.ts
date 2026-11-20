@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
+import { attributeReferral } from "@/lib/referral";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -36,6 +37,7 @@ const registerSchema = z.object({
   idDocumentPath: z.string().optional(),
   selfieDocumentPath: z.string().optional(),
   vouchedBy: z.string().optional(),
+  referralCode: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -75,6 +77,7 @@ export async function POST(request: Request) {
       idDocumentPath,
       selfieDocumentPath,
       vouchedBy,
+      referralCode,
     } = parsed.data;
 
     // Clean whitespaces from phone numbers for database consistency
@@ -359,6 +362,17 @@ export async function POST(request: Request) {
         timeout: 30000,
       }
     );
+
+    // Attribute referral to campus ambassador if code or cookie present
+    try {
+      await attributeReferral({
+        newUserId: newUser.id,
+        role: newUser.role as "BUYER" | "VENDOR",
+        explicitCode: referralCode || null,
+      });
+    } catch (refErr) {
+      console.error("Referral attribution error:", refErr);
+    }
 
     const token = signToken({
       userId: newUser.id,

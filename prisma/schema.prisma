@@ -12,6 +12,20 @@ enum Role {
   ADMIN
   VENDOR
   BUYER
+  AMBASSADOR
+}
+
+enum AmbassadorStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum ReferralRewardStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
 }
 
 enum VendorStatus {
@@ -80,6 +94,8 @@ model User {
   buyerConversations Conversation[] @relation("BuyerConversations")
   sentChatMessages   ChatMessage[]  @relation("UserSentMessages")
   notifications      Notification[]
+  ambassadorProfile  AmbassadorProfile?
+  referredBy         Referral?           @relation("ReferredUser")
 
   @@unique([email, role])
   @@index([role])
@@ -167,6 +183,7 @@ model Campus {
   vendors          VendorProfile[]
   settings         CampusSetting?
   safeMeetupPoints SafeMeetupPoint[]
+  ambassadors      AmbassadorProfile[]
 
   @@index([slug])
   @@index([isActive])
@@ -785,4 +802,72 @@ model Notification {
   @@index([isRead])
   @@index([createdAt])
 }
+
+model AmbassadorProfile {
+  id                String            @id @default(cuid())
+  userId            String            @unique
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campusId          String
+  campus            Campus            @relation(fields: [campusId], references: [id])
+  referralCode      String            @unique
+  status            AmbassadorStatus  @default(ACTIVE)
+  bio               String?
+  whatsapp          String?
+  bankAccountName   String?
+  bankAccountNumber String?
+  bankCode          String?
+  bankName          String?
+  bankResolvedName  String?
+  bankVerified      Boolean           @default(false)
+  
+  totalClicks       Int               @default(0)
+  totalEarnings     Float             @default(0.0)
+  paidEarnings      Float             @default(0.0)
+  pendingEarnings   Float             @default(0.0)
+
+  referrals         Referral[]
+  payouts           AmbassadorPayout[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([referralCode])
+  @@index([campusId])
+  @@index([status])
+}
+
+model Referral {
+  id              String                @id @default(cuid())
+  ambassadorId    String
+  ambassador      AmbassadorProfile     @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  referredUserId  String                @unique
+  referredUser    User                  @relation("ReferredUser", fields: [referredUserId], references: [id], onDelete: Cascade)
+  roleAtSignup    String                @default("BUYER") // "BUYER" | "VENDOR"
+  isQualified     Boolean               @default(false)   // Vendor listed item or completed activity
+  rewardAmount    Float                 @default(0.0)
+  rewardStatus    ReferralRewardStatus  @default(PENDING)
+  notes           String?
+  createdAt       DateTime              @default(now())
+
+  @@index([ambassadorId])
+  @@index([rewardStatus])
+  @@index([roleAtSignup])
+}
+
+model AmbassadorPayout {
+  id              String            @id @default(cuid())
+  ambassadorId    String
+  ambassador      AmbassadorProfile @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  amount          Float
+  reference       String            @unique
+  status          String            @default("PENDING") // PENDING, SUCCESSFUL, FAILED
+  bankDetails     String?           // JSON snapshot: bankName, accountNum, accountName
+  notes           String?
+  processedBy     String?           // Admin User ID
+  processedAt     DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@index([ambassadorId])
+  @@index([status])
+}
+
 

@@ -73,6 +73,19 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   const [whatsapp, setWhatsapp] = React.useState("+234 ");
   const [campusId, setCampusId] = React.useState(campuses[0]?.id || "");
 
+  // Ambassador Referral Code
+  const [referralCode, setReferralCode] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const urlRef = searchParams.get("ref") || searchParams.get("ambassador");
+    if (urlRef) {
+      setReferralCode(urlRef.trim().toUpperCase());
+    } else {
+      const stored = localStorage.getItem("campus_ref");
+      if (stored) setReferralCode(stored.trim().toUpperCase());
+    }
+  }, [searchParams]);
+
   React.useEffect(() => {
     if (!campusId && campuses.length > 0) {
       setCampusId(campuses[0].id);
@@ -240,6 +253,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         storeName: storeName || businessName,
         campusId,
         storeDescription,
+        referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
       };
 
       if (sellerType === "student") {

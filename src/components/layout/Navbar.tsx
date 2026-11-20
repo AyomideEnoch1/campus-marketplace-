@@ -301,6 +301,15 @@ export function Navbar({ initialUser }: NavbarProps) {
                   )}
 
                   <Link
+                    href="/ambassador"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-800 hover:bg-emerald-50/70 font-semibold transition-colors"
+                  >
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    Ambassador Hub
+                  </Link>
+
+                  <Link
                     href="/account"
                     onClick={() => setUserDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
