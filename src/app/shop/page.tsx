@@ -313,8 +313,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </div>
 
       {/* 3. MAIN CATALOG WITH SIDEBAR FILTERS (Reference Image 1 Layout) */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="flex flex-col lg:flex-row items-start lg:items-stretch gap-6 lg:gap-8">
+      <div className="w-full max-w-full overflow-hidden px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="w-full max-w-full flex flex-col lg:flex-row items-stretch gap-6 lg:gap-8">
           {/* Left Sidebar Filter Panel (Fixed/Sticky on large screens while products scroll) */}
           <aside className="hidden lg:block lg:w-64 xl:w-72 shrink-0 lg:self-stretch relative">
             <div className="sticky top-32 max-h-[calc(100vh-9rem)] overflow-y-auto p-5 rounded-3xl border border-neutral-200/80 bg-white pr-2 pb-6 space-y-5 shadow-xs">
@@ -641,7 +641,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </aside>
 
           {/* Right Product Grid Area */}
-          <main className="flex-1 min-w-0 space-y-6">
+          <main className="w-full max-w-full flex-1 min-w-0 space-y-6">
             {/* Header: Found count + Sorting dropdown */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
               <div>
@@ -862,7 +862,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5">
+              <div className="w-full max-w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product as any} />
                 ))}

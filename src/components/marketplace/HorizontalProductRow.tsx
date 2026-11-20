@@ -44,7 +44,7 @@ export function HorizontalProductRow({
   if (!products || products.length === 0) return null;
 
   return (
-    <div className="space-y-3 mb-8 bg-neutral-50/60 p-4 sm:p-5 rounded-3xl border border-neutral-200/70 shadow-2xs">
+    <div className="space-y-3 mb-8 bg-neutral-50/60 p-4 sm:p-5 rounded-3xl border border-neutral-200/70 shadow-2xs w-full max-w-full overflow-hidden min-w-0">
       {/* Row Header with navigation buttons */}
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-0.5">
@@ -93,7 +93,7 @@ export function HorizontalProductRow({
       <div
         ref={scrollContainerRef}
         onScroll={checkScroll}
-        className="flex gap-3 sm:gap-3.5 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1 -mx-2 px-2 snap-x snap-mandatory"
+        className="w-full max-w-full min-w-0 flex gap-3 sm:gap-3.5 overflow-x-auto no-scrollbar scroll-smooth pb-2 pt-1 -mx-2 px-2 snap-x snap-mandatory"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {products.map((product) => (

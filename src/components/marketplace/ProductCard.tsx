@@ -128,7 +128,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="group relative flex flex-col rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
+      <div className="group relative flex flex-col w-full max-w-full rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
         {/* Product Image Box */}
         <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
           <Link
