@@ -199,7 +199,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
             {/* Mobile Footer */}
             <div className="pt-4 border-t border-neutral-800 space-y-3 mt-6">
               <div className="flex items-center gap-3 px-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-200 flex items-center justify-center text-xs font-bold shrink-0">
                   {session.fullName?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div className="truncate flex-1">
@@ -387,7 +387,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
             <div className="flex flex-col items-center gap-2.5 w-full">
               {/* User Avatar with Tooltip */}
               <div className="relative group flex justify-center">
-                <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 flex items-center justify-center text-xs font-bold cursor-default">
+                <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-200 flex items-center justify-center text-xs font-bold cursor-default">
                   {session.fullName?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 hidden group-hover:flex items-center">
@@ -434,7 +434,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
           ) : (
             <>
               <div className="flex items-center gap-3 px-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-200 flex items-center justify-center text-xs font-bold shrink-0">
                   {session.fullName?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div className="truncate flex-1">

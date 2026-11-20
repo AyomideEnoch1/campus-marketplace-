@@ -22,7 +22,7 @@ export default async function AdminLayout({
       <AdminSidebar session={session} />
 
       {/* Main Admin Content Area */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-7xl">
+      <main className="flex-1 p-3.5 sm:p-6 md:p-10 overflow-y-auto max-w-7xl min-w-0">
         {children}
       </main>
     </div>

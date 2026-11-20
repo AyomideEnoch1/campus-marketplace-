@@ -255,8 +255,12 @@ export function Navbar({ initialUser }: NavbarProps) {
                 className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 pr-2.5 sm:pr-3 py-1 sm:py-1.5 rounded-full border border-neutral-200 hover:border-neutral-300 bg-white shadow-xs transition-colors cursor-pointer"
                 aria-label="User Account Menu"
               >
-                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold uppercase shrink-0">
-                  {user.fullName ? user.fullName[0] : "U"}
+                <div className="w-7 h-7 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold uppercase shrink-0 overflow-hidden shadow-2xs">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.fullName || "User"} className="w-full h-full object-cover" />
+                  ) : (
+                    user.fullName ? user.fullName[0] : "U"
+                  )}
                 </div>
                 <span className="hidden sm:inline-block text-xs font-semibold text-neutral-800 max-w-[85px] truncate">
                   {user.fullName?.split(" ")[0]}
@@ -273,7 +277,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                     <p className="text-xs text-neutral-500 truncate">
                       {user.email}
                     </p>
-                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase font-bold bg-pink-50 text-pink-700 border-pink-200">
+                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase font-bold bg-neutral-100 text-neutral-700 border-neutral-200">
                       {user.role}
                     </Badge>
                   </div>

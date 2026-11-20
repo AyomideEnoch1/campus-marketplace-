@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Building, ArrowRight, ShieldCheck, Wallet, QrCode, Share2 } from "lucide-react";
+import { Building, ArrowRight, ShieldCheck, Wallet, QrCode, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -63,10 +63,6 @@ export function AmbassadorOnboarding({
     <div className="min-h-screen bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto space-y-8">
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            Campus Ambassador Program
-          </div>
           <h1 className="text-3xl font-extrabold text-neutral-900 tracking-tight sm:text-4xl">
             Represent ọjà on Your Campus
           </h1>
@@ -84,8 +80,8 @@ export function AmbassadorOnboarding({
           </div>
           <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-sm text-center">
             <Wallet className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-            <h3 className="font-bold text-sm text-neutral-900">₦500 Per Vendor</h3>
-            <p className="text-xs text-neutral-500 mt-1">Plus ₦100 per shopper, paid directly into your bank account</p>
+            <h3 className="font-bold text-sm text-neutral-900">Earn Per Referral</h3>
+            <p className="text-xs text-neutral-500 mt-1">Get cash bounties on every vendor &amp; shopper onboarded, paid directly into your bank account</p>
           </div>
           <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-sm text-center">
             <ShieldCheck className="w-8 h-8 text-emerald-600 mx-auto mb-2" />

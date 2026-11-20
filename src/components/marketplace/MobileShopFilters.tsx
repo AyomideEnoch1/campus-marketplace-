@@ -269,7 +269,7 @@ export function MobileShopFilters({
         >
           <MapPin className="w-3 h-3 text-emerald-600" />
           <span className="truncate max-w-[110px]">
-            {selectedCampusObj ? selectedCampusObj.name.split(" ")[0] : "Campus"}
+            {selectedCampusObj ? selectedCampusObj.slug.toUpperCase() : "Campus"}
           </span>
           <ChevronDown className={`w-3 h-3 text-neutral-400 transition-transform ${activeDropdown === "campus" ? "rotate-180 text-emerald-600" : ""}`} />
         </button>
@@ -630,7 +630,7 @@ export function MobileShopFilters({
 
           {selectedCampusObj && (
             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">
-              <span>{selectedCampusObj.name.split(" ")[0]}</span>
+              <span>{selectedCampusObj.slug.toUpperCase()}</span>
               <button
                 onClick={() => removeFilter("campus")}
                 className="hover:text-emerald-950 p-0.5"

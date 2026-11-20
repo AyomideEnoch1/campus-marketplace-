@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Shield, User, ShoppingBag, Trash2, Loader2, ArrowLeftRight } from "lucide-react";
+import { Search, Shield, User, ShoppingBag, Trash2, Loader2, ArrowLeftRight, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 
@@ -105,8 +105,76 @@ export function AdminUserTable({ initialUsers }: { initialUsers: UserItem[] }) {
     }
   };
 
+  const totalUsers = users.length;
+  const buyerCount = users.filter((u) => u.role === "BUYER").length;
+  const vendorCount = users.filter((u) => u.role === "VENDOR").length;
+  const adminCount = users.filter((u) => u.role === "ADMIN").length;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* KPI Stats Header - Total Amount of Users & Role Breakdown */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-2xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-neutral-400 font-medium">Total Registered Users</span>
+            <div className="w-8 h-8 rounded-xl bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center">
+              <Users className="w-4 h-4 text-emerald-400" />
+            </div>
+          </div>
+          <span className="text-2xl sm:text-3xl font-black text-white block">
+            {totalUsers.toLocaleString()}
+          </span>
+          <span className="text-[11px] text-neutral-500 mt-1 block">
+            All campus community members
+          </span>
+        </div>
+
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-2xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-neutral-400 font-medium">Student Buyers</span>
+            <div className="w-8 h-8 rounded-xl bg-blue-950/60 border border-blue-800/60 text-blue-400 flex items-center justify-center">
+              <User className="w-4 h-4 text-blue-400" />
+            </div>
+          </div>
+          <span className="text-2xl sm:text-3xl font-black text-blue-400 block">
+            {buyerCount.toLocaleString()}
+          </span>
+          <span className="text-[11px] text-neutral-500 mt-1 block">
+            Active shoppers & students
+          </span>
+        </div>
+
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-2xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-neutral-400 font-medium">Campus Vendors</span>
+            <div className="w-8 h-8 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 flex items-center justify-center">
+              <ShoppingBag className="w-4 h-4 text-emerald-400" />
+            </div>
+          </div>
+          <span className="text-2xl sm:text-3xl font-black text-emerald-400 block">
+            {vendorCount.toLocaleString()}
+          </span>
+          <span className="text-[11px] text-neutral-500 mt-1 block">
+            Verified sellers with stores
+          </span>
+        </div>
+
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-2xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-neutral-400 font-medium">Administrators</span>
+            <div className="w-8 h-8 rounded-xl bg-purple-950/60 border border-purple-800/60 text-purple-400 flex items-center justify-center">
+              <Shield className="w-4 h-4 text-purple-400" />
+            </div>
+          </div>
+          <span className="text-2xl sm:text-3xl font-black text-purple-400 block">
+            {adminCount.toLocaleString()}
+          </span>
+          <span className="text-[11px] text-neutral-500 mt-1 block">
+            Platform managers (RBAC)
+          </span>
+        </div>
+      </div>
+
       {/* Search & Role Filter */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
@@ -121,17 +189,31 @@ export function AdminUserTable({ initialUsers }: { initialUsers: UserItem[] }) {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-          {["ALL", "ADMIN", "VENDOR", "BUYER"].map((role) => (
+          {[
+            { label: "ALL", count: totalUsers },
+            { label: "BUYER", count: buyerCount },
+            { label: "VENDOR", count: vendorCount },
+            { label: "ADMIN", count: adminCount },
+          ].map(({ label, count }) => (
             <button
-              key={role}
-              onClick={() => setRoleFilter(role)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                roleFilter === role
+              key={label}
+              onClick={() => setRoleFilter(label)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                roleFilter === label
                   ? "bg-emerald-600 text-white"
                   : "bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800"
               }`}
             >
-              {role}
+              <span>{label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                  roleFilter === label
+                    ? "bg-emerald-700 text-white"
+                    : "bg-neutral-800 text-neutral-400"
+                }`}
+              >
+                {count}
+              </span>
             </button>
           ))}
         </div>

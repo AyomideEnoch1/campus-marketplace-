@@ -394,6 +394,97 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* 9. Student Seller Community Showcase Banner (Mobile & Tablet) */}
+        <div className="px-4 sm:px-6 md:px-8 pt-2 max-w-2xl md:max-w-5xl mx-auto w-full">
+          <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-6 sm:p-8 md:p-10 flex flex-col justify-between min-h-[360px] sm:min-h-[400px] shadow-xl">
+            <div className="relative z-10 space-y-3">
+              <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] sm:text-xs font-bold">
+                Student Seller Community
+              </Badge>
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+                {cmsSettings.seller_promo_title || "Turn Your Drip or Skills Into Campus Income"}
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-400 max-w-sm">
+                {cmsSettings.seller_promo_subtitle ||
+                  "Launch your storefront in under 3 minutes. Pick your storefront layout, upload items, and receive WhatsApp orders."}
+              </p>
+              <ul className="text-xs text-neutral-300 space-y-2 pt-1">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Zero upfront listing fees for student sellers</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Choice of 4 custom storefront layouts</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="relative z-10 pt-6">
+              <Link href="/vendor/register">
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-7 py-3 shadow-md rounded-full text-xs sm:text-sm">
+                  Register Your Store &rarr;
+                </Button>
+              </Link>
+            </div>
+
+            {/* Decorative Background */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none">
+              <Image
+                src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&q=80"
+                alt="Student seller working"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 10. Campus Ambassador Hub Showcase Banner (Mobile & Tablet) */}
+        <div className="px-4 sm:px-6 md:px-8 pt-2 pb-4 max-w-2xl md:max-w-5xl mx-auto w-full">
+          <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-6 sm:p-8 md:p-10 flex flex-col justify-between min-h-[360px] sm:min-h-[400px] shadow-xl">
+            <div className="relative z-10 space-y-3">
+              <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] sm:text-xs font-bold">
+                Campus Ambassador Hub
+              </Badge>
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+                Represent ọjà &amp; Earn On Every Referral
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-400 max-w-sm">
+                Empower peers in your hostel and faculty to buy and sell safely. Earn direct cash bounties on every vendor and student you onboard.
+              </p>
+              <ul className="text-xs text-neutral-300 space-y-2 pt-1">
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Custom QR codes &amp; flyers for notice boards</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Direct cash bounties paid into your bank account</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="relative z-10 pt-6">
+              <Link href="/ambassador">
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-7 py-3 shadow-md rounded-full text-xs sm:text-sm">
+                  Join Ambassador Hub &rarr;
+                </Button>
+              </Link>
+            </div>
+
+            {/* Decorative Background */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none">
+              <Image
+                src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80"
+                alt="Campus students collaborating"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ========================================================= */}
@@ -504,70 +595,71 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* 5. DUAL PROMOTIONAL BANNERS (NovaTrend Reference Layout) */}
+        {/* 5. DUAL PROMOTIONAL & COMMUNITY BANNERS (Increased Height & Ambassador Hub) */}
         <section className="py-14 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Promo 1: Flash Sale with Countdown */}
-              <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl shadow-orange-600/15">
-                <div className="relative z-10 space-y-3">
-                  <Badge variant="dark" className="bg-white/20 backdrop-blur-md text-white border-0 text-xs font-bold">
-                    {cmsSettings.flash_sale_badge || "Semester Rush Deals"}
-                  </Badge>
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
-                    {cmsSettings.flash_sale_title || "Up To 50% Off Campus Essentials"}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-amber-100 max-w-sm">
-                    {cmsSettings.flash_sale_subtitle ||
-                      "Limited inventory discounts from student vendors wrapping up their clearance sales."}
-                  </p>
+          <div className="container mx-auto px-4 space-y-8">
+            {/* Promo 1: Flash Sale with Countdown (Increased Height) */}
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 text-white p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col md:flex-row md:items-center justify-between min-h-[300px] md:min-h-[340px] shadow-xl shadow-orange-600/15">
+              <div className="relative z-10 space-y-3.5 max-w-xl">
+                <Badge variant="dark" className="bg-white/20 backdrop-blur-md text-white border-0 text-xs font-bold">
+                  {cmsSettings.flash_sale_badge || "Semester Rush Deals"}
+                </Badge>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+                  {cmsSettings.flash_sale_title || "Up To 50% Off Campus Essentials"}
+                </h3>
+                <p className="text-xs sm:text-sm text-amber-100 max-w-md">
+                  {cmsSettings.flash_sale_subtitle ||
+                    "Limited inventory discounts from student vendors wrapping up their clearance sales."}
+                </p>
 
-                  {/* Countdown Timer Block */}
-                  <div className="flex items-center gap-1.5 sm:gap-2 pt-2">
-                    <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                      <span className="font-extrabold text-xs sm:text-base">02</span>
-                      <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Days</span>
-                    </div>
-                    <span className="font-bold">:</span>
-                    <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                      <span className="font-extrabold text-xs sm:text-base">14</span>
-                      <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
-                    </div>
-                    <span className="font-bold">:</span>
-                    <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                      <span className="font-extrabold text-xs sm:text-base">38</span>
-                      <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
-                    </div>
-                    <span className="font-bold">:</span>
-                    <div className="bg-white/20 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-center min-w-[42px] sm:min-w-[48px]">
-                      <span className="font-extrabold text-xs sm:text-base">45</span>
-                      <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
-                    </div>
+                {/* Countdown Timer Block */}
+                <div className="flex items-center gap-1.5 sm:gap-2 pt-2">
+                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center min-w-[48px]">
+                    <span className="font-extrabold text-sm sm:text-base">02</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Days</span>
                   </div>
-                </div>
-
-                <div className="relative z-10 pt-5 sm:pt-6">
-                  <Link href="/shop?filter=sale">
-                    <Button className="bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-5 sm:px-6 shadow-md text-xs sm:text-sm">
-                      Shop Flash Sale Now &rarr;
-                    </Button>
-                  </Link>
-                </div>
-
-                {/* Decorative Sneaker / Cutout */}
-                <div className="absolute -bottom-6 -right-6 w-56 h-56 opacity-25 lg:opacity-40 pointer-events-none">
-                  <Image
-                    src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
-                    alt="Sneaker flash sale"
-                    fill
-                    className="object-contain"
-                  />
+                  <span className="font-bold">:</span>
+                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center min-w-[48px]">
+                    <span className="font-extrabold text-sm sm:text-base">14</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Hours</span>
+                  </div>
+                  <span className="font-bold">:</span>
+                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center min-w-[48px]">
+                    <span className="font-extrabold text-sm sm:text-base">38</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Mins</span>
+                  </div>
+                  <span className="font-bold">:</span>
+                  <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-xl text-center min-w-[48px]">
+                    <span className="font-extrabold text-sm sm:text-base">45</span>
+                    <span className="block text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">Secs</span>
+                  </div>
                 </div>
               </div>
 
+              <div className="relative z-10 pt-6 md:pt-0">
+                <Link href="/shop?filter=sale">
+                  <Button className="bg-white text-neutral-950 hover:bg-neutral-100 font-bold px-6 py-3.5 shadow-md text-xs sm:text-sm rounded-full">
+                    Shop Flash Sale Now &rarr;
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Decorative Sneaker / Cutout */}
+              <div className="absolute -bottom-6 -right-6 w-64 h-64 opacity-25 lg:opacity-40 pointer-events-none">
+                <Image
+                  src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80"
+                  alt="Sneaker flash sale"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Dual Community Pillars: Student Seller Banner & Campus Ambassador Hub Banner (Increased Height) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Promo 2: Student Entrepreneurship / Seller Spotlight */}
-              <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-5 sm:p-8 md:p-10 flex flex-col justify-between min-h-[280px] sm:min-h-[300px] shadow-xl">
-                <div className="relative z-10 space-y-3">
+              <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-between min-h-[380px] sm:min-h-[420px] md:min-h-[460px] shadow-xl">
+                <div className="relative z-10 space-y-3.5">
                   <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
                     Student Seller Community
                   </Badge>
@@ -578,21 +670,25 @@ export default async function HomePage() {
                     {cmsSettings.seller_promo_subtitle ||
                       "Launch your storefront in under 3 minutes. Pick your storefront layout, upload items, and receive WhatsApp orders."}
                   </p>
-                  <ul className="text-xs text-neutral-300 space-y-1.5 pt-1">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  <ul className="text-xs text-neutral-300 space-y-2 pt-1">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                       <span>Zero upfront listing fees for student sellers</span>
                     </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                       <span>Choice of 4 custom storefront layouts</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Direct WhatsApp orders with safe Escrow</span>
                     </li>
                   </ul>
                 </div>
 
                 <div className="relative z-10 pt-6">
                   <Link href="/vendor/register">
-                    <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 shadow-md rounded-full">
+                    <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-7 py-3 shadow-md rounded-full text-xs sm:text-sm">
                       Register Your Store &rarr;
                     </Button>
                   </Link>
@@ -603,6 +699,53 @@ export default async function HomePage() {
                   <Image
                     src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600&q=80"
                     alt="Student seller working"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+
+              {/* Promo 3: Campus Ambassador Hub Spotlight */}
+              <div className="relative rounded-3xl overflow-hidden bg-neutral-900 text-white p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-between min-h-[380px] sm:min-h-[420px] md:min-h-[460px] shadow-xl">
+                <div className="relative z-10 space-y-3.5">
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                    Campus Ambassador Hub
+                  </Badge>
+                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight">
+                    Represent ọjà &amp; Earn On Every Referral
+                  </h3>
+                  <p className="text-xs sm:text-sm text-neutral-400 max-w-sm">
+                    Empower peers in your hostel and faculty to buy and sell safely. Earn direct cash bounties on every vendor and student you onboard.
+                  </p>
+                  <ul className="text-xs text-neutral-300 space-y-2 pt-1">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Custom QR codes &amp; flyers for campus notice boards</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Direct cash bounties paid into your bank account</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>Real-time dashboard tracking signups &amp; earnings</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="relative z-10 pt-6">
+                  <Link href="/ambassador">
+                    <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-7 py-3 shadow-md rounded-full text-xs sm:text-sm">
+                      Join Ambassador Hub &rarr;
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Decorative Background */}
+                <div className="absolute inset-0 opacity-20 pointer-events-none">
+                  <Image
+                    src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80"
+                    alt="Campus students collaborating"
                     fill
                     className="object-cover"
                   />

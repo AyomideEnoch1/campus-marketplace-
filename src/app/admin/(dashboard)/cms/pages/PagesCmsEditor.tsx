@@ -9,6 +9,7 @@ import {
   Trash2,
   ExternalLink,
   Check,
+  ArrowLeftRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,13 +111,13 @@ export function PagesCmsEditor({ initialPages }: { initialPages: PageItem[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-xs text-neutral-400">
           Create and edit static content pages (About, Terms, Privacy, FAQ).
         </p>
         <Button
           onClick={startCreate}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 self-start sm:self-auto shrink-0 shadow-sm"
         >
           <Plus className="w-4 h-4" /> Create Page
         </Button>
@@ -227,71 +228,85 @@ export function PagesCmsEditor({ initialPages }: { initialPages: PageItem[] }) {
         </div>
       )}
 
-      {/* Pages List */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden divide-y divide-neutral-800">
-        {pages.length === 0 ? (
-          <div className="p-8 text-center text-xs text-neutral-500">
-            No CMS pages found. Click &quot;Create Page&quot; to author your first page.
-          </div>
-        ) : (
-          pages.map((p) => (
-            <div
-              key={p.id}
-              className="p-4 flex items-center justify-between hover:bg-neutral-800/40 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-neutral-800 text-neutral-300 flex items-center justify-center">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-white">{p.title}</span>
-                    <span className="text-[11px] font-mono text-neutral-400">
-                      /{p.slug}
-                    </span>
-                    {p.isPublished ? (
-                      <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">
-                        Published
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] text-neutral-400">
-                        Draft
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-neutral-500 mt-0.5">
-                    Updated {formatDate(p.updatedAt)} · {p.content.length} characters
-                  </p>
-                </div>
-              </div>
+      {/* Mobile Scroll Hint */}
+      <div className="flex sm:hidden items-center gap-1.5 px-1 text-[11px] text-neutral-400">
+        <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+        <span>Swipe horizontally to view all page details &amp; actions</span>
+      </div>
 
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/${p.slug}`}
-                  target="_blank"
-                  className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
-                  title="View live page"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
-                <button
-                  onClick={() => startEdit(p)}
-                  className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
-                  title="Edit page"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => handleDelete(p.id, p.title)}
-                  className="p-1.5 rounded-lg bg-neutral-800 hover:bg-red-950/80 hover:text-red-400 text-neutral-500"
-                  title="Delete page"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+      {/* Pages List Container with Horizontal Scroll */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-neutral-900/50">
+          <div className="min-w-[620px] divide-y divide-neutral-800">
+            {pages.length === 0 ? (
+              <div className="p-8 text-center text-xs text-neutral-500">
+                No CMS pages found. Click &quot;Create Page&quot; to author your first page.
               </div>
-            </div>
-          ))
-        )}
+            ) : (
+              pages.map((p) => (
+                <div
+                  key={p.id}
+                  className="p-4 sm:p-5 flex items-center justify-between hover:bg-neutral-800/40 transition-colors gap-6"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-800/80 border border-neutral-700/60 text-emerald-400 flex items-center justify-center shrink-0">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-bold text-sm text-white whitespace-nowrap">
+                          {p.title}
+                        </span>
+                        <span className="text-[11px] font-mono text-neutral-400 bg-neutral-950/80 border border-neutral-800 px-2 py-0.5 rounded-md whitespace-nowrap">
+                          /{p.slug}
+                        </span>
+                        {p.isPublished ? (
+                          <Badge className="bg-emerald-950/80 text-emerald-400 border border-emerald-800 text-[10px] whitespace-nowrap">
+                            Published
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-neutral-400 whitespace-nowrap">
+                            Draft
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-neutral-400 whitespace-nowrap">
+                        Updated {formatDate(p.updatedAt)} · {p.content.length.toLocaleString()} characters
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      href={`/${p.slug}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 border border-neutral-700/60 text-xs font-medium text-neutral-200 transition-colors"
+                      title="View live page"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>View</span>
+                    </Link>
+                    <button
+                      onClick={() => startEdit(p)}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 border border-neutral-700/60 text-xs font-medium text-neutral-200 transition-colors"
+                      title="Edit page"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p.id, p.title)}
+                      className="p-2 rounded-xl bg-neutral-800/80 hover:bg-red-950/80 hover:text-red-400 border border-neutral-700/60 text-neutral-400 transition-colors"
+                      title="Delete page"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

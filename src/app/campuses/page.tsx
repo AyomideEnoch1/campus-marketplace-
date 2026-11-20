@@ -94,7 +94,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
-                  {c.name.split(" ")[0]}
+                  {c.slug.toUpperCase()}
                 </Link>
               );
             })}
