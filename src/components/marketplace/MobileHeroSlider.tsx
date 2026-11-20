@@ -195,14 +195,14 @@ export function MobileHeroSlider() {
         </div>
 
         {/* Overlay Pagination Dots */}
-        <div className="absolute bottom-2 sm:bottom-3.5 md:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 sm:gap-2 pointer-events-none">
+        <div className="absolute bottom-2 sm:bottom-4 md:bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 sm:gap-2.5 pointer-events-none">
           {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`transition-all duration-300 rounded-full pointer-events-auto ${
+              className={`transition-all duration-300 rounded-full pointer-events-auto cursor-pointer ${
                 current === i
-                  ? "w-5 sm:w-7 md:w-8 h-1.5 sm:h-2 bg-white shadow-xs"
+                  ? "w-5 sm:w-8 md:w-10 h-1.5 sm:h-2 md:h-2.5 bg-white shadow-xs"
                   : "w-1.5 sm:w-2 md:w-2.5 h-1.5 sm:h-2 md:h-2.5 bg-white/45 hover:bg-white/70"
               }`}
               aria-label={`Go to slide ${i + 1}`}

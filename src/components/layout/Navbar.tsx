@@ -229,22 +229,20 @@ export function Navbar({ initialUser }: NavbarProps) {
           )}
 
           {/* Cart / Bag Icon (Screens >= sm; mobile has bottom nav) */}
-          {user && (
-            <Link
-              href="/cart"
-              className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-              title="Bag"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              {totalCount > 0 && (
-                <Badge
-                  className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
-                >
-                  {totalCount}
-                </Badge>
-              )}
-            </Link>
-          )}
+          <Link
+            href="/cart"
+            className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+            title="Bag"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            {totalCount > 0 && (
+              <Badge
+                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
+              >
+                {totalCount}
+              </Badge>
+            )}
+          </Link>
 
           {/* Real-Time Notification Bell (Visible on both mobile & desktop when signed in) */}
           {user && <NotificationBell currentUserId={user.id} />}

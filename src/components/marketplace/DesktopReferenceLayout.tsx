@@ -264,7 +264,7 @@ export function DesktopReferenceLayout({
       {/* 1. HERO BANNER SLIDER (WITHOUT NAVIGATION ARROWS)        */}
       {/* ======================================================== */}
       <div
-        className="relative w-full h-[340px] lg:h-[360px] overflow-hidden bg-neutral-900 select-none"
+        className="relative w-full h-[360px] md:h-[420px] lg:h-[460px] xl:h-[500px] overflow-hidden bg-neutral-900 select-none"
         onMouseEnter={() => setIsSliderHovered(true)}
         onMouseLeave={() => setIsSliderHovered(false)}
       >
