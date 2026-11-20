@@ -191,8 +191,8 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* 2. Mobile Hero Promo Banner Slider (Interactive Carousel with Shopping Cart) */}
-        <div className="px-4">
+        {/* 2. Mobile Hero Promo Banner Slider (100% Viewport Width Full Bleed) */}
+        <div className="w-full -mt-2">
           <MobileHeroSlider />
         </div>
 

@@ -125,9 +125,9 @@ export function MobileHeroSlider() {
 
   return (
     <div className="w-full">
-      {/* Slider Viewport */}
+      {/* Slider Viewport (100% viewport width full bleed) */}
       <div
-        className="relative rounded-3xl overflow-hidden shadow-lg shadow-emerald-950/10"
+        className="relative w-full overflow-hidden shadow-xs"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -144,7 +144,7 @@ export function MobileHeroSlider() {
             return (
               <div
                 key={idx}
-                className={`min-w-full w-full ${slide.bgGradient} p-4 xs:p-5 text-white relative flex flex-col justify-between`}
+                className={`min-w-full w-full ${slide.bgGradient} px-5 pt-4 pb-6 xs:px-6 xs:pt-5 xs:pb-7 text-white relative flex flex-col justify-between`}
               >
                 {/* Background subtle ambient blob */}
                 <div className="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white/10 blur-xl pointer-events-none" />
@@ -193,22 +193,22 @@ export function MobileHeroSlider() {
             );
           })}
         </div>
-      </div>
 
-      {/* Pagination Dots */}
-      <div className="flex items-center justify-center gap-1.5 pt-2">
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`transition-all duration-300 rounded-full ${
-              current === i
-                ? "w-6 h-1.5 bg-emerald-500"
-                : "w-1.5 h-1.5 bg-neutral-300 hover:bg-neutral-400"
-            }`}
-            aria-label={`Go to slide ${i + 1}`}
-          />
-        ))}
+        {/* Overlay Pagination Dots */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center gap-1.5 pointer-events-none">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`transition-all duration-300 rounded-full pointer-events-auto ${
+                current === i
+                  ? "w-5 h-1.5 bg-white shadow-xs"
+                  : "w-1.5 h-1.5 bg-white/45 hover:bg-white/70"
+              }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
