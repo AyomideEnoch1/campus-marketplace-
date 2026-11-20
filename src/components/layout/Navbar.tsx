@@ -30,7 +30,6 @@ import { SignInAsBuyerButton } from "@/components/vendor/SignInAsBuyerButton";
 import { SwitchRoleButton } from "@/components/auth/SwitchRoleButton";
 import { NotificationBell } from "./NotificationBell";
 import { SearchBar } from "@/components/marketplace/SearchBar";
-import { NavbarCategoriesDropdown } from "./NavbarCategoriesDropdown";
 
 interface NavbarProps {
   initialUser?: any;
@@ -188,63 +187,22 @@ export function Navbar({ initialUser }: NavbarProps) {
 
         {/* Center Nav Links (Desktop md+) */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-          <Link
-            href="/"
-            className={`px-3.5 py-2 text-sm rounded-full transition-all ${
-              pathname === "/"
-                ? "text-emerald-800 bg-emerald-50 font-bold"
-                : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 font-medium"
-            }`}
-          >
-            Home
-          </Link>
-
-          {/* Categories Nav Item with Embedded Filters Dropdown (Large Screen Hover) */}
-          <NavbarCategoriesDropdown />
-
-          <Link
-            href="/shop"
-            className={`px-3.5 py-2 text-sm rounded-full transition-all ${
-              pathname === "/shop"
-                ? "text-emerald-800 bg-emerald-50 font-bold"
-                : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 font-medium"
-            }`}
-          >
-            Shop
-          </Link>
-
-          <Link
-            href="/campuses"
-            className={`px-3.5 py-2 text-sm rounded-full transition-all ${
-              pathname === "/campuses"
-                ? "text-emerald-800 bg-emerald-50 font-bold"
-                : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 font-medium"
-            }`}
-          >
-            Campuses
-          </Link>
-
-          <Link
-            href="/vendors"
-            className={`px-3.5 py-2 text-sm rounded-full transition-all ${
-              pathname === "/vendors"
-                ? "text-emerald-800 bg-emerald-50 font-bold"
-                : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 font-medium"
-            }`}
-          >
-            Vendors
-          </Link>
-
-          <Link
-            href="/about"
-            className={`px-3.5 py-2 text-sm rounded-full transition-all ${
-              pathname === "/about"
-                ? "text-emerald-800 bg-emerald-50 font-bold"
-                : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 font-medium"
-            }`}
-          >
-            About
-          </Link>
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`px-3.5 py-2 text-sm rounded-full transition-all ${
+                  isActive
+                    ? "text-emerald-800 bg-emerald-50 font-bold"
+                    : "text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 font-medium"
+                }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right Actions: Wishlist, Cart, Notifications, Profile, Hamburger */}
