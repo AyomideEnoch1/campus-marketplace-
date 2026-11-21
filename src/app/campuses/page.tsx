@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Campus Locations | CampusTrade",
+  title: "Campus Locations | ọjà",
   description: "Browse verified student sellers, products, and pickup hubs across UNILAG, UI, and OAU.",
 };
 
@@ -94,7 +94,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 hover:text-neutral-900"
                   }`}
                 >
-                  {c.name.split(" ")[0]}
+                  {c.slug.toUpperCase()}
                 </Link>
               );
             })}

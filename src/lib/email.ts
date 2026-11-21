@@ -4,7 +4,7 @@ import { VendorNotificationEmail, VendorNotificationEmailProps } from "@/emails/
 import { VendorStatusEmail, VendorStatusEmailProps } from "@/emails/VendorStatusEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.EMAIL_FROM || "CampusTrade <notifications@campustrade.ng>";
+const fromEmail = process.env.EMAIL_FROM || "ọjà <notifications@campustrade.ng>";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
@@ -24,7 +24,7 @@ export async function sendOrderConfirmationEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Order #${props.orderNumber} Confirmed — CampusTrade Escrow`,
+      subject: `Order #${props.orderNumber} Confirmed — ọjà Escrow`,
       react: OrderConfirmationEmail(props),
     });
 
@@ -75,9 +75,9 @@ export async function sendVendorStatusEmail(
   }
 
   const subjectMap = {
-    APPROVED: `Congratulations! Your store ${props.storeName} is approved — CampusTrade`,
-    REJECTED: `Update on your CampusTrade vendor application for ${props.storeName}`,
-    SUSPENDED: `Important notice regarding your CampusTrade vendor account`,
+    APPROVED: `Congratulations! Your store ${props.storeName} is approved — ọjà`,
+    REJECTED: `Update on your ọjà vendor application for ${props.storeName}`,
+    SUSPENDED: `Important notice regarding your ọjà vendor account`,
     INFO_REQUESTED: `Action required: More information needed for ${props.storeName}`,
   };
 
@@ -85,7 +85,7 @@ export async function sendVendorStatusEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: subjectMap[props.status] || `CampusTrade Vendor Application Update`,
+      subject: subjectMap[props.status] || `ọjà Vendor Application Update`,
       react: VendorStatusEmail(props),
     });
 

@@ -177,8 +177,16 @@ export function AccountClient({ initialUser }: AccountClientProps) {
         <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-4 sm:gap-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-extrabold text-xl sm:text-2xl flex items-center justify-center shadow-lg shadow-emerald-600/20 shrink-0">
-                {initials}
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-neutral-900 border border-neutral-800 text-white font-extrabold text-xl sm:text-2xl flex items-center justify-center shadow-md shadow-neutral-950/10 shrink-0 overflow-hidden">
+                {initialUser.avatarUrl ? (
+                  <img
+                    src={initialUser.avatarUrl}
+                    alt={initialUser.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
               </div>
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">

@@ -284,7 +284,7 @@ export async function POST(req: NextRequest) {
         phoneNumber: userPhone,
       },
       customizations: {
-        title: `CampusTrade ${quote.escrow_mode === "escrow" ? "Escrow" : "Direct"}: #${orderNumber}`,
+        title: `ọjà ${quote.escrow_mode === "escrow" ? "Escrow" : "Direct"}: #${orderNumber}`,
         description: quote.escrow_mode === "escrow"
           ? "Payment held safely in escrow until you inspect and accept items."
           : "Direct campus checkout: vendor is paid upon payment verification.",

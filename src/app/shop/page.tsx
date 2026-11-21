@@ -712,7 +712,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <span className="text-xs text-neutral-400 font-medium">Active:</span>
                 {campus && (
                   <Badge variant="campus" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs shrink-0 max-w-full">
-                    <span className="truncate">Campus: {campuses.find((c) => c.slug === campus)?.name.split(" ")[0]}</span>
+                    <span className="truncate">Campus: {campuses.find((c) => c.slug === campus)?.slug.toUpperCase() || campus.toUpperCase()}</span>
                     <Link
                       href={`/shop?${new URLSearchParams({
                         ...(category ? { category } : {}),
@@ -799,7 +799,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       href={`/store/${v.slug}`}
                       className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-neutral-200/90 hover:border-emerald-500 hover:shadow-xs transition-all group"
                     >
-                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-black uppercase shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-black uppercase shrink-0">
                         {v.storeName ? v.storeName[0] : "V"}
                       </div>
                       <div className="flex flex-col min-w-0">

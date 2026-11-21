@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ShieldCheck, AlertTriangle, Eye, CheckCircle, MapPin, ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Campus Safety & Anti-Scam Guide | CampusTrade",
+  title: "Campus Safety & Anti-Scam Guide | ọjà",
   description: "Crucial guidelines for safe peer-to-peer product transactions on university campuses.",
 };
 
@@ -25,7 +25,7 @@ export default function SafetyPage() {
     },
     {
       title: "4. Verify Student Status",
-      desc: "All approved vendors on CampusTrade have verified campus credentials. If something looks suspicious or too good to be true, ask to see their student ID card or report the listing to platform admins.",
+      desc: "All approved vendors on ọjà have verified campus credentials. If something looks suspicious or too good to be true, ask to see their student ID card or report the listing to platform admins.",
       icon: ShieldCheck,
     },
   ];
@@ -78,7 +78,7 @@ export default function SafetyPage() {
             Notice Concerning Platform Facilitation
           </p>
           <p>
-            CampusTrade serves as an open marketplace connecting student buyers and sellers on campus. Always exercise sound judgment during transactions. Report any suspicious behavior or fraudulent vendors immediately to <a href="mailto:safety@unitrade.ng" className="underline font-bold">safety@unitrade.ng</a>.
+            ọjà serves as an open marketplace connecting student buyers and sellers on campus. Always exercise sound judgment during transactions. Report any suspicious behavior or fraudulent vendors immediately to <a href="mailto:safety@unitrade.ng" className="underline font-bold">safety@unitrade.ng</a>.
           </p>
         </div>
       </div>

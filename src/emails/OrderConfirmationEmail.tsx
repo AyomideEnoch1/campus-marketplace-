@@ -34,7 +34,7 @@ export function OrderConfirmationEmail({
   return (
     <Html>
       <Head />
-      <Preview>Your CampusTrade order #{orderNumber} is confirmed!</Preview>
+      <Preview>Your ọjà order #{orderNumber} is confirmed!</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
@@ -49,7 +49,7 @@ export function OrderConfirmationEmail({
           <Section style={content}>
             <Heading style={heading}>Order Confirmed! 🎉</Heading>
             <Text style={paragraph}>
-              Hi <strong>{buyerName}</strong>, your order <strong>#{orderNumber}</strong> has been received and your payment is held securely in CampusTrade Escrow.
+              Hi <strong>{buyerName}</strong>, your order <strong>#{orderNumber}</strong> has been received and your payment is held securely in ọjà Escrow.
             </Text>
 
             {/* Escrow Delivery Code Pill */}
@@ -103,10 +103,10 @@ export function OrderConfirmationEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Need help? Reach out to CampusTrade Support at support@campustrade.ng.
+              Need help? Reach out to ọjà Support at support@campustrade.ng.
             </Text>
             <Text style={footerText}>
-              &copy; {new Date().getFullYear()} CampusTrade Nigeria. All rights reserved.
+              &copy; {new Date().getFullYear()} ọjà Nigeria. All rights reserved.
             </Text>
           </Section>
         </Container>

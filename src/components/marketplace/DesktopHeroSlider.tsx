@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DesktopSlide {
@@ -245,46 +245,186 @@ export function DesktopHeroSlider({
 
   return (
     <section className="relative overflow-hidden bg-white pt-4 pb-8 lg:pb-12">
-      <div className="w-[94%] max-w-[1600px] mx-auto">
+      {/* 1. VISIBLE FULL-BLEED VECTOR PATTERNS BACKGROUND */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden select-none">
+        {/* Crisp Vector Dot Matrix Grid */}
+        <svg
+          className="absolute inset-0 w-full h-full opacity-65 text-slate-400"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern
+              id="hero-grid-pattern"
+              width="36"
+              height="36"
+              patternUnits="userSpaceOnUse"
+            >
+              <circle cx="18" cy="18" r="1.8" fill="currentColor" />
+            </pattern>
+            {/* Soft radial fade vignette so center/edges are balanced */}
+            <radialGradient id="fade-mask" cx="50%" cy="45%" r="65%">
+              <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+              <stop offset="65%" stopColor="white" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="white" stopOpacity="0.1" />
+            </radialGradient>
+            <mask id="radial-fade">
+              <rect width="100%" height="100%" fill="url(#fade-mask)" />
+            </mask>
+          </defs>
+          <rect
+            width="100%"
+            height="100%"
+            fill="url(#hero-grid-pattern)"
+            mask="url(#radial-fade)"
+          />
+        </svg>
+
+        {/* Prominent Geometric Concentric Orbital Arcs behind right visual */}
+        <svg
+          className="absolute -top-16 -right-16 w-[740px] h-[740px] pointer-events-none"
+          viewBox="0 0 740 740"
+          fill="none"
+        >
+          {/* Outer dashed orbit with node */}
+          <circle cx="370" cy="370" r="330" stroke="#10b981" strokeWidth="2" strokeDasharray="10 14" opacity="0.35" />
+          <circle cx="700" cy="370" r="6" fill="#10b981" opacity="0.8" />
+          {/* Middle dashed orbit with node */}
+          <circle cx="370" cy="370" r="270" stroke="#14b8a6" strokeWidth="2" strokeDasharray="6 8" opacity="0.4" />
+          <circle cx="210" cy="180" r="5" fill="#14b8a6" opacity="0.8" />
+          {/* Inner orbit */}
+          <circle cx="370" cy="370" r="215" stroke="#059669" strokeWidth="1.5" strokeDasharray="5 7" opacity="0.4" />
+        </svg>
+
+        {/* Distinct Vector Wave Ribbon (Top Left behind headline) */}
+        <svg
+          className="absolute top-8 left-8 w-36 h-16 text-emerald-500 opacity-60 -rotate-6"
+          viewBox="0 0 140 40"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+        >
+          <path d="M10 20 C 35 5, 55 35, 80 20 C 105 5, 120 35, 135 20" />
+        </svg>
+
+        {/* Top-Right Secondary Geometric Wave */}
+        <svg
+          className="absolute top-1/2 left-[50%] w-28 h-12 text-teal-500 opacity-45 rotate-12"
+          viewBox="0 0 120 30"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
+          <path d="M5 15 Q 30 0, 60 15 T 115 15" />
+        </svg>
+
+        {/* High-visibility Geometric Cross / Plus Marks */}
+        <svg
+          className="absolute top-20 left-[42%] w-5 h-5 text-emerald-600 opacity-70"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
+          <line x1="10" y1="2" x2="10" y2="18" />
+          <line x1="2" y1="10" x2="18" y2="10" />
+        </svg>
+
+        <svg
+          className="absolute bottom-16 left-[20%] w-4 h-4 text-slate-500 opacity-70"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
+          <line x1="10" y1="2" x2="10" y2="18" />
+          <line x1="2" y1="10" x2="18" y2="10" />
+        </svg>
+
+        <svg
+          className="absolute bottom-28 right-[46%] w-4 h-4 text-emerald-600 opacity-60"
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
+          <line x1="10" y1="2" x2="10" y2="18" />
+          <line x1="2" y1="10" x2="18" y2="10" />
+        </svg>
+
+        {/* Distinct 4-Point Geometric Sparkles */}
+        <svg
+          className="absolute top-24 left-[54%] w-6 h-6 text-emerald-500 opacity-75 animate-pulse"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
+        </svg>
+
+        <svg
+          className="absolute bottom-24 left-[10%] w-5 h-5 text-amber-500 opacity-70"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" />
+        </svg>
+
+        {/* Geometric Corner Accent Rings (Top Left) */}
+        <svg
+          className="absolute -top-10 -left-10 w-44 h-44 text-emerald-400/30 pointer-events-none"
+          viewBox="0 0 160 160"
+          fill="none"
+        >
+          <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="1.5" strokeDasharray="6 6" />
+          <circle cx="80" cy="80" r="45" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      </div>
+
+      <div className="w-[95%] max-w-[1700px] mx-auto relative z-10">
         <div
-          className="relative bg-white py-4 sm:py-6 lg:py-8 select-none"
+          className="relative py-4 sm:py-6 lg:py-8 select-none"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
+
           {/* Decorative subtle ambient accents seamlessly blended with white */}
           <div
-            className={`absolute top-0 right-1/4 w-[460px] h-[460px] ${slide.ambientGlow} rounded-full blur-3xl pointer-events-none -z-0 transition-colors duration-700 opacity-50`}
+            className={`absolute top-0 right-12 w-[500px] h-[500px] ${slide.ambientGlow} rounded-full blur-3xl pointer-events-none -z-0 transition-colors duration-700 opacity-50`}
           />
           <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-teal-50/60 rounded-full blur-3xl pointer-events-none -z-0" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center relative z-10 min-h-[460px]">
-            {/* Left Column: Headline, Description & CTAs */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 xl:gap-12 items-center relative z-10 min-h-[520px] xl:min-h-[620px]">
+            {/* Left Column: Headline, Description & CTAs (Expanded Width on Large Screens) */}
             <div
               key={`text-${current}`}
-              className="lg:col-span-7 xl:col-span-7 space-y-6 lg:space-y-8 animate-in fade-in duration-500"
+              className="lg:col-span-7 xl:col-span-7 2xl:col-span-7 space-y-6 lg:space-y-7 animate-in fade-in duration-500 pr-2 lg:pr-6"
             >
-              {/* Main Headline */}
-              <div>
-                <h1 className="text-4xl lg:text-5xl xl:text-6xl 2xl:text-[70px] font-black text-neutral-950 tracking-tight leading-[1.06]">
+              {/* Main Headline (Wider & more impactful on large screens) */}
+              <div className="space-y-2.5 max-w-2xl xl:max-w-3xl">
+                <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl 2xl:text-[70px] font-black text-neutral-950 tracking-tight leading-[1.05]">
                   {slide.title} <br />
                   <span className="text-emerald-500">{slide.highlightText}</span>
                 </h1>
-                <p className="font-serif italic text-neutral-500 text-lg sm:text-xl lg:text-2xl mt-2 tracking-normal">
+                <p className="text-base sm:text-lg lg:text-xl xl:text-2xl text-neutral-500 font-medium tracking-tight">
                   {slide.subtitle}
                 </p>
               </div>
 
               {/* Short Description */}
-              <p className="text-base lg:text-lg text-neutral-600 leading-relaxed font-normal max-w-xl min-h-[72px]">
+              <p className="text-sm lg:text-base xl:text-lg text-neutral-600 leading-relaxed font-normal max-w-xl xl:max-w-2xl">
                 {slide.description}
               </p>
 
               {/* Dual CTA Buttons */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-3.5 pt-2">
                 <Link href={slide.primaryCta.href}>
                   <Button
                     size="lg"
-                    className="rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-3.5 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 transition-all text-sm sm:text-base cursor-pointer"
+                    className="rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-3.5 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 active:scale-95 transition-all text-sm sm:text-base cursor-pointer"
                   >
                     {slide.primaryCta.label} <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
@@ -293,129 +433,93 @@ export function DesktopHeroSlider({
                   <Button
                     variant="outline"
                     size="lg"
-                    className="rounded-full border-2 border-neutral-300 hover:border-neutral-900 text-neutral-900 font-bold px-7 py-3.5 bg-white hover:bg-neutral-50 hover:-translate-y-0.5 transition-all text-sm sm:text-base cursor-pointer"
+                    className="rounded-full border border-neutral-300 hover:border-neutral-900 text-neutral-900 font-bold px-7 py-3.5 bg-white hover:bg-neutral-50 hover:-translate-y-0.5 active:scale-95 transition-all text-sm sm:text-base cursor-pointer shadow-2xs"
                   >
                     {slide.secondaryCta.label}
                   </Button>
                 </Link>
-                {slide.tertiaryLink && (
-                  <Link
-                    href={slide.tertiaryLink.href}
-                    className="ml-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-4 cursor-pointer"
-                  >
-                    {slide.tertiaryLink.label}
-                  </Link>
-                )}
               </div>
             </div>
 
-            {/* Right Column: Hero Visual with Circular Spotlight Disc, Floating Badges, and Slider Nav */}
-            <div className="lg:col-span-5 xl:col-span-5 relative flex items-center justify-center">
+            {/* Right Column: Hero Visual with Circular Spotlight Disc (Shifted Right) */}
+            <div className="lg:col-span-5 xl:col-span-5 2xl:col-span-5 relative flex items-center justify-center lg:justify-end">
               {/* Visual Container */}
-              <div className="relative w-full h-[440px] xl:h-[500px] 2xl:h-[540px] flex items-center justify-center">
-                {/* Vibrant Circular Gradient Spotlight Disc */}
+              <div className="relative w-full h-[500px] lg:h-[560px] xl:h-[640px] 2xl:h-[700px] flex items-center justify-center lg:justify-end lg:translate-x-8 xl:translate-x-12 2xl:translate-x-16">
+                {/* Vibrant Circular Gradient Spotlight Disc (A lot bigger) */}
                 <div
-                  className={`absolute w-[360px] h-[360px] xl:w-[420px] xl:h-[420px] rounded-full bg-gradient-to-tr ${slide.discGradient} opacity-90 shadow-2xl shadow-emerald-500/20 -z-0 transition-all duration-700 hover:scale-105`}
+                  className={`absolute w-[420px] h-[420px] lg:w-[480px] lg:h-[480px] xl:w-[560px] xl:h-[560px] 2xl:w-[640px] 2xl:h-[640px] rounded-full bg-gradient-to-tr ${slide.discGradient} opacity-90 shadow-2xl shadow-emerald-500/20 -z-0 transition-all duration-700 hover:scale-105`}
                 />
 
                 {/* Decorative secondary ring */}
                 <div
-                  className={`absolute w-[390px] h-[390px] xl:w-[460px] xl:h-[460px] rounded-full border ${slide.discBorder} -z-0 pointer-events-none transition-colors duration-700`}
+                  className={`absolute w-[460px] h-[460px] lg:w-[530px] lg:h-[530px] xl:w-[620px] xl:h-[620px] 2xl:w-[700px] 2xl:h-[700px] rounded-full border ${slide.discBorder} -z-0 pointer-events-none transition-colors duration-700`}
                 />
 
                 {/* Floating Circular Discount Badge */}
                 <div
                   key={`badge-${current}`}
-                  className="absolute top-4 right-2 xl:top-6 xl:right-4 z-20 w-20 h-20 xl:w-22 xl:h-22 rounded-full bg-neutral-950 text-white flex flex-col items-center justify-center shadow-xl border-2 border-white/20 transform rotate-12 hover:rotate-0 hover:scale-110 transition-all cursor-pointer animate-in zoom-in-95 duration-500"
+                  className="absolute top-4 right-4 xl:top-6 xl:right-6 2xl:right-8 z-20 w-22 h-22 xl:w-24 xl:h-24 rounded-full bg-neutral-950 text-white flex flex-col items-center justify-center shadow-xl border-2 border-white/20 transform rotate-12 hover:rotate-0 hover:scale-110 transition-all cursor-pointer animate-in zoom-in-95 duration-500"
                 >
                   <span
-                    className={`text-[9px] font-semibold uppercase tracking-wider ${slide.discountBadge.accentColor}`}
+                    className={`text-[10px] xl:text-xs font-semibold uppercase tracking-wider ${slide.discountBadge.accentColor}`}
                   >
                     {slide.discountBadge.top}
                   </span>
-                  <span className="text-base xl:text-lg font-black leading-tight">
+                  <span className="text-lg xl:text-xl font-black leading-tight">
                     {slide.discountBadge.main}
                   </span>
-                  <span className="text-[8px] font-bold text-neutral-300">
+                  <span className="text-[9px] xl:text-[10px] font-bold text-neutral-300">
                     {slide.discountBadge.bottom}
                   </span>
                 </div>
 
-                {/* Foreground Product Composition */}
+                {/* Foreground Product Composition (Enlarged Scale) */}
                 <div
                   key={`image-${current}`}
-                  className="relative z-10 w-full h-full flex items-center justify-center animate-in fade-in zoom-in-95 duration-500"
+                  className="relative z-10 w-full h-full flex items-center justify-center animate-in fade-in zoom-in-95 duration-500 scale-105 xl:scale-110"
                 >
                   <Image
                     src={slide.imageSrc}
                     alt={slide.imageAlt}
                     fill
                     priority
-                    sizes="(max-width: 1024px) 50vw, 650px"
-                    className="object-contain filter drop-shadow-[0_25px_45px_rgba(0,0,0,0.20)] hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 1024px) 60vw, 850px"
+                    className="object-contain filter drop-shadow-[0_28px_50px_rgba(0,0,0,0.22)] hover:scale-105 transition-transform duration-500"
                   />
                 </div>
 
-                {/* Floating Pill Card */}
-                <div
-                  key={`pill-${current}`}
-                  className="absolute bottom-4 left-0 xl:bottom-6 xl:left-2 z-20 bg-white/95 backdrop-blur-md border border-neutral-200/80 rounded-2xl px-3.5 py-2 shadow-lg flex items-center gap-2.5 hover:-translate-y-0.5 transition-all animate-in slide-in-from-bottom-2 duration-500"
+                {/* Floating Circular "SELL" Badge (Strategically at Bottom-Left of Hero Visual) */}
+                <Link
+                  href="/vendor/register"
+                  className="absolute bottom-6 left-2 xl:bottom-8 xl:left-0 z-20 w-20 h-20 xl:w-22 xl:h-22 rounded-full bg-neutral-950 text-white flex flex-col items-center justify-center shadow-2xl border-2 border-emerald-400/40 transform -rotate-12 hover:rotate-0 hover:scale-110 hover:border-emerald-400 transition-all cursor-pointer group"
+                  title="Sell on Campus - Start Free"
                 >
-                  <div
-                    className={`w-8 h-8 rounded-xl ${slide.pillCard.iconBg} ${slide.pillCard.iconColor} flex items-center justify-center font-bold text-sm`}
-                  >
-                    {slide.pillCard.icon}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-neutral-900 leading-tight">
-                      {slide.pillCard.title}
-                    </p>
-                    <p className="text-[10px] text-neutral-500">
-                      {slide.pillCard.subtitle}
-                    </p>
-                  </div>
-                </div>
+                  <span className="text-[9px] xl:text-[10px] font-bold uppercase tracking-wider text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                    START
+                  </span>
+                  <span className="text-base xl:text-lg font-black leading-tight tracking-wide text-white">
+                    SELL
+                  </span>
+                  <span className="text-[8px] xl:text-[9px] font-bold text-neutral-300 uppercase tracking-tight">
+                    FREE
+                  </span>
+                </Link>
 
-                {/* Interactive Carousel Navigation Pill Controls */}
-                <div className="absolute bottom-4 right-0 xl:bottom-6 xl:right-2 z-30 flex items-center gap-2.5 bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-full border border-neutral-200/80 shadow-lg">
-                  {/* Clickable Dots */}
-                  <div className="flex items-center gap-1.5">
-                    {slides.map((_, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => changeSlide(i)}
-                        aria-label={`Go to slide ${i + 1}`}
-                        className={`transition-all duration-300 rounded-full cursor-pointer ${
-                          current === i
-                            ? "w-5 h-2 bg-emerald-500"
-                            : "w-2 h-2 bg-neutral-300 hover:bg-neutral-400"
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  <div className="h-3.5 w-px bg-neutral-200 mx-0.5" />
-
-                  {/* Previous Button */}
-                  <button
-                    type="button"
-                    onClick={prevSlide}
-                    aria-label="Previous slide"
-                    className="w-7 h-7 rounded-full bg-neutral-100 hover:bg-emerald-50 hover:text-emerald-700 text-neutral-700 flex items-center justify-center transition-all cursor-pointer active:scale-95"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  {/* Next Button */}
-                  <button
-                    type="button"
-                    onClick={nextSlide}
-                    aria-label="Next slide"
-                    className="w-7 h-7 rounded-full bg-neutral-100 hover:bg-emerald-50 hover:text-emerald-700 text-neutral-700 flex items-center justify-center transition-all cursor-pointer active:scale-95"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+                {/* Interactive Carousel Navigation Dots (Clean, without arrows) */}
+                <div className="absolute bottom-3 right-4 xl:bottom-5 xl:right-6 z-30 flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-neutral-200/80 shadow-md">
+                  {slides.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => changeSlide(i)}
+                      aria-label={`Go to slide ${i + 1}`}
+                      className={`transition-all duration-300 rounded-full cursor-pointer ${
+                        current === i
+                          ? "w-6 h-2 bg-emerald-500"
+                          : "w-2 h-2 bg-neutral-300 hover:bg-neutral-400"
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>

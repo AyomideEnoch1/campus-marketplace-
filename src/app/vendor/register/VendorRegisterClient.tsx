@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  ShoppingCart,
   GraduationCap,
   ShoppingBag,
   ShieldCheck,
@@ -306,14 +307,14 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2 mb-2">
             <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5" />
             </div>
-            <span className="font-extrabold text-2xl tracking-tight text-neutral-900">
-              Campus<span className="text-emerald-600">Trade</span>
+            <span className="font-black text-2xl tracking-tight text-neutral-900 lowercase">
+              ọ<span className="text-emerald-600">jà</span>
             </span>
           </Link>
           <h1 className="text-2xl sm:text-4xl font-black text-neutral-950 tracking-tight">
-            Start Selling on CampusTrade
+            Start Selling on ọjà
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-lg mx-auto">
             Sell directly to thousands of Nigerian university students. Choose whether you&apos;re a student or an external business to get started.
@@ -627,6 +628,31 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Ambassador / Referral Code */}
+            <div className="space-y-1 pt-1">
+              <label className="text-xs font-bold text-neutral-700 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  Campus Ambassador / Referral Code (Optional)
+                </span>
+                {referralCode && (
+                  <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    Ambassador Code Applied
+                  </span>
+                )}
+              </label>
+              <Input
+                maxLength={12}
+                placeholder="e.g. UNILAG-AYO"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                className="rounded-xl text-xs font-mono uppercase h-10"
+              />
+              <p className="text-[11px] text-neutral-400">
+                Did a student ambassador introduce you to ọjà? Enter their code so they receive credit for onboarding your store.
+              </p>
             </div>
           </div>
 

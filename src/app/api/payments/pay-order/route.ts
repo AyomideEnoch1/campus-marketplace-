@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         phoneNumber: order.buyerPhone || "08000000000",
       },
       customizations: {
-        title: `CampusTrade ${order.escrow_mode === "escrow" ? "Escrow" : "Direct"}: #${order.orderNumber}`,
+        title: `ọjà ${order.escrow_mode === "escrow" ? "Escrow" : "Direct"}: #${order.orderNumber}`,
         description:
           order.escrow_mode === "escrow"
             ? "Payment held safely in escrow until you inspect and accept items."

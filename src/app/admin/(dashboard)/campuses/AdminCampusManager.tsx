@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Settings,
   AlertTriangle,
+  Pencil,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,15 @@ export function AdminCampusManager({
   const [settingsGuestEnabled, setSettingsGuestEnabled] = useState(true);
   const [settingsGuestCap, setSettingsGuestCap] = useState(25);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Edit campus details form state
+  const [editingCampus, setEditingCampus] = useState<CampusItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSlug, setEditSlug] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editState, setEditState] = useState("");
+  const [isUpdatingCampus, setIsUpdatingCampus] = useState(false);
+  const [editErrorMsg, setEditErrorMsg] = useState("");
 
   const handleNameChange = (val: string) => {
     setName(val);
@@ -154,6 +164,59 @@ export function AdminCampusManager({
       console.error("Failed to save settings", err);
     } finally {
       setIsSavingSettings(false);
+    }
+  };
+
+  const openEditModal = (campus: CampusItem) => {
+    setEditingCampus(campus);
+    setEditName(campus.name);
+    setEditSlug(campus.slug);
+    setEditCity(campus.city);
+    setEditState(campus.state || "");
+    setEditErrorMsg("");
+  };
+
+  const handleUpdateCampus = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCampus || !editName.trim()) return;
+
+    setIsUpdatingCampus(true);
+    setEditErrorMsg("");
+
+    try {
+      const res = await fetch(`/api/admin/campuses/${editingCampus.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editName.trim(),
+          slug: editSlug.trim(),
+          city: editCity.trim(),
+          state: editState.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update campus name");
+
+      setCampuses((prev) =>
+        prev.map((c) =>
+          c.id === editingCampus.id
+            ? {
+                ...c,
+                name: editName.trim(),
+                slug: editSlug.trim(),
+                city: editCity.trim(),
+                state: editState.trim() || null,
+              }
+            : c
+        )
+      );
+
+      setEditingCampus(null);
+    } catch (err: any) {
+      setEditErrorMsg(err.message || "Failed to update campus");
+    } finally {
+      setIsUpdatingCampus(false);
     }
   };
 
@@ -431,6 +494,13 @@ export function AdminCampusManager({
 
                   <div className="flex items-center gap-1.5">
                     <button
+                      onClick={() => openEditModal(campus)}
+                      className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors"
+                      title="Edit campus name and details"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-emerald-400" />
+                    </button>
+                    <button
                       onClick={() => handleToggleActive(campus.id, campus.isActive)}
                       className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
                       title={campus.isActive ? "Deactivate Campus" : "Activate Campus"}
@@ -540,6 +610,127 @@ export function AdminCampusManager({
                 {isSavingSettings ? "Saving..." : "Save Settings"}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Campus Details Modal */}
+      {editingCampus && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-md w-full space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div>
+                <h3 className="font-bold text-base text-white flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-emerald-400" />
+                  Edit Campus Name & Details
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Update university name, slug, and location details.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingCampus(null)}
+                className="text-neutral-400 hover:text-white text-xs p-1 rounded-lg"
+              >
+                &times; Close
+              </button>
+            </div>
+
+            {editErrorMsg && (
+              <div className="p-3 bg-red-950/60 border border-red-800 rounded-xl text-xs text-red-300">
+                {editErrorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateCampus} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                  Campus / University Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. University of Lagos (UNILAG)"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                  Campus Slug
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. unilag"
+                  value={editSlug}
+                  onChange={(e) =>
+                    setEditSlug(
+                      e.target.value
+                        .toLowerCase()
+                        .trim()
+                        .replace(/[^a-z0-9-]+/g, "-")
+                    )
+                  }
+                  className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 font-mono"
+                />
+                <span className="text-[10px] text-neutral-500 mt-0.5 block">
+                  Used for directory and search filters
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                    City / Town
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Akoka, Yaba"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-neutral-300 block mb-1">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Lagos State"
+                    value={editState}
+                    onChange={(e) => setEditState(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-neutral-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingCampus(null)}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isUpdatingCampus || !editName.trim()}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
+                >
+                  {isUpdatingCampus ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

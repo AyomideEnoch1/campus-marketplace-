@@ -19,14 +19,14 @@ export async function generateMetadata({
   });
 
   if (!vendor) {
-    return { title: "Store Not Found | CampusTrade" };
+    return { title: "Store Not Found | ọjà" };
   }
 
   return {
     title: `${vendor.storeName} | ${vendor.campus?.name} Student Store`,
     description:
       vendor.storeDescription ||
-      `Shop authentic products from ${vendor.storeName} on CampusTrade.`,
+      `Shop authentic products from ${vendor.storeName} on ọjà.`,
   };
 }
 

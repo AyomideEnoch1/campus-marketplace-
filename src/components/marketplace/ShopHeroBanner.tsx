@@ -46,7 +46,7 @@ export function ShopHeroBanner() {
 
   return (
     <div
-      className="relative w-full h-[240px] xs:h-[270px] sm:h-[320px] lg:h-[360px] overflow-hidden bg-neutral-900 select-none"
+      className="relative w-full h-[240px] xs:h-[270px] sm:h-[320px] md:h-[350px] lg:h-[380px] overflow-hidden bg-neutral-900 select-none"
       onMouseEnter={() => setIsSliderHovered(true)}
       onMouseLeave={() => setIsSliderHovered(false)}
     >
@@ -82,10 +82,10 @@ export function ShopHeroBanner() {
 
             {/* Giant Centered Display Typography (Matches Home Page Reference Design) */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-              <h1 className="text-white text-[56px] xs:text-[72px] sm:text-[105px] lg:text-[145px] font-black tracking-tight leading-none drop-shadow-md opacity-95">
+              <h1 className="text-white text-[56px] xs:text-[72px] sm:text-[95px] md:text-[120px] lg:text-[145px] font-black tracking-tight leading-none drop-shadow-md opacity-95">
                 {slide.title}
               </h1>
-              <p className="text-white/85 text-[11px] sm:text-xs lg:text-sm font-semibold tracking-widest uppercase mt-2 drop-shadow-sm">
+              <p className="text-white/85 text-[11px] sm:text-xs md:text-sm lg:text-base font-semibold tracking-widest uppercase mt-2 drop-shadow-sm">
                 {slide.subtitle}
               </p>
             </div>

@@ -34,13 +34,13 @@ export function VendorNotificationEmail({
   return (
     <Html>
       <Head />
-      <Preview>New CampusTrade Order #{orderNumber} received!</Preview>
+      <Preview>New ọjà Order #{orderNumber} received!</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              Campus<span style={{ color: "#10b981" }}>Trade</span>
+              ọ<span style={{ color: "#10b981" }}>jà</span>
             </Text>
             <Text style={headerSub}>Vendor Notification &bull; Escrow Secured</Text>
           </Section>
@@ -103,7 +103,7 @@ export function VendorNotificationEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              CampusTrade Vendor Portal &bull; Protecting campus commerce.
+              ọjà Vendor Portal &bull; Protecting campus commerce.
             </Text>
           </Section>
         </Container>

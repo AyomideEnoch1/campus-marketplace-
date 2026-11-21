@@ -54,7 +54,7 @@ export default function CartPage() {
             </Link>
             <Link href="/auth/register" className="block">
               <Button variant="ghost" size="sm" className="w-full text-xs font-semibold text-neutral-600">
-                New to CampusTrade? Join Free
+                New to ọjà? Join Free
               </Button>
             </Link>
           </div>

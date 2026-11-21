@@ -374,7 +374,7 @@ export function AdminActivityTable({ initialLogs }: AdminActivityTableProps) {
                       {/* Performed By */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-neutral-800 text-neutral-300 border border-neutral-700 flex items-center justify-center text-[10px] font-bold shrink-0">
                             {avatarChar}
                           </div>
                           <div>

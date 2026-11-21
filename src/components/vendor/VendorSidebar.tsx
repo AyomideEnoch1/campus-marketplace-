@@ -472,7 +472,7 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
             <div className="flex flex-col items-center gap-2 pt-2 border-t border-neutral-100 w-full">
               {/* User Avatar with Tooltip */}
               <div className="relative group flex justify-center">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center border border-emerald-200 cursor-default">
+                <div className="w-8 h-8 rounded-full bg-neutral-900 text-white font-bold text-xs flex items-center justify-center border border-neutral-800 cursor-default">
                   {session.fullName?.[0]?.toUpperCase() || "U"}
                 </div>
                 <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 hidden group-hover:flex items-center">

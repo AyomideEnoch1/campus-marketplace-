@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GraduationCap, ShieldCheck, MapPin, Heart } from "lucide-react";
+import { ShoppingCart, ShieldCheck, Heart } from "lucide-react";
 
 export function Footer() {
   const pathname = usePathname();
@@ -32,26 +32,15 @@ export function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/25">
-                <GraduationCap className="w-6 h-6" />
+                <ShoppingCart className="w-6 h-6" />
               </div>
-              <span className="font-extrabold text-2xl tracking-tight text-neutral-950">
-                Campus<span className="text-emerald-600">Trade</span>
+              <span className="font-black text-2xl tracking-tight text-neutral-950 lowercase">
+                ọ<span className="text-emerald-600">jà</span>
               </span>
             </Link>
             <p className="text-sm text-neutral-600 max-w-sm leading-relaxed">
               The premier student-to-student marketplace across Nigerian universities. Buy and sell textbooks, fashion, tech gadgets, and hostel essentials with zero stress.
             </p>
-            <div className="flex flex-wrap gap-2 pt-2">
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-white text-emerald-800 border border-emerald-100 font-medium shadow-2xs">
-                <MapPin className="w-3 h-3 text-emerald-600" /> UNILAG Akoka
-              </span>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-white text-emerald-800 border border-emerald-100 font-medium shadow-2xs">
-                <MapPin className="w-3 h-3 text-emerald-600" /> UI Ibadan
-              </span>
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-white text-emerald-800 border border-emerald-100 font-medium shadow-2xs">
-                <MapPin className="w-3 h-3 text-emerald-600" /> OAU Ile-Ife
-              </span>
-            </div>
           </div>
 
           {/* Marketplace Categories */}
@@ -154,7 +143,7 @@ export function Footer() {
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               Student Safety First:
             </span>
-            CampusTrade connects student buyers with student sellers. We strongly recommend meeting in daylight at public campus hubs (Library quad, SUB, faculty foyers) to inspect goods before payment.
+            ọjà connects student buyers with student sellers. We strongly recommend meeting in daylight at public campus hubs (Library quad, SUB, faculty foyers) to inspect goods before payment.
           </p>
           <Link
             href="/safety"
@@ -166,7 +155,7 @@ export function Footer() {
 
         {/* Bottom Sub-bar */}
         <div className="pt-6 border-t border-neutral-200/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
-          <p>&copy; {new Date().getFullYear()} CampusTrade Technologies Ltd. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} ọjà Technologies Ltd. All rights reserved.</p>
           <p className="flex items-center gap-1">
             Built for Nigerian Students with <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
           </p>

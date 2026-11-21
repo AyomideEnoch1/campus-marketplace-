@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ShoppingBag,
+  ShoppingCart,
+  Home,
   Heart,
   User,
   GraduationCap,
@@ -95,10 +97,10 @@ export function Navbar({ initialUser }: NavbarProps) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-xs">
-              <GraduationCap className="w-4 h-4" />
+              <ShoppingCart className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-lg text-neutral-900 tracking-tight">
-              Campus<span className="text-emerald-500">Trade</span>
+            <span className="font-extrabold text-xl text-neutral-900 tracking-tight lowercase">
+              ọ<span className="text-emerald-500">jà</span>
             </span>
           </Link>
 
@@ -120,7 +122,7 @@ export function Navbar({ initialUser }: NavbarProps) {
 
   // 2. Standard Public Marketplace Header
   const navLinks = [
-    { name: "Home", href: "/", icon: GraduationCap },
+    { name: "Home", href: "/", icon: Home },
     { name: "Shop", href: "/shop", icon: Compass },
     { name: "Campuses", href: "/campuses", icon: GraduationCap },
     { name: "Vendors", href: "/vendors", icon: ShoppingBag },
@@ -134,11 +136,11 @@ export function Navbar({ initialUser }: NavbarProps) {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
-              <GraduationCap className="w-5 h-5 md:w-6 md:h-6" />
+              <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-xl md:text-2xl tracking-tight text-neutral-900 leading-none">
-                Campus<span className="text-emerald-500">Trade</span>
+              <span className="font-black text-2xl md:text-3xl tracking-tight text-neutral-900 leading-none lowercase">
+                ọ<span className="text-emerald-500">jà</span>
               </span>
               <span className="text-[10px] font-semibold text-neutral-400 tracking-tight hidden sm:inline-block">
                 Shop &bull; Sell &bull; Connect
@@ -227,22 +229,20 @@ export function Navbar({ initialUser }: NavbarProps) {
           )}
 
           {/* Cart / Bag Icon (Screens >= sm; mobile has bottom nav) */}
-          {user && (
-            <Link
-              href="/cart"
-              className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-              title="Bag"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              {totalCount > 0 && (
-                <Badge
-                  className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
-                >
-                  {totalCount}
-                </Badge>
-              )}
-            </Link>
-          )}
+          <Link
+            href="/cart"
+            className="hidden sm:flex relative w-10 h-10 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
+            title="Bag"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            {totalCount > 0 && (
+              <Badge
+                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
+              >
+                {totalCount}
+              </Badge>
+            )}
+          </Link>
 
           {/* Real-Time Notification Bell (Visible on both mobile & desktop when signed in) */}
           {user && <NotificationBell currentUserId={user.id} />}
@@ -255,8 +255,12 @@ export function Navbar({ initialUser }: NavbarProps) {
                 className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 pr-2.5 sm:pr-3 py-1 sm:py-1.5 rounded-full border border-neutral-200 hover:border-neutral-300 bg-white shadow-xs transition-colors cursor-pointer"
                 aria-label="User Account Menu"
               >
-                <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold uppercase shrink-0">
-                  {user.fullName ? user.fullName[0] : "U"}
+                <div className="w-7 h-7 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold uppercase shrink-0 overflow-hidden shadow-2xs">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.fullName || "User"} className="w-full h-full object-cover" />
+                  ) : (
+                    user.fullName ? user.fullName[0] : "U"
+                  )}
                 </div>
                 <span className="hidden sm:inline-block text-xs font-semibold text-neutral-800 max-w-[85px] truncate">
                   {user.fullName?.split(" ")[0]}
@@ -273,7 +277,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                     <p className="text-xs text-neutral-500 truncate">
                       {user.email}
                     </p>
-                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase font-bold bg-pink-50 text-pink-700 border-pink-200">
+                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase font-bold bg-neutral-100 text-neutral-700 border-neutral-200">
                       {user.role}
                     </Badge>
                   </div>
@@ -387,7 +391,7 @@ export function Navbar({ initialUser }: NavbarProps) {
           {/* Main Navigation Links */}
           <div className="space-y-1">
             <p className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 px-3 pb-1">
-              Explore CampusTrade
+              Explore ọjà
             </p>
             {navLinks.map((link) => {
               const Icon = link.icon;

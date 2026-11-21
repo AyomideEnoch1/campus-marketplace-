@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GraduationCap } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 
 export interface LoaderProps {
   /**
@@ -26,7 +26,7 @@ export function Loader({ isModal = true, className = "" }: LoaderProps) {
 
         {/* Brand Logo Squircle */}
         <div className="relative z-10 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-rose-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/25 shrink-0 animate-pulse">
-          <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-xs" />
+          <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 drop-shadow-xs" />
         </div>
 
         {/* Brand text turned to Loading... with the exact font, text, style, and vibe */}

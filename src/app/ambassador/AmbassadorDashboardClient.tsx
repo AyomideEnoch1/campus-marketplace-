@@ -13,7 +13,6 @@ import {
   Store,
   Wallet,
   TrendingUp,
-  Sparkles,
   ArrowUpRight,
   Building,
   CheckCircle2,
@@ -292,7 +291,7 @@ export function AmbassadorDashboardClient({
       // Instructions
       ctx.fillStyle = "#6b7280";
       ctx.font = "18px sans-serif";
-      ctx.fillText("Scan this code to join CampusTrade & browse verified student stores", 400, 265);
+      ctx.fillText("Scan this code to join ọjà & browse verified student stores", 400, 265);
 
       // QR Code Background Border
       ctx.fillStyle = "#f9fafb";
@@ -327,7 +326,7 @@ export function AmbassadorDashboardClient({
 
       // Trigger Download
       const link = document.createElement("a");
-      link.download = `CampusTrade-${ambassador.referralCode}-Flyer.png`;
+      link.download = `ọjà-${ambassador.referralCode}-Flyer.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
 
@@ -358,10 +357,6 @@ export function AmbassadorDashboardClient({
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-600/40 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-3 backdrop-blur-sm border border-emerald-500/30">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                Verified Campus Ambassador
-              </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                 Ambassador Hub — {ambassador.campus.name}
               </h1>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy | CampusTrade",
+  title: "Privacy Policy | ọjà",
 };
 
 export default function PrivacyPage() {

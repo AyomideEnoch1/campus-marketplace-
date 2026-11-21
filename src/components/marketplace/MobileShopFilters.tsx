@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { createPortal } from "react-dom";
 import {
   SlidersHorizontal,
   X,
@@ -15,6 +16,7 @@ import {
   ShoppingBag,
   ShieldCheck,
   ArrowLeft,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -47,7 +49,36 @@ export function MobileShopFilters({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const [mounted, setMounted] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
+  const [activeDropdown, setActiveDropdown] = React.useState<"campus" | "sort" | "price" | "condition" | null>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close dropdown on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null);
+      }
+    };
+    if (activeDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activeDropdown]);
+
+  // Support openFilters=true query param
+  React.useEffect(() => {
+    if (searchParams.get("openFilters") === "true") {
+      setIsOpen(true);
+    }
+  }, [searchParams]);
   const [activeTab, setActiveTab] = React.useState<"all" | "campus" | "sort" | "price" | "condition">("all");
 
   // Current URL filter states
@@ -226,70 +257,74 @@ export function MobileShopFilters({
         {/* Campus Selector Pill */}
         <button
           onClick={() => {
-            setActiveTab("campus");
-            setIsOpen(true);
+            setActiveDropdown((prev) => (prev === "campus" ? null : "campus"));
           }}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs ${
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs cursor-pointer ${
             currentCampus
               ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold"
+              : activeDropdown === "campus"
+              ? "bg-neutral-100 text-neutral-900 border-neutral-400 font-bold"
               : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50"
           }`}
         >
           <MapPin className="w-3 h-3 text-emerald-600" />
           <span className="truncate max-w-[110px]">
-            {selectedCampusObj ? selectedCampusObj.name.split(" ")[0] : "Campus"}
+            {selectedCampusObj ? selectedCampusObj.slug.toUpperCase() : "Campus"}
           </span>
-          <ChevronDown className="w-3 h-3 text-neutral-400" />
+          <ChevronDown className={`w-3 h-3 text-neutral-400 transition-transform ${activeDropdown === "campus" ? "rotate-180 text-emerald-600" : ""}`} />
         </button>
 
         {/* Sort Pill */}
         <button
           onClick={() => {
-            setActiveTab("sort");
-            setIsOpen(true);
+            setActiveDropdown((prev) => (prev === "sort" ? null : "sort"));
           }}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs ${
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs cursor-pointer ${
             currentSort && currentSort !== "newest"
               ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold"
+              : activeDropdown === "sort"
+              ? "bg-neutral-100 text-neutral-900 border-neutral-400 font-bold"
               : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50"
           }`}
         >
           <ArrowUpDown className="w-3 h-3 text-neutral-500" />
           <span>{sortLabel() || "Sort"}</span>
-          <ChevronDown className="w-3 h-3 text-neutral-400" />
+          <ChevronDown className={`w-3 h-3 text-neutral-400 transition-transform ${activeDropdown === "sort" ? "rotate-180 text-emerald-600" : ""}`} />
         </button>
 
         {/* Price Pill */}
         <button
           onClick={() => {
-            setActiveTab("price");
-            setIsOpen(true);
+            setActiveDropdown((prev) => (prev === "price" ? null : "price"));
           }}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs ${
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs cursor-pointer ${
             pricePresetLabel()
               ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold"
+              : activeDropdown === "price"
+              ? "bg-neutral-100 text-neutral-900 border-neutral-400 font-bold"
               : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50"
           }`}
         >
           <Tag className="w-3 h-3 text-neutral-500" />
           <span>{pricePresetLabel() || "Price"}</span>
-          <ChevronDown className="w-3 h-3 text-neutral-400" />
+          <ChevronDown className={`w-3 h-3 text-neutral-400 transition-transform ${activeDropdown === "price" ? "rotate-180 text-emerald-600" : ""}`} />
         </button>
 
         {/* Condition Pill */}
         <button
           onClick={() => {
-            setActiveTab("condition");
-            setIsOpen(true);
+            setActiveDropdown((prev) => (prev === "condition" ? null : "condition"));
           }}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs ${
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors border shadow-2xs cursor-pointer ${
             currentCondition
               ? "bg-emerald-50 text-emerald-800 border-emerald-300 font-bold"
+              : activeDropdown === "condition"
+              ? "bg-neutral-100 text-neutral-900 border-neutral-400 font-bold"
               : "bg-white text-neutral-700 border-neutral-200/90 hover:bg-neutral-50"
           }`}
         >
           <span>{conditionLabel() || "Condition"}</span>
-          <ChevronDown className="w-3 h-3 text-neutral-400" />
+          <ChevronDown className={`w-3 h-3 text-neutral-400 transition-transform ${activeDropdown === "condition" ? "rotate-180 text-emerald-600" : ""}`} />
         </button>
 
         {/* Clear Button if any filter active */}
@@ -303,6 +338,276 @@ export function MobileShopFilters({
           </button>
         )}
       </div>
+
+      {/* 1.5. Inline Drop-down Filter Tab Container */}
+      {activeDropdown && (
+        <div
+          ref={dropdownRef}
+          className="bg-white rounded-2xl border border-neutral-200/90 shadow-xl p-3.5 space-y-3 z-30 transition-all animate-in fade-in slide-in-from-top-2 duration-150"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+            <span className="text-xs font-bold text-neutral-900 flex items-center gap-1.5 capitalize">
+              {activeDropdown === "campus" && (
+                <>
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                  Select Campus
+                </>
+              )}
+              {activeDropdown === "sort" && (
+                <>
+                  <ArrowUpDown className="w-3.5 h-3.5 text-emerald-600" />
+                  Sort Listings
+                </>
+              )}
+              {activeDropdown === "price" && (
+                <>
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                  Filter by Price (₦)
+                </>
+              )}
+              {activeDropdown === "condition" && (
+                <>
+                  <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                  Item Condition
+                </>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveDropdown(null)}
+              className="w-6 h-6 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-500 hover:text-neutral-800 flex items-center justify-center transition-colors"
+              aria-label="Close tab"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* CAMPUS TAB CONTENT */}
+          {activeDropdown === "campus" && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push(buildUrl({ campus: null }));
+                    setActiveDropdown(null);
+                  }}
+                  className={`p-2 rounded-xl border text-xs font-semibold text-left flex items-center justify-between transition-colors ${
+                    !currentCampus
+                      ? "bg-emerald-50 text-emerald-900 border-emerald-300 font-bold"
+                      : "bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100"
+                  }`}
+                >
+                  <span>All Campuses</span>
+                  {!currentCampus && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                </button>
+                {campuses.map((c) => {
+                  const isSelected = currentCampus === c.slug;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => {
+                        router.push(buildUrl({ campus: isSelected ? null : c.slug }));
+                        setActiveDropdown(null);
+                      }}
+                      className={`p-2 rounded-xl border text-xs font-semibold text-left flex items-center justify-between transition-colors ${
+                        isSelected
+                          ? "bg-emerald-50 text-emerald-900 border-emerald-300 font-bold"
+                          : "bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <span className="truncate pr-1">{c.name}</span>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* SORT TAB CONTENT */}
+          {activeDropdown === "sort" && (
+            <div className="grid grid-cols-1 gap-1.5">
+              {[
+                { label: "Newest Listings", value: "newest" },
+                { label: "Price: Low to High", value: "price-asc" },
+                { label: "Price: High to Low", value: "price-desc" },
+              ].map((s) => {
+                const isSelected = (!currentSort && s.value === "newest") || currentSort === s.value;
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => {
+                      router.push(buildUrl({ sort: s.value === "newest" ? null : s.value }));
+                      setActiveDropdown(null);
+                    }}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-left flex items-center justify-between transition-colors ${
+                      isSelected
+                        ? "bg-emerald-50 text-emerald-900 border-emerald-300 font-bold"
+                        : "bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100"
+                    }`}
+                  >
+                    <span>{s.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* PRICE TAB CONTENT */}
+          {activeDropdown === "price" && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { label: "Under ₦10k", min: "", max: "10000" },
+                  { label: "₦10k - ₦30k", min: "10000", max: "30000" },
+                  { label: "₦30k - ₦100k", min: "30000", max: "100000" },
+                  { label: "Over ₦100k", min: "100000", max: "" },
+                ].map((p, idx) => {
+                  const isSelected = currentMinPrice === p.min && currentMaxPrice === p.max;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          router.push(buildUrl({ minPrice: null, maxPrice: null }));
+                        } else {
+                          router.push(buildUrl({ minPrice: p.min || null, maxPrice: p.max || null }));
+                        }
+                        setActiveDropdown(null);
+                      }}
+                      className={`p-2 rounded-xl border text-center text-xs font-semibold transition-colors ${
+                        isSelected
+                          ? "bg-emerald-500 text-white border-emerald-500 shadow-xs"
+                          : "bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Min / Max inputs */}
+              <div className="space-y-2 pt-1 border-t border-neutral-100">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-neutral-500 block font-medium">Min (₦)</label>
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={draftMinPrice}
+                      onChange={(e) => setDraftMinPrice(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl border border-neutral-200 text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-neutral-500 block font-medium">Max (₦)</label>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={draftMaxPrice}
+                      onChange={(e) => setDraftMaxPrice(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-xl border border-neutral-200 text-xs bg-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {(currentMinPrice || currentMaxPrice) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraftMinPrice("");
+                        setDraftMaxPrice("");
+                        router.push(buildUrl({ minPrice: null, maxPrice: null }));
+                        setActiveDropdown(null);
+                      }}
+                      className="text-xs text-rose-600 font-semibold px-2 py-1"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push(
+                        buildUrl({
+                          minPrice: draftMinPrice || null,
+                          maxPrice: draftMaxPrice || null,
+                        })
+                      );
+                      setActiveDropdown(null);
+                    }}
+                    className="flex-1 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-xs"
+                  >
+                    Apply Price
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* CONDITION TAB CONTENT */}
+          {activeDropdown === "condition" && (
+            <div className="grid grid-cols-1 gap-1.5">
+              {[
+                { label: "All Conditions", value: "" },
+                { label: "Brand New", value: "NEW" },
+                { label: "Like New", value: "USED_LIKE_NEW" },
+                { label: "Good Condition", value: "USED_GOOD" },
+                { label: "Fair Condition", value: "USED_FAIR" },
+              ].map((c) => {
+                const isSelected = (!currentCondition && c.value === "") || currentCondition === c.value;
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => {
+                      router.push(buildUrl({ condition: c.value || null }));
+                      setActiveDropdown(null);
+                    }}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-left flex items-center justify-between transition-colors ${
+                      isSelected
+                        ? "bg-emerald-50 text-emerald-900 border-emerald-300 font-bold"
+                        : "bg-neutral-50 text-neutral-700 border-neutral-200/80 hover:bg-neutral-100"
+                    }`}
+                  >
+                    <span>{c.label}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Footer button to open all filters */}
+          <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveDropdown(null);
+                setIsOpen(true);
+              }}
+              className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              <span>More filter options &amp; sellers</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDropdown(null)}
+              className="text-[11px] font-semibold text-neutral-400 hover:text-neutral-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. Active Filter Chips Row (Dismissible) */}
       {activeCount > 0 && (
@@ -325,7 +630,7 @@ export function MobileShopFilters({
 
           {selectedCampusObj && (
             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">
-              <span>{selectedCampusObj.name.split(" ")[0]}</span>
+              <span>{selectedCampusObj.slug.toUpperCase()}</span>
               <button
                 onClick={() => removeFilter("campus")}
                 className="hover:text-emerald-950 p-0.5"
@@ -404,16 +709,19 @@ export function MobileShopFilters({
       )}
 
       {/* 3. Slide-up Filter Bottom Sheet Modal */}
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          {/* Backdrop Overlay */}
-          <div
-            className="absolute inset-0 bg-neutral-950/60 backdrop-blur-xs transition-opacity"
-            onClick={() => setIsOpen(false)}
-          />
+      {isOpen &&
+        mounted &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[999] flex flex-col justify-end">
+            {/* Backdrop Overlay */}
+            <div
+              className="absolute inset-0 bg-neutral-950/60 backdrop-blur-xs transition-opacity"
+              onClick={() => setIsOpen(false)}
+            />
 
-          {/* Drawer Container */}
-          <div className="relative z-10 w-full max-h-[88vh] bg-white rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
+            {/* Drawer Container */}
+            <div className="relative z-10 w-full max-h-[88vh] bg-white rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200">
             {/* Header */}
             <div className="px-4 sm:px-5 pt-3.5 pb-3 border-b border-neutral-100 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -782,7 +1090,8 @@ export function MobileShopFilters({
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

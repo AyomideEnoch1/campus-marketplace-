@@ -44,7 +44,7 @@ export default async function OrderSuccessPage({
 
   const isGuestSeller = order.vendor.sellerType === "guest";
 
-  const whatsappMessage = `Hi ${order.vendor.storeName}, I just submitted order request #${order.orderNumber} on CampusTrade for ${formatNGN(order.totalAmount)}. Let's coordinate pickup at: ${order.deliveryAddress}.`;
+  const whatsappMessage = `Hi ${order.vendor.storeName}, I just submitted order request #${order.orderNumber} on ọjà for ${formatNGN(order.totalAmount)}. Let's coordinate pickup at: ${order.deliveryAddress}.`;
 
   const whatsappUrl = order.vendor.whatsapp
     ? `https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(whatsappMessage)}`

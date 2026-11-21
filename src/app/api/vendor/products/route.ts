@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireVendor } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
+import { qualifyVendorReferral } from "@/lib/referral";
 
 export const dynamic = "force-dynamic";
 
@@ -205,6 +206,13 @@ export async function POST(request: Request) {
       revalidatePath("/shop");
       revalidatePath("/dashboard/products");
     } catch (e) {}
+
+    // Qualify ambassador vendor referral if this was their first product listing
+    try {
+      await qualifyVendorReferral(session.id);
+    } catch (qErr) {
+      console.error("Qualify referral error:", qErr);
+    }
 
     return NextResponse.json({ success: true, product: newProduct });
   } catch (error: any) {

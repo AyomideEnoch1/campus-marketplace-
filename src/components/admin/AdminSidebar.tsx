@@ -99,15 +99,15 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
       {/* Mobile Top Header */}
       <div className="md:hidden flex items-center justify-between bg-neutral-900 border-b border-neutral-800 px-4 py-3 sticky top-0 z-30 shadow-md">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md">
-            CT
+          <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-xs shadow-md lowercase">
+            ọjà
           </div>
           <div>
             <h2 className="font-extrabold text-sm tracking-tight text-white leading-none">
               Admin <span className="text-emerald-400">CMS</span>
             </h2>
             <span className="text-[9px] text-neutral-400 font-semibold uppercase tracking-wider">
-              CampusTrade HQ
+              ọjà HQ
             </span>
           </div>
         </Link>
@@ -142,14 +142,14 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
                   className="flex items-center gap-2.5"
                 >
                   <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md">
-                    CT
+                    ọjà
                   </div>
                   <div>
                     <h2 className="font-extrabold text-sm tracking-tight text-white leading-none">
                       Admin <span className="text-emerald-400">CMS</span>
                     </h2>
                     <span className="text-[9px] text-neutral-400 font-semibold uppercase tracking-wider">
-                      CampusTrade HQ
+                      ọjà HQ
                     </span>
                   </div>
                 </Link>
@@ -199,7 +199,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
             {/* Mobile Footer */}
             <div className="pt-4 border-t border-neutral-800 space-y-3 mt-6">
               <div className="flex items-center gap-3 px-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-200 flex items-center justify-center text-xs font-bold shrink-0">
                   {session.fullName?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div className="truncate flex-1">
@@ -280,15 +280,15 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
           ) : (
             <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
               <Link href="/admin" className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-extrabold shadow-md">
-                  CT
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-xs shadow-md lowercase">
+                  ọjà
                 </div>
                 <div>
                   <h2 className="font-extrabold text-base tracking-tight text-white leading-none">
                     Admin <span className="text-emerald-400">CMS</span>
                   </h2>
                   <span className="text-[10px] text-neutral-400 font-semibold uppercase tracking-wider">
-                    CampusTrade HQ
+                    ọjà HQ
                   </span>
                 </div>
               </Link>
@@ -387,7 +387,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
             <div className="flex flex-col items-center gap-2.5 w-full">
               {/* User Avatar with Tooltip */}
               <div className="relative group flex justify-center">
-                <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 flex items-center justify-center text-xs font-bold cursor-default">
+                <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-200 flex items-center justify-center text-xs font-bold cursor-default">
                   {session.fullName?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 hidden group-hover:flex items-center">
@@ -434,7 +434,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
           ) : (
             <>
               <div className="flex items-center gap-3 px-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
+                <div className="w-8 h-8 rounded-full bg-neutral-800 border border-neutral-700 text-neutral-200 flex items-center justify-center text-xs font-bold shrink-0">
                   {session.fullName?.[0]?.toUpperCase() || "A"}
                 </div>
                 <div className="truncate flex-1">
