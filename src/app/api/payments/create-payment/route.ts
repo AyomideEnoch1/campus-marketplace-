@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createPayment } from "@/lib/payments/flutterwave";
-import { evaluateEscrowOrder, getPlatformSettings } from "@/lib/payments/escrow-rules";
+import { evaluateEscrowOrder, getPlatformSettings, checkOrderSplittingRisk } from "@/lib/payments/escrow-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -101,34 +101,80 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid items or zero subtotal" }, { status: 400 });
     }
 
-    // 2. Fetch Buyer History for Forced Escrow Checks
+    // 2. Fetch Buyer History & Evaluate Order-Splitting Risk
     let completedOrdersCount = 0;
+    let splittingRisk = {
+      isSplittingSuspected: false,
+      reason: null as string | null,
+      cumulativeSubtotalKobo: Math.round(subtotal * 100),
+      recentOrderCount: 0,
+    };
+
     if (session?.id) {
-      completedOrdersCount = await prisma.order.count({
-        where: {
-          buyerId: session.id,
-          escrow_status: { in: ["confirmed", "released"] },
-        },
-      });
+      try {
+        completedOrdersCount = await prisma.order.count({
+          where: {
+            buyerId: session.id,
+            OR: [
+              { escrow_status: { in: ["confirmed", "released", "released_to_seller"] } },
+              { status: "DELIVERED" },
+            ],
+          },
+        });
+      } catch {
+        completedOrdersCount = await prisma.order.count({
+          where: {
+            buyerId: session.id,
+            status: "DELIVERED",
+          },
+        }).catch(() => 0);
+      }
+
+      splittingRisk = await checkOrderSplittingRisk(
+        session.id,
+        primaryVendor.id,
+        Math.round(subtotal * 100)
+      );
+
+      if (splittingRisk.isSplittingSuspected) {
+        await prisma.activityLog.create({
+          data: {
+            userId: session.id,
+            action: "SUSPICIOUS_ORDER_SPLIT_DETECTED",
+            entityType: "ORDER",
+            metadataJson: JSON.stringify({
+              reason: splittingRisk.reason,
+              vendorId: primaryVendor.id,
+              buyerId: session.id,
+              cumulativeSubtotalKobo: splittingRisk.cumulativeSubtotalKobo,
+              recentOrderCount: splittingRisk.recentOrderCount,
+            }),
+          },
+        }).catch(() => {});
+      }
     }
 
     // 3. Evaluate Value-Based Escrow Rules Server-Side
     const settings = await getPlatformSettings();
-    const quote = await evaluateEscrowOrder({
+    let quote = await evaluateEscrowOrder({
       subtotal,
       buyerWantsDirect: Boolean(buyerWantsDirect),
       seller: primaryVendor,
       buyer: session ? { id: session.id, completedOrdersCount } : null,
       items: evaluatedItems,
       settings,
+      isSplittingSuspected: splittingRisk.isSplittingSuspected,
+      splittingReason: splittingRisk.reason,
     });
 
-    // 4. Enforce Direct Order Limits & Pattern Flagging
+    // 4. Enforce Direct Order Limits (Safely Mandate Escrow without blocking legitimate purchases)
     if (quote.escrow_mode === "direct") {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
-      // Check daily direct orders for buyer
+      let forceDueToDailyCap = false;
+      let capReason = "";
+
       if (session?.id) {
         const buyerDirectToday = await prisma.order.count({
           where: {
@@ -138,45 +184,48 @@ export async function POST(req: NextRequest) {
           },
         });
         if (buyerDirectToday >= settings.direct_orders_per_day_buyer_limit) {
-          throw new Error("Daily limit for direct orders reached. Please use Escrow Protection.");
+          forceDueToDailyCap = true;
+          capReason = `Daily direct order limit reached (${settings.direct_orders_per_day_buyer_limit}/day). Escrow protection applied.`;
         }
       }
 
-      // Check daily direct orders for seller
-      const sellerDirectToday = await prisma.order.count({
-        where: {
-          vendorId: primaryVendor.id,
-          escrow_mode: "direct",
-          createdAt: { gte: startOfDay },
-        },
-      });
-      if (sellerDirectToday >= settings.direct_orders_per_day_seller_limit) {
-        throw new Error("Vendor has reached daily limit for direct orders. Escrow is required.");
-      }
-
-      // Check suspicious repeated sub-₦5k pattern
-      if (session?.id && subtotal < 5000) {
-        const recentSub5k = await prisma.order.count({
+      if (!forceDueToDailyCap) {
+        const sellerDirectToday = await prisma.order.count({
           where: {
-            buyerId: session.id,
             vendorId: primaryVendor.id,
-            subtotal: { lt: 5000 },
-            createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+            escrow_mode: "direct",
+            createdAt: { gte: startOfDay },
           },
         });
+        if (sellerDirectToday >= settings.direct_orders_per_day_seller_limit) {
+          forceDueToDailyCap = true;
+          capReason = "Vendor daily direct order limit reached. Escrow protection applied.";
+        }
+      }
 
-        if (recentSub5k >= 3) {
-          // Flag suspicious pattern
+      if (forceDueToDailyCap) {
+        // Automatically mandate escrow without failing or blocking legitimate purchases
+        quote = await evaluateEscrowOrder({
+          subtotal,
+          buyerWantsDirect: false,
+          seller: primaryVendor,
+          buyer: session ? { id: session.id, completedOrdersCount } : null,
+          items: evaluatedItems,
+          settings,
+          isSplittingSuspected: true,
+          splittingReason: capReason,
+        });
+
+        if (session?.id) {
           await prisma.activityLog.create({
             data: {
               userId: session.id,
-              action: "SUSPICIOUS_DIRECT_PATTERN_FLAG",
+              action: "DIRECT_ORDER_LIMIT_ESCROW_ENFORCED",
               entityType: "ORDER",
               metadataJson: JSON.stringify({
-                reason: "Multiple sub-₦5,000 direct orders between same buyer and seller within 24h",
+                reason: capReason,
                 vendorId: primaryVendor.id,
                 buyerId: session.id,
-                recentCount: recentSub5k,
               }),
             },
           }).catch(() => {});

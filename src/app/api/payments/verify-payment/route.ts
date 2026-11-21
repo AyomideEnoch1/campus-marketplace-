@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
         orderId: result.orderId,
         txRef: result.txRef,
         status: result.status,
+        escrow_mode: result.order?.escrow_mode || "escrow",
       });
     }
 
@@ -50,6 +51,7 @@ export async function GET(req: NextRequest) {
         orderNumber: true,
         tx_ref: true,
         escrow_status: true,
+        escrow_mode: true,
         totalAmount: true,
         flw_transaction_id: true,
       },
@@ -67,6 +69,7 @@ export async function GET(req: NextRequest) {
         orderId: order.id,
         txRef: order.tx_ref,
         status: result.status || order.escrow_status,
+        escrow_mode: order.escrow_mode,
       });
     }
 
@@ -75,6 +78,7 @@ export async function GET(req: NextRequest) {
       orderId: order.id,
       txRef: order.tx_ref,
       status: order.escrow_status,
+      escrow_mode: order.escrow_mode,
     });
   } catch (error: any) {
     console.error("[Verify Payment Error]:", error);

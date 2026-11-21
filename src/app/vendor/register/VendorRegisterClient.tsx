@@ -495,7 +495,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                   required
                   minLength={7}
                   maxLength={15}
-                  placeholder="+234 814 817 6165"
+                  placeholder="e.g. 0801 234 5678"
                   value={phone}
                   onChange={(e) => {
                     const formatted = formatNigerianPhone(e.target.value);

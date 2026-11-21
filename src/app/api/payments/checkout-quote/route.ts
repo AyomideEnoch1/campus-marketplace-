@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { evaluateEscrowOrder } from "@/lib/payments/escrow-rules";
+import { evaluateEscrowOrder, checkOrderSplittingRisk } from "@/lib/payments/escrow-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -57,15 +57,40 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Buyer completed order count for new-buyer rule
+    // Buyer completed order count for new-buyer rule & splitting risk check
     let completedOrdersCount = 0;
+    let splittingRisk = {
+      isSplittingSuspected: false,
+      reason: null as string | null,
+    };
+
     if (session?.id) {
-      completedOrdersCount = await prisma.order.count({
-        where: {
-          buyerId: session.id,
-          escrow_status: { in: ["confirmed", "released"] },
-        },
-      });
+      try {
+        completedOrdersCount = await prisma.order.count({
+          where: {
+            buyerId: session.id,
+            OR: [
+              { escrow_status: { in: ["confirmed", "released", "released_to_seller"] } },
+              { status: "DELIVERED" },
+            ],
+          },
+        });
+      } catch {
+        completedOrdersCount = await prisma.order.count({
+          where: {
+            buyerId: session.id,
+            status: "DELIVERED",
+          },
+        }).catch(() => 0);
+      }
+
+      const risk = await checkOrderSplittingRisk(
+        session.id,
+        primaryVendor.id,
+        Math.round(subtotal * 100)
+      );
+      splittingRisk.isSplittingSuspected = risk.isSplittingSuspected;
+      splittingRisk.reason = risk.reason;
     }
 
     const quote = await evaluateEscrowOrder({
@@ -74,6 +99,8 @@ export async function POST(req: NextRequest) {
       seller: primaryVendor,
       buyer: session ? { id: session.id, completedOrdersCount } : null,
       items: evaluatedItems,
+      isSplittingSuspected: splittingRisk.isSplittingSuspected,
+      splittingReason: splittingRisk.reason,
     });
 
     return NextResponse.json({

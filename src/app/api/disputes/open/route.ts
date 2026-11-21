@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,13 @@ export async function POST(req: NextRequest) {
       where: { id: orderId },
       include: {
         dispute: true,
+        vendor: {
+          select: {
+            id: true,
+            userId: true,
+            storeName: true,
+          },
+        },
       },
     });
 
@@ -47,21 +55,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Must be in delivered or confirmed status
-    if (order.escrow_status !== "delivered" && order.escrow_status !== "confirmed") {
-      return NextResponse.json(
-        { error: `Cannot dispute order in '${order.escrow_status}' status. Only delivered/confirmed orders can be disputed.` },
-        { status: 400 }
-      );
-    }
+    // Verify status and inspection window based on dispute reason
+    if (reason === "VENDOR_NO_SHOW") {
+      if (
+        order.escrow_status !== "paid_held" &&
+        order.escrow_status !== "delivered" &&
+        order.escrow_status !== "confirmed"
+      ) {
+        return NextResponse.json(
+          {
+            error: `Cannot report vendor no-show for order in '${order.escrow_status}' status. Payment must be confirmed.`,
+          },
+          { status: 400 }
+        );
+      }
+    } else {
+      // For item-condition disputes, order must have been handed over
+      if (order.escrow_status !== "delivered" && order.escrow_status !== "confirmed") {
+        return NextResponse.json(
+          {
+            error: `Cannot dispute item condition in '${order.escrow_status}' status. Only delivered orders can be inspected and disputed.`,
+          },
+          { status: 400 }
+        );
+      }
 
-    // 48-hour dispute window verification
-    if (order.delivered_at) {
+      // 48-hour dispute window verification from handover (delivered_at)
+      if (!order.delivered_at) {
+        return NextResponse.json(
+          { error: "Cannot dispute item condition for an order that has not been confirmed as handed over." },
+          { status: 400 }
+        );
+      }
+
       const deliveredTime = new Date(order.delivered_at).getTime();
       const fortyEightHoursMs = 48 * 60 * 60 * 1000;
       if (Date.now() > deliveredTime + fortyEightHoursMs && !isAdmin) {
         return NextResponse.json(
-          { error: "The 48-hour dispute window following delivery has expired." },
+          { error: "The 48-hour inspection and dispute window following item handover has expired." },
           { status: 400 }
         );
       }
@@ -86,6 +117,32 @@ export async function POST(req: NextRequest) {
         },
       }),
     ]);
+
+    // Send in-app notification to seller
+    if (order.vendor?.userId) {
+      await createNotification({
+        userId: order.vendor.userId,
+        type: "ORDER_STATUS",
+        title: "Dispute Opened — Payout Frozen",
+        message: `Buyer opened a dispute for Order #${order.orderNumber} (${reason}). Payout is frozen pending review.`,
+        link: "/dashboard/orders",
+      }).catch(() => {});
+    }
+
+    // Audit Log
+    await prisma.activityLog.create({
+      data: {
+        userId: session.id,
+        action: "DISPUTE_OPENED",
+        entityType: "ORDER",
+        entityId: order.id,
+        metadataJson: JSON.stringify({
+          disputeId: newDispute.id,
+          reason,
+          orderNumber: order.orderNumber,
+        }),
+      },
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

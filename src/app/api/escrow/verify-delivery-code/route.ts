@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Only the seller or admin can verify the delivery code" }, { status: 403 });
     }
 
+    // Must be paid in escrow before handover can occur
+    if (!order.paid_at && order.escrow_status !== "paid_held") {
+      return NextResponse.json(
+        { error: "Cannot verify handover for an unpaid order. Payment must be confirmed first." },
+        { status: 400 }
+      );
+    }
+
+    // Prevent code reuse: if order is already marked delivered/confirmed
+    if (order.delivered_at || ["confirmed", "delivered", "released"].includes(order.escrow_status)) {
+      return NextResponse.json(
+        {
+          error: "Handover code for this order has already been verified and processed.",
+          alreadyVerified: true,
+          deliveredAt: order.delivered_at,
+          disputeDeadline: order.dispute_deadline,
+        },
+        { status: 400 }
+      );
+    }
+
     const deliveryRecord = order.deliveryCode;
     if (!deliveryRecord) {
       return NextResponse.json({ error: "No delivery code found for this order" }, { status: 404 });
@@ -101,6 +123,32 @@ export async function POST(req: NextRequest) {
           },
         }),
       ]);
+
+      // Audit Log
+      await prisma.activityLog.create({
+        data: {
+          userId: session.id,
+          action: "HANDOVER_CODE_VERIFIED",
+          entityType: "ORDER",
+          entityId: order.id,
+          metadataJson: JSON.stringify({
+            orderNumber: order.orderNumber,
+            verifiedBy: session.id,
+            disputeDeadline: disputeDeadline.toISOString(),
+          }),
+        },
+      }).catch(() => {});
+
+      // In-app Notification for Buyer
+      if (order.buyerId) {
+        await createNotification({
+          userId: order.buyerId,
+          type: "ORDER_STATUS",
+          title: "Item Handover Confirmed",
+          message: `The vendor verified your handover code for Order #${order.orderNumber}. Your 48-hour buyer inspection period is now active.`,
+          link: `/orders/${order.id}`,
+        }).catch(() => {});
+      }
 
       return NextResponse.json({
         success: true,

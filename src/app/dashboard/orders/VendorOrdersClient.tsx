@@ -19,6 +19,11 @@ import {
   Package,
   ArrowRight,
   ExternalLink,
+  Key,
+  Lock,
+  AlertCircle,
+  RefreshCw,
+  Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,11 +52,20 @@ interface OrderRecord {
   deliveryMethod: string;
   status: "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
   totalAmount: number;
+  subtotal?: number | null;
+  seller_amount?: number | null;
+  commission?: number | null;
   paid_at?: string | Date | null;
+  delivered_at?: string | Date | null;
+  dispute_deadline?: string | Date | null;
   escrow_status: string;
   escrow_mode: string;
   createdAt: string | Date;
   items?: OrderItem[];
+  deliveryCode?: {
+    attempts: number;
+    locked: boolean;
+  } | null;
 }
 
 interface VendorOrdersClientProps {
@@ -64,10 +78,89 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
   const [filterTab, setFilterTab] = React.useState<"PAID" | "ALL" | "UNPAID" | "DELIVERED">("PAID");
   const [searchQuery, setSearchQuery] = React.useState("");
 
+  // 6-digit Handover Code Verification Modal State
+  const [verifyModalOpen, setVerifyModalOpen] = React.useState(false);
+  const [verifyingOrder, setVerifyingOrder] = React.useState<OrderRecord | null>(null);
+  const [codeDigits, setCodeDigits] = React.useState("");
+  const [verifying, setVerifying] = React.useState(false);
+  const [verifyError, setVerifyError] = React.useState<string | null>(null);
+  const [attemptsRemaining, setAttemptsRemaining] = React.useState<number | null>(null);
+  const [isLocked, setIsLocked] = React.useState(false);
+  const [verifySuccess, setVerifySuccess] = React.useState(false);
+
+  const openVerifyModal = (order: OrderRecord) => {
+    setVerifyingOrder(order);
+    setCodeDigits("");
+    setVerifyError(null);
+    setAttemptsRemaining(null);
+    setIsLocked(Boolean(order.deliveryCode?.locked));
+    setVerifySuccess(false);
+    setVerifyModalOpen(true);
+  };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!verifyingOrder || codeDigits.length !== 6) return;
+
+    setVerifying(true);
+    setVerifyError(null);
+
+    try {
+      const res = await fetch("/api/escrow/verify-delivery-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: verifyingOrder.id,
+          deliveryCode: codeDigits.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        if (data.isLocked) {
+          setIsLocked(true);
+        }
+        if (data.attemptsRemaining !== undefined) {
+          setAttemptsRemaining(data.attemptsRemaining);
+        }
+        throw new Error(data.error || "Incorrect delivery verification code.");
+      }
+
+      // Verification Success!
+      setVerifySuccess(true);
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === verifyingOrder.id
+            ? {
+                ...o,
+                status: "DELIVERED",
+                escrow_status: "delivered",
+                delivered_at: data.delivered_at || new Date().toISOString(),
+                dispute_deadline: data.dispute_deadline,
+                deliveryCode: {
+                  attempts: (o.deliveryCode?.attempts || 0) + 1,
+                  locked: false,
+                },
+              }
+            : o
+        )
+      );
+
+      setTimeout(() => {
+        setVerifyModalOpen(false);
+        setVerifySuccess(false);
+      }, 1800);
+    } catch (err: any) {
+      setVerifyError(err.message || "Failed to verify handover code.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const handleUpdateStatus = async (orderId: string, newStatus: string, isPaid: boolean) => {
     if (newStatus === "DELIVERED" && !isPaid) {
       const confirmDeliverUnpaid = window.confirm(
-        "⚠️ PAYMENT NOTICE:\n\nThis order is marked as UNPAID. The buyer has NOT completed payment yet.\n\nAre you sure you want to mark it as Delivered before payment is verified in escrow?"
+        "⚠️ PAYMENT NOTICE:\n\nThis order is marked as UNPAID. The buyer has NOT completed payment yet.\n\nAre you sure you want to mark it as Delivered before payment is verified?"
       );
       if (!confirmDeliverUnpaid) return;
     }
@@ -79,7 +172,10 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error("Failed to update order status");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update order status");
+      }
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus as any } : o))
       );
@@ -107,7 +203,12 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
   };
 
   const isOrderPaid = (order: OrderRecord) => {
-    return Boolean(order.paid_at) || ["paid_held", "confirmed", "delivered", "released"].includes(order.escrow_status);
+    return (
+      Boolean(order.paid_at) ||
+      ["paid_held", "confirmed", "delivered", "disputed", "payout_pending", "released"].includes(
+        order.escrow_status
+      )
+    );
   };
 
   const paidCount = orders.filter((o) => isOrderPaid(o)).length;
@@ -158,7 +259,7 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            Paid in Escrow ({paidCount})
+            Paid Orders ({paidCount})
           </button>
           <button
             onClick={() => setFilterTab("UNPAID")}
@@ -214,7 +315,15 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
         <div className="space-y-4">
           {filteredOrders.map((order) => {
             const paid = isOrderPaid(order);
+            const isEscrow = order.escrow_mode === "escrow";
             const isReleased = order.escrow_status === "released";
+            const isDisputed = order.escrow_status === "disputed";
+            const isHandoverDelivered = order.status === "DELIVERED";
+            const codeLocked = Boolean(order.deliveryCode?.locked);
+
+            const displaySubtotal = order.subtotal || order.totalAmount;
+            const displayCommission = order.commission || Math.round(displaySubtotal * 0.05);
+            const displaySellerNet = order.seller_amount || (displaySubtotal - displayCommission);
 
             return (
               <div
@@ -225,25 +334,31 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                     : "border-amber-200/90 shadow-sm shadow-amber-500/5 bg-gradient-to-b from-amber-50/20 to-white"
                 }`}
               >
-                {/* Header: Order ID, Date, Payment Status & Fulfillment Status */}
+                {/* Header: Order ID, Date, Payment Status & Mode Badges */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3.5 border-b border-neutral-100 text-xs">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-black text-neutral-900 text-sm">
                       #{order.orderNumber}
                     </span>
 
-                    {/* PAYMENT STATUS BADGE (High Visibility) */}
-                    {paid ? (
+                    {/* Escrow vs Direct Badge */}
+                    {isEscrow ? (
                       <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 text-[11px] font-bold flex items-center gap-1.5 px-2.5 py-0.5">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                         <span>
-                          {isReleased ? "PAID • FUNDS RELEASED" : "PAID • HELD IN ESCROW"}
+                          {isReleased
+                            ? "PAID • FUNDS RELEASED"
+                            : isDisputed
+                            ? "PAID • DISPUTED (FROZEN)"
+                            : paid
+                            ? "PAID • HELD IN ESCROW"
+                            : "UNPAID • ESCROW ORDER"}
                         </span>
                       </Badge>
                     ) : (
-                      <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-100 border border-amber-300 text-[11px] font-bold flex items-center gap-1.5 px-2.5 py-0.5 animate-pulse">
-                        <Clock className="w-3.5 h-3.5 text-amber-700" />
-                        <span>UNPAID • PAYMENT PENDING</span>
+                      <Badge className="bg-neutral-100 text-neutral-800 border border-neutral-300 text-[11px] font-bold flex items-center gap-1 px-2 py-0.5">
+                        <Zap className="w-3 h-3 text-neutral-600" />
+                        <span>{paid ? "PAID • DIRECT SETTLEMENT" : "UNPAID • DIRECT"}</span>
                       </Badge>
                     )}
 
@@ -269,33 +384,73 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                   </span>
                 </div>
 
-                {/* Unpaid / Paid Info Advisory Banner */}
-                {paid ? (
-                  <div className="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200/70 text-emerald-900 text-xs flex items-start gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                {/* Status-Specific Advisory Banners */}
+                {isDisputed ? (
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-bold text-emerald-950">Payment Verified & Secured</p>
-                      <p className="text-[11px] text-emerald-800/90 mt-0.5 leading-relaxed">
-                        The buyer has deposited the funds into ọjà Escrow. Prepare the items and hand them over. Once the buyer enters their 6-digit verification code, the payment will be released directly to your bank account.
+                      <p className="font-bold text-amber-950 flex items-center gap-2">
+                        <span>Escrow Dispute Active — Payout Frozen</span>
+                        <Badge className="bg-amber-200 text-amber-900 text-[10px] font-bold">
+                          Under Review
+                        </Badge>
+                      </p>
+                      <p className="text-[11px] text-amber-900 mt-0.5 leading-relaxed">
+                        The buyer opened a dispute during the 48-hour inspection period. Automatic escrow release is strictly frozen. A platform mediator is reviewing the order details.
                       </p>
                     </div>
                   </div>
-                ) : (
+                ) : isReleased ? (
+                  <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs flex items-start gap-2.5">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-bold text-emerald-950">Payout Released to Your Account</p>
+                      <p className="text-[11px] text-emerald-800 mt-0.5 leading-relaxed">
+                        Funds ({formatNGN(displaySellerNet)}) have been released from platform escrow and processed to your registered payout account.
+                      </p>
+                    </div>
+                  </div>
+                ) : isHandoverDelivered && isEscrow ? (
+                  <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-200 text-blue-950 text-xs flex items-start gap-2.5">
+                    <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-bold text-blue-950 flex items-center gap-1.5">
+                        <span>Handover Verified • 48-Hour Inspection Window Active</span>
+                        <span className="text-[10px] font-semibold bg-blue-200/80 text-blue-900 px-2 py-0.5 rounded-full">
+                          Inspection Running
+                        </span>
+                      </p>
+                      <p className="text-[11px] text-blue-900/90 mt-0.5 leading-relaxed">
+                        The buyer provided the 6-digit delivery code. Funds are held during the mandatory 48-hour buyer inspection window. If no dispute is filed, your payout will release automatically.
+                      </p>
+                    </div>
+                  </div>
+                ) : paid && isEscrow ? (
+                  <div className="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200/70 text-emerald-900 text-xs flex items-start gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-bold text-emerald-950">Payment Secured in Escrow</p>
+                      <p className="text-[11px] text-emerald-800/90 mt-0.5 leading-relaxed">
+                        The buyer has deposited the funds. Meet the buyer at the campus meetup point. <strong>Request their 6-digit handover code</strong> in person after they inspect the items, then click "Verify Handover Code" below.
+                      </p>
+                    </div>
+                  </div>
+                ) : !paid ? (
                   <div className="p-3 rounded-2xl bg-amber-50 border border-amber-300/80 text-amber-950 text-xs flex items-start gap-2.5">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="font-bold text-amber-950 flex items-center gap-1.5">
-                        <span>Payment Not Made Yet</span>
+                        <span>Payment Not Completed Yet</span>
                         <span className="text-[10px] font-semibold bg-amber-200/80 text-amber-900 px-2 py-0.2 rounded-full">
-                          Awaiting Buyer Checkout
+                          Pending Buyer Checkout
                         </span>
                       </p>
                       <p className="text-[11px] text-amber-900 mt-0.5 leading-relaxed">
-                        The buyer submitted this order request without completing payment. <strong>Do not dispatch or hand over products</strong> until payment is confirmed in escrow. You can chat with the buyer to remind them to complete payment on their orders page.
+                        The buyer initiated this order request without completing payment. <strong>Do not dispatch or hand over products</strong> until payment is confirmed.
                       </p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Items Ordered List */}
                 {order.items && order.items.length > 0 && (
@@ -364,20 +519,22 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                     </p>
                   </div>
 
-                  {/* Payment Breakdown & Direct Chat */}
+                  {/* Financial Breakdown & Net Seller Proceeds */}
                   <div className="flex flex-col justify-between items-start md:items-end bg-neutral-50/40 p-3 rounded-2xl border border-neutral-100">
-                    <div className="text-left md:text-right w-full">
-                      <span className="text-[11px] text-neutral-400 block">Total Amount:</span>
-                      <span className="text-xl font-black text-neutral-950 block">
-                        {formatNGN(order.totalAmount)}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold block mt-0.5 ${
-                          paid ? "text-emerald-700" : "text-amber-700"
-                        }`}
-                      >
-                        {paid ? "✓ Payment Confirmed in Escrow" : "⏳ Buyer Payment Pending"}
-                      </span>
+                    <div className="text-left md:text-right w-full space-y-0.5">
+                      <span className="text-[11px] text-neutral-400 block">Buyer Total: {formatNGN(order.totalAmount)}</span>
+                      <div className="text-[10px] text-neutral-500 flex justify-between md:justify-end gap-2">
+                        <span>Platform Fee (5%):</span>
+                        <span className="font-semibold text-neutral-700">-{formatNGN(displayCommission)}</span>
+                      </div>
+                      <div className="pt-1 border-t border-neutral-200/60">
+                        <span className="text-[10px] text-neutral-500 block uppercase font-bold tracking-wider">
+                          Your Net Payout:
+                        </span>
+                        <span className="text-xl font-black text-emerald-700 block">
+                          {formatNGN(displaySellerNet)}
+                        </span>
+                      </div>
                     </div>
 
                     <Link
@@ -407,21 +564,55 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                         Confirm Order
                       </button>
                     )}
-                    {order.status !== "DELIVERED" && (
-                      <button
-                        disabled={updatingId === order.id}
-                        onClick={() => handleUpdateStatus(order.id, "DELIVERED", paid)}
-                        className={`px-3 py-1.5 rounded-xl border font-bold transition-colors cursor-pointer ${
-                          paid
-                            ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
-                            : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
-                        }`}
-                        title={!paid ? "Warning: Buyer has not paid yet" : undefined}
-                      >
-                        Mark Delivered {!paid && "⚠️ (Unpaid)"}
-                      </button>
+
+                    {/* ESCROW WORKFLOW: 6-Digit Handover Verification */}
+                    {isEscrow ? (
+                      order.status !== "DELIVERED" ? (
+                        paid ? (
+                          codeLocked ? (
+                            <Badge className="bg-rose-100 text-rose-800 border-rose-300 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1">
+                              <Lock className="w-3.5 h-3.5" />
+                              Verification Locked (5 Failed Attempts)
+                            </Badge>
+                          ) : (
+                            <button
+                              onClick={() => openVerifyModal(order)}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Key className="w-3.5 h-3.5" />
+                              <span>Verify Handover Code</span>
+                            </button>
+                          )
+                        ) : (
+                          <span className="text-[11px] text-amber-800 font-semibold bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+                            Awaiting Buyer Payment
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-[11px] text-emerald-800 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                          Handover Verified
+                        </span>
+                      )
+                    ) : (
+                      /* DIRECT ORDER WORKFLOW: Standard fulfillment */
+                      order.status !== "DELIVERED" && (
+                        <button
+                          disabled={updatingId === order.id}
+                          onClick={() => handleUpdateStatus(order.id, "DELIVERED", paid)}
+                          className={`px-3 py-1.5 rounded-xl border font-bold transition-colors cursor-pointer ${
+                            paid
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                              : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                          }`}
+                          title={!paid ? "Warning: Buyer has not paid yet" : undefined}
+                        >
+                          Mark Delivered {!paid && "⚠️ (Unpaid)"}
+                        </button>
+                      )
                     )}
-                    {order.status !== "CANCELLED" && (
+
+                    {order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
                       <button
                         disabled={updatingId === order.id}
                         onClick={() => handleUpdateStatus(order.id, "CANCELLED", paid)}
@@ -430,6 +621,7 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                         Cancel Order
                       </button>
                     )}
+
                     {!paid && (
                       <button
                         disabled={updatingId === order.id}
@@ -444,6 +636,130 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* 6-Digit Handover Code Verification Modal */}
+      {verifyModalOpen && verifyingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-50">
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-5">
+            <div className="flex items-start justify-between border-b border-neutral-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-neutral-950">
+                    Verify Handover Code
+                  </h3>
+                  <p className="text-xs text-neutral-500">
+                    Order #{verifyingOrder.orderNumber} &bull; {verifyingOrder.buyerName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVerifyModalOpen(false)}
+                className="p-1 rounded-full text-neutral-400 hover:text-neutral-700 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            {verifySuccess ? (
+              <div className="py-6 text-center space-y-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-8 h-8" />
+                </div>
+                <h4 className="text-lg font-extrabold text-neutral-950">
+                  Handover Verified Successfully!
+                </h4>
+                <p className="text-xs text-neutral-600 max-w-xs mx-auto">
+                  The order is now marked as delivered and the 48-hour buyer inspection window has begun.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Ask the buyer for their private <strong>6-digit delivery code</strong> in person after they have physically inspected their items at your meetup location.
+                </p>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-neutral-800 block text-center">
+                    Enter 6-Digit Buyer Code
+                  </label>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    disabled={isLocked || verifying}
+                    placeholder="••••••"
+                    value={codeDigits}
+                    onChange={(e) => setCodeDigits(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="h-14 text-center font-mono text-2xl tracking-[0.5em] font-black rounded-2xl border-2 border-neutral-300 focus:border-emerald-600 focus:ring-emerald-500"
+                    autoFocus
+                  />
+                </div>
+
+                {verifyError && (
+                  <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-bold">{verifyError}</p>
+                      {attemptsRemaining !== null && !isLocked && (
+                        <p className="text-[11px] text-rose-700 font-semibold">
+                          Warning: {attemptsRemaining} attempt{attemptsRemaining === 1 ? "" : "s"} remaining before lockout.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {isLocked && (
+                  <div className="p-3.5 rounded-2xl bg-rose-100 border border-rose-300 text-rose-950 text-xs flex items-start gap-2.5">
+                    <AlertTriangle className="w-4 h-4 text-rose-700 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-black text-rose-950">Verification Permanently Locked</p>
+                      <p className="text-[11px] text-rose-900 leading-relaxed">
+                        5 incorrect attempts were made for this order. For fraud prevention, handover verification is locked. Please contact platform support or mediation.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-3 rounded-xl bg-neutral-100/70 text-[11px] text-neutral-500 space-y-1">
+                  <p className="font-semibold text-neutral-700">🔒 Security Notice:</p>
+                  <p>Verification locks permanently after 5 incorrect attempts. Do not guess codes.</p>
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <Button
+                    type="submit"
+                    disabled={codeDigits.length !== 6 || verifying || isLocked}
+                    className="flex-1 h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20"
+                  >
+                    {verifying ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                        Verifying Code...
+                      </>
+                    ) : (
+                      "Verify & Confirm Handover"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setVerifyModalOpen(false)}
+                    className="h-11 rounded-2xl border-neutral-300 text-neutral-700 text-xs font-semibold"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
     </div>
