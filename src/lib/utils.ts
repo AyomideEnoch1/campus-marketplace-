@@ -33,11 +33,11 @@ export function formatDate(date: string | Date): string {
 
 /**
  * Formats a phone number for display with +234 prefix and grouping:
- * e.g., "+234 814 817 6165"
+ * e.g., "+234 801 234 5678"
  *
  * Rules:
  * - By default includes "+234 "
- * - If 11 digits entered (e.g. 08148176165), removes first digit (0) and adds +234
+ * - If 11 digits entered (e.g. 08012345678), removes first digit (0) and adds +234
  * - If 10 digits entered, keeps all digits and adds +234
  * - Formats as "+234 XXX XXX XXXX"
  */
@@ -76,7 +76,7 @@ export function formatNigerianPhone(raw: string): string {
 
 /**
  * Strips all whitespaces from a phone number for database storage
- * e.g., "+234 814 817 6165" -> "+2348148176165"
+ * e.g., "+234 801 234 5678" -> "+2348012345678"
  */
 export function cleanPhoneNumber(phone: string): string {
   if (!phone) return "";

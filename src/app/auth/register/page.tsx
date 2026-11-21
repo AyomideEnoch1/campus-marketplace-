@@ -136,7 +136,7 @@ function RegisterContent() {
   const isNameValid = fullName.trim().length >= 2;
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const isPhoneValid = cleanPhoneNumber(phone).replace(/\D/g, "").length >= 10;
-  const isStep1Valid = isNameValid && isEmailValid && isPhoneValid;
+  const isStep1Valid = isNameValid && isEmailValid;
 
   const isPasswordValid = password.length >= 6;
   const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
@@ -394,8 +394,61 @@ function RegisterContent() {
         {currentStep > 0 && (
           <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
             {/* Top Stepper Header */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="space-y-3">
+              {/* Prominent Selected Role Banner on Top */}
+              <div
+                className={`p-3.5 sm:p-4 rounded-2xl border flex items-center justify-between gap-3 shadow-xs ${
+                  role === "VENDOR"
+                    ? "bg-purple-50 border-purple-200/90 text-purple-950"
+                    : buyerType === "guest"
+                    ? "bg-sky-50 border-sky-200/90 text-sky-950"
+                    : "bg-emerald-50 border-emerald-200/90 text-emerald-950"
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                      role === "VENDOR"
+                        ? "bg-purple-600 text-white"
+                        : buyerType === "guest"
+                        ? "bg-sky-600 text-white"
+                        : "bg-emerald-600 text-white"
+                    }`}
+                  >
+                    {role === "VENDOR" ? (
+                      <Store className="w-5 h-5" />
+                    ) : buyerType === "guest" ? (
+                      <UserCheck className="w-5 h-5" />
+                    ) : (
+                      <GraduationCap className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider block opacity-70">
+                      Selected Account Role
+                    </span>
+                    <h3 className="text-sm sm:text-base font-black tracking-tight leading-tight mt-0.5">
+                      {role === "VENDOR"
+                        ? "Campus Vendor (Seller Account)"
+                        : buyerType === "guest"
+                        ? "Guest Buyer Account"
+                        : "Student Buyer Account"}
+                    </h3>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => goToStep(0, "backward")}
+                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-white/90 hover:bg-white text-neutral-700 hover:text-neutral-900 border border-neutral-200/70 shadow-2xs transition-colors cursor-pointer shrink-0"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Switch Role</span>
+                </button>
+              </div>
+
+              {/* Navigation & Step Indicator */}
+              <div className="flex items-center justify-between pt-0.5">
                 <button
                   type="button"
                   onClick={() => goToStep(currentStep - 1, "backward")}
@@ -409,36 +462,23 @@ function RegisterContent() {
                   </span>
                 </button>
 
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border border-neutral-200/80 bg-neutral-50">
-                  {role === "VENDOR" ? (
-                    <span className="flex items-center gap-1.5 text-purple-700">
-                      <Store className="w-3.5 h-3.5 text-purple-600" />
-                      <span>Vendor Flow</span>
-                    </span>
-                  ) : buyerType === "guest" ? (
-                    <span className="flex items-center gap-1.5 text-sky-700">
-                      <UserCheck className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Guest Buyer</span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1.5 text-emerald-700">
-                      <GraduationCap className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Student Buyer</span>
-                    </span>
-                  )}
-                </div>
+                <span className="text-xs font-bold text-neutral-400">
+                  Step {currentStep} of {totalSteps}
+                </span>
               </div>
 
               {/* Step Title & Subtitle */}
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-                  {currentStep === 1 && "Personal Information"}
-                  {currentStep === 2 && "Account Security"}
-                  {currentStep === 3 && "Store Information"}
+                  {currentStep === 1 && (role === "VENDOR" ? "Vendor Personal Information" : "Buyer Personal Information")}
+                  {currentStep === 2 && "Account Security & Password"}
+                  {currentStep === 3 && "Store Setup & University Campus"}
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
                   {currentStep === 1 &&
-                    "Enter your basic details to set up your profile and contact channel."}
+                    (role === "VENDOR"
+                      ? "Enter your name and email to start setting up your campus seller account."
+                      : "Enter your basic personal details to create your campus buyer account.")}
                   {currentStep === 2 &&
                     "Create a strong password to keep your campus account safe and secure."}
                   {currentStep === 3 &&
@@ -508,32 +548,6 @@ function RegisterContent() {
                       Please enter a valid email address.
                     </p>
                   )}
-                </div>
-
-                {/* Phone Number */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                      Phone Number <span className="text-rose-500">*</span>
-                    </label>
-                    <span className="text-[11px] text-neutral-400 font-medium">
-                      Format: +234 814 817 6165
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <Input
-                      type="tel"
-                      required
-                      placeholder="+234 814 817 6165"
-                      value={phone}
-                      onChange={handlePhoneChange}
-                      className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                    />
-                  </div>
-                  <p className="text-[11px] text-neutral-400">
-                    Type or paste 10 or 11 digits. &apos;+234&apos; is automatically formatted.
-                  </p>
                 </div>
 
                 {/* Step 1 Navigation Buttons */}
@@ -772,28 +786,20 @@ function RegisterContent() {
 
                 {/* WhatsApp Number for Orders */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                      WhatsApp for Orders <span className="text-rose-500">*</span>
-                    </label>
-                    <span className="text-[11px] text-neutral-400 font-medium">
-                      Format: +234 814 817 6165
-                    </span>
-                  </div>
+                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                    WhatsApp for Orders <span className="text-rose-500">*</span>
+                  </label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <Input
                       type="tel"
                       required
-                      placeholder="+234 814 817 6165"
+                      placeholder="e.g. 08012345678"
                       value={whatsapp}
                       onChange={handleWhatsappChange}
                       className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
                     />
                   </div>
-                  <p className="text-[11px] text-neutral-400">
-                    Buyers will tap a WhatsApp button on your listings to coordinate campus deliveries.
-                  </p>
                 </div>
 
                 {/* Faculty & Department */}

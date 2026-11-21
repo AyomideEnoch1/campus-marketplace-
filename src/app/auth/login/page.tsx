@@ -118,7 +118,7 @@ function LoginForm() {
               disabled={loading}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. student@unilag.edu.ng or 08148176165"
+              placeholder="e.g. student@unilag.edu.ng or 08012345678"
               className="pl-10 h-11 rounded-xl text-xs bg-neutral-50/50 border-neutral-200 focus:bg-white text-neutral-900 transition-all"
             />
           </div>
@@ -180,6 +180,21 @@ function LoginForm() {
             </>
           )}
         </Button>
+      
+        {/* Don't have an Account Link */}
+        <div className="pt-1 text-center text-xs text-neutral-600">
+          Don&apos;t have an account?{" "}
+          <Link
+            href={
+              redirectParam
+                ? `/auth/register?redirect=${encodeURIComponent(redirectParam)}`
+                : "/auth/register"
+            }
+            className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+          >
+            Create an Account / Register
+          </Link>
+        </div>
       </form>
 
       {/* Terms of Use and Privacy Policy */}
