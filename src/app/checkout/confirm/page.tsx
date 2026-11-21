@@ -25,6 +25,7 @@ function CheckoutConfirmContent() {
 
   const [loading, setLoading] = React.useState(true);
   const [orderStatus, setOrderStatus] = React.useState<string>("checking");
+  const [escrowMode, setEscrowMode] = React.useState<"escrow" | "direct">("escrow");
   const [orderId, setOrderId] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [pollCount, setPollCount] = React.useState(0);
@@ -77,6 +78,9 @@ function CheckoutConfirmContent() {
 
       if (data.orderId) {
         setOrderId(data.orderId);
+      }
+      if (data.escrow_mode) {
+        setEscrowMode(data.escrow_mode);
       }
 
       if (res.ok && (data.status === "paid_held" || data.status === "confirmed" || data.status === "delivered" || data.status === "released")) {
@@ -143,15 +147,27 @@ function CheckoutConfirmContent() {
         {!loading && isSuccess && (
           <div className="space-y-5">
             <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
-              <ShieldCheck className="w-10 h-10" />
+              {escrowMode === "escrow" ? (
+                <ShieldCheck className="w-10 h-10" />
+              ) : (
+                <CheckCircle2 className="w-10 h-10" />
+              )}
             </div>
 
             <div className="space-y-1.5">
               <h1 className="text-2xl font-black text-neutral-950 tracking-tight pt-1">
-                Order Paid &amp; Protected!
+                {escrowMode === "escrow" ? "Order Paid & Protected!" : "Order Paid Successfully!"}
               </h1>
               <p className="text-xs text-neutral-600 leading-relaxed pt-1">
-                Your payment has been received and is safely held in CampusTrade Escrow. The vendor will <strong>not</strong> receive payment until you meet, inspect, and confirm your delivery code.
+                {escrowMode === "escrow" ? (
+                  <>
+                    Your payment has been received and is safely held in CampusTrade Escrow. The vendor will <strong>not</strong> receive payment until you meet, inspect the items, and verify with your 6-digit delivery code.
+                  </>
+                ) : (
+                  <>
+                    Your direct payment has been received and confirmed. The vendor has been notified to prepare your items for campus pickup or delivery.
+                  </>
+                )}
               </p>
             </div>
 
@@ -169,7 +185,9 @@ function CheckoutConfirmContent() {
                 )}
                 <div className="flex justify-between text-neutral-500">
                   <span>Status:</span>
-                  <span className="text-emerald-700 font-bold uppercase">PAID &bull; HELD IN ESCROW</span>
+                  <span className="text-emerald-700 font-bold uppercase">
+                    {escrowMode === "escrow" ? "PAID • HELD IN ESCROW" : "PAID • DIRECT CHECKOUT"}
+                  </span>
                 </div>
               </div>
             )}
@@ -178,7 +196,11 @@ function CheckoutConfirmContent() {
               <Link href={orderId ? `/orders/${orderId}` : "/shop"} className="block">
                 <Button size="lg" className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md gap-2">
                   <Package className="w-4 h-4" />
-                  <span>Track Order &amp; View Delivery Code</span>
+                  <span>
+                    {escrowMode === "escrow"
+                      ? "Track Order & View Delivery Code"
+                      : "Track Order & View Details"}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>

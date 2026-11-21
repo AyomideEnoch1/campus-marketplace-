@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { sendPayout } from "@/lib/payments/flutterwave";
+import { sendPayout, getMerchantBalance } from "@/lib/payments/flutterwave";
+import { calculateEffectivePayoutEligibility } from "@/lib/escrow";
+import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const seller = order.vendor;
 
-    // 2. Validate Order Status: must be confirmed (or delivered)
+    // 2. Validate Order Status: must be confirmed or delivered
     if (order.escrow_status === "released") {
       return NextResponse.json({ message: "Funds for this order have already been released to seller", status: "released" });
     }
@@ -53,15 +55,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Dispute Freeze Check
-    if (order.dispute && (order.dispute.status === "open" || order.dispute.status === "under_review")) {
+    // 3. Handover Verification Requirement
+    if (!order.delivered_at) {
       return NextResponse.json(
-        { error: "Cannot release funds: an active dispute has frozen this order.", disputeId: order.dispute.id },
+        { error: "Item handover has not been verified yet. The buyer's 6-digit code must be entered before payout." },
         { status: 400 }
       );
     }
 
-    // 4. Seller Strike and Report Hold Check
+    // 4. Dispute Freeze Check
+    if (order.dispute && (order.dispute.status === "open" || order.dispute.status === "under_review")) {
+      return NextResponse.json(
+        {
+          error: "Cannot release funds: an active dispute has frozen this order.",
+          disputeId: order.dispute.id,
+          disputeStatus: order.dispute.status,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5. Seller Strike and Fraud Hold Check
     if (seller.strikesCount >= 3) {
       return NextResponse.json(
         { error: "Seller account has 3 or more strikes. Payouts are frozen pending administrative review." },
@@ -90,31 +104,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5. Payout Delay Evaluation (unless overridden by Admin)
-    const confirmedTime = order.confirmed_at || order.delivered_at || order.createdAt;
-    let delayHours = seller.payoutDelayHours || (seller.sellerType === "guest" ? 72 : 48);
+    // 6. Calculate Effective Payout Eligibility (Strict 48h Inspection & 48h/72h Seller Delays)
+    const eligibility = calculateEffectivePayoutEligibility(order, seller);
 
-    if (seller.isTrustedSeller) {
-      delayHours = Math.min(delayHours, 24);
-    }
-
-    const releaseEligibleTime = new Date(new Date(confirmedTime).getTime() + delayHours * 60 * 60 * 1000);
-    const now = new Date();
-
-    if (now < releaseEligibleTime && !isAdmin && !forceAdminRelease) {
-      const remainingHours = Math.ceil((releaseEligibleTime.getTime() - now.getTime()) / (1000 * 60 * 60));
+    if (!eligibility.isEligible && !isAdmin && !forceAdminRelease) {
       return NextResponse.json(
         {
-          error: `Payout hold in effect. Funds will be eligible for transfer in ${remainingHours} hour(s).`,
-          eligibleAt: releaseEligibleTime.toISOString(),
-          delayHours,
-          remainingHours,
+          error: eligibility.reason,
+          eligibleAt: eligibility.eligibleDate.toISOString(),
+          remainingHours: eligibility.remainingHours,
+          sellerDelayHours: eligibility.sellerDelayHours,
+          inspectionHours: eligibility.inspectionHours,
         },
         { status: 400 }
       );
     }
 
-    // 6. Bank Account Verification
+    // 7. Bank Account Verification
     const bankAccount = seller.sellerBankAccount;
     const bankCode = bankAccount?.bankCode || seller.bankCode;
     const accountNumber = bankAccount?.accountNumber || seller.bankAccountNumber;
@@ -127,10 +133,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 7. Atomic Lock: Write Escrow Ledger (escrow_out) & Create Payout Record
+    // 8. Amount calculation & Provider Custody Balance Check
+    const sellerAmount = Number(order.seller_amount || (order.subtotal - order.commission));
+    if (sellerAmount <= 0) {
+      return NextResponse.json({ error: "Invalid seller payout amount calculated (<= 0)" }, { status: 400 });
+    }
+
+    // Verify actual Flutterwave available merchant balance before initiating payout
+    try {
+      const merchantBalance = await getMerchantBalance("NGN");
+      if (merchantBalance.availableBalance < sellerAmount) {
+        return NextResponse.json(
+          {
+            error: `Payout paused: Platform available balance (₦${merchantBalance.availableBalance.toLocaleString()}) is insufficient to cover this payout (₦${sellerAmount.toLocaleString()}). Platform funding required before transfer can be completed.`,
+            insufficientMerchantBalance: true,
+            availableBalance: merchantBalance.availableBalance,
+            requiredAmount: sellerAmount,
+          },
+          { status: 503 }
+        );
+      }
+    } catch (balErr: any) {
+      console.warn("[Payout Safety Notice] Could not verify merchant balance prior to transfer:", balErr.message);
+    }
+
+    // 9. Atomic Lock: Write Escrow Ledger (escrow_out) & Create Payout Record
     const payoutAttempt = (order.payouts?.length || 0) + 1;
     const reference = `payout_${order.id}_${payoutAttempt}`;
-    const sellerAmount = Number(order.seller_amount || order.subtotal - order.commission);
 
     await prisma.$transaction(async (tx) => {
       // Mark Order as payout_pending
@@ -141,7 +170,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Write Append-Only Ledger Entry: escrow_out
+      // Write Immutable Ledger Entry: escrow_out
       await tx.escrowLedger.create({
         data: {
           orderId: order.id,
@@ -167,7 +196,7 @@ export async function POST(req: NextRequest) {
       });
     });
 
-    // 8. Call Flutterwave Transfers API
+    // 10. Call Flutterwave Transfers API
     try {
       const flwTransfer = await sendPayout(
         {
@@ -182,7 +211,6 @@ export async function POST(req: NextRequest) {
       const transferStatus = flwTransfer.status.toLowerCase();
 
       if (transferStatus === "successful") {
-        // Immediate success
         const completeTime = new Date();
         await prisma.$transaction([
           prisma.payout.update({
@@ -202,6 +230,15 @@ export async function POST(req: NextRequest) {
           }),
         ]);
 
+        // Send In-app notification to seller
+        await createNotification({
+          userId: seller.userId,
+          type: "ESCROW_RELEASED",
+          title: "Payout Completed",
+          message: `Payout of ₦${sellerAmount.toLocaleString()} for Order #${order.orderNumber} has been transferred to your bank account.`,
+          link: "/dashboard/wallet",
+        }).catch(() => {});
+
         return NextResponse.json({
           success: true,
           message: `Payout of NGN ${sellerAmount} transferred successfully to seller bank account.`,
@@ -210,7 +247,7 @@ export async function POST(req: NextRequest) {
           reference,
         });
       } else {
-        // Queued / processing
+        // Queued / processing on Flutterwave bank network
         await prisma.payout.update({
           where: { reference },
           data: {
@@ -221,37 +258,43 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: `Payout initiated and processing via Flutterwave Transfers. Awaiting bank completion.`,
+          message: `Payout of NGN ${sellerAmount} submitted to Flutterwave bank network. Status: processing.`,
           status: "payout_pending",
           transferId: flwTransfer.transferId,
           reference,
         });
       }
-    } catch (transferErr: any) {
-      console.error("[Flutterwave Transfer Error]:", transferErr);
+    } catch (flwErr: any) {
+      console.error("[Flutterwave Transfer Error]:", flwErr);
 
-      // Record transfer failure with retry schedule
-      const nextRetry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour retry
+      // Record failed payout attempt
       await prisma.payout.update({
         where: { reference },
         data: {
           status: "failed",
-          failureReason: transferErr.message || "Transfer failed via Flutterwave",
-          nextRetryAt: nextRetry,
+          failureReason: flwErr.message || "Transfer failed by bank network",
+          nextRetryAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // Retry in 2 hours
+        },
+      });
+
+      // Rollback order escrow_status so it can be retried
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          escrow_status: "confirmed",
         },
       });
 
       return NextResponse.json(
         {
-          error: `Payout transfer failed: ${transferErr.message}. Scheduled for retry.`,
-          status: "failed",
+          error: `Flutterwave transfer failed: ${flwErr.message}. Order status reverted to confirmed for retry.`,
           reference,
         },
         { status: 502 }
       );
     }
   } catch (error: any) {
-    console.error("[Release Funds Fatal Error]:", error);
+    console.error("[Release Funds Error]:", error);
     return NextResponse.json({ error: error.message || "Failed to release funds" }, { status: 500 });
   }
 }

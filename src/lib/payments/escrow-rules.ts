@@ -62,11 +62,18 @@ export const DEFAULT_ESCROW_SETTINGS: EscrowSettings = {
     restricted_category: true,
     restricted_categories: [
       "electronics",
+      "phones",
       "phones-tablets",
+      "laptops",
       "laptops-computers",
       "audio-accessories",
+      "food",
+      "groceries",
       "food-groceries",
+      "food-and-groceries",
+      "beauty",
       "beauty-care",
+      "health-and-beauty",
       "cosmetics",
       "fragrances",
     ],
@@ -78,7 +85,10 @@ export const DEFAULT_ESCROW_SETTINGS: EscrowSettings = {
  */
 export async function getPlatformSettings(): Promise<EscrowSettings> {
   try {
-    const records = await prisma.platformSetting.findMany();
+    if (!prisma?.platformSetting) {
+      return DEFAULT_ESCROW_SETTINGS;
+    }
+    const records = await prisma.platformSetting.findMany().catch(() => null);
     if (!records || records.length === 0) {
       return DEFAULT_ESCROW_SETTINGS;
     }
@@ -127,6 +137,8 @@ export interface EvaluateEscrowInput {
     categoryName?: string;
   }>;
   settings?: EscrowSettings;
+  isSplittingSuspected?: boolean;
+  splittingReason?: string | null;
 }
 
 export interface EvaluateEscrowOutput {
@@ -235,6 +247,12 @@ export async function evaluateEscrowOrder(
     }
   }
 
+  // Override 7: Order-splitting or cumulative risk detected
+  if (!isForced && input.isSplittingSuspected) {
+    isForced = true;
+    forcedReason = input.splittingReason || "Escrow protection applied based on recent transaction volume with this seller.";
+  }
+
   // 2. VALUE BANDS & ESCROW MODE
   let escrow_mode: "escrow" | "direct" = "escrow";
   let canToggle = false;
@@ -297,8 +315,8 @@ export async function evaluateEscrowOrder(
   const feeAmountNaira = feeAmountKobo / 100;
   const feePayer = settings.fee_payer;
 
-  // Platform Commission (3% student, 5% guest)
-  const commissionRate = seller.sellerType === "guest" ? 0.05 : 0.03;
+  // Platform Commission (standard 5% across all marketplace sales, deducted from seller proceeds)
+  const commissionRate = 0.05;
   const platformCommissionKobo = Math.round(subtotalKobo * commissionRate);
   const platformCommissionNaira = platformCommissionKobo / 100;
 
@@ -336,4 +354,106 @@ export async function evaluateEscrowOrder(
     platformCommissionNaira,
     settingsSnapshot: settings,
   };
+}
+
+export interface OrderSplittingRiskResult {
+  isSplittingSuspected: boolean;
+  reason: string | null;
+  cumulativeSubtotalKobo: number;
+  recentOrderCount: number;
+}
+
+/**
+ * Sensible risk-based detection for suspicious related transactions (order splitting).
+ * Evaluates whether multiple sub-threshold purchases between the same buyer and seller
+ * aggregate to exceed optional (₦5,000) or mandatory (₦20,000) escrow levels within 24 hours,
+ * or occur in rapid succession, without blocking legitimate repeat transactions.
+ */
+export async function checkOrderSplittingRisk(
+  buyerId: string | null | undefined,
+  vendorId: string,
+  currentSubtotalKobo: number
+): Promise<OrderSplittingRiskResult> {
+  if (!buyerId) {
+    return {
+      isSplittingSuspected: false,
+      reason: null,
+      cumulativeSubtotalKobo: currentSubtotalKobo,
+      recentOrderCount: 0,
+    };
+  }
+
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+    // Fetch recent direct orders between this buyer and vendor in the last 24h
+    const recentOrders = await prisma.order.findMany({
+      where: {
+        buyerId,
+        vendorId,
+        createdAt: { gte: twentyFourHoursAgo },
+        status: { not: "CANCELLED" },
+      },
+      select: {
+        id: true,
+        subtotal: true,
+        escrow_mode: true,
+        createdAt: true,
+      },
+    });
+
+    const recentDirectOrders = recentOrders.filter((o) => o.escrow_mode === "direct");
+    const pastDirectKobo = recentDirectOrders.reduce(
+      (sum, o) => sum + Math.round(Number(o.subtotal || 0) * 100),
+      0
+    );
+    const totalCombinedKobo = pastDirectKobo + currentSubtotalKobo;
+
+    // 1. Cumulative crossing into mandatory escrow threshold (>= ₦20,000)
+    if (pastDirectKobo > 0 && totalCombinedKobo >= 2000000) {
+      return {
+        isSplittingSuspected: true,
+        reason: `Combined direct purchases with this seller in the last 24 hours reach ₦${(totalCombinedKobo / 100).toLocaleString()}. Escrow protection is mandatory for transaction safety.`,
+        cumulativeSubtotalKobo: totalCombinedKobo,
+        recentOrderCount: recentOrders.length,
+      };
+    }
+
+    // 2. Cumulative crossing into optional escrow threshold (>= ₦5,000)
+    if (pastDirectKobo > 0 && totalCombinedKobo >= 500000) {
+      return {
+        isSplittingSuspected: true,
+        reason: `Combined direct purchases with this seller in the last 24 hours reach ₦${(totalCombinedKobo / 100).toLocaleString()}. Escrow protection applied.`,
+        cumulativeSubtotalKobo: totalCombinedKobo,
+        recentOrderCount: recentOrders.length,
+      };
+    }
+
+    // 3. Rapid succession burst (2 or more direct orders in the last 10 minutes)
+    const rapidOrders = recentDirectOrders.filter((o) => new Date(o.createdAt) >= tenMinutesAgo);
+    if (rapidOrders.length >= 2) {
+      return {
+        isSplittingSuspected: true,
+        reason: "Multiple rapid transactions detected between the same buyer and seller. Escrow protection applied for transaction safety.",
+        cumulativeSubtotalKobo: totalCombinedKobo,
+        recentOrderCount: recentOrders.length,
+      };
+    }
+
+    return {
+      isSplittingSuspected: false,
+      reason: null,
+      cumulativeSubtotalKobo: totalCombinedKobo,
+      recentOrderCount: recentOrders.length,
+    };
+  } catch (err) {
+    console.warn("[Risk Check Warning] Could not evaluate order splitting history:", err);
+    return {
+      isSplittingSuspected: false,
+      reason: null,
+      cumulativeSubtotalKobo: currentSubtotalKobo,
+      recentOrderCount: 0,
+    };
+  }
 }

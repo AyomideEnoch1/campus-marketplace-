@@ -19,10 +19,69 @@ import {
   AlertCircle,
   CreditCard,
   RefreshCw,
+  Lock,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
+
+function InspectionCountdown({ deadline }: { deadline: string | Date }) {
+  const [timeLeft, setTimeLeft] = React.useState<{
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isExpired: boolean;
+  }>({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isExpired: false,
+  });
+
+  React.useEffect(() => {
+    const target = new Date(deadline).getTime();
+
+    const updateTimer = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, isExpired: true });
+        return;
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft({ hours, minutes, seconds, isExpired: false });
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  if (timeLeft.isExpired) {
+    return (
+      <div className="text-xs font-bold text-neutral-600 bg-neutral-100 px-3 py-1.5 rounded-xl inline-flex items-center gap-1.5">
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+        <span>Inspection Window Concluded (48h Elapsed)</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1.5 bg-blue-100 text-blue-900 px-3.5 py-1.5 rounded-xl font-mono font-black text-sm border border-blue-200 shadow-2xs">
+        <Clock className="w-4 h-4 text-blue-700 animate-pulse" />
+        <span>
+          {String(timeLeft.hours).padStart(2, "0")}h {String(timeLeft.minutes).padStart(2, "0")}m {String(timeLeft.seconds).padStart(2, "0")}s
+        </span>
+      </div>
+      <span className="text-[11px] font-semibold text-blue-800">
+        remaining to inspect items &amp; open disputes
+      </span>
+    </div>
+  );
+}
 
 export default function OrderTrackingPage() {
   const params = useParams();
@@ -156,7 +215,7 @@ export default function OrderTrackingPage() {
       <div className="min-h-[70vh] flex items-center justify-center py-20">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-neutral-500">Loading escrow order status...</p>
+          <p className="text-xs text-neutral-500">Loading order status...</p>
         </div>
       </div>
     );
@@ -170,7 +229,7 @@ export default function OrderTrackingPage() {
             <AlertCircle className="w-7 h-7" />
           </div>
           <h2 className="text-lg font-bold text-neutral-900">Order Not Found</h2>
-          <p className="text-xs text-neutral-500">{error || "Could not find this escrow order."}</p>
+          <p className="text-xs text-neutral-500">{error || "Could not find this order."}</p>
           <Link href="/shop">
             <Button variant="outline" size="sm" className="rounded-xl">
               Back to Marketplace
@@ -181,28 +240,35 @@ export default function OrderTrackingPage() {
     );
   }
 
+  const isEscrow = order.escrow_mode === "escrow";
   const escrowStatus = order.escrow_status || "pending";
   const isUnpaid =
     !order.paid_at &&
     escrowStatus === "pending" &&
     order.status !== "CANCELLED";
   const isPaidHeld = escrowStatus === "paid_held";
-  const isDelivered = escrowStatus === "delivered";
+  const isDelivered = order.status === "DELIVERED" || escrowStatus === "delivered";
   const isConfirmed = escrowStatus === "confirmed" || escrowStatus === "payout_pending" || escrowStatus === "released";
+  const isReleased = escrowStatus === "released";
   const isDisputed = escrowStatus === "disputed";
   const isRefunded = escrowStatus === "refunded";
+
+  const effectiveDeadline =
+    order.dispute_deadline ||
+    (order.delivered_at
+      ? new Date(new Date(order.delivered_at).getTime() + 48 * 3600000).toISOString()
+      : null);
 
   return (
     <div className="min-h-screen bg-neutral-50/70 py-8 px-4 sm:px-6">
       <div className="container mx-auto max-w-4xl space-y-6">
-        
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <Link href="/shop" className="text-xs font-semibold text-neutral-500 hover:text-neutral-900 flex items-center gap-1 mb-2">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Shop
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-black text-neutral-950 tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-black text-neutral-950 tracking-tight flex flex-wrap items-center gap-2.5">
               <span>Order #{order.orderNumber}</span>
               {isUnpaid && (
                 <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs font-bold">
@@ -214,9 +280,19 @@ export default function OrderTrackingPage() {
                   Funds Held in Escrow
                 </Badge>
               )}
+              {isDelivered && !isDisputed && !isReleased && (
+                <Badge className="bg-blue-100 text-blue-900 border-blue-200 text-xs font-bold">
+                  Handover Verified • 48h Inspection
+                </Badge>
+              )}
               {isDisputed && (
                 <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-xs font-bold">
                   Dispute Under Review
+                </Badge>
+              )}
+              {isReleased && (
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-bold">
+                  Completed &amp; Released
                 </Badge>
               )}
               {isRefunded && (
@@ -277,6 +353,7 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
+        {/* Unpaid Order Banner */}
         {isUnpaid && (
           <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -293,7 +370,7 @@ export default function OrderTrackingPage() {
                   </Badge>
                 </div>
                 <p className="text-xs text-amber-800/90 leading-relaxed max-w-xl">
-                  This order was created without completing payment. Complete your payment of <strong>{formatNGN(order.totalAmount)}</strong> now so funds are secured in platform escrow and the vendor can deliver your order.
+                  This order was created without completing checkout payment. Complete your payment of <strong>{formatNGN(order.totalAmount)}</strong> now so funds are secured and the vendor can deliver your order.
                 </p>
               </div>
             </div>
@@ -318,87 +395,135 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
-        {/* 1. Escrow Status Timeline */}
+        {/* Disputed State Alert Banner */}
+        {isDisputed && (
+          <div className="p-5 rounded-3xl bg-amber-50 border-2 border-amber-400 text-amber-950 shadow-sm space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <h3 className="font-extrabold text-sm text-amber-950">
+                Escrow Dispute Active — Payout Locked
+              </h3>
+            </div>
+            <p className="text-xs text-amber-900 leading-relaxed">
+              You opened an escrow dispute for this order. Escrow payout to the vendor is strictly frozen. A platform mediator is reviewing the provided documentation and will contact both parties within 24 hours to issue a resolution.
+            </p>
+          </div>
+        )}
+
+        {/* 1. Order Lifecycle Timeline */}
         <div className="bg-white rounded-3xl border border-neutral-200/90 shadow-xs p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
             <h3 className="font-extrabold text-sm text-neutral-900 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Escrow Order Lifecycle</span>
+              {isEscrow ? (
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <Zap className="w-4 h-4 text-neutral-600" />
+              )}
+              <span>{isEscrow ? "Escrow Order Lifecycle" : "Direct Order Lifecycle"}</span>
             </h3>
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-              Escrow Protected
-            </span>
+            {isEscrow ? (
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                Escrow Protected
+              </span>
+            ) : (
+              <span className="text-[11px] font-semibold text-neutral-700 bg-neutral-100 px-2.5 py-0.5 rounded-full border border-neutral-200">
+                Direct Settlement
+              </span>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 relative">
-            {/* Step 1: Paid & Held */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              isPaidHeld || isDelivered || isConfirmed
-                ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
-                : "bg-neutral-50 border-neutral-200 text-neutral-400"
-            }`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold">1. Payment Held</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          {isEscrow ? (
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 relative">
+              {/* Step 1: Paid & Held */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                isPaidHeld || isDelivered || isConfirmed
+                  ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
+                  : "bg-neutral-50 border-neutral-200 text-neutral-400"
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold">1. Payment Held</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                </div>
+                <p className="text-[11px] text-neutral-600 leading-snug">
+                  Funds safely deposited into platform escrow.
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-600 leading-snug">
-                Funds safely deposited into platform escrow.
-              </p>
-            </div>
 
-            {/* Step 2: Safe Meetup */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              isPaidHeld || isDelivered || isConfirmed
-                ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
-                : "bg-neutral-50 border-neutral-200 text-neutral-400"
-            }`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold">2. Meet &amp; Inspect</span>
-                <MapPin className="w-4 h-4 text-emerald-600" />
+              {/* Step 2: Safe Meetup */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                isPaidHeld || isDelivered || isConfirmed
+                  ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
+                  : "bg-neutral-50 border-neutral-200 text-neutral-400"
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold">2. Meet &amp; Inspect</span>
+                  <MapPin className="w-4 h-4 text-emerald-600" />
+                </div>
+                <p className="text-[11px] text-neutral-600 leading-snug">
+                  Meet vendor at designated safe meetup point.
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-600 leading-snug">
-                Meet vendor at designated safe meetup point.
-              </p>
-            </div>
 
-            {/* Step 3: Delivery Code */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              isDelivered || isConfirmed
-                ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
-                : isPaidHeld
-                ? "bg-amber-50/80 border-amber-300 text-amber-950 ring-2 ring-amber-400/20"
-                : "bg-neutral-50 border-neutral-200 text-neutral-400"
-            }`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold">3. Delivery Code</span>
-                <Clock className="w-4 h-4 text-amber-600" />
+              {/* Step 3: Delivery Code */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                isDelivered || isConfirmed
+                  ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
+                  : isPaidHeld
+                  ? "bg-amber-50/80 border-amber-300 text-amber-950 ring-2 ring-amber-400/20"
+                  : "bg-neutral-50 border-neutral-200 text-neutral-400"
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold">3. Handover Code</span>
+                  <Clock className="w-4 h-4 text-amber-600" />
+                </div>
+                <p className="text-[11px] text-neutral-600 leading-snug">
+                  {isDelivered
+                    ? "Handover code verified by vendor."
+                    : "Provide your 6-digit code after verifying item condition."}
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-600 leading-snug">
-                Provide your 6-digit code after verifying item condition.
-              </p>
-            </div>
 
-            {/* Step 4: Released */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              escrowStatus === "released"
-                ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
-                : "bg-neutral-50 border-neutral-200 text-neutral-400"
-            }`}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold">4. Payout Released</span>
-                <Package className="w-4 h-4 text-neutral-400" />
+              {/* Step 4: Released */}
+              <div className={`p-4 rounded-2xl border transition-all ${
+                isReleased
+                  ? "bg-emerald-50/60 border-emerald-200 text-emerald-950"
+                  : isDelivered && !isDisputed
+                  ? "bg-blue-50/60 border-blue-200 text-blue-950"
+                  : "bg-neutral-50 border-neutral-200 text-neutral-400"
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold">4. Payout Release</span>
+                  <Package className="w-4 h-4 text-neutral-400" />
+                </div>
+                <p className="text-[11px] text-neutral-600 leading-snug">
+                  {isReleased
+                    ? "Vendor paid out successfully."
+                    : isDelivered
+                    ? "Releases after 48h inspection."
+                    : "Held until delivery code is verified."}
+                </p>
               </div>
-              <p className="text-[11px] text-neutral-600 leading-snug">
-                {escrowStatus === "released"
-                  ? "Vendor paid out successfully."
-                  : "Held until delivery code is verified."}
-              </p>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className={`p-4 rounded-2xl border ${!isUnpaid ? "bg-emerald-50 border-emerald-200 text-emerald-950" : "bg-neutral-50 border-neutral-200"}`}>
+                <span className="text-xs font-bold block mb-1">1. Direct Payment</span>
+                <p className="text-[11px] text-neutral-600">Paid directly to seller upon payment verification.</p>
+              </div>
+              <div className={`p-4 rounded-2xl border ${isDelivered ? "bg-emerald-50 border-emerald-200 text-emerald-950" : "bg-neutral-50 border-neutral-200"}`}>
+                <span className="text-xs font-bold block mb-1">2. Fulfillment</span>
+                <p className="text-[11px] text-neutral-600">Vendor prepares and delivers items to pickup location.</p>
+              </div>
+              <div className={`p-4 rounded-2xl border ${order.status === "DELIVERED" ? "bg-emerald-50 border-emerald-200 text-emerald-950" : "bg-neutral-50 border-neutral-200"}`}>
+                <span className="text-xs font-bold block mb-1">3. Completed</span>
+                <p className="text-[11px] text-neutral-600">Order handed over and finished.</p>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* 2. One-Time 6-Digit Delivery Code Box */}
-        {(isPaidHeld || isDelivered) && (
+        {/* 2. One-Time 6-Digit Delivery Code Box (Shown when paid & handover pending) */}
+        {isEscrow && isPaidHeld && !isDelivered && (
           <div className="bg-gradient-to-br from-emerald-50 via-white to-teal-50 rounded-3xl border-2 border-emerald-500/40 p-6 sm:p-8 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
@@ -409,7 +534,7 @@ export default function OrderTrackingPage() {
                   Your 6-Digit Hand-Off Code
                 </h3>
                 <p className="text-xs text-neutral-600 leading-relaxed max-w-xl mt-0.5">
-                  Keep this code private. <strong>Only give this code to the vendor in person AFTER you have thoroughly inspected the item</strong> and are fully satisfied.
+                  Keep this code private. <strong>Only give this code to the vendor in person AFTER you have thoroughly inspected the item</strong> at the meetup spot and are fully satisfied.
                 </p>
               </div>
 
@@ -421,7 +546,7 @@ export default function OrderTrackingPage() {
                 <button
                   type="button"
                   onClick={handleCopyCode}
-                  className="p-2 rounded-xl hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 transition-colors"
+                  className="p-2 rounded-xl hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900 transition-colors cursor-pointer"
                   title="Copy Code"
                 >
                   {codeCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
@@ -432,13 +557,51 @@ export default function OrderTrackingPage() {
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Fraud Advisory:</strong> Never share this code over chat, WhatsApp, or phone before seeing the item. Once the seller enters your code, the order is verified and funds will be released to their bank account.
+                <strong>Fraud Advisory:</strong> Never share this code over chat, WhatsApp, or phone before seeing the item. Once the seller enters your code, handover is confirmed.
               </span>
             </div>
           </div>
         )}
 
-        {/* 3. Order Items & Meetup Details */}
+        {/* 3. 48-Hour Inspection Window Card (Shown once handover code is verified) */}
+        {isEscrow && isDelivered && !isDisputed && !isReleased && effectiveDeadline && (
+          <div className="bg-gradient-to-br from-blue-50 via-white to-sky-50 rounded-3xl border-2 border-blue-400 p-6 sm:p-8 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 bg-blue-100 px-2.5 py-0.5 rounded-full">
+                    Handover Confirmed • Inspection Window
+                  </span>
+                </div>
+                <h3 className="text-xl font-black text-neutral-950">
+                  48-Hour Buyer Inspection Period
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed max-w-xl">
+                  Your delivery code was verified. You have a full 48-hour inspection period starting from handover to test your item and ensure it matches the description.
+                </p>
+              </div>
+
+              {/* Live Inspection Countdown */}
+              <InspectionCountdown deadline={effectiveDeadline} />
+            </div>
+
+            <div className="pt-2 border-t border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <p className="text-neutral-500 text-[11px]">
+                If the item has defects or issues, open a dispute before the timer expires to freeze payment release.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDisputeModalOpen(true)}
+                className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl shrink-0 cursor-pointer"
+              >
+                Open Dispute / Report Issue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* 4. Order Items & Meetup Details */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 bg-white rounded-3xl border border-neutral-200/90 shadow-xs p-6 space-y-4">
             <h3 className="font-bold text-sm text-neutral-900 border-b border-neutral-100 pb-3">
@@ -466,11 +629,24 @@ export default function OrderTrackingPage() {
               ))}
             </div>
 
-            <div className="pt-4 border-t border-neutral-100 flex justify-between items-center text-sm">
-              <span className="font-bold text-neutral-700">Total Escrow Amount:</span>
-              <span className="text-base font-extrabold text-emerald-700">
-                {formatNGN(order.subtotal || order.totalAmount)}
-              </span>
+            {/* Complete Itemized Price Breakdown */}
+            <div className="pt-4 border-t border-neutral-100 space-y-1.5 text-xs text-neutral-600">
+              <div className="flex justify-between">
+                <span>Items Subtotal:</span>
+                <span className="font-semibold text-neutral-900">{formatNGN(order.subtotal || order.totalAmount)}</span>
+              </div>
+              {order.fee_amount > 0 && (
+                <div className="flex justify-between text-neutral-600">
+                  <span>Escrow Protection Fee ({order.fee_percent || 0}%):</span>
+                  <span className="font-semibold text-emerald-700">+{formatNGN(order.fee_amount)}</span>
+                </div>
+              )}
+              <div className="pt-2 border-t border-neutral-100 flex justify-between items-center text-sm">
+                <span className="font-bold text-neutral-800">Total Paid:</span>
+                <span className="text-base font-extrabold text-neutral-950">
+                  {formatNGN(order.totalAmount)}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -497,14 +673,14 @@ export default function OrderTrackingPage() {
                 </p>
               </div>
 
-              {/* Dispute Button (Available if delivered or confirmed, before 48h) */}
-              {!isDisputed && !isRefunded && (
+              {/* Dispute Button (Available if escrow mode, before 48h elapsed, and not yet disputed/refunded) */}
+              {isEscrow && !isDisputed && !isRefunded && (
                 <div className="pt-4 border-t border-neutral-100 space-y-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setDisputeModalOpen(true)}
-                    className="w-full text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50"
+                    className="w-full text-xs font-semibold text-rose-600 border-rose-200 hover:bg-rose-50 cursor-pointer"
                   >
                     Open Dispute / Report Issue
                   </Button>

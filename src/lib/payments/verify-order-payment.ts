@@ -101,10 +101,13 @@ export async function verifyOrderPayment(
   }
 
   // 4. Strict Amount & Currency Validation
-  const expectedAmount = Number(order.subtotal || order.totalAmount);
+  const expectedAmount = Number(order.totalAmount || order.subtotal);
   const paidAmount = Number(flwResult.amount);
 
-  if (Math.abs(paidAmount - expectedAmount) > 0.01) {
+  if (
+    Math.abs(paidAmount - expectedAmount) > 0.01 &&
+    Math.abs(paidAmount - Number(order.subtotal)) > 0.01
+  ) {
     console.error(
       `[Escrow Security Alert] Amount mismatch for order ${order.id}: expected ${expectedAmount} NGN, received ${paidAmount} NGN`
     );

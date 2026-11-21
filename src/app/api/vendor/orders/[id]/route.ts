@@ -21,6 +21,27 @@ export async function PATCH(
     const body = await request.json();
     const { status } = body;
 
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: params.id },
+      select: { id: true, vendorId: true, escrow_mode: true, escrow_status: true, status: true },
+    });
+
+    if (!existingOrder || existingOrder.vendorId !== vendor.id) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Security Gate: Escrow-protected orders CANNOT be manually marked DELIVERED by vendor.
+    // They must be verified via the buyer's 6-digit handover code at /api/escrow/verify-delivery-code
+    if (status === "DELIVERED" && existingOrder.escrow_mode === "escrow") {
+      return NextResponse.json(
+        {
+          error:
+            "Escrow-protected orders cannot be manually marked as delivered. The buyer's 6-digit handover code must be verified at handover.",
+        },
+        { status: 400 }
+      );
+    }
+
     const updated = await prisma.order.update({
       where: { id: params.id, vendorId: vendor.id },
       data: { status: status as any },

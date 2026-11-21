@@ -4,6 +4,40 @@ A production-ready, mobile-first multi-vendor e-commerce marketplace built speci
 
 Designed with the modern aesthetics of **NovaTrend** (Hero, value propositions, category grids, dynamic promo banners) and **Forma** (Catalog browsing, horizontal category pills, dual-thumb price filters, condition filters, and student safety trust marks).
 
+> 📘 **Payments, Escrow & Disputes Documentation**:  
+> For complete architecture details, sequence diagrams, fee structures, 6-digit handover code security, and cron auto-release instructions, see [**docs/PAYMENTS-AND-ESCROW-IMPLEMENTATION.md**](docs/PAYMENTS-AND-ESCROW-IMPLEMENTATION.md).
+
+---
+
+## Secure Payment, Escrow & Payout System (Flutterwave v3)
+
+CampusTrade features a production-grade payment and escrow engine built specifically for Nigerian university campuses, powered by **Flutterwave v3**:
+
+- **Dynamic Value Bands & Risk Overrides**:
+  - *Below ₦5,000*: Direct settlement with 0% escrow fee by default.
+  - *₦5,000–₦19,999*: Optional toggle between Escrow Protection (1% fee) and Direct Settlement (0% fee).
+  - *₦20,000 and Above*: Mandatory Escrow Protection (2% fee).
+  - *Mandatory Overrides*: Escrow is strictly enforced regardless of amount for off-campus Guest Vendors, sellers with safety strikes, high-risk product categories (Electronics, Cosmetics, Campus Meals), and suspicious order-splitting patterns.
+- **Transparent Fee Structure**:
+  - 5% marketplace commission across all tiers, strictly deducted from vendor proceeds (never added to buyer total).
+  - Full financial transparency during checkout: product subtotal, escrow protection fee, total payable, platform commission, and expected net seller payout.
+- **Physical Handover Verification**:
+  - Cryptographically secure 6-digit one-time handover codes generated upon payment verification and encrypted with AES-256-GCM.
+  - Stored as `sha256Hash|aesEncryptedPayload`. Only the authenticated buyer can view their code.
+  - Vendors verify the code in person at university safe meetup points via a dedicated interface protected by a **5-attempt brute-force lockout**.
+- **Inviolable 48-Hour Inspection Window**:
+  - Starts strictly upon verified physical handover (`delivered_at`).
+  - Student vendors: 48-hour payout eligibility.
+  - Guest vendors: 72-hour payout eligibility.
+  - Buyers can open an active dispute during this window, which immediately freezes automatic payout release.
+- **Double Payout Prevention & Balanced Ledger**:
+  - Immutable append-only `escrow_ledger` records every transaction (`escrow_in`, `commission`, `escrow_out`, `refund_out`, `adjustment`).
+  - Automated cron release endpoint (`/api/escrow/cron-auto-release`) protected by `CRON_SECRET` verifies actual Flutterwave merchant balance before executing payouts.
+- **Automated Test Suite**:
+  - Comprehensive 93-assertion test suite in `scripts/test-escrow-flow.ts` covering eligibility, webhooks, crypto, lockout, timing, disputes, ledger balance equations, and concurrency.
+
+For complete technical documentation, see [**docs/PAYMENTS-AND-ESCROW-IMPLEMENTATION.md**](docs/PAYMENTS-AND-ESCROW-IMPLEMENTATION.md).
+
 ---
 
 ## Tech Stack

@@ -17,11 +17,17 @@ export default async function VendorOrdersPage() {
       vendorId: vendor.id,
       OR: [
         { paid_at: { not: null } },
-        { escrow_status: { in: ["held", "paid_held", "confirmed", "delivered", "released"] } },
+        { escrow_status: { in: ["pending", "held", "paid_held", "confirmed", "delivered", "disputed", "payout_pending", "released", "refunded"] } },
       ],
     },
     orderBy: { createdAt: "desc" },
     include: {
+      deliveryCode: {
+        select: {
+          attempts: true,
+          locked: true,
+        },
+      },
       items: {
         include: {
           product: {
