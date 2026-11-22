@@ -13,6 +13,7 @@ import { RouteNavigationLoader } from "@/components/common/RouteNavigationLoader
 import { ReferralTracker } from "@/components/ambassador/ReferralTracker";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ojacampus.com"),
   title: "ọjà | Multi-Vendor Marketplace for Nigerian University Students",
   description:
     "Buy and sell textbooks, fashion, tech gadgets, and hostel essentials from verified student vendors across UNILAG, UI, and OAU on ọjà.",
@@ -25,6 +26,9 @@ export const metadata: Metadata = {
     "student vendors",
     "nigeria campus ecommerce",
   ],
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  },
 };
 
 export default async function RootLayout({

@@ -10,19 +10,26 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const clientId = process.env.GOOGLE_CLIENT_ID;
+  const requestUrl = new URL(request.url);
+  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin).replace(/\/$/, "");
+  const referer = request.headers.get("referer");
+  let fallbackPath = "/auth/login";
+  if (referer) {
+    try {
+      fallbackPath = new URL(referer).pathname;
+    } catch {}
+  }
 
-    if (!clientId) {
-      console.error("[Google OAuth] GOOGLE_CLIENT_ID is not configured in environment variables.");
-      return NextResponse.json(
-        {
-          error:
-            "Google Sign-In is not configured yet. Missing GOOGLE_CLIENT_ID in environment settings.",
-        },
-        { status: 500 }
-      );
+  try {
+    const { searchParams } = requestUrl;
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.warn("[Google OAuth] GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not configured in .env.");
+      const redirectUrl = new URL(fallbackPath, appBaseUrl);
+      redirectUrl.searchParams.set("error", "server_config_error");
+      return NextResponse.redirect(redirectUrl.toString());
     }
 
     const rawRole = searchParams.get("role")?.toUpperCase();
@@ -60,9 +67,8 @@ export async function GET(request: Request) {
     return response;
   } catch (error: any) {
     console.error("[Google OAuth Init Error]:", error);
-    return NextResponse.json(
-      { error: "Failed to initiate Google authentication" },
-      { status: 500 }
-    );
+    const redirectUrl = new URL(fallbackPath, appBaseUrl);
+    redirectUrl.searchParams.set("error", "server_config_error");
+    return NextResponse.redirect(redirectUrl.toString());
   }
 }
