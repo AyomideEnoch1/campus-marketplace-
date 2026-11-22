@@ -1,44 +1,166 @@
 import { Resend } from "resend";
-import { OrderConfirmationEmail, OrderConfirmationEmailProps } from "@/emails/OrderConfirmationEmail";
-import { VendorNotificationEmail, VendorNotificationEmailProps } from "@/emails/VendorNotificationEmail";
-import { VendorStatusEmail, VendorStatusEmailProps } from "@/emails/VendorStatusEmail";
-import { PasswordResetEmail, PasswordResetEmailProps } from "@/emails/PasswordResetEmail";
-import { EmailVerificationEmail, EmailVerificationEmailProps } from "@/emails/EmailVerificationEmail";
-import { WelcomeEmail, WelcomeEmailProps } from "@/emails/WelcomeEmail";
-import { VerifyEmail, VerifyEmailProps } from "@/emails/VerifyEmail";
+import {
+  getEmailVerificationTemplate,
+  getWelcomeTemplate,
+  getPasswordResetTemplate,
+  getOrderConfirmationTemplate,
+  getVendorStatusTemplate,
+  getVendorNotificationTemplate,
+} from "./email-templates";
+
+export interface OrderConfirmationEmailProps {
+  buyerName?: string;
+  customerName?: string;
+  orderNumber: string;
+  items: Array<{ title?: string; name?: string; quantity: number; price: number }>;
+  totalAmount: number;
+  currency?: string;
+  deliveryCode?: string;
+  verificationCode?: string;
+  meetupPoint?: string;
+  campusName?: string;
+}
+
+export interface VendorNotificationEmailProps {
+  storeName: string;
+  orderNumber: string;
+  vendorName?: string;
+  buyerName?: string;
+  buyerPhone?: string;
+  items?: Array<{ title?: string; name?: string; quantity: number; price: number }>;
+  payoutAmount?: number;
+  totalAmount?: number;
+  meetupPoint?: string;
+  campusName?: string;
+  dashboardUrl?: string;
+}
+
+export interface VendorStatusEmailProps {
+  storeName: string;
+  applicantName?: string;
+  vendorName?: string;
+  status: "APPROVED" | "REJECTED" | "SUSPENDED" | "INFO_REQUESTED" | string;
+  rejectionReason?: string;
+  tier?: number;
+  dashboardUrl?: string;
+  notes?: string;
+}
+
+export interface PasswordResetEmailProps {
+  userName?: string;
+  resetUrl: string;
+}
+
+export interface EmailVerificationEmailProps {
+  userName?: string;
+  verificationCode?: string;
+  verifyUrl: string;
+}
+
+export interface VerifyEmailProps {
+  userName?: string;
+  verificationCode?: string;
+  verifyUrl: string;
+}
+
+export interface WelcomeEmailProps {
+  userName?: string;
+  userRole?: string;
+  dashboardUrl?: string;
+  exploreUrl?: string;
+}
 
 const resendApiKey = process.env.RESEND_API_KEY;
 // Uses the verified custom domain xn--j-sfa590u.com (ọjà.com) on Resend for safe inbox delivery
-const fromEmail = process.env.EMAIL_FROM || "ọjà. <notifications@xn--j-sfa590u.com>";
+const primaryFromEmail = process.env.EMAIL_FROM || "ọjà. <notifications@xn--j-sfa590u.com>";
 const fallbackFromEmail = "notifications@xn--j-sfa590u.com";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 /**
- * Send order confirmation to the student buyer
+ * Internal robust email sender with fallback from address and error detection
+ */
+async function sendWithFallback({
+  to,
+  subject,
+  html,
+  text,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<{ success: boolean; data?: any; error?: string; simulated?: boolean }> {
+  if (!resend) {
+    console.log(`[Email Simulated] to=${to}, subject="${subject}"`);
+    return { success: true, simulated: true };
+  }
+
+  try {
+    const response = await resend.emails.send({
+      from: primaryFromEmail,
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    if (response.error) {
+      console.warn(`[Resend Primary Send Error] from=${primaryFromEmail}:`, response.error);
+      // Attempt fallback with plain sender address (no unicode display name)
+      const fallbackResponse = await resend.emails.send({
+        from: fallbackFromEmail,
+        to,
+        subject,
+        html,
+        text,
+      });
+
+      if (fallbackResponse.error) {
+        console.error(`[Resend Fallback Send Error] from=${fallbackFromEmail}:`, fallbackResponse.error);
+        return { success: false, error: fallbackResponse.error.message };
+      }
+
+      console.log(`[Email Sent via Fallback] to=${to}, id=${fallbackResponse.data?.id}`);
+      return { success: true, data: fallbackResponse.data };
+    }
+
+    console.log(`[Email Sent Successfully] to=${to}, id=${response.data?.id}`);
+    return { success: true, data: response.data };
+  } catch (err: any) {
+    console.error("[Resend Network / Exception Error]:", err?.message || err);
+    try {
+      const fallbackResponse = await resend.emails.send({
+        from: fallbackFromEmail,
+        to,
+        subject,
+        html,
+        text,
+      });
+      if (fallbackResponse.error) {
+        return { success: false, error: fallbackResponse.error.message };
+      }
+      return { success: true, data: fallbackResponse.data };
+    } catch (fallbackErr: any) {
+      return { success: false, error: fallbackErr?.message || err?.message };
+    }
+  }
+}
+
+/**
+ * Send order confirmation to student buyer
  */
 export async function sendOrderConfirmationEmail(
   to: string,
   props: OrderConfirmationEmailProps
 ) {
-  if (!resend) {
-    console.log(`[Email Simulated] Order confirmation for #${props.orderNumber} sent to ${to}`);
-    return { success: true, simulated: true };
-  }
-
-  try {
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject: `Order #${props.orderNumber} Confirmed — ọjà. Escrow`,
-      react: OrderConfirmationEmail(props),
-    });
-
-    return { success: true, data };
-  } catch (error: any) {
-    console.error("Failed to send order confirmation email:", error);
-    return { success: false, error: error.message };
-  }
+  const { html, text } = getOrderConfirmationTemplate(props);
+  return sendWithFallback({
+    to,
+    subject: `Order #${props.orderNumber} Confirmed — ọjà. Escrow`,
+    html,
+    text,
+  });
 }
 
 /**
@@ -48,24 +170,13 @@ export async function sendVendorOrderNotificationEmail(
   to: string,
   props: VendorNotificationEmailProps
 ) {
-  if (!resend) {
-    console.log(`[Email Simulated] Vendor notification for #${props.orderNumber} sent to ${to}`);
-    return { success: true, simulated: true };
-  }
-
-  try {
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject: `New Order #${props.orderNumber} Received — ${props.storeName}`,
-      react: VendorNotificationEmail(props),
-    });
-
-    return { success: true, data };
-  } catch (error: any) {
-    console.error("Failed to send vendor order notification email:", error);
-    return { success: false, error: error.message };
-  }
+  const { html, text } = getVendorNotificationTemplate(props);
+  return sendWithFallback({
+    to,
+    subject: `New Order #${props.orderNumber} Received — ${props.storeName}`,
+    html,
+    text,
+  });
 }
 
 /**
@@ -75,31 +186,20 @@ export async function sendVendorStatusEmail(
   to: string,
   props: VendorStatusEmailProps
 ) {
-  if (!resend) {
-    console.log(`[Email Simulated] Vendor status update (${props.status}) sent to ${to}`);
-    return { success: true, simulated: true };
-  }
-
-  const subjectMap = {
+  const subjectMap: Record<string, string> = {
     APPROVED: `Congratulations! Your store ${props.storeName} is approved — ọjà.`,
     REJECTED: `Update on your ọjà. vendor application for ${props.storeName}`,
     SUSPENDED: `Important notice regarding your ọjà. vendor account`,
     INFO_REQUESTED: `Action required: More information needed for ${props.storeName}`,
   };
 
-  try {
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject: subjectMap[props.status] || `ọjà. Vendor Application Update`,
-      react: VendorStatusEmail(props),
-    });
-
-    return { success: true, data };
-  } catch (error: any) {
-    console.error("Failed to send vendor status email:", error);
-    return { success: false, error: error.message };
-  }
+  const { html, text } = getVendorStatusTemplate(props);
+  return sendWithFallback({
+    to,
+    subject: subjectMap[props.status] || `ọjà. Vendor Application Update`,
+    html,
+    text,
+  });
 }
 
 /**
@@ -109,100 +209,45 @@ export async function sendPasswordResetEmail(
   to: string,
   props: PasswordResetEmailProps
 ) {
-  if (!resend) {
-    console.log(`[Email Simulated] Password reset link for ${to}: ${props.resetUrl}`);
-    return { success: true, simulated: true };
-  }
-
-  try {
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject: `Reset your ọjà. password`,
-      react: PasswordResetEmail(props),
-    });
-
-    return { success: true, data };
-  } catch (error: any) {
-    console.error("Failed to send password reset email:", error);
-    return { success: false, error: error.message };
-  }
+  const { html, text } = getPasswordResetTemplate(props);
+  return sendWithFallback({
+    to,
+    subject: `Reset your ọjà. password`,
+    html,
+    text,
+  });
 }
 
 /**
- * Send email address verification email
+ * Send email address verification email (with 6-digit code & link)
  */
 export async function sendEmailVerificationEmail(
   to: string,
   props: EmailVerificationEmailProps
 ) {
-  if (!resend) {
-    console.log(`[Email Simulated] Email verification for ${to}: code=${props.verificationCode}, link=${props.verifyUrl}`);
-    return { success: true, simulated: true };
-  }
-
-  try {
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject: `Verify your email address — ọjà.`,
-      react: EmailVerificationEmail(props),
-    });
-
-    return { success: true, data };
-  } catch (error: any) {
-    console.warn("[Resend Primary Error]", error?.message);
-    try {
-      const fallbackData = await resend.emails.send({
-        from: fallbackFromEmail,
-        to,
-        subject: `Verify your email address — ọjà.`,
-        react: EmailVerificationEmail(props),
-      });
-      return { success: true, data: fallbackData };
-    } catch (fallbackError: any) {
-      console.error("[Resend Fallback Error]:", fallbackError?.message);
-      return { success: false, error: fallbackError?.message || error?.message };
-    }
-  }
+  const { html, text } = getEmailVerificationTemplate(props);
+  return sendWithFallback({
+    to,
+    subject: `Verify your email address — ọjà.`,
+    html,
+    text,
+  });
 }
 
 /**
- * Send 6-digit verification code & link email
+ * Send 6-digit verification code & link email (alias)
  */
 export async function sendVerifyEmail(
   to: string,
   props: VerifyEmailProps
 ) {
-  if (!resend) {
-    console.log(`[Email Simulated] Verification email for ${to}: code=${props.verificationCode}, link=${props.verifyUrl}`);
-    return { success: true, simulated: true };
-  }
-
-  try {
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject: `Verify your email address — ọjà.`,
-      react: VerifyEmail(props),
-    });
-
-    return { success: true, data };
-  } catch (error: any) {
-    console.warn("[Resend Primary Error]", error?.message);
-    try {
-      const fallbackData = await resend.emails.send({
-        from: fallbackFromEmail,
-        to,
-        subject: `Verify your email address — ọjà.`,
-        react: VerifyEmail(props),
-      });
-      return { success: true, data: fallbackData };
-    } catch (fallbackError: any) {
-      console.error("[Resend Fallback Error]:", fallbackError?.message);
-      return { success: false, error: fallbackError?.message || error?.message };
-    }
-  }
+  const { html, text } = getEmailVerificationTemplate(props);
+  return sendWithFallback({
+    to,
+    subject: `Verify your email address — ọjà.`,
+    html,
+    text,
+  });
 }
 
 /**
@@ -212,33 +257,11 @@ export async function sendWelcomeEmail(
   to: string,
   props: WelcomeEmailProps
 ) {
-  if (!resend) {
-    console.log(`[Email Simulated] Welcome email for ${to} (${props.userRole || "BUYER"})`);
-    return { success: true, simulated: true };
-  }
-
-  try {
-    const data = await resend.emails.send({
-      from: fromEmail,
-      to,
-      subject: `Welcome to ọjà., ${props.userName || "Campus Member"}! 🎓🛍️`,
-      react: WelcomeEmail(props),
-    });
-
-    return { success: true, data };
-  } catch (error: any) {
-    console.warn("[Resend Primary Error]", error?.message);
-    try {
-      const fallbackData = await resend.emails.send({
-        from: fallbackFromEmail,
-        to,
-        subject: `Welcome to ọjà., ${props.userName || "Campus Member"}! 🎓🛍️`,
-        react: WelcomeEmail(props),
-      });
-      return { success: true, data: fallbackData };
-    } catch (fallbackError: any) {
-      console.error("[Resend Fallback Error]:", fallbackError?.message);
-      return { success: false, error: fallbackError?.message || error?.message };
-    }
-  }
+  const { html, text } = getWelcomeTemplate(props);
+  return sendWithFallback({
+    to,
+    subject: `Welcome to ọjà., ${props.userName || "Campus Member"}! 🎓🛍️`,
+    html,
+    text,
+  });
 }
