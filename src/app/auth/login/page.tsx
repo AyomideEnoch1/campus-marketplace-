@@ -14,6 +14,7 @@ import {
   EyeOff,
   Sparkles,
   Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/Loader";
@@ -34,6 +35,7 @@ function LoginForm() {
   const redirectParam = searchParams.get("redirect");
   const roleParam = searchParams.get("role");
   const errorParam = searchParams.get("error");
+  const resetParam = searchParams.get("reset");
 
   React.useEffect(() => {
     if (errorParam) {
@@ -115,6 +117,14 @@ function LoginForm() {
         </p>
       </div>
 
+      {/* Reset success message */}
+      {resetParam === "success" && !error && (
+        <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium animate-in fade-in-50 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Your password has been reset successfully! Please sign in below.</span>
+        </div>
+      )}
+
       {/* Error message */}
       {error && (
         <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium animate-in fade-in-50">
@@ -149,7 +159,7 @@ function LoginForm() {
               Password
             </label>
             <Link
-              href="#"
+              href="/auth/forgot-password"
               className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
             >
               Forgot password?

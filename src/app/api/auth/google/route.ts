@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
-  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin).replace(/\/$/, "");
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
+  const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
+  const appBaseUrl = `${proto}://${host}`.replace(/\/$/, "");
   const referer = request.headers.get("referer");
   let fallbackPath = "/auth/login";
   if (referer) {
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
     const rawRedirect = searchParams.get("redirect");
     const redirect = rawRedirect ? sanitizeRedirectUrl(rawRedirect) : undefined;
 
-    const redirectUri = getGoogleCallbackUrl();
+    const redirectUri = getGoogleCallbackUrl(appBaseUrl);
 
     // Generate signed, tamper-resistant state
     const { stateString, cookieValue } = generateOAuthState({

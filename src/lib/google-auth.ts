@@ -37,11 +37,11 @@ export interface OAuthStatePayload {
 /**
  * Returns the effective Google OAuth Callback URL.
  */
-export function getGoogleCallbackUrl(): string {
+export function getGoogleCallbackUrl(currentOrigin?: string): string {
   if (process.env.GOOGLE_CALLBACK_URL) {
     return process.env.GOOGLE_CALLBACK_URL;
   }
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = currentOrigin || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   return `${appUrl.replace(/\/$/, "")}/api/auth/google/callback`;
 }
 

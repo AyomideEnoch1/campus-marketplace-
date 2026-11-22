@@ -15,11 +15,12 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
+  const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
+  const appBaseUrl = `${proto}://${host}`.replace(/\/$/, "");
   const code = requestUrl.searchParams.get("code");
   const state = requestUrl.searchParams.get("state");
   const error = requestUrl.searchParams.get("error");
-
-  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || requestUrl.origin).replace(/\/$/, "");
 
   // 1. Handle user cancellation or errors returned by Google
   if (error) {
@@ -66,7 +67,7 @@ export async function GET(request: Request) {
     return res;
   }
 
-  const redirectUri = getGoogleCallbackUrl();
+  const redirectUri = getGoogleCallbackUrl(appBaseUrl);
 
   try {
     // 4. Exchange code for Google tokens

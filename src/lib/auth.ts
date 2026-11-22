@@ -27,6 +27,22 @@ export function verifyToken(token: string): { userId: string; role: string; emai
   }
 }
 
+export function signPasswordResetToken(payload: { userId: string; email: string }): string {
+  return jwt.sign({ ...payload, purpose: "password_reset" }, JWT_SECRET, { expiresIn: "1h" });
+}
+
+export function verifyPasswordResetToken(token: string): { userId: string; email: string } | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    if (decoded?.purpose !== "password_reset" || !decoded?.userId || !decoded?.email) {
+      return null;
+    }
+    return { userId: decoded.userId, email: decoded.email };
+  } catch {
+    return null;
+  }
+}
+
 export async function getSession(): Promise<SessionUser | null> {
   try {
     const cookieStore = cookies();

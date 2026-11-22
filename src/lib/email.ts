@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { OrderConfirmationEmail, OrderConfirmationEmailProps } from "@/emails/OrderConfirmationEmail";
 import { VendorNotificationEmail, VendorNotificationEmailProps } from "@/emails/VendorNotificationEmail";
 import { VendorStatusEmail, VendorStatusEmailProps } from "@/emails/VendorStatusEmail";
+import { PasswordResetEmail, PasswordResetEmailProps } from "@/emails/PasswordResetEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 // Default to Resend's sandbox domain 'onboarding@resend.dev' until a custom verified domain is supplied
@@ -93,6 +94,33 @@ export async function sendVendorStatusEmail(
     return { success: true, data };
   } catch (error: any) {
     console.error("Failed to send vendor status email:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send password reset email with secure link
+ */
+export async function sendPasswordResetEmail(
+  to: string,
+  props: PasswordResetEmailProps
+) {
+  if (!resend) {
+    console.log(`[Email Simulated] Password reset link for ${to}: ${props.resetUrl}`);
+    return { success: true, simulated: true };
+  }
+
+  try {
+    const data = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject: `Reset your ọjà password`,
+      react: PasswordResetEmail(props),
+    });
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("Failed to send password reset email:", error);
     return { success: false, error: error.message };
   }
 }
