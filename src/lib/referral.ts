@@ -76,6 +76,41 @@ export async function getAmbassadorPayoutLockStatus(): Promise<boolean> {
   }
 }
 
+export interface AmbassadorBannerConfig {
+  enabled: boolean;
+  message: string;
+  title?: string;
+  type?: "info" | "warning" | "success" | "announcement";
+  updatedAt?: string;
+}
+
+/**
+ * Fetch announcement banner for the Ambassador Hub, written by Super Admin.
+ */
+export async function getAmbassadorDashboardBanner(): Promise<AmbassadorBannerConfig> {
+  try {
+    const setting = await prisma.siteSetting.findUnique({
+      where: { key: "ambassador_dashboard_banner" },
+    });
+    if (!setting || !setting.value) {
+      return { enabled: false, message: "", type: "info" };
+    }
+    const parsed = JSON.parse(setting.value);
+    return {
+      enabled: Boolean(parsed.enabled),
+      message: typeof parsed.message === "string" ? parsed.message : "",
+      title: typeof parsed.title === "string" ? parsed.title : "",
+      type: ["info", "warning", "success", "announcement"].includes(parsed.type)
+        ? parsed.type
+        : "info",
+      updatedAt: parsed.updatedAt,
+    };
+  } catch (err) {
+    console.error("Error reading ambassador dashboard banner:", err);
+    return { enabled: false, message: "", type: "info" };
+  }
+}
+
 /**
  * Increment ambassador click/scan count idempotently
  */

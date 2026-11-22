@@ -3,7 +3,11 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSession } from "@/lib/auth";
-import { getReferralRewardConfig, getAmbassadorPayoutLockStatus } from "@/lib/referral";
+import {
+  getReferralRewardConfig,
+  getAmbassadorPayoutLockStatus,
+  getAmbassadorDashboardBanner,
+} from "@/lib/referral";
 
 export async function GET() {
   try {
