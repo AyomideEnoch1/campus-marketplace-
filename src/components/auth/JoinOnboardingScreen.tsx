@@ -9,6 +9,7 @@ import {
   Store,
   Building,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 
 export type IntentType = "buy" | "sell";
@@ -72,6 +73,9 @@ export const ROLE_LOOKUP: Record<`${IntentType}_${AffiliationType}`, RoleConfig>
 export interface JoinOnboardingScreenProps {
   initialIntent?: IntentType;
   initialAffiliation?: AffiliationType;
+  referralCode?: string;
+  onClearReferral?: () => void;
+  error?: string;
   onContinue: (config: RoleConfig) => void;
   onRoleChange?: (config: RoleConfig) => void;
   onExploreGuest?: () => void;
@@ -82,6 +86,9 @@ export interface JoinOnboardingScreenProps {
 export function JoinOnboardingScreen({
   initialIntent = "buy",
   initialAffiliation = "student",
+  referralCode,
+  onClearReferral,
+  error,
   onContinue,
   onRoleChange,
   onExploreGuest,
@@ -145,6 +152,37 @@ export function JoinOnboardingScreen({
           Tell us how you&apos;ll use ọjà.
         </p>
       </div>
+
+      {/* Referral / Ambassador Banner */}
+      {referralCode && (
+        <div className="mt-3.5 flex items-center justify-between p-2.5 rounded-xl bg-neutral-100/90 border border-neutral-200 text-neutral-800 text-xs shadow-2xs">
+          <div className="flex items-center gap-1.5 truncate">
+            <Sparkles className="w-3.5 h-3.5 text-[#0F9D76] shrink-0" />
+            <span className="truncate text-[11px]">
+              Referred by Ambassador:{" "}
+              <strong className="font-mono font-bold text-neutral-900 bg-neutral-200/80 px-1.5 py-0.5 rounded">
+                {referralCode}
+              </strong>
+            </span>
+          </div>
+          {onClearReferral && (
+            <button
+              type="button"
+              onClick={onClearReferral}
+              className="text-neutral-400 hover:text-neutral-600 text-[10px] underline shrink-0 ml-2"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Error Notification */}
+      {error && (
+        <div className="mt-3.5 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold animate-in fade-in-50">
+          {error}
+        </div>
+      )}
 
       {/* Toggles Container */}
       <div className="space-y-3 mt-5">
