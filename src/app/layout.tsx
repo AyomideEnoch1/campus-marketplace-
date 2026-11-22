@@ -13,7 +13,7 @@ import { RouteNavigationLoader } from "@/components/common/RouteNavigationLoader
 import { ReferralTracker } from "@/components/ambassador/ReferralTracker";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://ojacampus.com"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://xn--j-sfa590u.com"),
   title: "ọjà | Multi-Vendor Marketplace for Nigerian University Students",
   description:
     "Buy and sell textbooks, fashion, tech gadgets, and hostel essentials from verified student vendors across UNILAG, UI, and OAU on ọjà.",
