@@ -71,14 +71,15 @@ export interface WelcomeEmailProps {
 }
 
 const resendApiKey = process.env.RESEND_API_KEY;
-// Uses the verified custom domain xn--j-sfa590u.com (ọjà.com) on Resend for safe inbox delivery
-const primaryFromEmail = process.env.EMAIL_FROM || "ọjà. <notifications@xn--j-sfa590u.com>";
+// Uses RFC 5322 quoted display name to safely handle unicode and trailing dot in email headers
+const primaryFromEmail = process.env.EMAIL_FROM || '"ọjà." <notifications@xn--j-sfa590u.com>';
 const fallbackFromEmail = "notifications@xn--j-sfa590u.com";
+const replyToEmail = "support@xn--j-sfa590u.com";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 /**
- * Internal robust email sender with fallback from address and error detection
+ * Internal robust email sender with fallback from address, deliverability headers, and error detection
  */
 async function sendWithFallback({
   to,
@@ -96,24 +97,32 @@ async function sendWithFallback({
     return { success: true, simulated: true };
   }
 
+  const emailHeaders = {
+    "X-Entity-Ref-ID": `oja-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  };
+
   try {
     const response = await resend.emails.send({
       from: primaryFromEmail,
       to,
+      replyTo: replyToEmail,
       subject,
       html,
       text,
+      headers: emailHeaders,
     });
 
     if (response.error) {
       console.warn(`[Resend Primary Send Error] from=${primaryFromEmail}:`, response.error);
-      // Attempt fallback with plain sender address (no unicode display name)
+      // Attempt fallback with plain sender address
       const fallbackResponse = await resend.emails.send({
         from: fallbackFromEmail,
         to,
+        replyTo: replyToEmail,
         subject,
         html,
         text,
+        headers: emailHeaders,
       });
 
       if (fallbackResponse.error) {
@@ -133,9 +142,11 @@ async function sendWithFallback({
       const fallbackResponse = await resend.emails.send({
         from: fallbackFromEmail,
         to,
+        replyTo: replyToEmail,
         subject,
         html,
         text,
+        headers: emailHeaders,
       });
       if (fallbackResponse.error) {
         return { success: false, error: fallbackResponse.error.message };
