@@ -28,6 +28,8 @@ function VerifyEmailContent() {
   const emailParam = searchParams.get("email");
   const statusParam = searchParams.get("status");
 
+  const redirectParam = searchParams.get("redirect");
+
   const [loading, setLoading] = React.useState(Boolean(token && !statusParam));
   const [submittingCode, setSubmittingCode] = React.useState(false);
   const [resending, setResending] = React.useState(false);
@@ -40,7 +42,7 @@ function VerifyEmailContent() {
     (statusParam as any) || (token ? null : null)
   );
   const [errorMessage, setErrorMessage] = React.useState("");
-  const [destinationUrl, setDestinationUrl] = React.useState("/shop");
+  const [destinationUrl, setDestinationUrl] = React.useState(redirectParam || "/shop");
 
   // Cooldown timer effect
   React.useEffect(() => {
@@ -208,7 +210,13 @@ function VerifyEmailContent() {
               }}
               className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Continue to Marketplace</span>
+              <span>
+                {destinationUrl === "/admin"
+                  ? "Continue to Admin Dashboard"
+                  : destinationUrl === "/dashboard"
+                  ? "Continue to Vendor Dashboard"
+                  : "Continue to Marketplace"}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           </div>

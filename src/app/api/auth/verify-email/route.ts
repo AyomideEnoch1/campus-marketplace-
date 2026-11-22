@@ -27,7 +27,13 @@ export async function GET(request: Request) {
     origin: requestUrl.origin,
   }).catch((err) => console.error("Welcome email error:", err));
 
-  const response = NextResponse.redirect(new URL("/auth/verify-email?status=success", requestUrl.origin));
+  const isAdmin = result.user.role === "ADMIN" || result.user.role === "SUPERADMIN";
+  const isVendor = result.user.role === "VENDOR";
+  const targetDashboard = isAdmin ? "/admin" : isVendor ? "/dashboard" : "/shop";
+
+  const response = NextResponse.redirect(
+    new URL(`/auth/verify-email?status=success&redirect=${encodeURIComponent(targetDashboard)}`, requestUrl.origin)
+  );
 
   // Automatically authenticate user
   const sessionToken = signToken({
@@ -85,8 +91,9 @@ export async function POST(request: Request) {
       email: result.user.email,
     });
 
+    const isAdmin = result.user.role === "ADMIN" || result.user.role === "SUPERADMIN";
     const isVendor = result.user.role === "VENDOR";
-    const redirectTo = isVendor ? "/dashboard" : "/shop";
+    const redirectTo = isAdmin ? "/admin" : isVendor ? "/dashboard" : "/shop";
 
     const response = NextResponse.json({
       success: true,

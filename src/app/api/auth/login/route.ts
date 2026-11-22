@@ -83,8 +83,10 @@ export async function POST(request: Request) {
     const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
     const origin = `${proto}://${host}`;
 
-    // Email verification check: if user email is not verified, require verification
-    if (!user.emailVerified && user.role !== "ADMIN" && user.role !== "SUPERADMIN" && !user.email.endsWith("@guest.campustrade.ng")) {
+    // Email verification check on sign-in:
+    // If the account has an email address (not synthetic phone-only guest account),
+    // require 6-digit email OTP verification before issuing session credentials
+    if (user.email && !user.email.endsWith("@guest.campustrade.ng")) {
       await createAndSendVerificationEmail({
         userId: user.id,
         email: user.email,
@@ -97,12 +99,13 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         {
-          error: "Your email address is not verified yet. Please enter the 6-digit verification code sent to your email to continue.",
+          success: true,
           requiresVerification: true,
           email: user.email,
+          message: "A 6-digit verification code has been dispatched to your email. Please enter it to complete sign-in.",
           redirectTo: `/auth/verify-email?email=${encodeURIComponent(user.email)}`,
         },
-        { status: 403 }
+        { status: 200 }
       );
     }
 

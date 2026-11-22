@@ -31,14 +31,6 @@ export async function POST(request: Request) {
       });
     }
 
-    if (user.emailVerified) {
-      return NextResponse.json({
-        success: true,
-        alreadyVerified: true,
-        message: "This email address is already verified. You can sign in directly.",
-      });
-    }
-
     // Generate fresh OTP, JWT token and dispatch email
     await createAndSendVerificationEmail({
       userId: user.id,
