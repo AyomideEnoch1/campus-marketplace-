@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrustBar } from "@/components/marketplace/TrustBar";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
 import { DesktopHeroSlider } from "@/components/marketplace/DesktopHeroSlider";
@@ -499,10 +498,7 @@ export default async function HomePage() {
           customHeroCta={cmsSettings.hero_cta_text}
         />
 
-        {/* 2. TRUST AND VALUE PROPOSITIONS BAR */}
-        <TrustBar />
-
-        {/* 3. SHOP BY CATEGORIES (NovaTrend Reference Layout) */}
+        {/* 2. SHOP BY CATEGORIES (NovaTrend Reference Layout) */}
         <section className="py-16 bg-white">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
