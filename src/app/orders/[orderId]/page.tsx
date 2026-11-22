@@ -25,6 +25,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
+import {
+  FlutterwaveLockedModal,
+  ExistingOrderPayload,
+} from "@/components/marketplace/FlutterwaveLockedModal";
 
 function InspectionCountdown({ deadline }: { deadline: string | Date }) {
   const [timeLeft, setTimeLeft] = React.useState<{
@@ -97,8 +101,17 @@ export default function OrderTrackingPage() {
   const [paying, setPaying] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
 
+  // Flutterwave Live Locked & Modal State
+  const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
+  const isFlutterwaveLocked =
+    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+
   const handleCompletePayment = async () => {
     if (!order) return;
+    if (isFlutterwaveLocked) {
+      setLockedModalOpen(true);
+      return;
+    }
     try {
       setPaying(true);
       setPaymentError(null);
@@ -388,7 +401,11 @@ export default function OrderTrackingPage() {
               ) : (
                 <>
                   <CreditCard className="w-4 h-4" />
-                  <span>Complete Order &amp; Pay Now &rarr;</span>
+                  <span>
+                    {isFlutterwaveLocked
+                      ? "Pay via Meetup / Online Status →"
+                      : "Complete Order & Pay Now →"}
+                  </span>
                 </>
               )}
             </Button>
@@ -772,6 +789,23 @@ export default function OrderTrackingPage() {
         </div>
       )}
 
+      {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
+      <FlutterwaveLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+        existingOrder={
+          order
+            ? {
+                orderId: order.id,
+                orderNumber: order.orderNumber,
+                totalAmount: order.totalAmount,
+                vendorStoreName: order.vendor.storeName,
+                vendorWhatsApp: order.vendor.whatsapp,
+                deliveryAddress: order.deliveryAddress,
+              }
+            : null
+        }
+      />
     </div>
   );
 }

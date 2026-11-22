@@ -30,6 +30,10 @@ import { Loader } from "@/components/ui/Loader";
 import { useSafeMeetupPoints, SafeMeetupPoint, VendorMeta } from "@/hooks/use-meetup-points-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/react-query/query-keys";
+import {
+  FlutterwaveLockedModal,
+  CheckoutDataPayload,
+} from "@/components/marketplace/FlutterwaveLockedModal";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +80,11 @@ function CheckoutForm() {
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+
+  // Flutterwave Live Locked & Modal State
+  const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
+  const isFlutterwaveLocked =
+    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
 
   // Target vendor group
   const vendorIds = Object.keys(itemsByVendor);
@@ -193,8 +202,15 @@ function CheckoutForm() {
       return;
     }
 
-    setLoading(true);
     setError("");
+
+    // If live Flutterwave payments are locked, intercept with professional locked UI modal
+    if (isFlutterwaveLocked) {
+      setLockedModalOpen(true);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const payload = {
@@ -267,6 +283,33 @@ function CheckoutForm() {
   const effectiveCommission = quote ? quote.commission : Math.round(group.subtotal * 0.05);
   const effectiveSellerNet = quote ? quote.sellerAmount : Math.round(group.subtotal * 0.95);
   const isEscrowMode = quote ? quote.escrow_mode === "escrow" : !buyerWantsDirect;
+
+  const checkoutData: CheckoutDataPayload | null = group
+    ? {
+        buyerName,
+        buyerEmail,
+        buyerPhone,
+        deliveryMethod: isGuestSeller ? "SAFE_MEETUP_POINT" : deliveryMethod,
+        deliveryAddress: isGuestSeller
+          ? deliveryAddress ||
+            meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ||
+            "Campus Safe Meetup Point"
+          : deliveryAddress,
+        meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
+        vendorId: group.vendor.id || group.vendor.slug,
+        vendorName: group.vendor.storeName,
+        vendorWhatsApp: group.vendor.whatsapp || null,
+        notes,
+        totalAmount: effectiveTotal,
+        items: group.items.map((i) => ({
+          id: i.id,
+          title: i.title,
+          price: i.price,
+          quantity: i.quantity,
+          image: i.image,
+        })),
+      }
+    : null;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
@@ -691,30 +734,41 @@ function CheckoutForm() {
                       : "bg-neutral-900 hover:bg-neutral-800 shadow-neutral-900/25"
                   }`}
                 >
-                  {isEscrowMode ? (
+                  {isFlutterwaveLocked ? (
+                    <Lock className="w-4 h-4 mr-1.5 inline" />
+                  ) : isEscrowMode ? (
                     <ShieldCheck className="w-4 h-4 mr-1.5 inline" />
                   ) : (
                     <Zap className="w-4 h-4 mr-1.5 inline" />
                   )}
                   {loading
                     ? "Initializing Payment..."
+                    : isFlutterwaveLocked
+                    ? `Proceed to Payment (${formatNGN(effectiveTotal)}) →`
                     : isEscrowMode
                     ? `Pay Securely via Escrow (${formatNGN(effectiveTotal)}) →`
                     : `Pay Directly (${formatNGN(effectiveTotal)}) →`}
                 </Button>
-                <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-neutral-500 mt-2.5">
-                  {isEscrowMode ? (
-                    <>
-                      <span>🔒</span>
-                      <span>100% Escrow Protected: Funds held until you verify delivery with your 6-digit code</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>⚡</span>
-                      <span>Direct Payment: Seller is paid immediately upon payment confirmation</span>
-                    </>
-                  )}
-                </div>
+                {isFlutterwaveLocked ? (
+                  <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-xl py-1.5 px-3 mt-2.5">
+                    <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Live online card payment locked &bull; Pay-on-Campus Meetup ready</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-neutral-500 mt-2.5">
+                    {isEscrowMode ? (
+                      <>
+                        <span>🔒</span>
+                        <span>100% Escrow Protected: Funds held until you verify delivery with your 6-digit code</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>⚡</span>
+                        <span>Direct Payment: Seller is paid immediately upon payment confirmation</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </form>
           </div>
@@ -809,10 +863,18 @@ function CheckoutForm() {
             </div>
 
             {/* Payment provider badge */}
-            <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
-              <span className="flex items-center gap-1">
-                <span>💳</span> Powered by <strong>Flutterwave</strong>
-              </span>
+            <div className="pt-2 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[11px] text-neutral-500">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="flex items-center gap-1">
+                  <span>💳</span> Powered by <strong>Flutterwave</strong>
+                </span>
+                {isFlutterwaveLocked && (
+                  <Badge className="bg-amber-100/90 text-amber-900 border-amber-300/80 text-[10px] font-bold py-0 px-2 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5 text-amber-700" />
+                    Locked (Live Gateway Onboarding)
+                  </Badge>
+                )}
+              </div>
               <span>Cards &bull; Bank Transfers &bull; USSD</span>
             </div>
           </div>
@@ -837,6 +899,19 @@ function CheckoutForm() {
           </div>
         </div>
       </div>
+
+      {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
+      <FlutterwaveLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+        checkoutData={checkoutData}
+        onOrderPlaced={(orderNumber) => {
+          if (group?.vendor?.id) {
+            clearVendorItems(group.vendor.id);
+          }
+          router.push(`/order-success/${orderNumber}`);
+        }}
+      />
     </div>
   );
 }

@@ -31,6 +31,7 @@ import { Loader } from "@/components/ui/Loader";
 import { useCampuses } from "@/hooks/use-campuses-query";
 import { formatNigerianPhone, cleanPhoneNumber } from "@/lib/utils";
 import { PasswordStrengthGauge } from "@/components/ui/PasswordStrengthGauge";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,23 @@ function RegisterContent() {
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+
+  const errorParam = searchParams.get("error");
+  React.useEffect(() => {
+    if (errorParam) {
+      if (errorParam === "cancelled") {
+        setError("Google Sign-In was cancelled.");
+      } else if (errorParam === "email_not_verified") {
+        setError("Your Google account email is not verified. Please verify your email with Google first.");
+      } else if (errorParam === "server_config_error") {
+        setError("Google Sign-In is not configured yet on the server.");
+      } else if (errorParam === "invalid_state") {
+        setError("Authentication session expired. Please try again.");
+      } else {
+        setError("Failed to authenticate with Google. Please try again.");
+      }
+    }
+  }, [errorParam]);
 
   // Default campus selection
   React.useEffect(() => {
@@ -384,6 +402,21 @@ function RegisterContent() {
               </button>
             </div>
 
+            {/* Quick Google Sign-Up Divider & Button */}
+            <div className="space-y-3 pt-1">
+              <div className="relative flex items-center justify-center">
+                <div className="border-t border-neutral-200/80 w-full" />
+                <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">
+                  Or sign up with Google
+                </span>
+                <div className="border-t border-neutral-200/80 w-full" />
+              </div>
+              <GoogleSignInButton
+                text="Sign up with Google"
+                redirect={searchParams.get("redirect") || undefined}
+              />
+            </div>
+
             {/* Quick Guest Browsing Link */}
             <div className="text-center pt-0.5">
               <Link
@@ -519,6 +552,22 @@ function RegisterContent() {
             {/* =============================================================== */}
             {currentStep === 1 && (
               <div key="step-1" className={`space-y-4 ${animationClass}`}>
+                {/* Fast-track Google Sign-Up with chosen role */}
+                <div className="space-y-3 pb-1">
+                  <GoogleSignInButton
+                    role={role || "BUYER"}
+                    text={role === "VENDOR" ? "Sign up as Vendor with Google" : "Sign up as Buyer with Google"}
+                    redirect={searchParams.get("redirect") || undefined}
+                  />
+                  <div className="relative flex items-center justify-center">
+                    <div className="border-t border-neutral-200/80 w-full" />
+                    <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">
+                      Or fill details manually
+                    </span>
+                    <div className="border-t border-neutral-200/80 w-full" />
+                  </div>
+                </div>
+
                 {/* Full Name */}
                 <div className="space-y-1.5">
                   <label className="text-xs sm:text-sm font-bold text-neutral-700 block">

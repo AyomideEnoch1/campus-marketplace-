@@ -14,6 +14,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FlutterwaveLockedModal } from "@/components/marketplace/FlutterwaveLockedModal";
 
 function CheckoutConfirmContent() {
   const searchParams = useSearchParams();
@@ -32,7 +33,16 @@ function CheckoutConfirmContent() {
   const [paying, setPaying] = React.useState(false);
   const [retryError, setRetryError] = React.useState<string | null>(null);
 
+  // Flutterwave Live Locked & Modal State
+  const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
+  const isFlutterwaveLocked =
+    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+
   const handleRetryPayment = async () => {
+    if (isFlutterwaveLocked) {
+      setLockedModalOpen(true);
+      return;
+    }
     if (!orderId && !txRef) return;
     try {
       setPaying(true);
@@ -279,6 +289,21 @@ function CheckoutConfirmContent() {
         )}
 
       </div>
+      {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
+      <FlutterwaveLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+        existingOrder={
+          orderId || txRef
+            ? {
+                orderId: orderId || undefined,
+                orderNumber: txRef || "PENDING",
+                totalAmount: 0,
+                vendorStoreName: "Campus Vendor",
+              }
+            : null
+        }
+      />
     </div>
   );
 }

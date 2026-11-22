@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN, formatDate } from "@/lib/utils";
 import { OrderMilestoneTracker } from "@/components/orders/OrderMilestoneTracker";
+import { FlutterwaveLockedModal } from "@/components/marketplace/FlutterwaveLockedModal";
 
 interface OrderTrackingClientProps {
   order: {
@@ -81,7 +82,16 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
   const [paying, setPaying] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
 
+  // Flutterwave Live Locked & Modal State
+  const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
+  const isFlutterwaveLocked =
+    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+
   const handleCompletePayment = async () => {
+    if (isFlutterwaveLocked) {
+      setLockedModalOpen(true);
+      return;
+    }
     try {
       setPaying(true);
       setPaymentError(null);
@@ -149,7 +159,11 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
                 ) : (
                   <>
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span>Complete Order &amp; Pay</span>
+                    <span>
+                      {isFlutterwaveLocked
+                        ? "Payment Details (Locked)"
+                        : "Complete Order & Pay"}
+                    </span>
                   </>
                 )}
               </Button>
@@ -398,6 +412,20 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
           </div>
         </div>
       </div>
+
+      {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
+      <FlutterwaveLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+        existingOrder={{
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          totalAmount: order.totalAmount,
+          vendorStoreName: order.vendor.storeName,
+          vendorWhatsApp: order.vendor.whatsapp,
+          deliveryAddress: order.deliveryAddress,
+        }}
+      />
     </div>
   );
 }

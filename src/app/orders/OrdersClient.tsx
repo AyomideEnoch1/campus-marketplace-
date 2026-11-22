@@ -29,6 +29,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatNGN, formatDate } from "@/lib/utils";
 import { ReviewFormModal } from "@/components/marketplace/ReviewFormModal";
+import {
+  FlutterwaveLockedModal,
+  ExistingOrderPayload,
+} from "@/components/marketplace/FlutterwaveLockedModal";
 import { useOrders, useInvalidateOrders } from "@/hooks/use-orders-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/react-query/query-keys";
@@ -112,7 +116,28 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
   const [payingOrderId, setPayingOrderId] = React.useState<string | null>(null);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
 
+  // Flutterwave Live Locked & Modal State
+  const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
+  const [selectedLockedOrder, setSelectedLockedOrder] =
+    React.useState<ExistingOrderPayload | null>(null);
+  const isFlutterwaveLocked =
+    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+
   const handleCompletePayment = async (orderId: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (isFlutterwaveLocked && targetOrder) {
+      setSelectedLockedOrder({
+        orderId: targetOrder.id,
+        orderNumber: targetOrder.orderNumber,
+        totalAmount: targetOrder.totalAmount,
+        vendorStoreName: targetOrder.vendor.storeName,
+        vendorWhatsApp: targetOrder.vendor.whatsapp,
+        deliveryAddress: targetOrder.deliveryAddress,
+      });
+      setLockedModalOpen(true);
+      return;
+    }
+
     try {
       setPayingOrderId(orderId);
       setPaymentError(null);
@@ -715,6 +740,16 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           onSuccess={handleReviewSuccess}
         />
       )}
+
+      {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
+      <FlutterwaveLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => {
+          setLockedModalOpen(false);
+          setSelectedLockedOrder(null);
+        }}
+        existingOrder={selectedLockedOrder}
+      />
     </div>
   );
 }
