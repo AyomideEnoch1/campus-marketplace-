@@ -122,23 +122,6 @@ function LoginForm() {
         </div>
       )}
 
-      {/* Google Sign-In */}
-      <div className="space-y-4">
-        <GoogleSignInButton
-          redirect={redirectParam || undefined}
-          text="Continue with Google"
-        />
-
-        {/* OR Divider */}
-        <div className="relative flex items-center justify-center">
-          <div className="border-t border-neutral-200/80 w-full" />
-          <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">
-            Or sign in with credentials
-          </span>
-          <div className="border-t border-neutral-200/80 w-full" />
-        </div>
-      </div>
-
       {/* Login Credentials Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
@@ -216,6 +199,21 @@ function LoginForm() {
             </>
           )}
         </Button>
+
+        {/* OR Divider */}
+        <div className="relative flex items-center justify-center py-1">
+          <div className="border-t border-neutral-200/80 w-full" />
+          <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">
+            Or
+          </span>
+          <div className="border-t border-neutral-200/80 w-full" />
+        </div>
+
+        {/* Google Sign-In Action Button */}
+        <GoogleSignInButton
+          redirect={redirectParam || undefined}
+          text="Continue with Google"
+        />
       
         {/* Don't have an Account Link */}
         <div className="pt-1 text-center text-xs text-neutral-600">

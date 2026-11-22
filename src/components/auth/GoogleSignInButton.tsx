@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export interface GoogleSignInButtonProps {
   role?: "BUYER" | "VENDOR";
@@ -41,7 +42,10 @@ export function GoogleSignInButton({
       onClick={handleClick}
       disabled={loading || disabled}
       variant="outline"
-      className={`w-full h-11 bg-white hover:bg-neutral-50/90 text-neutral-800 font-bold text-xs rounded-xl border border-neutral-200/90 shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
+      className={cn(
+        "w-full h-11 bg-white hover:bg-neutral-50/90 text-neutral-700 font-medium text-xs rounded-2xl border border-neutral-200/90 shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed",
+        className
+      )}
     >
       {loading ? (
         <div className="flex items-center gap-2 text-neutral-600">
