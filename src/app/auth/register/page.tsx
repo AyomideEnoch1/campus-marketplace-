@@ -32,7 +32,10 @@ import { useCampuses } from "@/hooks/use-campuses-query";
 import { formatNigerianPhone, cleanPhoneNumber } from "@/lib/utils";
 import { PasswordStrengthGauge } from "@/components/ui/PasswordStrengthGauge";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
-import { JoinOnboardingScreen, type RoleConfig } from "@/components/auth/JoinOnboardingScreen";
+import {
+  JoinOnboardingScreen,
+  type RoleConfig,
+} from "@/components/auth/JoinOnboardingScreen";
 
 export const dynamic = "force-dynamic";
 
@@ -44,10 +47,16 @@ function RegisterContent() {
 
   // Role selection: "BUYER" | "VENDOR" | null (null = initial account type selection screen)
   const [role, setRole] = React.useState<RoleType | null>(null);
-  const [buyerType, setBuyerType] = React.useState<"student" | "guest">("student");
-  const [sellerType, setSellerType] = React.useState<"student" | "guest">("student");
+  const [buyerType, setBuyerType] = React.useState<"student" | "guest">(
+    "student",
+  );
+  const [sellerType, setSellerType] = React.useState<"student" | "guest">(
+    "student",
+  );
   const [intent, setIntent] = React.useState<"buy" | "sell">("buy");
-  const [affiliation, setAffiliation] = React.useState<"student" | "guest">("student");
+  const [affiliation, setAffiliation] = React.useState<"student" | "guest">(
+    "student",
+  );
 
   // Stepper state:
   // Step 0: Account Type Selection
@@ -55,7 +64,9 @@ function RegisterContent() {
   // Step 2: Account Security (Final for Buyer; Step 2 of 3 for Vendor)
   // Step 3: Store Information (Final for Vendor)
   const [currentStep, setCurrentStep] = React.useState<number>(0);
-  const [slideDirection, setSlideDirection] = React.useState<"forward" | "backward">("forward");
+  const [slideDirection, setSlideDirection] = React.useState<
+    "forward" | "backward"
+  >("forward");
 
   // Step 1 Fields: Personal Information
   const [fullName, setFullName] = React.useState("");
@@ -102,7 +113,9 @@ function RegisterContent() {
       if (errorParam === "cancelled") {
         setError("Google Sign-In was cancelled.");
       } else if (errorParam === "email_not_verified") {
-        setError("Your Google account email is not verified. Please verify your email with Google first.");
+        setError(
+          "Your Google account email is not verified. Please verify your email with Google first.",
+        );
       } else if (errorParam === "server_config_error") {
         setError("Google Sign-In is not configured yet on the server.");
       } else if (errorParam === "invalid_state") {
@@ -147,7 +160,10 @@ function RegisterContent() {
     }
   };
 
-  const handleSelectRole = (selectedRole: RoleType, selectedBuyerType?: "student" | "guest") => {
+  const handleSelectRole = (
+    selectedRole: RoleType,
+    selectedBuyerType?: "student" | "guest",
+  ) => {
     setRole(selectedRole);
     if (selectedBuyerType) {
       setBuyerType(selectedBuyerType);
@@ -162,13 +178,16 @@ function RegisterContent() {
   const isStep1Valid = isNameValid && isEmailValid;
 
   const isPasswordValid = password.length >= 6;
-  const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
-  const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
+  const passwordsMatch =
+    confirmPassword.length > 0 && password === confirmPassword;
+  const passwordsMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
   const isStep2Valid = isPasswordValid && passwordsMatch;
 
   const isStoreNameValid = storeName.trim().length >= 2;
   const isCampusValid = Boolean(campusId && campusId.trim().length > 0);
-  const isWhatsappValid = cleanPhoneNumber(whatsapp).replace(/\D/g, "").length >= 10;
+  const isWhatsappValid =
+    cleanPhoneNumber(whatsapp).replace(/\D/g, "").length >= 10;
   const isStep3Valid = isStoreNameValid && isCampusValid && isWhatsappValid;
 
   const totalSteps = role === "VENDOR" ? 3 : 2;
@@ -191,13 +210,17 @@ function RegisterContent() {
     }
 
     if (!isStep2Valid) {
-      setError("Please ensure your password is at least 6 characters and both passwords match.");
+      setError(
+        "Please ensure your password is at least 6 characters and both passwords match.",
+      );
       goToStep(2, "backward");
       return;
     }
 
     if (role === "VENDOR" && !isStep3Valid) {
-      setError("Please fill out the required store name and valid WhatsApp number.");
+      setError(
+        "Please fill out the required store name and valid WhatsApp number.",
+      );
       return;
     }
 
@@ -216,7 +239,9 @@ function RegisterContent() {
         role,
         buyerType: role === "BUYER" ? buyerType : undefined,
         sellerType: role === "VENDOR" ? sellerType : undefined,
-        referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
+        referralCode: referralCode
+          ? referralCode.trim().toUpperCase()
+          : undefined,
       };
 
       if (role === "VENDOR") {
@@ -239,7 +264,8 @@ function RegisterContent() {
         throw new Error(data.error || "Registration failed");
       }
 
-      const targetUrl = data.redirectTo || (role === "VENDOR" ? "/dashboard" : "/shop");
+      const targetUrl =
+        data.redirectTo || (role === "VENDOR" ? "/dashboard" : "/shop");
       window.location.href = targetUrl;
     } catch (err: any) {
       console.error("Registration error:", err);
@@ -253,7 +279,9 @@ function RegisterContent() {
         msg.includes("500") ||
         msg.includes("Internal");
       setError(
-        isSystemError ? "Something went wrong. Please try again later." : msg || "Something went wrong. Please try again later."
+        isSystemError
+          ? "Something went wrong. Please try again later."
+          : msg || "Something went wrong. Please try again later.",
       );
       setLoading(false);
     }
@@ -271,7 +299,12 @@ function RegisterContent() {
         } else if (role === "BUYER" && isStep2Valid && !loading) {
           handleSubmit(e as any);
         }
-      } else if (currentStep === 3 && role === "VENDOR" && isStep3Valid && !loading) {
+      } else if (
+        currentStep === 3 &&
+        role === "VENDOR" &&
+        isStep3Valid &&
+        !loading
+      ) {
         handleSubmit(e as any);
       }
     }
@@ -305,66 +338,14 @@ function RegisterContent() {
         /* REGISTRATION FLOW (Steps 1, 2, and 3)                               */
         /* =================================================================== */
         <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-6 sm:p-9 space-y-7 transition-all">
-          <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            onKeyDown={handleKeyDown}
+            className="space-y-6"
+          >
             {/* Top Stepper Header */}
             <div className="space-y-3">
               {/* Prominent Selected Role Banner on Top */}
-              <div
-                className={`p-3.5 sm:p-4 rounded-2xl border flex items-center justify-between gap-3 shadow-xs ${
-                  role === "VENDOR"
-                    ? "bg-purple-50 border-purple-200/90 text-purple-950"
-                    : buyerType === "guest"
-                    ? "bg-sky-50 border-sky-200/90 text-sky-950"
-                    : "bg-emerald-50 border-emerald-200/90 text-emerald-950"
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
-                      role === "VENDOR"
-                        ? "bg-purple-600 text-white"
-                        : buyerType === "guest"
-                        ? "bg-sky-600 text-white"
-                        : "bg-emerald-600 text-white"
-                    }`}
-                  >
-                    {role === "VENDOR" ? (
-                      sellerType === "guest" ? (
-                        <Building className="w-5 h-5" />
-                      ) : (
-                        <Store className="w-5 h-5" />
-                      )
-                    ) : buyerType === "guest" ? (
-                      <UserCheck className="w-5 h-5" />
-                    ) : (
-                      <GraduationCap className="w-5 h-5" />
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider block opacity-70">
-                      Selected Account Role
-                    </span>
-                    <h3 className="text-sm sm:text-base font-black tracking-tight leading-tight mt-0.5">
-                      {role === "VENDOR"
-                        ? sellerType === "guest"
-                          ? "Guest Vendor Account"
-                          : "Student Vendor Account"
-                        : buyerType === "guest"
-                        ? "Guest Buyer Account"
-                        : "Student Buyer Account"}
-                    </h3>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => goToStep(0, "backward")}
-                  className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-white/90 hover:bg-white text-neutral-700 hover:text-neutral-900 border border-neutral-200/70 shadow-2xs transition-colors cursor-pointer shrink-0"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Switch Role</span>
-                </button>
-              </div>
 
               {/* Navigation & Step Indicator */}
               <div className="flex items-center justify-between pt-0.5">
@@ -389,7 +370,10 @@ function RegisterContent() {
               {/* Step Title & Subtitle */}
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-                  {currentStep === 1 && (role === "VENDOR" ? "Vendor Personal Information" : "Buyer Personal Information")}
+                  {currentStep === 1 &&
+                    (role === "VENDOR"
+                      ? "Vendor Personal Information"
+                      : "Buyer Personal Information")}
                   {currentStep === 2 && "Account Security & Password"}
                   {currentStep === 3 && "Store Setup & University Campus"}
                 </h2>
@@ -422,7 +406,11 @@ function RegisterContent() {
                 <div className="space-y-3 pb-1">
                   <GoogleSignInButton
                     role={role || "BUYER"}
-                    text={role === "VENDOR" ? "Sign up as Vendor with Google" : "Sign up as Buyer with Google"}
+                    text={
+                      role === "VENDOR"
+                        ? "Sign up as Vendor with Google"
+                        : "Sign up as Buyer with Google"
+                    }
                     redirect={searchParams.get("redirect") || undefined}
                   />
                   <div className="relative flex items-center justify-center">
@@ -490,7 +478,10 @@ function RegisterContent() {
                   <label className="text-xs font-bold text-neutral-700 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      Campus Ambassador Code <span className="text-neutral-400 font-normal">(Optional)</span>
+                      Campus Ambassador Code{" "}
+                      <span className="text-neutral-400 font-normal">
+                        (Optional)
+                      </span>
                     </span>
                     {referralCode && (
                       <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
@@ -503,11 +494,14 @@ function RegisterContent() {
                     maxLength={12}
                     placeholder="e.g. UNILAG-AYO"
                     value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setReferralCode(e.target.value.toUpperCase())
+                    }
                     className="h-11 rounded-xl text-xs font-mono uppercase bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
                   />
                   <p className="text-[11px] text-neutral-400">
-                    Have an ambassador code from a student rep? Enter it here to link to your campus hub.
+                    Have an ambassador code from a student rep? Enter it here to
+                    link to your campus hub.
                   </p>
                 </div>
                 {/* Step 1 Navigation Buttons */}
@@ -571,9 +565,7 @@ function RegisterContent() {
                 </div>
 
                 {/* Password Strength Gauge */}
-                {password && (
-                  <PasswordStrengthGauge password={password} />
-                )}
+                {password && <PasswordStrengthGauge password={password} />}
 
                 {/* Confirm Password Input */}
                 <div className="space-y-1.5">
@@ -606,13 +598,15 @@ function RegisterContent() {
                         passwordsMismatch
                           ? "border-rose-400 focus-visible:ring-rose-500/20"
                           : passwordsMatch
-                          ? "border-emerald-400 focus-visible:ring-emerald-500/20"
-                          : "border-neutral-200 focus:bg-white"
+                            ? "border-emerald-400 focus-visible:ring-emerald-500/20"
+                            : "border-neutral-200 focus:bg-white"
                       }`}
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
                     >
                       {showConfirmPassword ? (
@@ -645,8 +639,8 @@ function RegisterContent() {
                         loading
                           ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
                           : !isStep2Valid
-                          ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
-                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                            ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
                       }`}
                     >
                       {loading ? (
@@ -690,7 +684,9 @@ function RegisterContent() {
                 <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-900 flex items-center gap-2.5">
                   <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
                   <span>
-                    Your storefront will be visible to students on your campus. Buyers can browse your products and place direct WhatsApp orders.
+                    Your storefront will be visible to students on your campus.
+                    Buyers can browse your products and place direct WhatsApp
+                    orders.
                   </span>
                 </div>
 
@@ -734,9 +730,15 @@ function RegisterContent() {
                         ))}
                         {campuses.length === 0 && (
                           <>
-                            <option value="unilag">University of Lagos (UNILAG)</option>
-                            <option value="ui">University of Ibadan (UI)</option>
-                            <option value="oau">Obafemi Awolowo University (OAU)</option>
+                            <option value="unilag">
+                              University of Lagos (UNILAG)
+                            </option>
+                            <option value="ui">
+                              University of Ibadan (UI)
+                            </option>
+                            <option value="oau">
+                              Obafemi Awolowo University (OAU)
+                            </option>
                           </>
                         )}
                       </select>
@@ -822,8 +824,8 @@ function RegisterContent() {
                       loading
                         ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
                         : !isStep3Valid
-                        ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
-                        : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                          ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
                     }`}
                   >
                     {loading ? (
@@ -870,8 +872,8 @@ function RegisterContent() {
                         isCurrent
                           ? "w-7 h-2.5 bg-emerald-600 shadow-xs"
                           : isCompleted
-                          ? "w-2.5 h-2.5 bg-emerald-500"
-                          : "w-2.5 h-2.5 bg-neutral-200"
+                            ? "w-2.5 h-2.5 bg-emerald-500"
+                            : "w-2.5 h-2.5 bg-neutral-200"
                       }`}
                     />
                   );
@@ -900,13 +902,16 @@ function RegisterContent() {
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100/80 shadow-inner">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
             </div>
-            
+
             <div className="space-y-1.5">
               <h3 className="font-extrabold text-lg text-neutral-900">
-                {role === "VENDOR" ? "Setting Up Your Store..." : "Creating Your Account..."}
+                {role === "VENDOR"
+                  ? "Setting Up Your Store..."
+                  : "Creating Your Account..."}
               </h3>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Please hold on while we save your credentials and initialize your profile.
+                Please hold on while we save your credentials and initialize
+                your profile.
               </p>
             </div>
 
