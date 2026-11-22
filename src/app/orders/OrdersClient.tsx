@@ -29,6 +29,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { formatNGN, formatDate } from "@/lib/utils";
 import { ReviewFormModal } from "@/components/marketplace/ReviewFormModal";
+import {
+  FlutterwaveLockedModal,
+  ExistingOrderPayload,
+} from "@/components/marketplace/FlutterwaveLockedModal";
 import { useOrders, useInvalidateOrders } from "@/hooks/use-orders-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/react-query/query-keys";
@@ -97,7 +101,8 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
 
   // Cached server-state for orders with background refetching
   const { data: ordersData, isFetching } = useOrders(initialOrders as any);
-  const [localOrders, setLocalOrders] = React.useState<OrderData[]>(initialOrders);
+  const [localOrders, setLocalOrders] =
+    React.useState<OrderData[]>(initialOrders);
 
   // Sync query data with local state when new orders arrive
   React.useEffect(() => {
@@ -112,7 +117,28 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
   const [payingOrderId, setPayingOrderId] = React.useState<string | null>(null);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
 
+  // Flutterwave Live Locked & Modal State
+  const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
+  const [selectedLockedOrder, setSelectedLockedOrder] =
+    React.useState<ExistingOrderPayload | null>(null);
+  const isFlutterwaveLocked =
+    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+
   const handleCompletePayment = async (orderId: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (isFlutterwaveLocked && targetOrder) {
+      setSelectedLockedOrder({
+        orderId: targetOrder.id,
+        orderNumber: targetOrder.orderNumber,
+        totalAmount: targetOrder.totalAmount,
+        vendorStoreName: targetOrder.vendor.storeName,
+        vendorWhatsApp: targetOrder.vendor.whatsapp,
+        deliveryAddress: targetOrder.deliveryAddress,
+      });
+      setLockedModalOpen(true);
+      return;
+    }
+
     try {
       setPayingOrderId(orderId);
       setPaymentError(null);
@@ -132,7 +158,9 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       }
     } catch (err: any) {
       console.error("Payment error:", err);
-      setPaymentError(err.message || "Failed to start payment. Please try again.");
+      setPaymentError(
+        err.message || "Failed to start payment. Please try again.",
+      );
     } finally {
       setPayingOrderId(null);
     }
@@ -148,7 +176,8 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
   } | null>(null);
 
   const unpaidOrdersCount = orders.filter(
-    (o) => !o.paid_at && o.escrow_status === "pending" && o.status !== "CANCELLED"
+    (o) =>
+      !o.paid_at && o.escrow_status === "pending" && o.status !== "CANCELLED",
   ).length;
 
   const filteredOrders = React.useMemo(() => {
@@ -173,7 +202,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
         const matchesNumber = order.orderNumber.toLowerCase().includes(q);
         const matchesStore = order.vendor.storeName.toLowerCase().includes(q);
         const matchesProduct = order.items.some((item) =>
-          item.product.title.toLowerCase().includes(q)
+          item.product.title.toLowerCase().includes(q),
         );
         return matchesNumber || matchesStore || matchesProduct;
       }
@@ -197,7 +226,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
             }
             return it;
           }),
-        }))
+        })),
       );
     }
     setReviewModalData(null);
@@ -257,7 +286,13 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
   const statuses = [
     { label: "All Orders", value: "ALL", count: orders.length },
     ...(unpaidOrdersCount > 0
-      ? [{ label: "Payment Pending", value: "UNPAID", count: unpaidOrdersCount }]
+      ? [
+          {
+            label: "Payment Pending",
+            value: "UNPAID",
+            count: unpaidOrdersCount,
+          },
+        ]
       : []),
     {
       label: "Pending Vendor",
@@ -265,7 +300,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       count: orders.filter(
         (o) =>
           o.status === "PENDING" &&
-          !(!o.paid_at && o.escrow_status === "pending")
+          !(!o.paid_at && o.escrow_status === "pending"),
       ).length,
     },
     {
@@ -300,13 +335,17 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
               </Badge>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500 mt-1">
-              Track incoming orders, coordinate meetups with vendors, and leave verified reviews.
+              Track incoming orders, coordinate meetups with vendors, and leave
+              verified reviews.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <Link href="/shop">
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm">
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm"
+              >
                 Explore Marketplace &rarr;
               </Button>
             </Link>
@@ -529,7 +568,11 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                             </span>
                           </div>
                           <p className="text-xs text-amber-800/90 leading-snug">
-                            This order was placed without payment. Complete your payment of <strong>{formatNGN(order.totalAmount)}</strong> now so the vendor can prepare your order under Flutterwave Escrow protection.
+                            This order was placed without payment. Complete your
+                            payment of{" "}
+                            <strong>{formatNGN(order.totalAmount)}</strong> now
+                            so the vendor can prepare your order under
+                            Flutterwave Escrow protection.
                           </p>
                         </div>
                       </div>
@@ -547,7 +590,9 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                         ) : (
                           <>
                             <CreditCard className="w-3.5 h-3.5" />
-                            <span>Pay {formatNGN(order.totalAmount)} Now &rarr;</span>
+                            <span>
+                              Pay {formatNGN(order.totalAmount)} Now &rarr;
+                            </span>
                           </>
                         )}
                       </Button>
@@ -598,17 +643,6 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                                 {formatNGN(item.unitPrice * item.quantity)}
                               </span>
 
-                              <Link href={`/orders/track/${order.orderNumber}`}>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-[11px] font-bold text-neutral-600 hover:text-emerald-700 rounded-xl h-8 gap-1 px-2.5"
-                                >
-                                  <Truck className="w-3 h-3 text-emerald-600" />
-                                  <span>Track</span>
-                                </Button>
-                              </Link>
-
                               {item.review ? (
                                 <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[11px] font-bold flex items-center gap-1">
                                   <Star className="w-3 h-3 fill-amber-400" />
@@ -657,24 +691,20 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                               : order.deliveryMethod}
                           </strong>{" "}
                           &mdash;{" "}
-                          <span className="text-neutral-500">{order.deliveryAddress}</span>
+                          <span className="text-neutral-500">
+                            {order.deliveryAddress}
+                          </span>
                         </span>
                       </div>
                       {order.meetupPoint && (
                         <p className="text-[11px] text-purple-800 font-medium pl-6">
-                          📍 Designated Safe Zone: <strong>{order.meetupPoint.name}</strong>
-                          {order.meetupPoint.description ? ` (${order.meetupPoint.description})` : ""}
+                          📍 Designated Safe Zone:{" "}
+                          <strong>{order.meetupPoint.name}</strong>
+                          {order.meetupPoint.description
+                            ? ` (${order.meetupPoint.description})`
+                            : ""}
                         </p>
                       )}
-                      <div className="pl-6 pt-0.5">
-                        <Link
-                          href={`/orders/track/${order.orderNumber}`}
-                          className="text-[11px] font-bold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-1"
-                        >
-                          <Truck className="w-3 h-3 text-emerald-600" />
-                          <span>Track 6-step milestones & delivery status &rarr;</span>
-                        </Link>
-                      </div>
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end gap-3">
@@ -694,9 +724,13 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
         <div className="rounded-2xl bg-white border border-neutral-200/80 p-5 flex items-start gap-3.5 shadow-sm">
           <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           <div className="space-y-1 text-xs text-neutral-600">
-            <p className="font-bold text-neutral-900">Student Buyer Protection</p>
+            <p className="font-bold text-neutral-900">
+              Student Buyer Protection
+            </p>
             <p>
-              Coordinate campus pickups at designated university public zones. Once you inspect and receive your item, remember to submit a verified purchase review to help other students on campus.
+              Coordinate campus pickups at designated university public zones.
+              Once you inspect and receive your item, remember to submit a
+              verified purchase review to help other students on campus.
             </p>
           </div>
         </div>
@@ -715,6 +749,16 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           onSuccess={handleReviewSuccess}
         />
       )}
+
+      {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
+      <FlutterwaveLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => {
+          setLockedModalOpen(false);
+          setSelectedLockedOrder(null);
+        }}
+        existingOrder={selectedLockedOrder}
+      />
     </div>
   );
 }

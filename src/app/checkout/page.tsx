@@ -27,9 +27,17 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
 import { Loader } from "@/components/ui/Loader";
-import { useSafeMeetupPoints, SafeMeetupPoint, VendorMeta } from "@/hooks/use-meetup-points-query";
+import {
+  useSafeMeetupPoints,
+  SafeMeetupPoint,
+  VendorMeta,
+} from "@/hooks/use-meetup-points-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/react-query/query-keys";
+import {
+  FlutterwaveLockedModal,
+  CheckoutDataPayload,
+} from "@/components/marketplace/FlutterwaveLockedModal";
 
 export const dynamic = "force-dynamic";
 
@@ -63,9 +71,12 @@ function CheckoutForm() {
   const [buyerName, setBuyerName] = React.useState("");
   const [buyerEmail, setBuyerEmail] = React.useState("");
   const [buyerPhone, setBuyerPhone] = React.useState("");
-  const [deliveryMethod, setDeliveryMethod] = React.useState<"PICKUP" | "CAMPUS_DELIVERY" | "SAFE_MEETUP_POINT">("PICKUP");
+  const [deliveryMethod, setDeliveryMethod] = React.useState<
+    "PICKUP" | "CAMPUS_DELIVERY" | "SAFE_MEETUP_POINT"
+  >("PICKUP");
   const [deliveryAddress, setDeliveryAddress] = React.useState("");
-  const [selectedMeetupPointId, setSelectedMeetupPointId] = React.useState<string>("");
+  const [selectedMeetupPointId, setSelectedMeetupPointId] =
+    React.useState<string>("");
   const [notes, setNotes] = React.useState("");
 
   // Escrow Selection & Dynamic Quote State (Backend is source of truth)
@@ -77,6 +88,11 @@ function CheckoutForm() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
+  // Flutterwave Live Locked & Modal State
+  const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
+  const isFlutterwaveLocked =
+    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+
   // Target vendor group
   const vendorIds = Object.keys(itemsByVendor);
   const selectedVendorId = vendorIdParam || vendorIds[0];
@@ -85,7 +101,9 @@ function CheckoutForm() {
   const queryClient = useQueryClient();
 
   // Cached remote vendor & safe meetup points state via TanStack Query
-  const { data: meetupData, isLoading: fetchingMeta } = useSafeMeetupPoints(group?.vendor.id);
+  const { data: meetupData, isLoading: fetchingMeta } = useSafeMeetupPoints(
+    group?.vendor.id,
+  );
   const vendorMeta = meetupData?.vendor || null;
   const meetupPoints = meetupData?.meetupPoints || [];
 
@@ -95,7 +113,9 @@ function CheckoutForm() {
     }
     if (meetupPoints.length > 0 && !selectedMeetupPointId) {
       setSelectedMeetupPointId(meetupPoints[0].id);
-      setDeliveryAddress(`${meetupPoints[0].name} - ${meetupPoints[0].description || ""}`.trim());
+      setDeliveryAddress(
+        `${meetupPoints[0].name} - ${meetupPoints[0].description || ""}`.trim(),
+      );
     }
   }, [vendorMeta, meetupPoints, selectedMeetupPointId]);
 
@@ -109,42 +129,47 @@ function CheckoutForm() {
     isGuestSeller && verificationTier < 2 && (group?.subtotal || 0) > 10000;
 
   // Fetch verified checkout quote from backend
-  const fetchQuote = React.useCallback(async (wantsDirect: boolean) => {
-    if (!group || group.items.length === 0) return;
-    setQuoteLoading(true);
-    setQuoteError(null);
-    try {
-      const payload = {
-        items: group.items.map((i) => ({
-          productId: i.id,
-          quantity: i.quantity,
-        })),
-        buyerWantsDirect: wantsDirect,
-      };
+  const fetchQuote = React.useCallback(
+    async (wantsDirect: boolean) => {
+      if (!group || group.items.length === 0) return;
+      setQuoteLoading(true);
+      setQuoteError(null);
+      try {
+        const payload = {
+          items: group.items.map((i) => ({
+            productId: i.id,
+            quantity: i.quantity,
+          })),
+          buyerWantsDirect: wantsDirect,
+        };
 
-      const res = await fetch("/api/payments/checkout-quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+        const res = await fetch("/api/payments/checkout-quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to calculate pricing and escrow quote.");
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(
+            data.error || "Failed to calculate pricing and escrow quote.",
+          );
+        }
+
+        setQuote(data.quote);
+        // If server rules force escrow, ensure client toggle state is kept in sync
+        if (data.quote.isForced && wantsDirect) {
+          setBuyerWantsDirect(false);
+        }
+      } catch (err: any) {
+        console.error("[Checkout Quote Error]:", err);
+        setQuoteError(err.message || "Failed to calculate escrow & fee quote.");
+      } finally {
+        setQuoteLoading(false);
       }
-
-      setQuote(data.quote);
-      // If server rules force escrow, ensure client toggle state is kept in sync
-      if (data.quote.isForced && wantsDirect) {
-        setBuyerWantsDirect(false);
-      }
-    } catch (err: any) {
-      console.error("[Checkout Quote Error]:", err);
-      setQuoteError(err.message || "Failed to calculate escrow & fee quote.");
-    } finally {
-      setQuoteLoading(false);
-    }
-  }, [group]);
+    },
+    [group],
+  );
 
   React.useEffect(() => {
     fetchQuote(buyerWantsDirect);
@@ -174,7 +199,9 @@ function CheckoutForm() {
     }
 
     if (!buyerPhone.trim() || buyerPhone.trim().length < 7) {
-      setError("Please enter a valid contact phone number (at least 7 digits).");
+      setError(
+        "Please enter a valid contact phone number (at least 7 digits).",
+      );
       return;
     }
 
@@ -184,17 +211,28 @@ function CheckoutForm() {
     }
 
     if (isTier1Capped) {
-      setError("Orders from Tier 1 Guest Vendors are capped at ₦10,000 for buyer security. Please adjust your order.");
+      setError(
+        "Orders from Tier 1 Guest Vendors are capped at ₦10,000 for buyer security. Please adjust your order.",
+      );
       return;
     }
 
     if (isGuestSeller && meetupPoints.length > 0 && !selectedMeetupPointId) {
-      setError("Please select a safe campus meetup point for this guest seller order.");
+      setError(
+        "Please select a safe campus meetup point for this guest seller order.",
+      );
+      return;
+    }
+
+    setError("");
+
+    // If live Flutterwave payments are locked, intercept with professional locked UI modal
+    if (isFlutterwaveLocked) {
+      setLockedModalOpen(true);
       return;
     }
 
     setLoading(true);
-    setError("");
 
     try {
       const payload = {
@@ -203,7 +241,9 @@ function CheckoutForm() {
         buyerPhone,
         deliveryMethod: isGuestSeller ? "SAFE_MEETUP_POINT" : deliveryMethod,
         deliveryAddress: isGuestSeller
-          ? (deliveryAddress || (meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ?? "Campus Safe Point"))
+          ? deliveryAddress ||
+            (meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ??
+              "Campus Safe Point")
           : deliveryAddress,
         meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
         vendorId: group.vendor.id || group.vendor.slug,
@@ -225,7 +265,9 @@ function CheckoutForm() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Failed to initialize Flutterwave payment");
+        throw new Error(
+          data.error || "Failed to initialize Flutterwave payment",
+        );
       }
 
       // Clear the vendor's items from the cart
@@ -238,7 +280,9 @@ function CheckoutForm() {
         router.push(`/checkout/confirm?tx_ref=${data.txRef}`);
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong while initiating your checkout.");
+      setError(
+        err.message || "Something went wrong while initiating your checkout.",
+      );
     } finally {
       setLoading(false);
     }
@@ -250,8 +294,12 @@ function CheckoutForm() {
         <div className="w-16 h-16 rounded-3xl bg-neutral-100 flex items-center justify-center mx-auto text-2xl">
           📦
         </div>
-        <h2 className="text-xl font-bold text-neutral-900">No Items to Check Out</h2>
-        <p className="text-xs text-neutral-500">Your selected vendor items are empty or already ordered.</p>
+        <h2 className="text-xl font-bold text-neutral-900">
+          No Items to Check Out
+        </h2>
+        <p className="text-xs text-neutral-500">
+          Your selected vendor items are empty or already ordered.
+        </p>
         <Link href="/cart">
           <Button variant="outline" size="sm">
             &larr; Back to Bag
@@ -264,15 +312,51 @@ function CheckoutForm() {
   const effectiveTotal = quote ? quote.buyerTotal : group.subtotal;
   const effectiveSubtotal = quote ? quote.subtotal : group.subtotal;
   const effectiveFee = quote ? quote.feeAmount : 0;
-  const effectiveCommission = quote ? quote.commission : Math.round(group.subtotal * 0.05);
-  const effectiveSellerNet = quote ? quote.sellerAmount : Math.round(group.subtotal * 0.95);
-  const isEscrowMode = quote ? quote.escrow_mode === "escrow" : !buyerWantsDirect;
+  const effectiveCommission = quote
+    ? quote.commission
+    : Math.round(group.subtotal * 0.05);
+  const effectiveSellerNet = quote
+    ? quote.sellerAmount
+    : Math.round(group.subtotal * 0.95);
+  const isEscrowMode = quote
+    ? quote.escrow_mode === "escrow"
+    : !buyerWantsDirect;
+
+  const checkoutData: CheckoutDataPayload | null = group
+    ? {
+        buyerName,
+        buyerEmail,
+        buyerPhone,
+        deliveryMethod: isGuestSeller ? "SAFE_MEETUP_POINT" : deliveryMethod,
+        deliveryAddress: isGuestSeller
+          ? deliveryAddress ||
+            meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ||
+            "Campus Safe Meetup Point"
+          : deliveryAddress,
+        meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
+        vendorId: group.vendor.id || group.vendor.slug,
+        vendorName: group.vendor.storeName,
+        vendorWhatsApp: group.vendor.whatsapp || null,
+        notes,
+        totalAmount: effectiveTotal,
+        items: group.items.map((i) => ({
+          id: i.id,
+          title: i.title,
+          price: i.price,
+          quantity: i.quantity,
+          image: i.image,
+        })),
+      }
+    : null;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-10">
       {loading && <Loader isModal={true} />}
       <div className="flex items-center gap-2 mb-6 text-xs text-neutral-500">
-        <Link href="/cart" className="hover:text-neutral-900 flex items-center gap-1 font-semibold">
+        <Link
+          href="/cart"
+          className="hover:text-neutral-900 flex items-center gap-1 font-semibold"
+        >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Cart
         </Link>
         <span>/</span>
@@ -313,10 +397,13 @@ function CheckoutForm() {
               </div>
 
               <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-950 mt-2">
-                {isGuestSeller ? "Campus Safe Meetup & Contact Info" : "Student Contact & Pickup Info"}
+                {isGuestSeller
+                  ? "Campus Safe Meetup & Contact Info"
+                  : "Student Contact & Pickup Info"}
               </h2>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Ordering from <strong>{group.vendor.storeName}</strong> ({group.vendor.campus?.name})
+                Ordering from <strong>{group.vendor.storeName}</strong> (
+                {group.vendor.campus?.name})
               </p>
             </div>
 
@@ -328,7 +415,10 @@ function CheckoutForm() {
                   Designated Campus Meetup Required
                 </div>
                 <p className="text-[11px] leading-relaxed text-purple-800">
-                  This vendor is an off-campus <strong>Guest Trader</strong>. For student safety and platform escrow guarantee, delivery must occur at one of the official university designated safe meetup points selected below.
+                  This vendor is an off-campus <strong>Guest Trader</strong>.
+                  For student safety and platform escrow guarantee, delivery
+                  must occur at one of the official university designated safe
+                  meetup points selected below.
                 </p>
               </div>
             )}
@@ -341,7 +431,10 @@ function CheckoutForm() {
                   Order Amount Exceeds Tier 1 Guest Cap
                 </div>
                 <p className="text-[11px] text-amber-800">
-                  Orders from newly registered Tier 1 Guest Vendors are capped at <strong>₦10,000</strong> for security. Your cart total is <strong>{formatNGN(group.subtotal)}</strong>. Please reduce item quantity or order from a verified Tier 2+ seller.
+                  Orders from newly registered Tier 1 Guest Vendors are capped
+                  at <strong>₦10,000</strong> for security. Your cart total is{" "}
+                  <strong>{formatNGN(group.subtotal)}</strong>. Please reduce
+                  item quantity or order from a verified Tier 2+ seller.
                 </p>
               </div>
             )}
@@ -375,11 +468,14 @@ function CheckoutForm() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span className="text-xs font-extrabold text-neutral-900">Payment Protection Policy</span>
+                  <span className="text-xs font-extrabold text-neutral-900">
+                    Payment Protection Policy
+                  </span>
                 </div>
                 {quoteLoading ? (
                   <span className="text-[10px] text-neutral-400 flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 animate-spin" /> Checking eligibility...
+                    <RefreshCw className="w-3 h-3 animate-spin" /> Checking
+                    eligibility...
                   </span>
                 ) : quote?.isForced ? (
                   <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] font-bold">
@@ -405,10 +501,13 @@ function CheckoutForm() {
                       Mandatory Escrow Protection Applied
                     </p>
                     <p className="text-[11px] text-purple-800 leading-relaxed">
-                      {quote.forcedReason || "Platform security policy requires escrow protection for this transaction."}
+                      {quote.forcedReason ||
+                        "Platform security policy requires escrow protection for this transaction."}
                     </p>
                     <p className="text-[10px] text-purple-700 pt-1">
-                      Funds are held safely in platform escrow until you receive and verify your 6-digit delivery code. Includes a 48-hour inspection dispute window.
+                      Funds are held safely in platform escrow until you receive
+                      and verify your 6-digit delivery code. Includes a 48-hour
+                      inspection dispute window.
                     </p>
                   </div>
                 </div>
@@ -418,7 +517,8 @@ function CheckoutForm() {
               {quote && quote.canToggle && !quote.isForced && (
                 <div className="space-y-2.5">
                   <p className="text-[11px] text-neutral-600 leading-relaxed">
-                    This order qualifies for optional buyer protection. Choose how you would like to complete your payment:
+                    This order qualifies for optional buyer protection. Choose
+                    how you would like to complete your payment:
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Option A: Escrow Protected */}
@@ -439,14 +539,19 @@ function CheckoutForm() {
                             onChange={() => handleToggleEscrow(false)}
                             className="text-emerald-600 focus:ring-emerald-500"
                           />
-                          <span className="font-bold text-xs text-neutral-900">Escrow Protection</span>
+                          <span className="font-bold text-xs text-neutral-900">
+                            Escrow Protection
+                          </span>
                         </div>
                         <Badge className="bg-emerald-100 text-emerald-800 text-[10px] font-bold">
                           Recommended
                         </Badge>
                       </div>
                       <p className="text-[11px] text-neutral-600 leading-tight">
-                        1% service fee ({formatNGN(Math.round(group.subtotal * 0.01))}). Funds held safely until you verify handover with your 6-digit code. 48-hour dispute window included.
+                        1% service fee (
+                        {formatNGN(Math.round(group.subtotal * 0.01))}). Funds
+                        held safely until you verify handover with your 6-digit
+                        code. 48-hour dispute window included.
                       </p>
                     </label>
 
@@ -468,14 +573,18 @@ function CheckoutForm() {
                             onChange={() => handleToggleEscrow(true)}
                             className="text-neutral-900 focus:ring-neutral-700"
                           />
-                          <span className="font-bold text-xs text-neutral-900">Direct Payment</span>
+                          <span className="font-bold text-xs text-neutral-900">
+                            Direct Payment
+                          </span>
                         </div>
                         <span className="text-[10px] font-bold text-neutral-500">
                           ₦0 Fee
                         </span>
                       </div>
                       <p className="text-[11px] text-neutral-500 leading-tight">
-                        Vendor receives payout directly upon payment verification. No 6-digit delivery code or 48-hour escrow dispute window.
+                        Vendor receives payout directly upon payment
+                        verification. No 6-digit delivery code or 48-hour escrow
+                        dispute window.
                       </p>
                     </label>
                   </div>
@@ -483,22 +592,30 @@ function CheckoutForm() {
               )}
 
               {/* Case 3: Sub-₦5,000 Micro Order (Direct by default) */}
-              {quote && !quote.isForced && (quote.thresholdCategory === "under_5k" || quote.thresholdCategory === "MICRO" || quote.subtotal < 5000) && (
-                <div className="p-3 rounded-xl bg-neutral-100/80 border border-neutral-200 text-xs text-neutral-700 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-neutral-900">
-                    <Info className="w-3.5 h-3.5 text-neutral-500" />
-                    <span>Micro-Transaction (Under ₦5,000)</span>
+              {quote &&
+                !quote.isForced &&
+                (quote.thresholdCategory === "under_5k" ||
+                  quote.thresholdCategory === "MICRO" ||
+                  quote.subtotal < 5000) && (
+                  <div className="p-3 rounded-xl bg-neutral-100/80 border border-neutral-200 text-xs text-neutral-700 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-neutral-900">
+                      <Info className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Micro-Transaction (Under ₦5,000)</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-600 leading-relaxed">
+                      Orders below ₦5,000 qualify for direct campus settlement
+                      with <strong>₦0 escrow fees</strong>. The standard
+                      price-based escrow protection threshold begins at ₦5,000.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-neutral-600 leading-relaxed">
-                    Orders below ₦5,000 qualify for direct campus settlement with <strong>₦0 escrow fees</strong>. The standard price-based escrow protection threshold begins at ₦5,000.
-                  </p>
-                </div>
-              )}
+                )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700">Your Full Name</label>
+                <label className="text-xs font-bold text-neutral-700">
+                  Your Full Name
+                </label>
                 <Input
                   required
                   maxLength={70}
@@ -510,7 +627,9 @@ function CheckoutForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">WhatsApp / Phone Number</label>
+                  <label className="text-xs font-bold text-neutral-700">
+                    WhatsApp / Phone Number
+                  </label>
                   <Input
                     type="tel"
                     required
@@ -523,7 +642,9 @@ function CheckoutForm() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-neutral-700">Email Address</label>
+                  <label className="text-xs font-bold text-neutral-700">
+                    Email Address
+                  </label>
                   <Input
                     type="email"
                     required
@@ -551,7 +672,8 @@ function CheckoutForm() {
 
                   {meetupPoints.length === 0 ? (
                     <div className="p-4 rounded-xl bg-neutral-100 text-xs text-neutral-600">
-                      Standard Safe Campus Location (Main Campus Gate / Student Center)
+                      Standard Safe Campus Location (Main Campus Gate / Student
+                      Center)
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -573,7 +695,9 @@ function CheckoutForm() {
                             className="mt-0.5 text-purple-600 focus:ring-purple-500"
                           />
                           <div className="space-y-0.5 text-xs">
-                            <span className="font-bold text-neutral-950 block">{point.name}</span>
+                            <span className="font-bold text-neutral-950 block">
+                              {point.name}
+                            </span>
                             {point.description && (
                               <span className="text-neutral-500 text-[11px] block leading-tight">
                                 {point.description}
@@ -607,7 +731,9 @@ function CheckoutForm() {
                           onChange={() => setDeliveryMethod("PICKUP")}
                           className="text-emerald-600"
                         />
-                        <span className="font-bold text-xs text-neutral-900">Campus Hub Pickup</span>
+                        <span className="font-bold text-xs text-neutral-900">
+                          Campus Hub Pickup
+                        </span>
                       </div>
                       <span className="text-[11px] text-neutral-500">
                         Free meeting at faculty quads, library, or SUB
@@ -629,7 +755,9 @@ function CheckoutForm() {
                           onChange={() => setDeliveryMethod("CAMPUS_DELIVERY")}
                           className="text-emerald-600"
                         />
-                        <span className="font-bold text-xs text-neutral-900">Hostel Delivery</span>
+                        <span className="font-bold text-xs text-neutral-900">
+                          Hostel Delivery
+                        </span>
                       </div>
                       <span className="text-[11px] text-neutral-500">
                         Vendor delivers to your room or hostel block
@@ -659,7 +787,9 @@ function CheckoutForm() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-700">Special Notes for Vendor (Optional)</label>
+                <label className="text-xs font-bold text-neutral-700">
+                  Special Notes for Vendor (Optional)
+                </label>
                 <textarea
                   rows={2}
                   maxLength={300}
@@ -681,40 +811,62 @@ function CheckoutForm() {
                     !buyerEmail.trim() ||
                     !buyerPhone.trim() ||
                     (!isGuestSeller && !deliveryAddress.trim()) ||
-                    (isGuestSeller && meetupPoints.length > 0 && !selectedMeetupPointId)
+                    (isGuestSeller &&
+                      meetupPoints.length > 0 &&
+                      !selectedMeetupPointId)
                   }
                   className={`w-full h-12 text-white font-bold rounded-2xl shadow-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     isGuestSeller
                       ? "bg-purple-700 hover:bg-purple-800 shadow-purple-700/25"
                       : isEscrowMode
-                      ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25"
-                      : "bg-neutral-900 hover:bg-neutral-800 shadow-neutral-900/25"
+                        ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25"
+                        : "bg-neutral-900 hover:bg-neutral-800 shadow-neutral-900/25"
                   }`}
                 >
-                  {isEscrowMode ? (
+                  {isFlutterwaveLocked ? (
+                    <Lock className="w-4 h-4 mr-1.5 inline" />
+                  ) : isEscrowMode ? (
                     <ShieldCheck className="w-4 h-4 mr-1.5 inline" />
                   ) : (
                     <Zap className="w-4 h-4 mr-1.5 inline" />
                   )}
                   {loading
                     ? "Initializing Payment..."
-                    : isEscrowMode
-                    ? `Pay Securely via Escrow (${formatNGN(effectiveTotal)}) →`
-                    : `Pay Directly (${formatNGN(effectiveTotal)}) →`}
+                    : isFlutterwaveLocked
+                      ? `Proceed to Payment (${formatNGN(effectiveTotal)}) →`
+                      : isEscrowMode
+                        ? `Pay Securely via Escrow (${formatNGN(effectiveTotal)}) →`
+                        : `Pay Directly (${formatNGN(effectiveTotal)}) →`}
                 </Button>
-                <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-neutral-500 mt-2.5">
-                  {isEscrowMode ? (
-                    <>
-                      <span>🔒</span>
-                      <span>100% Escrow Protected: Funds held until you verify delivery with your 6-digit code</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>⚡</span>
-                      <span>Direct Payment: Seller is paid immediately upon payment confirmation</span>
-                    </>
-                  )}
-                </div>
+                {isFlutterwaveLocked ? (
+                  <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-xl py-1.5 px-3 mt-2.5">
+                    <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>
+                      Live online card payment locked &bull; Pay-on-Campus
+                      Meetup ready
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-1.5 text-center text-[11px] text-neutral-500 mt-2.5">
+                    {isEscrowMode ? (
+                      <>
+                        <span>🔒</span>
+                        <span>
+                          100% Escrow Protected: Funds held until you verify
+                          delivery with your 6-digit code
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span>⚡</span>
+                        <span>
+                          Direct Payment: Seller is paid immediately upon
+                          payment confirmation
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </form>
           </div>
@@ -725,16 +877,23 @@ function CheckoutForm() {
           <div className="bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-6 space-y-4">
             <h3 className="font-bold text-sm text-neutral-900 border-b border-neutral-100 pb-3 flex items-center justify-between">
               <span>Order Summary ({group.items.length} items)</span>
-              {isGuestSeller ? (
-                <span className="text-[11px] text-purple-700 font-semibold">Guest Seller</span>
+              {/* {isGuestSeller ? (
+                <span className="text-[11px] text-purple-700 font-semibold">
+                  Guest Seller
+                </span>
               ) : (
-                <span className="text-[11px] text-emerald-700 font-semibold">Student Seller</span>
-              )}
+                <span className="text-[11px] text-emerald-700 font-semibold">
+                  Student Seller
+                </span>
+              )} */}
             </h3>
 
             <div className="space-y-3 divide-y divide-neutral-100">
               {group.items.map((item) => (
-                <div key={item.id} className="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs">
+                <div
+                  key={item.id}
+                  className="pt-3 first:pt-0 flex items-center justify-between gap-3 text-xs"
+                >
                   <div className="flex items-center gap-2.5 truncate">
                     <img
                       src={item.image}
@@ -742,7 +901,9 @@ function CheckoutForm() {
                       className="w-10 h-10 rounded-xl object-cover shrink-0 border border-neutral-200"
                     />
                     <div className="truncate">
-                      <p className="font-bold text-neutral-900 truncate">{item.title}</p>
+                      <p className="font-bold text-neutral-900 truncate">
+                        {item.title}
+                      </p>
                       <p className="text-neutral-400 text-[11px]">
                         Qty: {item.quantity} &times; {formatNGN(item.price)}
                       </p>
@@ -773,46 +934,77 @@ function CheckoutForm() {
                 <span className="flex items-center gap-1">
                   <span>Escrow Protection Fee</span>
                   {quote && quote.feePercent > 0 && (
-                    <span className="text-[10px] text-neutral-400">({quote.feePercent}%)</span>
+                    <span className="text-[10px] text-neutral-400">
+                      ({quote.feePercent}%)
+                    </span>
                   )}
                 </span>
                 {quoteLoading ? (
-                  <span className="text-[11px] text-neutral-400">Calculating...</span>
+                  <span className="text-[11px] text-neutral-400">
+                    Calculating...
+                  </span>
                 ) : effectiveFee > 0 ? (
-                  <span className="text-emerald-700 font-bold">+{formatNGN(effectiveFee)}</span>
+                  <span className="text-emerald-700 font-bold">
+                    +{formatNGN(effectiveFee)}
+                  </span>
                 ) : (
-                  <span className="text-emerald-700 font-bold">₦0 (Free / Direct)</span>
+                  <span className="text-emerald-700 font-bold">
+                    ₦0 (Free / Direct)
+                  </span>
                 )}
               </div>
 
               <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-base font-extrabold text-neutral-950">
                 <span>Total Payable by Buyer</span>
-                <span className={isGuestSeller ? "text-purple-700" : isEscrowMode ? "text-emerald-600" : "text-neutral-900"}>
+                <span
+                  className={
+                    isGuestSeller
+                      ? "text-purple-700"
+                      : isEscrowMode
+                        ? "text-emerald-600"
+                        : "text-neutral-900"
+                  }
+                >
                   {formatNGN(effectiveTotal)}
                 </span>
               </div>
             </div>
 
             {/* Seller Proceeds & Commission Breakdown Transparency */}
-            <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-150 text-[11px] space-y-1.5 text-neutral-600">
-              <div className="flex items-center justify-between font-medium">
-                <span className="text-neutral-500">Platform Commission (5%):</span>
-                <span className="text-neutral-700 font-semibold">-{formatNGN(effectiveCommission)}</span>
-              </div>
-              <div className="flex items-center justify-between font-bold text-neutral-900 border-t border-neutral-200/60 pt-1">
+            {/* <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-150 text-[11px] space-y-1.5 text-neutral-600"> */}
+            {/* <div className="flex items-center justify-between font-medium">
+                <span className="text-neutral-500">
+                  Platform Commission (5%):
+                </span>
+                <span className="text-neutral-700 font-semibold">
+                  -{formatNGN(effectiveCommission)}
+                </span>
+              </div> */}
+            {/* <div className="flex items-center justify-between font-bold text-neutral-900 border-t border-neutral-200/60 pt-1">
                 <span>Expected Seller Net Proceeds:</span>
-                <span className="text-emerald-700">{formatNGN(effectiveSellerNet)}</span>
-              </div>
-              <p className="text-[10px] text-neutral-400 leading-tight pt-0.5">
-                Marketplace commission is deducted from the seller's proceeds, not added to the buyer total.
+                <span className="text-emerald-700">
+                  {formatNGN(effectiveSellerNet)}
+                </span>
+              </div> */}
+            {/* <p className="text-[10px] text-neutral-400 leading-tight pt-0.5">
+                Marketplace commission is deducted from the seller's proceeds,
+                not added to the buyer total.
               </p>
-            </div>
+            </div> */}
 
             {/* Payment provider badge */}
-            <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-500">
-              <span className="flex items-center gap-1">
-                <span>💳</span> Powered by <strong>Flutterwave</strong>
-              </span>
+            <div className="pt-2 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[11px] text-neutral-500">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="flex items-center gap-1">
+                  <span>💳</span> Powered by <strong>Flutterwave</strong>
+                </span>
+                {isFlutterwaveLocked && (
+                  <Badge className="bg-amber-100/90 text-amber-900 border-amber-300/80 text-[10px] font-bold py-0 px-2 flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5 text-amber-700" />
+                    Locked (Live Gateway Onboarding)
+                  </Badge>
+                )}
+              </div>
               <span>Cards &bull; Bank Transfers &bull; USSD</span>
             </div>
           </div>
@@ -821,22 +1013,43 @@ function CheckoutForm() {
           <div className="p-4 rounded-2xl bg-neutral-100/70 text-xs text-neutral-600 space-y-2">
             <p className="font-bold text-neutral-900 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              {isGuestSeller ? "Campus Safe Meetup Guarantee" : "Verified Student Protection"}
+              {isGuestSeller
+                ? "Campus Safe Meetup Guarantee"
+                : "Verified Student Protection"}
             </p>
             <p className="text-[11px] leading-relaxed text-neutral-500">
               {isGuestSeller ? (
                 <>
-                  Your order is protected under campus trade safeguards. Meet vendor <strong>{group.vendor.storeName}</strong> strictly at the selected university safe zone. You will receive an immediate confirmation link upon payment.
+                  Your order is protected under campus trade safeguards. Meet
+                  vendor <strong>{group.vendor.storeName}</strong> strictly at
+                  the selected university safe zone. You will receive an
+                  immediate confirmation link upon payment.
                 </>
               ) : (
                 <>
-                  Your order details will be sent directly to <strong>{group.vendor.storeName}</strong>. You will receive an immediate confirmation link to communicate with the student seller.
+                  Your order details will be sent directly to{" "}
+                  <strong>{group.vendor.storeName}</strong>. You will receive an
+                  immediate confirmation link to communicate with the student
+                  seller.
                 </>
               )}
             </p>
           </div>
         </div>
       </div>
+
+      {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
+      <FlutterwaveLockedModal
+        isOpen={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+        checkoutData={checkoutData}
+        onOrderPlaced={(orderNumber) => {
+          if (group?.vendor?.id) {
+            clearVendorItems(group.vendor.id);
+          }
+          router.push(`/order-success/${orderNumber}`);
+        }}
+      />
     </div>
   );
 }

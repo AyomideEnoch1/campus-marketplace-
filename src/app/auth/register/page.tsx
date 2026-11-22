@@ -31,6 +31,8 @@ import { Loader } from "@/components/ui/Loader";
 import { useCampuses } from "@/hooks/use-campuses-query";
 import { formatNigerianPhone, cleanPhoneNumber } from "@/lib/utils";
 import { PasswordStrengthGauge } from "@/components/ui/PasswordStrengthGauge";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { JoinOnboardingScreen, type RoleConfig } from "@/components/auth/JoinOnboardingScreen";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +45,9 @@ function RegisterContent() {
   // Role selection: "BUYER" | "VENDOR" | null (null = initial account type selection screen)
   const [role, setRole] = React.useState<RoleType | null>(null);
   const [buyerType, setBuyerType] = React.useState<"student" | "guest">("student");
+  const [sellerType, setSellerType] = React.useState<"student" | "guest">("student");
+  const [intent, setIntent] = React.useState<"buy" | "sell">("buy");
+  const [affiliation, setAffiliation] = React.useState<"student" | "guest">("student");
 
   // Stepper state:
   // Step 0: Account Type Selection
@@ -90,6 +95,23 @@ function RegisterContent() {
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
+
+  const errorParam = searchParams.get("error");
+  React.useEffect(() => {
+    if (errorParam) {
+      if (errorParam === "cancelled") {
+        setError("Google Sign-In was cancelled.");
+      } else if (errorParam === "email_not_verified") {
+        setError("Your Google account email is not verified. Please verify your email with Google first.");
+      } else if (errorParam === "server_config_error") {
+        setError("Google Sign-In is not configured yet on the server.");
+      } else if (errorParam === "invalid_state") {
+        setError("Authentication session expired. Please try again.");
+      } else {
+        setError("Failed to authenticate with Google. Please try again.");
+      }
+    }
+  }, [errorParam]);
 
   // Default campus selection
   React.useEffect(() => {
@@ -193,6 +215,7 @@ function RegisterContent() {
         phone: cleanPhone,
         role,
         buyerType: role === "BUYER" ? buyerType : undefined,
+        sellerType: role === "VENDOR" ? sellerType : undefined,
         referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
       };
 
@@ -260,158 +283,28 @@ function RegisterContent() {
       : "animate-in fade-in-50 slide-in-from-left-8 duration-300";
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-10 sm:py-14 px-4 bg-gradient-to-b from-neutral-50 via-neutral-100/50 to-neutral-50">
-      <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-6 sm:p-9 space-y-7 transition-all">
-        {/* =================================================================== */}
-        {/* SCREEN 0: Initial Screen – Account Type Selection                   */}
-        {/* =================================================================== */}
-        {currentStep === 0 && (
-          <div className="space-y-7 animate-in fade-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100 shadow-sm">
-                <ShoppingCart className="w-6 h-6" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
-                Join ọjà
-              </h1>
-              <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
-                Connect directly with verified students and trusted campus merchants. How would you like to use ọjà?
-              </p>
-            </div>
-
-            {/* Referral / Ambassador Endorsement Banner if detected */}
-            {referralCode && (
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs shadow-xs">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>
-                    Invited by Campus Ambassador: <strong className="font-mono font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded">{referralCode}</strong>
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setReferralCode("")}
-                  className="text-neutral-400 hover:text-neutral-600 text-[11px] underline"
-                >
-                  Clear
-                </button>
-              </div>
-            )}
-
-            {/* Error Notification if any */}
-            {error && (
-              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold animate-in fade-in-50">
-                {error}
-              </div>
-            )}
-
-            {/* Account Type Selection Cards */}
-            <div className="space-y-3">
-              {/* Option 1: Student Buyer */}
-              <button
-                type="button"
-                onClick={() => handleSelectRole("BUYER", "student")}
-                className="w-full group p-4 sm:p-4.5 rounded-2xl border-2 border-neutral-200/90 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-emerald-600/5 relative flex items-center gap-3.5 cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 group-hover:border-emerald-300 text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-emerald-950 transition-colors">
-                      Student Buyer
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
-                      Student
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
-                    Shop campus listings, textbooks, and hostel delivery.
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
-              </button>
-
-              {/* Option 2: Guest Buyer */}
-              <button
-                type="button"
-                onClick={() => handleSelectRole("BUYER", "guest")}
-                className="w-full group p-4 sm:p-4.5 rounded-2xl border-2 border-neutral-200/90 hover:border-sky-500 bg-neutral-50/50 hover:bg-sky-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-sky-600/5 relative flex items-center gap-3.5 cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 group-hover:border-sky-300 text-sky-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-sky-950 transition-colors">
-                      Guest Buyer
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded-full">
-                      Guest
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
-                    Browse and buy without student email verification.
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-sky-600 group-hover:translate-x-1 transition-all shrink-0" />
-              </button>
-
-              {/* Option 3: Campus Vendor */}
-              <button
-                type="button"
-                onClick={() => handleSelectRole("VENDOR")}
-                className="w-full group p-4 sm:p-4.5 rounded-2xl border-2 border-neutral-200/90 hover:border-purple-500 bg-neutral-50/50 hover:bg-purple-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-purple-600/5 relative flex items-center gap-3.5 cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 group-hover:border-purple-300 text-purple-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                  <Store className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-purple-950 transition-colors">
-                      Campus Vendor
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-full">
-                      Seller
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
-                    Open a verified campus store and sell to students.
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all shrink-0" />
-              </button>
-            </div>
-
-            {/* Quick Guest Browsing Link */}
-            <div className="text-center pt-0.5">
-              <Link
-                href="/shop"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-emerald-700 transition-colors"
-              >
-                <span>Just looking around? Explore marketplace as guest</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* Footer / Login Link */}
-            <div className="pt-2 text-center text-xs text-neutral-500 border-t border-neutral-100">
-              Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
-              >
-                Sign In here
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* =================================================================== */}
-        {/* REGISTRATION FLOW (Steps 1, 2, and 3)                                */}
-        {/* =================================================================== */}
-        {currentStep > 0 && (
+    <div className="min-h-[85vh] flex items-center justify-center py-6 sm:py-12 px-3 sm:px-4 bg-gradient-to-b from-neutral-50 via-neutral-100/50 to-neutral-50">
+      {/* =================================================================== */}
+      {/* SCREEN 0: Initial Screen – Clean "Join ọjà" Onboarding             */}
+      {/* =================================================================== */}
+      {currentStep === 0 ? (
+        <JoinOnboardingScreen
+          initialIntent={intent}
+          initialAffiliation={affiliation}
+          onContinue={(config: RoleConfig) => {
+            setIntent(config.intent);
+            setAffiliation(config.affiliation);
+            setRole(config.role);
+            if (config.buyerType) setBuyerType(config.buyerType);
+            if (config.sellerType) setSellerType(config.sellerType);
+            goToStep(1, "forward");
+          }}
+        />
+      ) : (
+        /* =================================================================== */
+        /* REGISTRATION FLOW (Steps 1, 2, and 3)                               */
+        /* =================================================================== */
+        <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-6 sm:p-9 space-y-7 transition-all">
           <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
             {/* Top Stepper Header */}
             <div className="space-y-3">
@@ -436,7 +329,11 @@ function RegisterContent() {
                     }`}
                   >
                     {role === "VENDOR" ? (
-                      <Store className="w-5 h-5" />
+                      sellerType === "guest" ? (
+                        <Building className="w-5 h-5" />
+                      ) : (
+                        <Store className="w-5 h-5" />
+                      )
                     ) : buyerType === "guest" ? (
                       <UserCheck className="w-5 h-5" />
                     ) : (
@@ -449,7 +346,9 @@ function RegisterContent() {
                     </span>
                     <h3 className="text-sm sm:text-base font-black tracking-tight leading-tight mt-0.5">
                       {role === "VENDOR"
-                        ? "Campus Vendor (Seller Account)"
+                        ? sellerType === "guest"
+                          ? "Guest Vendor Account"
+                          : "Student Vendor Account"
                         : buyerType === "guest"
                         ? "Guest Buyer Account"
                         : "Student Buyer Account"}
@@ -519,6 +418,22 @@ function RegisterContent() {
             {/* =============================================================== */}
             {currentStep === 1 && (
               <div key="step-1" className={`space-y-4 ${animationClass}`}>
+                {/* Fast-track Google Sign-Up with chosen role */}
+                <div className="space-y-3 pb-1">
+                  <GoogleSignInButton
+                    role={role || "BUYER"}
+                    text={role === "VENDOR" ? "Sign up as Vendor with Google" : "Sign up as Buyer with Google"}
+                    redirect={searchParams.get("redirect") || undefined}
+                  />
+                  <div className="relative flex items-center justify-center">
+                    <div className="border-t border-neutral-200/80 w-full" />
+                    <span className="bg-white px-3 text-[11px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">
+                      Or fill details manually
+                    </span>
+                    <div className="border-t border-neutral-200/80 w-full" />
+                  </div>
+                </div>
+
                 {/* Full Name */}
                 <div className="space-y-1.5">
                   <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
@@ -975,39 +890,39 @@ function RegisterContent() {
               </Link>
             </div>
           </form>
-        )}
+        </div>
+      )}
 
-        {/* Full-screen Submission Load State Overlay */}
-        {loading && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-8 text-center space-y-4 animate-in zoom-in-95 duration-200">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100/80 shadow-inner">
-                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-              </div>
-              
-              <div className="space-y-1.5">
-                <h3 className="font-extrabold text-lg text-neutral-900">
-                  {role === "VENDOR" ? "Setting Up Your Store..." : "Creating Your Account..."}
-                </h3>
-                <p className="text-xs text-neutral-500 leading-relaxed">
-                  Please hold on while we save your credentials and initialize your profile.
-                </p>
-              </div>
+      {/* Full-screen Submission Load State Overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-neutral-100 p-8 text-center space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-100/80 shadow-inner">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+            </div>
+            
+            <div className="space-y-1.5">
+              <h3 className="font-extrabold text-lg text-neutral-900">
+                {role === "VENDOR" ? "Setting Up Your Store..." : "Creating Your Account..."}
+              </h3>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                Please hold on while we save your credentials and initialize your profile.
+              </p>
+            </div>
 
-              <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/60 text-left space-y-2 text-xs text-neutral-600">
-                <div className="flex items-center gap-2 text-emerald-700 font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>Connecting to campus database</span>
-                </div>
-                <div className="flex items-center gap-2 text-neutral-800 font-bold animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>Finalizing setup &amp; redirecting...</span>
-                </div>
+            <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/60 text-left space-y-2 text-xs text-neutral-600">
+              <div className="flex items-center gap-2 text-emerald-700 font-semibold">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span>Connecting to campus database</span>
+              </div>
+              <div className="flex items-center gap-2 text-neutral-800 font-bold animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span>Finalizing setup &amp; redirecting...</span>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

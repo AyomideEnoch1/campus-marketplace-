@@ -47,7 +47,6 @@ export function Navbar({ initialUser }: NavbarProps) {
   const { data: authData } = useCurrentUser(initialUser);
   const user = authData?.user ?? initialUser;
   const logoutMutation = useLogout();
-
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [selectedCampus, setSelectedCampus] = React.useState<string>("all");
@@ -103,11 +102,6 @@ export function Navbar({ initialUser }: NavbarProps) {
               ọ<span className="text-emerald-500">jà</span>
             </span>
           </Link>
-
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-3 py-1.5 rounded-full">
-            <Lock className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Secure Escrow Checkout</span>
-          </div>
 
           <Link
             href="/cart"
@@ -236,9 +230,7 @@ export function Navbar({ initialUser }: NavbarProps) {
           >
             <ShoppingBag className="w-5 h-5" />
             {totalCount > 0 && (
-              <Badge
-                className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs"
-              >
+              <Badge className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-400 text-neutral-950 animate-in zoom-in-75 shadow-xs">
                 {totalCount}
               </Badge>
             )}
@@ -257,9 +249,15 @@ export function Navbar({ initialUser }: NavbarProps) {
               >
                 <div className="w-7 h-7 rounded-full bg-neutral-900 text-white flex items-center justify-center text-xs font-bold uppercase shrink-0 overflow-hidden shadow-2xs">
                   {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.fullName || "User"} className="w-full h-full object-cover" />
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.fullName || "User"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : user.fullName ? (
+                    user.fullName[0]
                   ) : (
-                    user.fullName ? user.fullName[0] : "U"
+                    "U"
                   )}
                 </div>
                 <span className="hidden sm:inline-block text-xs font-semibold text-neutral-800 max-w-[85px] truncate">
@@ -277,7 +275,10 @@ export function Navbar({ initialUser }: NavbarProps) {
                     <p className="text-xs text-neutral-500 truncate">
                       {user.email}
                     </p>
-                    <Badge variant="secondary" className="mt-1 text-[10px] uppercase font-bold bg-neutral-100 text-neutral-700 border-neutral-200">
+                    <Badge
+                      variant="secondary"
+                      className="mt-1 text-[10px] uppercase font-bold bg-neutral-100 text-neutral-700 border-neutral-200"
+                    >
                       {user.role}
                     </Badge>
                   </div>
@@ -362,12 +363,19 @@ export function Navbar({ initialUser }: NavbarProps) {
           ) : (
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="text-xs font-semibold px-2.5 sm:px-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs font-semibold px-2.5 sm:px-3"
+                >
                   Sign In
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button size="sm" className="hidden sm:inline-flex text-xs font-semibold px-3 sm:px-4 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-full">
+                <Button
+                  size="sm"
+                  className="hidden sm:inline-flex text-xs font-semibold px-3 sm:px-4 shadow-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-full"
+                >
                   Join Free
                 </Button>
               </Link>
@@ -380,7 +388,11 @@ export function Navbar({ initialUser }: NavbarProps) {
             className="md:hidden w-10 h-10 rounded-2xl border border-neutral-200/80 flex items-center justify-center text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer shrink-0"
             aria-label="Toggle Navigation Menu"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5 text-neutral-900" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? (
+              <X className="w-5 h-5 text-neutral-900" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>
@@ -407,7 +419,9 @@ export function Navbar({ initialUser }: NavbarProps) {
                       : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-950"
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-neutral-400"}`} />
+                  <Icon
+                    className={`w-4 h-4 ${isActive ? "text-emerald-600" : "text-neutral-400"}`}
+                  />
                   <span>{link.name}</span>
                 </Link>
               );
@@ -443,7 +457,9 @@ export function Navbar({ initialUser }: NavbarProps) {
             >
               <span className="flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition-transform" />
-                {user?.role === "VENDOR" ? "Go to Vendor Dashboard" : "Become a Student Seller"}
+                {user?.role === "VENDOR"
+                  ? "Go to Vendor Dashboard"
+                  : "Become a Student Seller"}
               </span>
               <span className="text-emerald-700">&rarr;</span>
             </Link>
@@ -452,7 +468,10 @@ export function Navbar({ initialUser }: NavbarProps) {
       )}
 
       {/* Fullscreen Blocking Signout Modal */}
-      <SignoutModal isOpen={isSigningOut || logoutMutation.isPending} onClose={() => setIsSigningOut(false)} />
+      <SignoutModal
+        isOpen={isSigningOut || logoutMutation.isPending}
+        onClose={() => setIsSigningOut(false)}
+      />
     </header>
   );
 }
