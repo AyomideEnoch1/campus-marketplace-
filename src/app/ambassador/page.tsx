@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getReferralRewardConfig, getAmbassadorPayoutLockStatus } from "@/lib/referral";
+import {
+  getReferralRewardConfig,
+  getAmbassadorPayoutLockStatus,
+  getAmbassadorDashboardBanner,
+} from "@/lib/referral";
 import { AmbassadorDashboardClient } from "./AmbassadorDashboardClient";
 import { AmbassadorOnboarding } from "./AmbassadorOnboarding";
 
@@ -43,7 +47,7 @@ export default async function AmbassadorPage() {
     return <AmbassadorOnboarding campuses={campuses} userName={session.fullName} />;
   }
 
-  // Compute stats, active pending requests, and lock status
+  // Compute stats, active pending requests, lock status, and announcement banner
   const [
     totalVendors,
     qualifiedVendors,
@@ -51,6 +55,7 @@ export default async function AmbassadorPage() {
     rewardConfig,
     payoutRequestsLocked,
     activePayoutRequest,
+    bannerConfig,
   ] = await Promise.all([
     prisma.referral.count({
       where: { ambassadorId: ambassador.id, roleAtSignup: "VENDOR" },
@@ -67,6 +72,7 @@ export default async function AmbassadorPage() {
       where: { ambassadorId: ambassador.id, status: "PENDING" },
       orderBy: { createdAt: "desc" },
     }),
+    getAmbassadorDashboardBanner(),
   ]);
 
   const sanitizedAmbassador = {
@@ -82,6 +88,7 @@ export default async function AmbassadorPage() {
     bankVerified: ambassador.bankVerified,
     campus: ambassador.campus,
     payoutRequestsLocked,
+    bannerConfig,
     activePayoutRequest: activePayoutRequest
       ? {
           id: activePayoutRequest.id,

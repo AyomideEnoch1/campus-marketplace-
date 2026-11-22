@@ -77,12 +77,14 @@ export async function GET() {
 
     const rewardConfig = await getReferralRewardConfig();
     const payoutRequestsLocked = await getAmbassadorPayoutLockStatus();
+    const bannerConfig = await getAmbassadorDashboardBanner();
 
     return NextResponse.json({
       ambassadors: formatted,
       campuses,
       rewardConfig,
       payoutRequestsLocked,
+      bannerConfig,
     });
   } catch (err: any) {
     console.error("GET /api/admin/ambassadors error:", err);
@@ -177,14 +179,47 @@ export async function POST(request: Request) {
   }
 }
 
-// Regulate Ambassador Referral Reward Rates & Payout Requests Lock
+// Regulate Ambassador Referral Reward Rates, Payout Lock & Announcement Banner
 export async function PATCH(request: Request) {
   try {
     const admin = await requireAdmin();
     const body = await request.json();
-    const { vendorBonus, buyerBonus, qualifiedVendorBonus, payoutRequestsLocked } = body;
+    const { vendorBonus, buyerBonus, qualifiedVendorBonus, payoutRequestsLocked, banner } = body;
 
     const updates = [];
+
+    // Super Admin privilege check for ambassador dashboard announcement banner
+    if (banner !== undefined) {
+      if (admin.role !== "SUPERADMIN") {
+        return NextResponse.json(
+          { error: "Forbidden: Only Super Administrators have authority to manage the ambassador announcement banner." },
+          { status: 403 }
+        );
+      }
+
+      const bannerData = {
+        enabled: Boolean(banner.enabled),
+        title: typeof banner.title === "string" ? banner.title.trim() : "",
+        message: typeof banner.message === "string" ? banner.message.trim() : "",
+        type: ["info", "warning", "success", "announcement"].includes(banner.type)
+          ? banner.type
+          : "info",
+        updatedAt: new Date().toISOString(),
+        updatedBy: admin.fullName || admin.email,
+      };
+
+      updates.push(
+        prisma.siteSetting.upsert({
+          where: { key: "ambassador_dashboard_banner" },
+          update: { value: JSON.stringify(bannerData) },
+          create: {
+            key: "ambassador_dashboard_banner",
+            value: JSON.stringify(bannerData),
+            description: "Announcement banner displayed on the ambassador dashboard",
+          },
+        })
+      );
+    }
 
     // Super Admin privilege check for locking/unlocking ambassador earning requests
     if (payoutRequestsLocked !== undefined) {
@@ -275,16 +310,24 @@ export async function PATCH(request: Request) {
     if (updates.length > 0) {
       await prisma.$transaction(updates);
 
+      let action = "AMBASSADOR_REWARD_RATES_UPDATED";
+      if (banner !== undefined) {
+        action = "AMBASSADOR_BANNER_UPDATED";
+      } else if (payoutRequestsLocked !== undefined) {
+        action = "AMBASSADOR_PAYOUT_LOCK_TOGGLED";
+      }
+
       await prisma.activityLog.create({
         data: {
           userId: admin.id,
-          action: payoutRequestsLocked !== undefined ? "AMBASSADOR_PAYOUT_LOCK_TOGGLED" : "AMBASSADOR_REWARD_RATES_UPDATED",
+          action,
           entityType: "AmbassadorProfile",
           metadataJson: JSON.stringify({
             vendorBonus,
             buyerBonus,
             qualifiedVendorBonus,
             payoutRequestsLocked,
+            banner,
             updatedBy: admin.email,
             updatedByRole: admin.role,
           }),
@@ -294,14 +337,23 @@ export async function PATCH(request: Request) {
 
     const newConfig = await getReferralRewardConfig();
     const currentLockStatus = await getAmbassadorPayoutLockStatus();
+    const currentBannerConfig = await getAmbassadorDashboardBanner();
+
+    let successMessage = "Ambassador referral settings updated successfully";
+    if (banner !== undefined) {
+      successMessage = banner.enabled
+        ? "Ambassador announcement banner updated and activated"
+        : "Ambassador announcement banner updated (currently disabled)";
+    } else if (payoutRequestsLocked !== undefined) {
+      successMessage = `Ambassador earning requests are now ${currentLockStatus ? "locked" : "unlocked"}`;
+    }
 
     return NextResponse.json({
       success: true,
-      message: payoutRequestsLocked !== undefined
-        ? `Ambassador earning requests are now ${currentLockStatus ? "locked" : "unlocked"}`
-        : "Ambassador referral reward rates updated successfully",
+      message: successMessage,
       rewardConfig: newConfig,
       payoutRequestsLocked: currentLockStatus,
+      bannerConfig: currentBannerConfig,
     });
   } catch (err: any) {
     console.error("PATCH /api/admin/ambassadors error:", err);

@@ -24,10 +24,15 @@ import {
   Loader2,
   ShieldAlert,
   ShieldCheck,
+  Megaphone,
+  Pencil,
+  Info,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import type { AmbassadorBannerConfig } from "@/lib/referral";
 
 interface AmbassadorItem {
   id: string;
@@ -70,12 +75,14 @@ export function AdminAmbassadorTable({
   campuses,
   initialRewardConfig,
   initialPayoutRequestsLocked,
+  initialBannerConfig,
   currentAdminRole,
 }: {
   initialAmbassadors: AmbassadorItem[];
   campuses: CampusItem[];
   initialRewardConfig?: ReferralRewardRates;
   initialPayoutRequestsLocked?: boolean;
+  initialBannerConfig?: AmbassadorBannerConfig;
   currentAdminRole?: string;
 }) {
   const [ambassadors, setAmbassadors] = React.useState<AmbassadorItem[]>(initialAmbassadors);
@@ -90,6 +97,90 @@ export function AdminAmbassadorTable({
   );
   const [togglingLock, setTogglingLock] = React.useState(false);
   const isSuperAdmin = currentAdminRole === "SUPERADMIN";
+
+  // Ambassador Hub Announcement Banner State (Superadmin Managed)
+  const [bannerConfig, setBannerConfig] = React.useState<AmbassadorBannerConfig>(
+    initialBannerConfig || {
+      enabled: false,
+      message: "",
+      title: "",
+      type: "info",
+    }
+  );
+  const [bannerEnabled, setBannerEnabled] = React.useState<boolean>(
+    Boolean(initialBannerConfig?.enabled)
+  );
+  const [bannerTitle, setBannerTitle] = React.useState<string>(
+    initialBannerConfig?.title || ""
+  );
+  const [bannerMessage, setBannerMessage] = React.useState<string>(
+    initialBannerConfig?.message || ""
+  );
+  const [bannerType, setBannerType] = React.useState<"info" | "warning" | "success" | "announcement">(
+    initialBannerConfig?.type || "info"
+  );
+  const [isEditingBanner, setIsEditingBanner] = React.useState(false);
+  const [savingBanner, setSavingBanner] = React.useState(false);
+
+  async function handleSaveBanner(e?: React.FormEvent, customEnabled?: boolean) {
+    if (e) e.preventDefault();
+    if (!isSuperAdmin) {
+      toast.error("Forbidden: Only Super Administrators can update the ambassador banner.");
+      return;
+    }
+
+    const targetEnabled = customEnabled !== undefined ? customEnabled : bannerEnabled;
+
+    if (targetEnabled && !bannerMessage.trim()) {
+      toast.error("Please enter a message before activating the announcement banner.");
+      return;
+    }
+
+    try {
+      setSavingBanner(true);
+      const res = await fetch("/api/admin/ambassadors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          banner: {
+            enabled: targetEnabled,
+            title: bannerTitle.trim(),
+            message: bannerMessage.trim(),
+            type: bannerType,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update banner");
+
+      setBannerConfig(data.bannerConfig);
+      setBannerEnabled(data.bannerConfig.enabled);
+      setBannerTitle(data.bannerConfig.title || "");
+      setBannerMessage(data.bannerConfig.message || "");
+      setBannerType(data.bannerConfig.type || "info");
+      toast.success(data.message || "Announcement banner updated successfully");
+      setIsEditingBanner(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update announcement banner");
+    } finally {
+      setSavingBanner(false);
+    }
+  }
+
+  async function handleToggleBannerActive() {
+    if (!isSuperAdmin) {
+      toast.error("Forbidden: Only Super Administrators can update the ambassador banner.");
+      return;
+    }
+    const nextState = !bannerEnabled;
+    if (nextState && !bannerMessage.trim()) {
+      toast.error("Please write a message into the banner before activating it.");
+      setIsEditingBanner(true);
+      return;
+    }
+    await handleSaveBanner(undefined, nextState);
+  }
 
   async function handleTogglePayoutLock() {
     if (!isSuperAdmin) {
@@ -524,6 +615,207 @@ export function AdminAmbassadorTable({
                   {savingRates ? "Saving Rates..." : "Save Reward Rates"}
                 </Button>
               </div>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* Super Admin Ambassador Hub Announcement Banner */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+                bannerConfig.enabled
+                  ? "bg-purple-950/80 border-purple-800/80 text-purple-400"
+                  : "bg-neutral-950 border-neutral-800 text-neutral-400"
+              }`}
+            >
+              <Megaphone className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm sm:text-base font-bold text-white">
+                  Ambassador Hub Announcement Banner
+                </h2>
+                <span
+                  className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border ${
+                    bannerConfig.enabled
+                      ? "bg-purple-950/80 text-purple-300 border-purple-800"
+                      : "bg-neutral-950 text-neutral-400 border-neutral-800"
+                  }`}
+                >
+                  {bannerConfig.enabled ? "Active on Hub" : "Disabled / Inactive"}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                Broadcast critical updates, payment schedules, or guidelines directly on ambassadors&apos; dashboards.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {isSuperAdmin ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditingBanner((prev) => !prev)}
+                  className="text-xs border-neutral-700 bg-neutral-800 text-neutral-200 hover:bg-neutral-700 gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-purple-400" />
+                  {isEditingBanner ? "Close Editor" : "Write Banner"}
+                </Button>
+
+                <Button
+                  type="button"
+                  disabled={savingBanner}
+                  onClick={handleToggleBannerActive}
+                  className={`text-xs font-bold gap-1.5 px-3.5 h-9 rounded-xl transition-colors ${
+                    bannerConfig.enabled
+                      ? "bg-neutral-800 hover:bg-neutral-700 text-neutral-300 border border-neutral-700"
+                      : "bg-purple-600 hover:bg-purple-700 text-white"
+                  }`}
+                >
+                  {savingBanner ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : bannerConfig.enabled ? (
+                    <span>Disable Banner</span>
+                  ) : (
+                    <span>Activate Banner</span>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <div
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-neutral-500 text-xs cursor-not-allowed"
+                title="Super Administrator privilege required"
+              >
+                <ShieldAlert className="w-3.5 h-3.5 text-neutral-600" />
+                <span>Superadmin Control Only</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Current Active Banner Preview */}
+        {bannerConfig.message ? (
+          <div
+            className={`p-3.5 rounded-xl border flex items-start gap-3 ${
+              bannerConfig.type === "warning"
+                ? "bg-amber-950/40 border-amber-800/80 text-amber-200"
+                : bannerConfig.type === "success"
+                ? "bg-emerald-950/40 border-emerald-800/80 text-emerald-200"
+                : bannerConfig.type === "announcement"
+                ? "bg-purple-950/40 border-purple-800/80 text-purple-200"
+                : "bg-blue-950/40 border-blue-800/80 text-blue-200"
+            }`}
+          >
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider block">
+                  {bannerConfig.title || "Ambassador Notice"} • Tone: {bannerConfig.type || "info"}
+                </span>
+                {bannerConfig.updatedAt && (
+                  <span className="text-[10px] text-neutral-400">
+                    Updated {new Date(bannerConfig.updatedAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm mt-0.5 leading-relaxed">{bannerConfig.message}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-neutral-950/60 border border-neutral-800/80 rounded-xl p-3 text-xs text-neutral-500 flex items-center gap-2">
+            <Info className="w-4 h-4 text-neutral-600 shrink-0" />
+            <span>
+              No announcement banner message has been written yet. Click &quot;Write Banner&quot; to publish important information to ambassadors.
+            </span>
+          </div>
+        )}
+
+        {/* Interactive Banner Editor Form (Superadmin only) */}
+        {isEditingBanner && isSuperAdmin && (
+          <form
+            onSubmit={(e) => handleSaveBanner(e)}
+            className="pt-4 border-t border-neutral-800 space-y-4 animate-in fade-in duration-200"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
+                  Banner Title (Optional Headline)
+                </label>
+                <Input
+                  type="text"
+                  value={bannerTitle}
+                  onChange={(e) => setBannerTitle(e.target.value)}
+                  className="h-10 bg-neutral-950 border-neutral-700 text-xs text-white rounded-xl focus:border-purple-500"
+                  placeholder="e.g. End of Month Payout Notice / Campus Leaderboard Update"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
+                  Banner Style / Tone
+                </label>
+                <select
+                  value={bannerType}
+                  onChange={(e) => setBannerType(e.target.value as any)}
+                  className="w-full h-10 px-3 bg-neutral-950 border border-neutral-700 text-xs text-white rounded-xl focus:border-purple-500 focus:outline-none"
+                >
+                  <option value="announcement">Announcement (Purple / Highlight)</option>
+                  <option value="info">Information (Blue / Notice)</option>
+                  <option value="warning">Important / Warning (Amber)</option>
+                  <option value="success">Success / Milestone (Emerald)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
+                Banner Message Content *
+              </label>
+              <textarea
+                value={bannerMessage}
+                onChange={(e) => setBannerMessage(e.target.value)}
+                rows={3}
+                required
+                className="w-full p-3 bg-neutral-950 border border-neutral-700 text-xs text-white rounded-xl focus:border-purple-500 focus:outline-none placeholder:text-neutral-600"
+                placeholder="Write the announcement or instructions ambassadors should see on their dashboard..."
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="bannerEnabledCheckbox"
+                checked={bannerEnabled}
+                onChange={(e) => setBannerEnabled(e.target.checked)}
+                className="w-4 h-4 rounded border-neutral-700 text-purple-600 focus:ring-purple-500 bg-neutral-950"
+              />
+              <label htmlFor="bannerEnabledCheckbox" className="text-xs text-neutral-300 cursor-pointer">
+                Make banner visible on Ambassador Dashboard immediately upon saving
+              </label>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsEditingBanner(false)}
+                className="text-xs text-neutral-400 hover:text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={savingBanner}
+                className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs gap-1.5"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {savingBanner ? "Saving Banner..." : "Save Banner Content"}
+              </Button>
             </div>
           </form>
         )}

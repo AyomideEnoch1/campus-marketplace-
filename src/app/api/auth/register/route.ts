@@ -381,19 +381,14 @@ export async function POST(request: Request) {
     const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
     const origin = `${proto}://${host}`;
 
-    const verifyParams = new URLSearchParams({ email: newUser.email });
-
     if (newUser.email && !newUser.email.endsWith("@guest.campustrade.ng")) {
       try {
-        const regResult = await createAndSendVerificationEmail({
+        await createAndSendVerificationEmail({
           userId: newUser.id,
           email: newUser.email,
           fullName: newUser.fullName,
           origin,
         });
-        if (regResult?.code) {
-          verifyParams.set("hint", regResult.code);
-        }
       } catch (emailErr) {
         console.error("Failed to dispatch email verification on registration:", emailErr);
       }
@@ -414,7 +409,7 @@ export async function POST(request: Request) {
         fullName: newUser.fullName,
         role: newUser.role,
       },
-      redirectTo: `/auth/verify-email?${verifyParams.toString()}`,
+      redirectTo: `/auth/verify-email?email=${encodeURIComponent(newUser.email)}`,
     });
 
     response.cookies.set(AUTH_COOKIE_NAME, token, {

@@ -26,7 +26,6 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const emailParam = searchParams.get("email");
-  const hintParam = searchParams.get("hint") || searchParams.get("code");
   const statusParam = searchParams.get("status");
 
   const [loading, setLoading] = React.useState(Boolean(token && !statusParam));
@@ -36,19 +35,12 @@ function VerifyEmailContent() {
   const [resendNotice, setResendNotice] = React.useState("");
 
   const [email, setEmail] = React.useState(emailParam || "");
-  const [code, setCode] = React.useState(hintParam || "");
+  const [code, setCode] = React.useState("");
   const [status, setStatus] = React.useState<"success" | "expired" | "invalid" | null>(
     (statusParam as any) || (token ? null : null)
   );
   const [errorMessage, setErrorMessage] = React.useState("");
   const [destinationUrl, setDestinationUrl] = React.useState("/shop");
-
-  // Pre-fill code if hintParam provided
-  React.useEffect(() => {
-    if (hintParam && !code) {
-      setCode(hintParam);
-    }
-  }, [hintParam]);
 
   // Cooldown timer effect
   React.useEffect(() => {
@@ -160,12 +152,7 @@ function VerifyEmailContent() {
         return;
       }
 
-      if (data.hint) {
-        setCode(data.hint);
-        setResendNotice(`A new 6-digit verification code has been dispatched! (Code: ${data.hint})`);
-      } else {
-        setResendNotice("A new 6-digit verification code has been dispatched to your email!");
-      }
+      setResendNotice("A new 6-digit verification code has been dispatched to your email address!");
       setResendCooldown(60); // 60 seconds cooldown
     } catch (err: any) {
       setErrorMessage(err.message || "Could not resend email. Please try again.");
@@ -240,23 +227,6 @@ function VerifyEmailContent() {
               </p>
             </div>
           </div>
-
-          {/* Test Hint Banner */}
-          {hintParam && (
-            <div className="p-3 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-xs text-emerald-950 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Verification code: <strong className="font-mono text-sm tracking-wider text-emerald-800">{hintParam}</strong></span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCode(hintParam)}
-                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition-colors cursor-pointer"
-              >
-                Auto-fill
-              </button>
-            </div>
-          )}
 
           {/* Error Message Alert */}
           {errorMessage && (

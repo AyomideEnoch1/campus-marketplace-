@@ -3,37 +3,43 @@ export const revalidate = 0;
 
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { getReferralRewardConfig, getAmbassadorPayoutLockStatus } from "@/lib/referral";
+import {
+  getReferralRewardConfig,
+  getAmbassadorPayoutLockStatus,
+  getAmbassadorDashboardBanner,
+} from "@/lib/referral";
 import { AdminAmbassadorTable } from "./AdminAmbassadorTable";
 
 export default async function AdminAmbassadorsPage() {
-  const [session, ambassadors, campuses, rewardConfig, payoutRequestsLocked] = await Promise.all([
-    getSession(),
-    prisma.ambassadorProfile.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { id: true, fullName: true, email: true, phone: true } },
-        campus: { select: { id: true, name: true, city: true } },
-        _count: { select: { referrals: true, payouts: true } },
-        referrals: {
-          select: {
-            id: true,
-            roleAtSignup: true,
-            isQualified: true,
-            rewardAmount: true,
-            rewardStatus: true,
+  const [session, ambassadors, campuses, rewardConfig, payoutRequestsLocked, bannerConfig] =
+    await Promise.all([
+      getSession(),
+      prisma.ambassadorProfile.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, fullName: true, email: true, phone: true } },
+          campus: { select: { id: true, name: true, city: true } },
+          _count: { select: { referrals: true, payouts: true } },
+          referrals: {
+            select: {
+              id: true,
+              roleAtSignup: true,
+              isQualified: true,
+              rewardAmount: true,
+              rewardStatus: true,
+            },
           },
         },
-      },
-    }),
-    prisma.campus.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    getReferralRewardConfig(),
-    getAmbassadorPayoutLockStatus(),
-  ]);
+      }),
+      prisma.campus.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      getReferralRewardConfig(),
+      getAmbassadorPayoutLockStatus(),
+      getAmbassadorDashboardBanner(),
+    ]);
 
   const formatted = ambassadors.map((a) => {
     const vendorCount = a.referrals.filter((r) => r.roleAtSignup === "VENDOR").length;
@@ -84,6 +90,7 @@ export default async function AdminAmbassadorsPage() {
         campuses={campuses}
         initialRewardConfig={rewardConfig}
         initialPayoutRequestsLocked={payoutRequestsLocked}
+        initialBannerConfig={bannerConfig}
         currentAdminRole={session?.role}
       />
     </div>

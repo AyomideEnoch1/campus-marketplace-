@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { getAmbassadorPayoutLockStatus } from "@/lib/referral";
+import { getAmbassadorPayoutLockStatus, getAmbassadorDashboardBanner } from "@/lib/referral";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +30,15 @@ export async function GET() {
       return NextResponse.json({ ambassador: null });
     }
 
-    // Get breakdown stats, lock status, and active pending payout requests
-    const [totalVendors, qualifiedVendors, totalBuyers, payoutRequestsLocked, activePayoutRequest] = await Promise.all([
+    // Get breakdown stats, lock status, active pending payout requests, and announcement banner
+    const [
+      totalVendors,
+      qualifiedVendors,
+      totalBuyers,
+      payoutRequestsLocked,
+      activePayoutRequest,
+      bannerConfig,
+    ] = await Promise.all([
       prisma.referral.count({
         where: { ambassadorId: ambassador.id, roleAtSignup: "VENDOR" },
       }),
@@ -46,12 +53,14 @@ export async function GET() {
         where: { ambassadorId: ambassador.id, status: "PENDING" },
         orderBy: { createdAt: "desc" },
       }),
+      getAmbassadorDashboardBanner(),
     ]);
 
     return NextResponse.json({
       ambassador: {
         ...ambassador,
         payoutRequestsLocked,
+        bannerConfig,
         activePayoutRequest: activePayoutRequest
           ? {
               id: activePayoutRequest.id,

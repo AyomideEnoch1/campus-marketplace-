@@ -27,10 +27,14 @@ import {
   Unlock,
   Send,
   Loader2,
+  Megaphone,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { AmbassadorBannerConfig } from "@/lib/referral";
 
 interface AmbassadorData {
   id: string;
@@ -44,6 +48,7 @@ interface AmbassadorData {
   bankName?: string | null;
   bankVerified?: boolean;
   payoutRequestsLocked?: boolean;
+  bannerConfig?: AmbassadorBannerConfig;
   activePayoutRequest?: {
     id: string;
     amount: number;
@@ -491,6 +496,72 @@ export function AmbassadorDashboardClient({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
+        {/* Super Admin Announcement Banner */}
+        {ambassador.bannerConfig?.enabled && ambassador.bannerConfig?.message && (
+          <div
+            className={`p-4 sm:p-5 rounded-2xl border shadow-xs relative overflow-hidden transition-all animate-in fade-in slide-in-from-top-2 duration-300 ${
+              ambassador.bannerConfig.type === "warning"
+                ? "bg-amber-50 border-amber-200 text-amber-950"
+                : ambassador.bannerConfig.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-950"
+                : ambassador.bannerConfig.type === "announcement"
+                ? "bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 border-purple-200 text-purple-950"
+                : "bg-blue-50 border-blue-200 text-blue-950"
+            }`}
+          >
+            <div className="flex items-start gap-3.5 sm:gap-4">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                  ambassador.bannerConfig.type === "warning"
+                    ? "bg-amber-100 text-amber-700 border border-amber-300"
+                    : ambassador.bannerConfig.type === "success"
+                    ? "bg-emerald-100 text-emerald-700 border border-emerald-300"
+                    : ambassador.bannerConfig.type === "announcement"
+                    ? "bg-purple-100 text-purple-700 border border-purple-300"
+                    : "bg-blue-100 text-blue-700 border border-blue-300"
+                }`}
+              >
+                {ambassador.bannerConfig.type === "warning" ? (
+                  <AlertTriangle className="w-5 h-5" />
+                ) : ambassador.bannerConfig.type === "success" ? (
+                  <CheckCircle2 className="w-5 h-5" />
+                ) : ambassador.bannerConfig.type === "announcement" ? (
+                  <Megaphone className="w-5 h-5" />
+                ) : (
+                  <Info className="w-5 h-5" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span
+                    className={`text-xs sm:text-sm font-extrabold uppercase tracking-wider ${
+                      ambassador.bannerConfig.type === "warning"
+                        ? "text-amber-800"
+                        : ambassador.bannerConfig.type === "success"
+                        ? "text-emerald-800"
+                        : ambassador.bannerConfig.type === "announcement"
+                        ? "text-purple-800"
+                        : "text-blue-800"
+                    }`}
+                  >
+                    {ambassador.bannerConfig.title || "Campus Leadership Announcement"}
+                  </span>
+                  {ambassador.bannerConfig.updatedAt && (
+                    <span className="text-[11px] text-neutral-500 font-medium">
+                      Posted {new Date(ambassador.bannerConfig.updatedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-1 text-sm sm:text-base leading-relaxed text-neutral-800 font-medium whitespace-pre-line">
+                  {ambassador.bannerConfig.message}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* KPI Stat Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-sm">
