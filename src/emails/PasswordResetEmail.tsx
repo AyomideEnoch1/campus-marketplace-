@@ -19,8 +19,13 @@ export interface PasswordResetEmailProps {
 
 export function PasswordResetEmail({
   userName = "Student",
-  resetUrl = "https://ọjà.com/auth/reset-password",
+  resetUrl = "https://xn--j-sfa590u.com/auth/reset-password",
 }: PasswordResetEmailProps) {
+  // Ensure the link always uses ASCII Punycode so email clients cannot strip diacritics to foreign domains like oja.com
+  const safeResetUrl =
+    resetUrl.includes("localhost") || resetUrl.includes("127.0.0.1")
+      ? resetUrl
+      : resetUrl.replace(/https?:\/\/[^\/]+/, "https://xn--j-sfa590u.com");
   return (
     <Html>
       <Head />
@@ -45,7 +50,7 @@ export function PasswordResetEmail({
 
             {/* Button */}
             <Section style={buttonContainer}>
-              <Link href={resetUrl} style={button}>
+              <Link href={safeResetUrl} style={button}>
                 Reset Password
               </Link>
             </Section>
@@ -59,8 +64,8 @@ export function PasswordResetEmail({
             <Text style={footerNote}>
               If the button doesn&apos;t work, copy and paste this link into your browser:
               <br />
-              <Link href={resetUrl} style={link}>
-                {resetUrl}
+              <Link href={safeResetUrl} style={link}>
+                {safeResetUrl}
               </Link>
             </Text>
           </Section>
@@ -68,7 +73,7 @@ export function PasswordResetEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              &copy; {new Date().getFullYear()} ọjà Marketplace. Built for Nigerian campus students.
+              &copy; {new Date().getFullYear()} ọjà Marketplace (ọjà.com). Built for Nigerian campus students.
             </Text>
           </Section>
         </Container>

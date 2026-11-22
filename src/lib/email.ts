@@ -3,6 +3,9 @@ import { OrderConfirmationEmail, OrderConfirmationEmailProps } from "@/emails/Or
 import { VendorNotificationEmail, VendorNotificationEmailProps } from "@/emails/VendorNotificationEmail";
 import { VendorStatusEmail, VendorStatusEmailProps } from "@/emails/VendorStatusEmail";
 import { PasswordResetEmail, PasswordResetEmailProps } from "@/emails/PasswordResetEmail";
+import { EmailVerificationEmail, EmailVerificationEmailProps } from "@/emails/EmailVerificationEmail";
+import { WelcomeEmail, WelcomeEmailProps } from "@/emails/WelcomeEmail";
+import { VerifyEmail, VerifyEmailProps } from "@/emails/VerifyEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
 // Default to Resend's sandbox domain 'onboarding@resend.dev' until a custom verified domain is supplied
@@ -121,6 +124,87 @@ export async function sendPasswordResetEmail(
     return { success: true, data };
   } catch (error: any) {
     console.error("Failed to send password reset email:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send email address verification email
+ */
+export async function sendEmailVerificationEmail(
+  to: string,
+  props: EmailVerificationEmailProps
+) {
+  if (!resend) {
+    console.log(`[Email Simulated] Email verification link for ${to}: ${props.verifyUrl}`);
+    return { success: true, simulated: true };
+  }
+
+  try {
+    const data = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject: `Verify your email address — ọjà`,
+      react: EmailVerificationEmail(props),
+    });
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("Failed to send email verification email:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send 6-digit verification code & link email
+ */
+export async function sendVerifyEmail(
+  to: string,
+  props: VerifyEmailProps
+) {
+  if (!resend) {
+    console.log(`[Email Simulated] Verification email for ${to}: code=${props.verificationCode}, link=${props.verifyUrl}`);
+    return { success: true, simulated: true };
+  }
+
+  try {
+    const data = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject: `Verify your email address — ọjà`,
+      react: VerifyEmail(props),
+    });
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("Failed to send verification email:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send welcome email upon initial sign-in / registration
+ */
+export async function sendWelcomeEmail(
+  to: string,
+  props: WelcomeEmailProps
+) {
+  if (!resend) {
+    console.log(`[Email Simulated] Welcome email for ${to} (${props.userRole || "BUYER"})`);
+    return { success: true, simulated: true };
+  }
+
+  try {
+    const data = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject: `Welcome to ọjà, ${props.userName || "Campus Member"}! 🎓🛍️`,
+      react: WelcomeEmail(props),
+    });
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("Failed to send welcome email:", error);
     return { success: false, error: error.message };
   }
 }

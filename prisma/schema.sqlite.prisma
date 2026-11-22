@@ -11,7 +11,7 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   passwordHash  String?
-  role          String    @default("BUYER") // ADMIN | VENDOR | BUYER
+  role          String    @default("BUYER") // SUPERADMIN | ADMIN | VENDOR | BUYER | AMBASSADOR
   fullName      String
   phone         String?
   avatarUrl     String?

@@ -35,8 +35,8 @@ export default function AdminLoginPage() {
         throw new Error(data.error || "Authentication failed");
       }
 
-      if (data.user?.role !== "ADMIN") {
-        throw new Error("Access Denied: This account does not possess Super Administrator privileges.");
+      if (data.user?.role !== "ADMIN" && data.user?.role !== "SUPERADMIN") {
+        throw new Error("Access Denied: This account does not possess Administrator privileges.");
       }
 
       router.push("/admin");

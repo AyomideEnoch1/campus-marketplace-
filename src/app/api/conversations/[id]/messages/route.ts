@@ -41,7 +41,7 @@ export async function GET(
     const isParticipant =
       conversation.buyerId === session.id || conversation.vendor.userId === session.id;
 
-    if (!isParticipant && session.role !== "ADMIN") {
+    if (!isParticipant && session.role !== "ADMIN" && session.role !== "SUPERADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -110,7 +110,7 @@ export async function POST(
     const isParticipant =
       conversation.buyerId === session.id || conversation.vendor.userId === session.id;
 
-    if (!isParticipant && session.role !== "ADMIN") {
+    if (!isParticipant && session.role !== "ADMIN" && session.role !== "SUPERADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -40,7 +40,7 @@ export function OrderConfirmationEmail({
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              Campus<span style={{ color: "#10b981" }}>Trade</span>
+              ọ<span style={{ color: "#10b981" }}>jà</span>
             </Text>
             <Text style={headerSub}>Campus Student Marketplace &bull; Escrow Protected</Text>
           </Section>
@@ -103,7 +103,7 @@ export function OrderConfirmationEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              Need help? Reach out to ọjà Support at support@campustrade.ng.
+              Need help? Reach out to ọjà Support at support@ọjà.com.
             </Text>
             <Text style={footerText}>
               &copy; {new Date().getFullYear()} ọjà Nigeria. All rights reserved.

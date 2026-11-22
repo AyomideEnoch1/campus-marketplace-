@@ -43,6 +43,22 @@ export function verifyPasswordResetToken(token: string): { userId: string; email
   }
 }
 
+export function signEmailVerificationToken(payload: { userId: string; email: string; code?: string }): string {
+  return jwt.sign({ ...payload, purpose: "email_verification" }, JWT_SECRET, { expiresIn: "24h" });
+}
+
+export function verifyEmailVerificationToken(token: string): { userId: string; email: string; code?: string } | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    if (decoded?.purpose !== "email_verification" || !decoded?.userId || !decoded?.email) {
+      return null;
+    }
+    return { userId: decoded.userId, email: decoded.email, code: decoded.code };
+  } catch {
+    return null;
+  }
+}
+
 export async function getSession(): Promise<SessionUser | null> {
   try {
     const cookieStore = cookies();
@@ -151,7 +167,15 @@ export async function requireAuth(): Promise<SessionUser> {
 
 export async function requireAdmin(): Promise<SessionUser> {
   const user = await requireAuth();
-  if (user.role !== "ADMIN") {
+  if (user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
+    throw new Error("Forbidden: Administrator access required");
+  }
+  return user;
+}
+
+export async function requireSuperAdmin(): Promise<SessionUser> {
+  const user = await requireAuth();
+  if (user.role !== "SUPERADMIN") {
     throw new Error("Forbidden: Super Administrator access required");
   }
   return user;
@@ -159,7 +183,7 @@ export async function requireAdmin(): Promise<SessionUser> {
 
 export async function requireVendor(): Promise<SessionUser> {
   const user = await requireAuth();
-  if (user.role !== "VENDOR" && user.role !== "ADMIN") {
+  if (user.role !== "VENDOR" && user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
     throw new Error("Forbidden: Vendor access required");
   }
   return user;

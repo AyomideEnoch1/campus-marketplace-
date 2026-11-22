@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     // Verify buyer ownership
     const isBuyer = order.buyerId === session.id || order.buyerEmail === session.email;
-    const isAdmin = (session as any).role === "ADMIN";
+    const isAdmin = (session as any).role === "ADMIN" || (session as any).role === "SUPERADMIN";
 
     if (!isBuyer && !isAdmin) {
       return NextResponse.json({ error: "Only the buyer can open a dispute" }, { status: 403 });

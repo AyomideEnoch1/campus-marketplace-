@@ -185,7 +185,7 @@ export async function GET(request: Request) {
       // Existing user: Route according to their established role
       if (statePayload.redirect && statePayload.redirect !== "/shop") {
         destination = sanitizeRedirectUrl(statePayload.redirect);
-      } else if (targetUser.role === "ADMIN") {
+      } else if (targetUser.role === "ADMIN" || targetUser.role === "SUPERADMIN") {
         destination = "/admin";
       } else if (targetUser.role === "VENDOR" || targetUser.vendorProfile) {
         destination = "/dashboard";

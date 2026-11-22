@@ -81,6 +81,10 @@ function LoginForm() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.requiresVerification && data.redirectTo) {
+          window.location.href = data.redirectTo;
+          return;
+        }
         throw new Error(data.error || "Login failed");
       }
 

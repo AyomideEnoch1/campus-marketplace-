@@ -39,11 +39,10 @@ export async function POST(request: Request) {
         email: user.email,
       });
 
-      // Determine application root URL
-      const host = request.headers.get("host") || "";
-      const protocol = request.headers.get("x-forwarded-proto") || "https";
-      const defaultUrl = host ? `${protocol}://${host}` : "https://ọjà.com";
-      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || defaultUrl).replace(/\/$/, "");
+      // Determine canonical root URL (using Punycode for production to prevent email clients from stripping Unicode characters to foreign domains like oja.com)
+      const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+      const appUrl = isLocal ? `http://${host}` : "https://xn--j-sfa590u.com";
 
       const resetUrl = `${appUrl}/auth/reset-password?token=${encodeURIComponent(token)}`;
 

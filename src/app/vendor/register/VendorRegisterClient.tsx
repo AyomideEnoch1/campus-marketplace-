@@ -290,7 +290,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         sessionStorage.removeItem("ct_vendor_form_draft");
       } catch {}
 
-      window.location.href = "/dashboard";
+      window.location.href = data.redirectTo || "/dashboard";
     } catch (err: any) {
       console.error("Vendor register error:", err);
       const msg = err.message || "";

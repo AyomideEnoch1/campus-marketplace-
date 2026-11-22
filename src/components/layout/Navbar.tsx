@@ -283,7 +283,7 @@ export function Navbar({ initialUser }: NavbarProps) {
                     </Badge>
                   </div>
 
-                  {user.role === "ADMIN" && (
+                  {(user.role === "ADMIN" || user.role === "SUPERADMIN") && (
                     <Link
                       href="/admin"
                       onClick={() => setUserDropdownOpen(false)}

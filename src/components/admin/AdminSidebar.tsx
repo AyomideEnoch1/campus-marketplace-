@@ -207,7 +207,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
                     {session.fullName}
                   </p>
                   <p className="text-[10px] text-emerald-400 font-semibold">
-                    Super Administrator
+                    {session.role === "SUPERADMIN" ? "Super Administrator" : "Administrator"}
                   </p>
                 </div>
               </div>
@@ -392,7 +392,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
                 </div>
                 <div className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 hidden group-hover:flex items-center">
                   <div className="bg-neutral-800 border border-neutral-700 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap">
-                    {session.fullName} (Super Administrator)
+                    {session.fullName} ({session.role === "SUPERADMIN" ? "Super Administrator" : "Administrator"})
                   </div>
                 </div>
               </div>
@@ -442,7 +442,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
                     {session.fullName}
                   </p>
                   <p className="text-[10px] text-emerald-400 font-semibold">
-                    Super Administrator
+                    {session.role === "SUPERADMIN" ? "Super Administrator" : "Administrator"}
                   </p>
                 </div>
               </div>

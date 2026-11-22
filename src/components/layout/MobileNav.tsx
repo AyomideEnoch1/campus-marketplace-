@@ -31,7 +31,7 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
   const user = authData?.user ?? initialUser;
 
   const isVendor = user?.role === "VENDOR";
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPERADMIN";
 
   // Build items symmetrically with exactly 5 items so "Shop" is ALWAYS in the center slot (index 2)
   const items = React.useMemo(() => {

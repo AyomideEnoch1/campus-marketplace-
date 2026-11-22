@@ -4,12 +4,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { createAndSendVerificationEmail, sendWelcomeOnSignIn } from "@/lib/email-service";
 
 const loginSchema = z.object({
   identifier: z.string().min(2, "Please enter your email or phone number").optional(),
   email: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["buyer", "vendor", "BUYER", "VENDOR", "ADMIN", "admin"]).optional(),
+  role: z.enum(["buyer", "vendor", "BUYER", "VENDOR", "ADMIN", "admin", "SUPERADMIN", "superadmin"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -77,6 +78,42 @@ export async function POST(request: Request) {
       );
     }
 
+    const requestUrl = new URL(request.url);
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
+    const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
+    const origin = `${proto}://${host}`;
+
+    // Email verification check: if user email is not verified, require verification
+    if (!user.emailVerified && user.role !== "ADMIN" && user.role !== "SUPERADMIN" && !user.email.endsWith("@guest.campustrade.ng")) {
+      createAndSendVerificationEmail({
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        origin,
+      }).catch((e) => console.error("Verification dispatch error on login:", e));
+
+      return NextResponse.json(
+        {
+          error: "Your email address is not verified yet. We have sent a 6-digit verification code to your email.",
+          requiresVerification: true,
+          email: user.email,
+          redirectTo: `/auth/verify-email?email=${encodeURIComponent(user.email)}`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // Dispatch Welcome Email upon sign-in (safely deduplicated per user)
+    if (user.email && !user.email.endsWith("@guest.campustrade.ng")) {
+      sendWelcomeOnSignIn({
+        userId: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        origin,
+      }).catch((e) => console.error("Welcome email dispatch error:", e));
+    }
+
     const token = signToken({
       userId: user.id,
       role: user.role,
@@ -85,7 +122,7 @@ export async function POST(request: Request) {
 
     // Automatically decipher destination according to the user's account role
     const isVendor = user.role === "VENDOR" || !!user.vendorProfile;
-    const isAdmin = user.role === "ADMIN";
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
 
     const defaultRedirect = isAdmin
       ? "/admin"

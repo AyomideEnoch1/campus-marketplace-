@@ -43,7 +43,7 @@ export default function RoleSelectPage() {
             Welcome to ọjà, {displayName}!
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-sm mx-auto leading-relaxed">
-            Your Google account has been verified. Choose how you would like to use CampusTrade:
+            Your Google account has been verified. Choose how you would like to use ọjà:
           </p>
         </div>
 

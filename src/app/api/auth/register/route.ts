@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
 import { attributeReferral } from "@/lib/referral";
+import { createAndSendVerificationEmail } from "@/lib/email-service";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -374,6 +375,25 @@ export async function POST(request: Request) {
       console.error("Referral attribution error:", refErr);
     }
 
+    // Dispatch email verification OTP and email
+    const requestUrl = new URL(request.url);
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
+    const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
+    const origin = `${proto}://${host}`;
+
+    if (newUser.email && !newUser.email.endsWith("@guest.campustrade.ng")) {
+      try {
+        await createAndSendVerificationEmail({
+          userId: newUser.id,
+          email: newUser.email,
+          fullName: newUser.fullName,
+          origin,
+        });
+      } catch (emailErr) {
+        console.error("Failed to dispatch email verification on registration:", emailErr);
+      }
+    }
+
     const token = signToken({
       userId: newUser.id,
       role: newUser.role,
@@ -382,16 +402,14 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       success: true,
+      requiresVerification: true,
       user: {
         id: newUser.id,
         email: newUser.email,
         fullName: newUser.fullName,
         role: newUser.role,
       },
-      redirectTo:
-        newUser.role === "VENDOR"
-          ? "/dashboard"
-          : "/shop",
+      redirectTo: `/auth/verify-email?email=${encodeURIComponent(newUser.email)}`,
     });
 
     response.cookies.set(AUTH_COOKIE_NAME, token, {

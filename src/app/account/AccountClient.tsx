@@ -194,7 +194,7 @@ export function AccountClient({ initialUser }: AccountClientProps) {
                     {initialUser.fullName}
                   </h1>
                   <Badge variant="secondary" className="text-[11px] font-bold uppercase tracking-wider">
-                    {initialUser.role === "VENDOR" ? "Campus Vendor" : initialUser.role === "ADMIN" ? "Admin" : "Student Buyer"}
+                    {initialUser.role === "VENDOR" ? "Campus Vendor" : initialUser.role === "SUPERADMIN" ? "Super Admin" : initialUser.role === "ADMIN" ? "Admin" : "Student Buyer"}
                   </Badge>
                 </div>
                 <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs sm:text-sm text-neutral-500">

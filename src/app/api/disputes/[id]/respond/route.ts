@@ -50,7 +50,7 @@ export async function POST(
 
     const isBuyer = dispute.buyerId === session.id;
     const isSeller = dispute.order.vendor.userId === session.id;
-    const isAdmin = (session as any).role === "ADMIN";
+    const isAdmin = (session as any).role === "ADMIN" || (session as any).role === "SUPERADMIN";
 
     if (!isBuyer && !isSeller && !isAdmin) {
       return NextResponse.json(

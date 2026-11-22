@@ -171,7 +171,7 @@ function CheckoutConfirmContent() {
               <p className="text-xs text-neutral-600 leading-relaxed pt-1">
                 {escrowMode === "escrow" ? (
                   <>
-                    Your payment has been received and is safely held in CampusTrade Escrow. The vendor will <strong>not</strong> receive payment until you meet, inspect the items, and verify with your 6-digit delivery code.
+                    Your payment has been received and is safely held in ọjà Escrow. The vendor will <strong>not</strong> receive payment until you meet, inspect the items, and verify with your 6-digit delivery code.
                   </>
                 ) : (
                   <>

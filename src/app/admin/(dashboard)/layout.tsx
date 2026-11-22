@@ -12,7 +12,7 @@ export default async function AdminLayout({
   const session = await getSession();
 
   // Enforce server-side role check
-  if (!session || session.role !== "ADMIN") {
+  if (!session || (session.role !== "ADMIN" && session.role !== "SUPERADMIN")) {
     redirect("/admin/login");
   }
 

@@ -1,4 +1,4 @@
-export type Role = "ADMIN" | "VENDOR" | "BUYER" | "AMBASSADOR";
+export type Role = "SUPERADMIN" | "ADMIN" | "VENDOR" | "BUYER" | "AMBASSADOR";
 export type VendorStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
 export type AmbassadorStatus = "ACTIVE" | "PENDING" | "SUSPENDED";
 export type ReferralRewardStatus = "PENDING" | "APPROVED" | "PAID" | "REJECTED";

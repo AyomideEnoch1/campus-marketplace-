@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
-    if (!session || (session as any).role !== "ADMIN") {
+    if (!session || ((session as any).role !== "ADMIN" && (session as any).role !== "SUPERADMIN")) {
       return NextResponse.json({ error: "Unauthorized. Admin privileges required." }, { status: 403 });
     }
 

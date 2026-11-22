@@ -94,7 +94,7 @@ export async function createVouch({
     throw new Error("Voucher user account not found");
   }
 
-  const isAdmin = voucherUser.role === "ADMIN";
+  const isAdmin = voucherUser.role === "ADMIN" || voucherUser.role === "SUPERADMIN";
   const isTrusted = voucherUser.vendorProfile?.isTrustedSeller === true;
 
   if (!isAdmin && !isTrusted) {
