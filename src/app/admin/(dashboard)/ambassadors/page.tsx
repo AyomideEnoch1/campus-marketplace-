@@ -2,10 +2,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { prisma } from "@/lib/prisma";
+import { getReferralRewardConfig } from "@/lib/referral";
 import { AdminAmbassadorTable } from "./AdminAmbassadorTable";
 
 export default async function AdminAmbassadorsPage() {
-  const [ambassadors, campuses] = await Promise.all([
+  const [ambassadors, campuses, rewardConfig] = await Promise.all([
     prisma.ambassadorProfile.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -28,6 +29,7 @@ export default async function AdminAmbassadorsPage() {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    getReferralRewardConfig(),
   ]);
 
   const formatted = ambassadors.map((a) => {
@@ -74,7 +76,11 @@ export default async function AdminAmbassadorsPage() {
         </div>
       </div>
 
-      <AdminAmbassadorTable initialAmbassadors={formatted} campuses={campuses} />
+      <AdminAmbassadorTable
+        initialAmbassadors={formatted}
+        campuses={campuses}
+        initialRewardConfig={rewardConfig}
+      />
     </div>
   );
 }

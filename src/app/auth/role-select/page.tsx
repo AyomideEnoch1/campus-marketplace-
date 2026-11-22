@@ -56,17 +56,17 @@ export default function RoleSelectPage() {
               router.push("/shop");
               router.refresh();
             }}
-            className="w-full group p-4 sm:p-5 rounded-2xl border-2 border-neutral-200 hover:border-emerald-500 bg-neutral-50/50 hover:bg-emerald-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-emerald-600/5 flex items-center gap-4 cursor-pointer"
+            className="w-full group p-4 sm:p-5 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 bg-neutral-50/50 hover:bg-neutral-100/60 text-left transition-all duration-200 hover:shadow-xs flex items-center gap-4 cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 group-hover:border-emerald-300 text-emerald-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-              <GraduationCap className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 text-neutral-700 flex items-center justify-center shrink-0 shadow-2xs transition-colors">
+              <GraduationCap className="w-6 h-6 text-neutral-700" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-emerald-950 transition-colors">
+                <span className="text-sm sm:text-base font-bold text-neutral-900 transition-colors">
                   Continue as Student Buyer
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600 bg-neutral-200/70 border border-neutral-300/60 px-2 py-0.5 rounded-full">
                   Buyer
                 </span>
               </div>
@@ -74,7 +74,7 @@ export default function RoleSelectPage() {
                 Browse campus listings, buy textbooks and gadgets, and order with escrow protection.
               </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+            <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 group-hover:translate-x-1 transition-all shrink-0" />
           </button>
 
           {/* Option 2: Vendor */}
@@ -84,17 +84,17 @@ export default function RoleSelectPage() {
               router.push("/vendor/register");
               router.refresh();
             }}
-            className="w-full group p-4 sm:p-5 rounded-2xl border-2 border-neutral-200 hover:border-purple-500 bg-neutral-50/50 hover:bg-purple-50/20 text-left transition-all duration-200 hover:shadow-md hover:shadow-purple-600/5 flex items-center gap-4 cursor-pointer"
+            className="w-full group p-4 sm:p-5 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 bg-neutral-50/50 hover:bg-neutral-100/60 text-left transition-all duration-200 hover:shadow-xs flex items-center gap-4 cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 group-hover:border-purple-300 text-purple-600 flex items-center justify-center shrink-0 shadow-xs transition-colors">
-              <Store className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-xl bg-white border border-neutral-200 text-neutral-700 flex items-center justify-center shrink-0 shadow-2xs transition-colors">
+              <Store className="w-6 h-6 text-neutral-700" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm sm:text-base font-black text-neutral-900 group-hover:text-purple-950 transition-colors">
+                <span className="text-sm sm:text-base font-bold text-neutral-900 transition-colors">
                   Open a Campus Store
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-100/70 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600 bg-neutral-200/70 border border-neutral-300/60 px-2 py-0.5 rounded-full">
                   Vendor
                 </span>
               </div>
@@ -102,7 +102,7 @@ export default function RoleSelectPage() {
                 Set up your store name, campus, and WhatsApp to start selling to fellow students.
               </p>
             </div>
-            <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all shrink-0" />
+            <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 group-hover:translate-x-1 transition-all shrink-0" />
           </button>
         </div>
 

@@ -15,6 +15,10 @@ import {
   CreditCard,
   Send,
   ExternalLink,
+  Coins,
+  SlidersHorizontal,
+  Save,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,12 +54,20 @@ interface CampusItem {
   name: string;
 }
 
+export interface ReferralRewardRates {
+  vendorBonus: number;
+  buyerBonus: number;
+  qualifiedVendorBonus: number;
+}
+
 export function AdminAmbassadorTable({
   initialAmbassadors,
   campuses,
+  initialRewardConfig,
 }: {
   initialAmbassadors: AmbassadorItem[];
   campuses: CampusItem[];
+  initialRewardConfig?: ReferralRewardRates;
 }) {
   const [ambassadors, setAmbassadors] = React.useState<AmbassadorItem[]>(initialAmbassadors);
   const [search, setSearch] = React.useState("");
@@ -64,6 +76,81 @@ export function AdminAmbassadorTable({
   const [payoutAmount, setPayoutAmount] = React.useState<number>(0);
   const [payoutNotes, setPayoutNotes] = React.useState("");
   const [processingPayout, setProcessingPayout] = React.useState(false);
+
+  // Referral Reward Rates State
+  const [rewardRates, setRewardRates] = React.useState<ReferralRewardRates>(
+    initialRewardConfig || {
+      vendorBonus: 500,
+      buyerBonus: 100,
+      qualifiedVendorBonus: 1000,
+    }
+  );
+  const [vendorBonusInput, setVendorBonusInput] = React.useState(
+    (initialRewardConfig?.vendorBonus ?? 500).toString()
+  );
+  const [buyerBonusInput, setBuyerBonusInput] = React.useState(
+    (initialRewardConfig?.buyerBonus ?? 100).toString()
+  );
+  const [qualifiedVendorBonusInput, setQualifiedVendorBonusInput] = React.useState(
+    (initialRewardConfig?.qualifiedVendorBonus ?? 1000).toString()
+  );
+  const [savingRates, setSavingRates] = React.useState(false);
+  const [isEditingRates, setIsEditingRates] = React.useState(false);
+
+  async function handleSaveRates(e: React.FormEvent) {
+    e.preventDefault();
+    const vBonus = parseFloat(vendorBonusInput);
+    const bBonus = parseFloat(buyerBonusInput);
+    const qBonus = parseFloat(qualifiedVendorBonusInput);
+
+    if (isNaN(vBonus) || vBonus < 0) {
+      toast.error("Please enter a valid vendor bounty (₦)");
+      return;
+    }
+    if (isNaN(bBonus) || bBonus < 0) {
+      toast.error("Please enter a valid shopper bounty (₦)");
+      return;
+    }
+    if (isNaN(qBonus) || qBonus < 0) {
+      toast.error("Please enter a valid qualified vendor bonus (₦)");
+      return;
+    }
+
+    try {
+      setSavingRates(true);
+      const res = await fetch("/api/admin/ambassadors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendorBonus: vBonus,
+          buyerBonus: bBonus,
+          qualifiedVendorBonus: qBonus,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update reward rates");
+
+      toast.success("Referral bounty rates updated! Reflected on ambassador dashboards.");
+      if (data.rewardConfig) {
+        setRewardRates(data.rewardConfig);
+        setVendorBonusInput(data.rewardConfig.vendorBonus.toString());
+        setBuyerBonusInput(data.rewardConfig.buyerBonus.toString());
+        setQualifiedVendorBonusInput(data.rewardConfig.qualifiedVendorBonus.toString());
+      }
+      setIsEditingRates(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update rates");
+    } finally {
+      setSavingRates(false);
+    }
+  }
+
+  function handleResetRates() {
+    setVendorBonusInput("500");
+    setBuyerBonusInput("100");
+    setQualifiedVendorBonusInput("1000");
+  }
 
   // Compute totals
   const totalPendingPayouts = ambassadors.reduce((sum, a) => sum + a.pendingEarnings, 0);
@@ -155,6 +242,168 @@ export function AdminAmbassadorTable({
           <span className="text-2xl font-bold text-teal-400">₦{totalPaidOut.toLocaleString()}</span>
           <span className="text-[11px] text-neutral-400 block mt-1">Direct student rewards</span>
         </div>
+      </div>
+
+      {/* Referral Reward Rates Regulator */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 flex items-center justify-center shrink-0">
+              <Coins className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                Referral Reward Rates Regulator
+              </h2>
+              <p className="text-xs text-neutral-400">
+                Regulate the cash bonus ambassadors earn per referral on their dashboard &amp; signups.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsEditingRates((prev) => !prev)}
+            className="self-start sm:self-auto text-xs border-neutral-700 bg-neutral-800 text-neutral-200 hover:bg-neutral-700 gap-1.5"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />
+            {isEditingRates ? "Close Regulator" : "Regulate Referral Amounts"}
+          </Button>
+        </div>
+
+        {/* Current Active Rates Display */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div className="bg-neutral-950/70 border border-neutral-800/90 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-neutral-400 block font-medium">Vendor Referral Bounty</span>
+              <span className="text-lg font-bold text-emerald-400">₦{rewardRates.vendorBonus.toLocaleString()}</span>
+            </div>
+            <Store className="w-4 h-4 text-emerald-500/60" />
+          </div>
+
+          <div className="bg-neutral-950/70 border border-neutral-800/90 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-neutral-400 block font-medium">Shopper / Buyer Bounty</span>
+              <span className="text-lg font-bold text-teal-400">₦{rewardRates.buyerBonus.toLocaleString()}</span>
+            </div>
+            <Users className="w-4 h-4 text-teal-500/60" />
+          </div>
+
+          <div className="bg-neutral-950/70 border border-neutral-800/90 rounded-xl p-3 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-neutral-400 block font-medium">Qualified Vendor Bonus</span>
+              <span className="text-lg font-bold text-amber-400">₦{rewardRates.qualifiedVendorBonus.toLocaleString()}</span>
+            </div>
+            <Sparkles className="w-4 h-4 text-amber-500/60" />
+          </div>
+        </div>
+
+        {/* Interactive Rate Editor Form */}
+        {isEditingRates && (
+          <form
+            onSubmit={handleSaveRates}
+            className="pt-4 border-t border-neutral-800 space-y-4 animate-in fade-in duration-200"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
+                  Vendor Bounty (₦)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-neutral-500 font-bold">₦</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={vendorBonusInput}
+                    onChange={(e) => setVendorBonusInput(e.target.value)}
+                    className="pl-7 h-10 bg-neutral-950 border-neutral-700 text-xs text-white rounded-xl focus:border-emerald-500"
+                    placeholder="e.g. 500"
+                    required
+                  />
+                </div>
+                <span className="text-[10px] text-neutral-500 mt-1 block">
+                  Earned when a vendor registers with ambassador code
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
+                  Shopper Bounty (₦)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-neutral-500 font-bold">₦</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={buyerBonusInput}
+                    onChange={(e) => setBuyerBonusInput(e.target.value)}
+                    className="pl-7 h-10 bg-neutral-950 border-neutral-700 text-xs text-white rounded-xl focus:border-emerald-500"
+                    placeholder="e.g. 100"
+                    required
+                  />
+                </div>
+                <span className="text-[10px] text-neutral-500 mt-1 block">
+                  Earned when a student shopper signs up
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-neutral-300 block mb-1.5">
+                  Qualified Vendor Bonus (₦)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-xs text-neutral-500 font-bold">₦</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={qualifiedVendorBonusInput}
+                    onChange={(e) => setQualifiedVendorBonusInput(e.target.value)}
+                    className="pl-7 h-10 bg-neutral-950 border-neutral-700 text-xs text-white rounded-xl focus:border-emerald-500"
+                    placeholder="e.g. 1000"
+                    required
+                  />
+                </div>
+                <span className="text-[10px] text-neutral-500 mt-1 block">
+                  Bonus unlocked once recruited vendor lists items
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleResetRates}
+                className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Reset Defaults (₦500 / ₦100 / ₦1,000)
+              </button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsEditingRates(false)}
+                  className="text-xs text-neutral-400 hover:text-white"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={savingRates}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {savingRates ? "Saving Rates..." : "Save Reward Rates"}
+                </Button>
+              </div>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Filter and Search Bar */}

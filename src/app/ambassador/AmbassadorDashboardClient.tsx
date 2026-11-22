@@ -84,10 +84,18 @@ interface BankItem {
   name: string;
 }
 
+export interface ReferralRewardRates {
+  vendorBonus: number;
+  buyerBonus: number;
+  qualifiedVendorBonus: number;
+}
+
 export function AmbassadorDashboardClient({
   initialAmbassador,
+  rewardConfig = { vendorBonus: 500, buyerBonus: 100, qualifiedVendorBonus: 1000 },
 }: {
   initialAmbassador: AmbassadorData;
+  rewardConfig?: ReferralRewardRates;
 }) {
   const [ambassador, setAmbassador] = React.useState<AmbassadorData>(initialAmbassador);
   const [referrals, setReferrals] = React.useState<ReferralItem[]>([]);
@@ -411,7 +419,9 @@ export function AmbassadorDashboardClient({
               <Store className="w-4 h-4 text-emerald-600" />
             </div>
             <p className="text-2xl font-bold text-emerald-700">{ambassador.stats.totalVendors.toLocaleString()}</p>
-            <span className="text-[11px] text-emerald-600/80 mt-1 block">₦500 bounty each</span>
+            <span className="text-[11px] text-emerald-600/80 mt-1 block">
+              ₦{rewardConfig.vendorBonus.toLocaleString()} bounty each
+            </span>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-sm">
@@ -516,7 +526,7 @@ export function AmbassadorDashboardClient({
                   {vendorReferralUrl}
                 </p>
                 <span className="text-[11px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded font-medium">
-                  Earn ₦500 per vendor
+                  Earn ₦{rewardConfig.vendorBonus.toLocaleString()} per vendor
                 </span>
               </div>
 
@@ -537,7 +547,7 @@ export function AmbassadorDashboardClient({
                   {shopReferralUrl}
                 </p>
                 <span className="text-[11px] text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded font-medium">
-                  Earn ₦100 per shopper
+                  Earn ₦{rewardConfig.buyerBonus.toLocaleString()} per shopper
                 </span>
               </div>
             </div>

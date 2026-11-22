@@ -10,6 +10,56 @@ export const REWARD_CONFIG = {
   QUALIFIED_VENDOR_BONUS: 1000, // additional bonus once vendor uploads items
 };
 
+export interface ReferralRewardConfig {
+  vendorBonus: number;
+  buyerBonus: number;
+  qualifiedVendorBonus: number;
+}
+
+/**
+ * Fetch dynamic referral reward config regulated by admin in SiteSettings,
+ * with graceful fallback to default REWARD_CONFIG
+ */
+export async function getReferralRewardConfig(): Promise<ReferralRewardConfig> {
+  try {
+    const settings = await prisma.siteSetting.findMany({
+      where: {
+        key: {
+          in: [
+            "ambassador_vendor_reward",
+            "ambassador_buyer_reward",
+            "ambassador_qualified_vendor_reward",
+          ],
+        },
+      },
+    });
+
+    const config: ReferralRewardConfig = {
+      vendorBonus: REWARD_CONFIG.VENDOR_BONUS,
+      buyerBonus: REWARD_CONFIG.BUYER_BONUS,
+      qualifiedVendorBonus: REWARD_CONFIG.QUALIFIED_VENDOR_BONUS,
+    };
+
+    settings.forEach((s) => {
+      const val = parseFloat(s.value);
+      if (!isNaN(val) && val >= 0) {
+        if (s.key === "ambassador_vendor_reward") config.vendorBonus = val;
+        if (s.key === "ambassador_buyer_reward") config.buyerBonus = val;
+        if (s.key === "ambassador_qualified_vendor_reward") config.qualifiedVendorBonus = val;
+      }
+    });
+
+    return config;
+  } catch (err) {
+    console.error("Error reading referral reward config:", err);
+    return {
+      vendorBonus: REWARD_CONFIG.VENDOR_BONUS,
+      buyerBonus: REWARD_CONFIG.BUYER_BONUS,
+      qualifiedVendorBonus: REWARD_CONFIG.QUALIFIED_VENDOR_BONUS,
+    };
+  }
+}
+
 /**
  * Increment ambassador click/scan count idempotently
  */
@@ -76,8 +126,9 @@ export async function attributeReferral({
     // Prevent self-referral
     if (ambassador.userId === newUserId) return null;
 
-    // Initial reward amount based on role
-    const rewardAmount = role === "VENDOR" ? REWARD_CONFIG.VENDOR_BONUS : REWARD_CONFIG.BUYER_BONUS;
+    // Regulated reward amount based on role
+    const config = await getReferralRewardConfig();
+    const rewardAmount = role === "VENDOR" ? config.vendorBonus : config.buyerBonus;
 
     // Create the referral record
     const referral = await prisma.referral.create({

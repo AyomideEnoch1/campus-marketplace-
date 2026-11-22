@@ -163,10 +163,14 @@ function RegisterContent() {
   const handleSelectRole = (
     selectedRole: RoleType,
     selectedBuyerType?: "student" | "guest",
+    selectedSellerType?: "student" | "guest",
   ) => {
     setRole(selectedRole);
     if (selectedBuyerType) {
       setBuyerType(selectedBuyerType);
+    }
+    if (selectedSellerType) {
+      setSellerType(selectedSellerType);
     }
     goToStep(1, "forward");
   };
@@ -318,21 +322,182 @@ function RegisterContent() {
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-6 sm:py-12 px-3 sm:px-4 bg-gradient-to-b from-neutral-50 via-neutral-100/50 to-neutral-50">
       {/* =================================================================== */}
-      {/* SCREEN 0: Initial Screen – Clean "Join ọjà" Onboarding             */}
+      {/* SCREEN 0: Initial Screen – Account Type Selection                   */}
       {/* =================================================================== */}
       {currentStep === 0 ? (
-        <JoinOnboardingScreen
-          initialIntent={intent}
-          initialAffiliation={affiliation}
-          onContinue={(config: RoleConfig) => {
-            setIntent(config.intent);
-            setAffiliation(config.affiliation);
-            setRole(config.role);
-            if (config.buyerType) setBuyerType(config.buyerType);
-            if (config.sellerType) setSellerType(config.sellerType);
-            goToStep(1, "forward");
-          }}
-        />
+        <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-6 sm:p-9 space-y-6 transition-all">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-700 flex items-center justify-center mx-auto border border-neutral-200/80 shadow-xs">
+              <ShoppingCart className="w-6 h-6" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
+              Join ọjà
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto leading-relaxed">
+              Connect directly with verified students and trusted campus merchants. How would you like to use ọjà?
+            </p>
+          </div>
+
+          {/* Referral / Ambassador Endorsement Banner if detected */}
+          {referralCode && (
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-neutral-100/80 border border-neutral-200 text-neutral-800 text-xs shadow-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-neutral-600 shrink-0" />
+                <span>
+                  Invited by Campus Ambassador:{" "}
+                  <strong className="font-mono font-bold text-neutral-900 bg-neutral-200/80 px-2 py-0.5 rounded">
+                    {referralCode}
+                  </strong>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReferralCode("")}
+                className="text-neutral-400 hover:text-neutral-600 text-[11px] underline"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
+          {/* Error Notification if any */}
+          {error && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold animate-in fade-in-50">
+              {error}
+            </div>
+          )}
+
+          {/* Account Type Selection Cards (Uniform Color, No Bright Colors) */}
+          <div className="space-y-3">
+            {/* Option 1: Student Buyer */}
+            <button
+              type="button"
+              onClick={() => handleSelectRole("BUYER", "student")}
+              className="w-full group p-4 sm:p-4.5 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 bg-neutral-50/50 hover:bg-neutral-100/60 text-left transition-all duration-200 hover:shadow-xs relative flex items-center gap-3.5 cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 text-neutral-700 flex items-center justify-center shrink-0 shadow-2xs transition-colors">
+                <GraduationCap className="w-5 h-5 text-neutral-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm sm:text-base font-bold text-neutral-900 transition-colors">
+                    Student Buyer
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600 bg-neutral-200/70 border border-neutral-300/60 px-2 py-0.5 rounded-full">
+                    Student
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                  Shop campus listings, textbooks, and hostel delivery.
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 group-hover:translate-x-1 transition-all shrink-0" />
+            </button>
+
+            {/* Option 2: Guest Buyer */}
+            <button
+              type="button"
+              onClick={() => handleSelectRole("BUYER", "guest")}
+              className="w-full group p-4 sm:p-4.5 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 bg-neutral-50/50 hover:bg-neutral-100/60 text-left transition-all duration-200 hover:shadow-xs relative flex items-center gap-3.5 cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 text-neutral-700 flex items-center justify-center shrink-0 shadow-2xs transition-colors">
+                <UserCheck className="w-5 h-5 text-neutral-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm sm:text-base font-bold text-neutral-900 transition-colors">
+                    Guest Buyer
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600 bg-neutral-200/70 border border-neutral-300/60 px-2 py-0.5 rounded-full">
+                    Guest
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                  Browse and buy without student email verification.
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 group-hover:translate-x-1 transition-all shrink-0" />
+            </button>
+
+            {/* Option 3: Student Vendor */}
+            <button
+              type="button"
+              onClick={() => handleSelectRole("VENDOR", undefined, "student")}
+              className="w-full group p-4 sm:p-4.5 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 bg-neutral-50/50 hover:bg-neutral-100/60 text-left transition-all duration-200 hover:shadow-xs relative flex items-center gap-3.5 cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 text-neutral-700 flex items-center justify-center shrink-0 shadow-2xs transition-colors">
+                <Store className="w-5 h-5 text-neutral-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm sm:text-base font-bold text-neutral-900 transition-colors">
+                    Student Vendor
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600 bg-neutral-200/70 border border-neutral-300/60 px-2 py-0.5 rounded-full">
+                    Student
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                  Open a verified campus store and sell to students.
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 group-hover:translate-x-1 transition-all shrink-0" />
+            </button>
+
+            {/* Option 4: Guest Vendor */}
+            <button
+              type="button"
+              onClick={() => {
+                const refParam = referralCode
+                  ? `&ref=${encodeURIComponent(referralCode)}`
+                  : "";
+                router.push(`/vendor/register?type=guest${refParam}`);
+              }}
+              className="w-full group p-4 sm:p-4.5 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 bg-neutral-50/50 hover:bg-neutral-100/60 text-left transition-all duration-200 hover:shadow-xs relative flex items-center gap-3.5 cursor-pointer"
+            >
+              <div className="w-11 h-11 rounded-xl bg-white border border-neutral-200/80 text-neutral-700 flex items-center justify-center shrink-0 shadow-2xs transition-colors">
+                <Building className="w-5 h-5 text-neutral-700" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm sm:text-base font-bold text-neutral-900 transition-colors">
+                    Guest Vendor
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-600 bg-neutral-200/70 border border-neutral-300/60 px-2 py-0.5 rounded-full">
+                    Merchant
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 mt-0.5 line-clamp-1">
+                  Sell to university campuses as an external merchant or business.
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-700 group-hover:translate-x-1 transition-all shrink-0" />
+            </button>
+          </div>
+
+          {/* Quick Guest Browsing Link */}
+          <div className="text-center pt-0.5">
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-800 transition-colors"
+            >
+              <span>Just looking around? Explore marketplace as guest</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Footer / Login Link */}
+          <div className="pt-2 text-center text-xs text-neutral-500 border-t border-neutral-100">
+            Already have an account?{" "}
+            <Link
+              href="/auth/login"
+              className="font-bold text-neutral-800 hover:underline"
+            >
+              Sign In here
+            </Link>
+          </div>
+        </div>
       ) : (
         /* =================================================================== */
         /* REGISTRATION FLOW (Steps 1, 2, and 3)                               */

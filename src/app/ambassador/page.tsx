@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getReferralRewardConfig } from "@/lib/referral";
 import { AmbassadorDashboardClient } from "./AmbassadorDashboardClient";
 import { AmbassadorOnboarding } from "./AmbassadorOnboarding";
 
@@ -42,8 +43,8 @@ export default async function AmbassadorPage() {
     return <AmbassadorOnboarding campuses={campuses} userName={session.fullName} />;
   }
 
-  // Compute stats
-  const [totalVendors, qualifiedVendors, totalBuyers] = await Promise.all([
+  // Compute stats and fetch regulated referral reward rates
+  const [totalVendors, qualifiedVendors, totalBuyers, rewardConfig] = await Promise.all([
     prisma.referral.count({
       where: { ambassadorId: ambassador.id, roleAtSignup: "VENDOR" },
     }),
@@ -53,6 +54,7 @@ export default async function AmbassadorPage() {
     prisma.referral.count({
       where: { ambassadorId: ambassador.id, roleAtSignup: "BUYER" },
     }),
+    getReferralRewardConfig(),
   ]);
 
   const sanitizedAmbassador = {
@@ -79,5 +81,10 @@ export default async function AmbassadorPage() {
     },
   };
 
-  return <AmbassadorDashboardClient initialAmbassador={sanitizedAmbassador} />;
+  return (
+    <AmbassadorDashboardClient
+      initialAmbassador={sanitizedAmbassador}
+      rewardConfig={rewardConfig}
+    />
+  );
 }

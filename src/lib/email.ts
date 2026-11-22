@@ -4,7 +4,8 @@ import { VendorNotificationEmail, VendorNotificationEmailProps } from "@/emails/
 import { VendorStatusEmail, VendorStatusEmailProps } from "@/emails/VendorStatusEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.EMAIL_FROM || "ọjà <notifications@campustrade.ng>";
+// Default to Resend's sandbox domain 'onboarding@resend.dev' until a custom verified domain is supplied
+const fromEmail = process.env.EMAIL_FROM || "ọjà <onboarding@resend.dev>";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 

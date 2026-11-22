@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSession } from "@/lib/auth";
+import { getReferralRewardConfig } from "@/lib/referral";
 
 export async function GET() {
   try {
@@ -70,9 +71,12 @@ export async function GET() {
       };
     });
 
+    const rewardConfig = await getReferralRewardConfig();
+
     return NextResponse.json({
       ambassadors: formatted,
       campuses,
+      rewardConfig,
     });
   } catch (err: any) {
     console.error("GET /api/admin/ambassadors error:", err);
@@ -163,6 +167,107 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: err.message || "Failed to process ambassador payout" },
       { status: 500 }
+    );
+  }
+}
+
+// Regulate Ambassador Referral Reward Rates
+export async function PATCH(request: Request) {
+  try {
+    const admin = await requireAdmin();
+    const body = await request.json();
+    const { vendorBonus, buyerBonus, qualifiedVendorBonus } = body;
+
+    const updates = [];
+
+    if (vendorBonus !== undefined) {
+      const num = Number(vendorBonus);
+      if (isNaN(num) || num < 0) {
+        return NextResponse.json(
+          { error: "Vendor bonus must be a valid positive number" },
+          { status: 400 }
+        );
+      }
+      updates.push(
+        prisma.siteSetting.upsert({
+          where: { key: "ambassador_vendor_reward" },
+          update: { value: String(num) },
+          create: {
+            key: "ambassador_vendor_reward",
+            value: String(num),
+            description: "Ambassador reward amount per registered vendor in Naira",
+          },
+        })
+      );
+    }
+
+    if (buyerBonus !== undefined) {
+      const num = Number(buyerBonus);
+      if (isNaN(num) || num < 0) {
+        return NextResponse.json(
+          { error: "Buyer bonus must be a valid positive number" },
+          { status: 400 }
+        );
+      }
+      updates.push(
+        prisma.siteSetting.upsert({
+          where: { key: "ambassador_buyer_reward" },
+          update: { value: String(num) },
+          create: {
+            key: "ambassador_buyer_reward",
+            value: String(num),
+            description: "Ambassador reward amount per registered student buyer in Naira",
+          },
+        })
+      );
+    }
+
+    if (qualifiedVendorBonus !== undefined) {
+      const num = Number(qualifiedVendorBonus);
+      if (isNaN(num) || num < 0) {
+        return NextResponse.json(
+          { error: "Qualified vendor bonus must be a valid positive number" },
+          { status: 400 }
+        );
+      }
+      updates.push(
+        prisma.siteSetting.upsert({
+          where: { key: "ambassador_qualified_vendor_reward" },
+          update: { value: String(num) },
+          create: {
+            key: "ambassador_qualified_vendor_reward",
+            value: String(num),
+            description: "Ambassador reward bonus when onboarded vendor lists items in Naira",
+          },
+        })
+      );
+    }
+
+    if (updates.length > 0) {
+      await prisma.$transaction(updates);
+
+      await prisma.activityLog.create({
+        data: {
+          userId: admin.id,
+          action: "AMBASSADOR_REWARD_RATES_UPDATED",
+          entityType: "AmbassadorProfile",
+          metadataJson: JSON.stringify({ vendorBonus, buyerBonus, qualifiedVendorBonus }),
+        },
+      });
+    }
+
+    const newConfig = await getReferralRewardConfig();
+
+    return NextResponse.json({
+      success: true,
+      message: "Ambassador referral reward rates updated successfully",
+      rewardConfig: newConfig,
+    });
+  } catch (err: any) {
+    console.error("PATCH /api/admin/ambassadors error:", err);
+    return NextResponse.json(
+      { error: err.message || "Failed to update ambassador referral rates" },
+      { status: err.message?.includes("Forbidden") ? 403 : 500 }
     );
   }
 }

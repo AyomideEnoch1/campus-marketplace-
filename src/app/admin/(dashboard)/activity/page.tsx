@@ -46,15 +46,9 @@ export default async function AdminActivityPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              System Activity & Audit Trail
-            </h1>
-            <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Live Audit Active
-            </span>
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            System Activity & Audit Trail
+          </h1>
           <p className="text-xs sm:text-sm text-neutral-400 mt-1">
             Real-time audit log of vendor moderations, role updates, product changes, and administrative operations
           </p>

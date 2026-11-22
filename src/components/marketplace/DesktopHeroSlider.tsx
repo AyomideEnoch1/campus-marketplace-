@@ -384,7 +384,7 @@ export function DesktopHeroSlider({
         </svg>
       </div>
 
-      <div className="w-[95%] max-w-[1700px] mx-auto relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div
           className="relative py-4 sm:py-6 lg:py-8 select-none"
           onMouseEnter={() => setIsPaused(true)}
@@ -393,38 +393,38 @@ export function DesktopHeroSlider({
 
           {/* Decorative subtle ambient accents seamlessly blended with white */}
           <div
-            className={`absolute top-0 right-12 w-[500px] h-[500px] ${slide.ambientGlow} rounded-full blur-3xl pointer-events-none -z-0 transition-colors duration-700 opacity-50`}
+            className={`absolute top-0 right-12 w-[420px] h-[420px] ${slide.ambientGlow} rounded-full blur-3xl pointer-events-none -z-0 transition-colors duration-700 opacity-50`}
           />
-          <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-teal-50/60 rounded-full blur-3xl pointer-events-none -z-0" />
+          <div className="absolute -bottom-10 -left-10 w-72 h-72 bg-teal-50/60 rounded-full blur-3xl pointer-events-none -z-0" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 xl:gap-12 items-center relative z-10 min-h-[520px] xl:min-h-[620px]">
-            {/* Left Column: Headline, Description & CTAs (Expanded Width on Large Screens) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 xl:gap-8 items-center relative z-10 min-h-[460px] xl:min-h-[520px]">
+            {/* Left Column: Headline, Description & CTAs (Tight Proximity to Visual) */}
             <div
               key={`text-${current}`}
-              className="lg:col-span-7 xl:col-span-7 2xl:col-span-7 space-y-6 lg:space-y-7 animate-in fade-in duration-500 pr-2 lg:pr-6"
+              className="lg:col-span-7 xl:col-span-7 space-y-5 lg:space-y-6 animate-in fade-in duration-500"
             >
-              {/* Main Headline (Wider & more impactful on large screens) */}
-              <div className="space-y-2.5 max-w-2xl xl:max-w-3xl">
-                <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl 2xl:text-[70px] font-black text-neutral-950 tracking-tight leading-[1.05]">
+              {/* Main Headline */}
+              <div className="space-y-2 max-w-xl xl:max-w-2xl">
+                <h1 className="text-3xl sm:text-4xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-black text-neutral-950 tracking-tight leading-[1.08]">
                   {slide.title} <br />
                   <span className="text-emerald-500">{slide.highlightText}</span>
                 </h1>
-                <p className="text-base sm:text-lg lg:text-xl xl:text-2xl text-neutral-500 font-medium tracking-tight">
+                <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-neutral-500 font-medium tracking-tight">
                   {slide.subtitle}
                 </p>
               </div>
 
               {/* Short Description */}
-              <p className="text-sm lg:text-base xl:text-lg text-neutral-600 leading-relaxed font-normal max-w-xl xl:max-w-2xl">
+              <p className="text-sm lg:text-base text-neutral-600 leading-relaxed font-normal max-w-lg xl:max-w-xl">
                 {slide.description}
               </p>
 
               {/* Dual CTA Buttons */}
-              <div className="flex items-center gap-3.5 pt-2">
+              <div className="flex items-center gap-3.5 pt-1">
                 <Link href={slide.primaryCta.href}>
                   <Button
                     size="lg"
-                    className="rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-8 py-3.5 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 active:scale-95 transition-all text-sm sm:text-base cursor-pointer"
+                    className="rounded-full gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-7 py-3 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 active:scale-95 transition-all text-sm sm:text-base cursor-pointer"
                   >
                     {slide.primaryCta.label} <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
@@ -433,7 +433,7 @@ export function DesktopHeroSlider({
                   <Button
                     variant="outline"
                     size="lg"
-                    className="rounded-full border border-neutral-300 hover:border-neutral-900 text-neutral-900 font-bold px-7 py-3.5 bg-white hover:bg-neutral-50 hover:-translate-y-0.5 active:scale-95 transition-all text-sm sm:text-base cursor-pointer shadow-2xs"
+                    className="rounded-full border border-neutral-300 hover:border-neutral-900 text-neutral-900 font-bold px-6 py-3 bg-white hover:bg-neutral-50 hover:-translate-y-0.5 active:scale-95 transition-all text-sm sm:text-base cursor-pointer shadow-2xs"
                   >
                     {slide.secondaryCta.label}
                   </Button>
@@ -441,18 +441,18 @@ export function DesktopHeroSlider({
               </div>
             </div>
 
-            {/* Right Column: Hero Visual with Circular Spotlight Disc (Shifted Right) */}
-            <div className="lg:col-span-5 xl:col-span-5 2xl:col-span-5 relative flex items-center justify-center lg:justify-end">
+            {/* Right Column: Hero Visual with Circular Spotlight Disc (Brought in Close) */}
+            <div className="lg:col-span-5 xl:col-span-5 relative flex items-center justify-center lg:justify-start lg:-ml-4 xl:-ml-6">
               {/* Visual Container */}
-              <div className="relative w-full h-[500px] lg:h-[560px] xl:h-[640px] 2xl:h-[700px] flex items-center justify-center lg:justify-end lg:translate-x-8 xl:translate-x-12 2xl:translate-x-16">
-                {/* Vibrant Circular Gradient Spotlight Disc (A lot bigger) */}
+              <div className="relative w-[380px] sm:w-[440px] lg:w-[460px] xl:w-[500px] h-[420px] lg:h-[480px] xl:h-[520px] flex items-center justify-center shrink-0">
+                {/* Vibrant Circular Gradient Spotlight Disc */}
                 <div
-                  className={`absolute w-[420px] h-[420px] lg:w-[480px] lg:h-[480px] xl:w-[560px] xl:h-[560px] 2xl:w-[640px] 2xl:h-[640px] rounded-full bg-gradient-to-tr ${slide.discGradient} opacity-90 shadow-2xl shadow-emerald-500/20 -z-0 transition-all duration-700 hover:scale-105`}
+                  className={`absolute w-[340px] h-[340px] lg:w-[380px] lg:h-[380px] xl:w-[430px] xl:h-[430px] rounded-full bg-gradient-to-tr ${slide.discGradient} opacity-90 shadow-2xl shadow-emerald-500/20 -z-0 transition-all duration-700 hover:scale-105`}
                 />
 
                 {/* Decorative secondary ring */}
                 <div
-                  className={`absolute w-[460px] h-[460px] lg:w-[530px] lg:h-[530px] xl:w-[620px] xl:h-[620px] 2xl:w-[700px] 2xl:h-[700px] rounded-full border ${slide.discBorder} -z-0 pointer-events-none transition-colors duration-700`}
+                  className={`absolute w-[380px] h-[380px] lg:w-[420px] lg:h-[420px] xl:w-[475px] xl:h-[475px] rounded-full border ${slide.discBorder} -z-0 pointer-events-none transition-colors duration-700`}
                 />
 
                 {/* Floating Circular Discount Badge */}
