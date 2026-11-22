@@ -47,7 +47,6 @@ export function Navbar({ initialUser }: NavbarProps) {
   const { data: authData } = useCurrentUser(initialUser);
   const user = authData?.user ?? initialUser;
   const logoutMutation = useLogout();
-
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [selectedCampus, setSelectedCampus] = React.useState<string>("all");
