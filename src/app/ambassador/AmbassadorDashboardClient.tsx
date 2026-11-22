@@ -23,6 +23,10 @@ import {
   AlertCircle,
   HelpCircle,
   MessageCircle,
+  Lock,
+  Unlock,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -39,6 +43,14 @@ interface AmbassadorData {
   bankCode?: string | null;
   bankName?: string | null;
   bankVerified?: boolean;
+  payoutRequestsLocked?: boolean;
+  activePayoutRequest?: {
+    id: string;
+    amount: number;
+    status: string;
+    reference: string;
+    createdAt: string;
+  } | null;
   campus: {
     id: string;
     name: string;
@@ -111,6 +123,18 @@ export function AmbassadorDashboardClient({
   const [resolvedAccountName, setResolvedAccountName] = React.useState(ambassador.bankAccountName || "");
   const [resolvingBank, setResolvingBank] = React.useState(false);
   const [savingBank, setSavingBank] = React.useState(false);
+
+  // Earning Payout Request State (Super Admin Lockable)
+  const [payoutRequestsLocked, setPayoutRequestsLocked] = React.useState<boolean>(
+    Boolean(initialAmbassador.payoutRequestsLocked)
+  );
+  const [activePayoutRequest, setActivePayoutRequest] = React.useState<any>(
+    initialAmbassador.activePayoutRequest || null
+  );
+  const [showRequestPayoutModal, setShowRequestPayoutModal] = React.useState(false);
+  const [requestingPayout, setRequestingPayout] = React.useState(false);
+  const [customPayoutAmount, setCustomPayoutAmount] = React.useState<string>("");
+  const [payoutNotesInput, setPayoutNotesInput] = React.useState("");
 
   // Filter and Search State
   const [filterRole, setFilterRole] = React.useState<"ALL" | "VENDOR" | "BUYER">("ALL");
@@ -242,6 +266,80 @@ export function AmbassadorDashboardClient({
       toast.error(err.message || "Failed to save bank account");
     } finally {
       setSavingBank(false);
+    }
+  }
+
+  // Refresh Ambassador Profile & Lock Status
+  async function fetchProfile() {
+    try {
+      const res = await fetch("/api/ambassador/profile");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ambassador) {
+          setAmbassador(data.ambassador);
+          setPayoutRequestsLocked(Boolean(data.ambassador.payoutRequestsLocked));
+          setActivePayoutRequest(data.ambassador.activePayoutRequest || null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh ambassador profile:", err);
+    }
+  }
+
+  // Submit Earning Payout Request
+  async function handleSubmitPayoutRequest(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (payoutRequestsLocked) {
+      toast.error("Earning requests are currently paused by platform administrators.");
+      return;
+    }
+
+    if (!ambassador.bankVerified || !ambassador.bankAccountNumber) {
+      toast.error("Please verify and link your Nigerian bank account before requesting earnings.");
+      return;
+    }
+
+    const amountNum = customPayoutAmount.trim()
+      ? Number(customPayoutAmount)
+      : ambassador.stats.pendingEarnings;
+
+    if (isNaN(amountNum) || amountNum <= 0) {
+      toast.error("Please enter a valid payout amount.");
+      return;
+    }
+
+    if (amountNum > ambassador.stats.pendingEarnings) {
+      toast.error("Requested amount cannot exceed your available pending earnings.");
+      return;
+    }
+
+    try {
+      setRequestingPayout(true);
+      const res = await fetch("/api/ambassador/payout-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: amountNum,
+          notes: payoutNotesInput.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit payout request");
+
+      toast.success(data.message || "Payout request submitted successfully!");
+      setActivePayoutRequest(data.payout);
+      setShowRequestPayoutModal(false);
+      setCustomPayoutAmount("");
+      setPayoutNotesInput("");
+
+      // Refresh profile to reflect any updated state
+      fetchProfile();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit payout request");
+    } finally {
+      setRequestingPayout(false);
     }
   }
 
@@ -433,13 +531,66 @@ export function AmbassadorDashboardClient({
             <span className="text-[11px] text-neutral-400 mt-1 block">Listed items</span>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-sm">
-            <div className="flex items-center justify-between text-neutral-500 text-xs font-medium mb-2">
-              <span>Pending Payout</span>
-              <Clock className="w-4 h-4 text-amber-500" />
+          <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-sm flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between text-neutral-500 text-xs font-medium mb-1.5">
+                <span>Pending Payout</span>
+                <Clock className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-2xl font-bold text-amber-600">₦{ambassador.stats.pendingEarnings.toLocaleString()}</p>
+              <span className="text-[11px] text-neutral-400 mt-0.5 block">Unwithdrawn earnings</span>
             </div>
-            <p className="text-2xl font-bold text-amber-600">₦{ambassador.stats.pendingEarnings.toLocaleString()}</p>
-            <span className="text-[11px] text-amber-600/80 mt-1 block">Awaiting cycle</span>
+
+            <div className="mt-3 pt-2.5 border-t border-neutral-100">
+              {payoutRequestsLocked ? (
+                <button
+                  type="button"
+                  disabled
+                  title="Earning payout requests are currently paused by platform administrators"
+                  className="w-full text-[11px] font-bold py-1.5 px-2 bg-neutral-100 text-neutral-400 border border-neutral-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-1.5"
+                >
+                  <Lock className="w-3 h-3 text-neutral-400" />
+                  <span>Requests Locked</span>
+                </button>
+              ) : activePayoutRequest ? (
+                <div className="w-full py-1.5 px-2 bg-blue-50 border border-blue-200 text-blue-700 text-center text-[11px] font-bold rounded-lg flex items-center justify-center gap-1">
+                  <Clock className="w-3 h-3 animate-pulse text-blue-600" />
+                  <span>In Review (₦{Number(activePayoutRequest.amount).toLocaleString()})</span>
+                </div>
+              ) : !ambassador.bankVerified ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const bankEl = document.getElementById("bank-details-section");
+                    bankEl?.scrollIntoView({ behavior: "smooth" });
+                    toast.info("Please verify your Nigerian bank account first.");
+                  }}
+                  className="w-full text-[11px] font-bold py-1.5 px-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center justify-center gap-1"
+                >
+                  <span>Verify Bank First</span>
+                </button>
+              ) : ambassador.stats.pendingEarnings <= 0 ? (
+                <button
+                  type="button"
+                  disabled
+                  className="w-full text-[11px] font-semibold py-1.5 px-2 bg-neutral-100 text-neutral-400 rounded-lg cursor-not-allowed text-center"
+                >
+                  <span>No Earnings</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomPayoutAmount(String(ambassador.stats.pendingEarnings));
+                    setShowRequestPayoutModal(true);
+                  }}
+                  className="w-full text-[11px] font-bold py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors shadow-xs flex items-center justify-center gap-1"
+                >
+                  <Send className="w-3 h-3" />
+                  <span>Request Earnings</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-neutral-200/80 shadow-sm">
@@ -449,6 +600,121 @@ export function AmbassadorDashboardClient({
             </div>
             <p className="text-2xl font-bold text-emerald-600">₦{ambassador.stats.totalEarnings.toLocaleString()}</p>
             <span className="text-[11px] text-neutral-400 mt-1 block">Lifetime commission</span>
+          </div>
+        </div>
+
+        {/* Super Admin Lock Notice Banner */}
+        {payoutRequestsLocked && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-xs">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-200/80 border border-amber-300 text-amber-800 flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-bold text-xs sm:text-sm text-amber-950 flex items-center gap-1.5">
+                  Earning Payout Requests Temporarily Paused by Administration
+                </p>
+                <p className="text-[11px] sm:text-xs text-amber-800/90 mt-0.5">
+                  Platform management has currently locked manual earning requests for review and audit reconciliation. Your referral signups, bounty clicks, and earned commissions will continue to accrue normally.
+                </p>
+              </div>
+            </div>
+            <span className="self-start sm:self-auto text-[10px] uppercase font-mono font-bold px-2.5 py-1 bg-amber-200/60 border border-amber-300 rounded-full text-amber-900 shrink-0">
+              Admin Locked
+            </span>
+          </div>
+        )}
+
+        {/* Earning Payout Request Action Panel */}
+        <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+              <Wallet className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-bold text-neutral-900">
+                  Referral Earning Payouts
+                </h2>
+                {ambassador.bankVerified ? (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    Verified: {ambassador.bankName} (••••{ambassador.bankAccountNumber?.slice(-4)})
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 text-amber-600" />
+                    Bank Not Verified
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-neutral-500 mt-1">
+                Withdraw your accumulated student buyer and vendor recruitment earnings directly to your verified Nigerian bank account.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <div className="text-right sm:pr-2 hidden sm:block">
+              <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-semibold">
+                Available to Request
+              </span>
+              <span className="text-xl font-black text-emerald-700">
+                ₦{ambassador.stats.pendingEarnings.toLocaleString()}
+              </span>
+            </div>
+
+            {payoutRequestsLocked ? (
+              <Button
+                type="button"
+                disabled
+                className="bg-neutral-100 text-neutral-400 border border-neutral-200 cursor-not-allowed font-bold text-xs h-11 px-5 rounded-xl gap-2"
+                title="Super Administrators have locked earning requests"
+              >
+                <Lock className="w-4 h-4 text-neutral-400" />
+                <span>Request Earnings (Locked)</span>
+              </Button>
+            ) : activePayoutRequest ? (
+              <div className="px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold flex items-center gap-2">
+                <Clock className="w-4 h-4 animate-pulse text-blue-600" />
+                <span>
+                  Payout Request in Review (₦{Number(activePayoutRequest.amount).toLocaleString()})
+                </span>
+              </div>
+            ) : !ambassador.bankVerified ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  const bankEl = document.getElementById("bank-details-section");
+                  bankEl?.scrollIntoView({ behavior: "smooth" });
+                  toast.info("Please verify and link your Nigerian bank account first.");
+                }}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs h-11 px-5 rounded-xl gap-2 shadow-xs"
+              >
+                <Building className="w-4 h-4" />
+                <span>Verify Bank to Request</span>
+              </Button>
+            ) : ambassador.stats.pendingEarnings <= 0 ? (
+              <Button
+                type="button"
+                disabled
+                className="bg-neutral-100 text-neutral-400 border border-neutral-200 cursor-not-allowed font-bold text-xs h-11 px-5 rounded-xl"
+              >
+                <span>No Pending Earnings</span>
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                onClick={() => {
+                  setCustomPayoutAmount(String(ambassador.stats.pendingEarnings));
+                  setShowRequestPayoutModal(true);
+                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs h-11 px-6 rounded-xl shadow-md gap-2"
+              >
+                <Send className="w-4 h-4" />
+                <span>Request Earnings (₦{ambassador.stats.pendingEarnings.toLocaleString()})</span>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -610,7 +876,7 @@ export function AmbassadorDashboardClient({
         </div>
 
         {/* Bank Account Linking for Payouts */}
-        <div className="bg-white rounded-2xl border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
+        <div id="bank-details-section" className="bg-white rounded-2xl border border-neutral-200/80 p-6 sm:p-7 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
@@ -846,6 +1112,128 @@ export function AmbassadorDashboardClient({
           )}
         </div>
       </div>
+
+      {/* Request Payout Confirmation Modal */}
+      {showRequestPayoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-neutral-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold">
+                  <Send className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-neutral-900">Request Referral Earnings</h3>
+                  <p className="text-xs text-neutral-500">Submit payout request to platform management</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRequestPayoutModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-400 hover:text-neutral-600 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitPayoutRequest} className="space-y-4">
+              {/* Destination Bank Account Summary */}
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-500 block">
+                  Payout Destination Bank
+                </span>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-neutral-500">Bank:</span>
+                  <span className="font-bold text-neutral-900">{ambassador.bankName}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-neutral-500">Account Number:</span>
+                  <span className="font-mono font-bold text-neutral-900">{ambassador.bankAccountNumber}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-neutral-500">Account Name:</span>
+                  <span className="font-semibold text-emerald-700">{ambassador.bankAccountName}</span>
+                </div>
+              </div>
+
+              {/* Amount Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-neutral-700">Amount to Request (₦)</label>
+                  <span className="text-[11px] text-neutral-500">
+                    Available: <strong className="text-emerald-600">₦{ambassador.stats.pendingEarnings.toLocaleString()}</strong>
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 text-xs font-bold text-neutral-400">₦</span>
+                  <Input
+                    type="number"
+                    min="1"
+                    max={ambassador.stats.pendingEarnings}
+                    value={customPayoutAmount}
+                    onChange={(e) => setCustomPayoutAmount(e.target.value)}
+                    required
+                    className="pl-8 pr-16 h-11 font-mono font-bold text-base"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCustomPayoutAmount(String(ambassador.stats.pendingEarnings))}
+                    className="absolute right-2.5 top-2.5 px-2 py-0.5 rounded-md bg-neutral-100 hover:bg-neutral-200 text-[11px] font-bold text-neutral-700"
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+
+              {/* Optional Notes */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-700">Notes (Optional)</label>
+                <Input
+                  type="text"
+                  placeholder="e.g. November referral earnings"
+                  value={payoutNotesInput}
+                  onChange={(e) => setPayoutNotesInput(e.target.value)}
+                  maxLength={150}
+                  className="text-xs h-10"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-[11px] text-emerald-800 flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>
+                  Once submitted, management reviews the request and disburses the funds directly to your verified bank account.
+                </span>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowRequestPayoutModal(false)}
+                  disabled={requestingPayout}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={requestingPayout || !customPayoutAmount || Number(customPayoutAmount) <= 0}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 h-10"
+                >
+                  {requestingPayout ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Confirm Payout Request"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

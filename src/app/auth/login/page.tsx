@@ -15,6 +15,7 @@ import {
   Sparkles,
   Loader2,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/Loader";
@@ -80,11 +81,15 @@ function LoginForm() {
       });
 
       const data = await res.json();
+
+      // If account requires email verification, immediately redirect to verification screen
+      if (data?.requiresVerification) {
+        const verifyUrl = data.redirectTo || `/auth/verify-email?email=${encodeURIComponent(data.email || email.trim())}`;
+        window.location.href = verifyUrl;
+        return;
+      }
+
       if (!res.ok) {
-        if (data.requiresVerification && data.redirectTo) {
-          window.location.href = data.redirectTo;
-          return;
-        }
         throw new Error(data.error || "Login failed");
       }
 
@@ -106,7 +111,7 @@ function LoginForm() {
           <ShoppingCart className="w-7 h-7" />
         </div>
         <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-          Welcome to ọjà
+          Welcome to ọjà.
         </h1>
         <p className="text-xs text-neutral-500 max-w-xs mx-auto leading-relaxed">
           Sign in to access your orders, saved listings, or vendor store
@@ -129,10 +134,22 @@ function LoginForm() {
         </div>
       )}
 
-      {/* Error message */}
+      {/* Error message / Verification prompt */}
       {error && (
-        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium animate-in fade-in-50">
-          {error}
+        <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs font-medium animate-in fade-in-50 space-y-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">{error}</p>
+          </div>
+          {error.toLowerCase().includes("verif") && (
+            <Link
+              href={`/auth/verify-email?email=${encodeURIComponent(email.trim())}`}
+              className="inline-flex items-center justify-center gap-2 w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            >
+              <span>Enter 6-Digit Verification Code</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       )}
 

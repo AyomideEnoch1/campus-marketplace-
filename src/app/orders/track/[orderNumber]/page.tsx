@@ -74,7 +74,7 @@ export default async function OrderTrackingPage({
   // Ensure user is authorized to track this order (buyer or vendor or admin)
   const isBuyer = order.buyerId === session.id || order.buyerEmail === session.email;
   const isVendor = order.vendor.userId === session.id;
-  const isAdmin = session.role === "ADMIN";
+  const isAdmin = session.role === "ADMIN" || session.role === "SUPERADMIN";
 
   if (!isBuyer && !isVendor && !isAdmin) {
     redirect("/orders");

@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
 import { AdminUserTable } from "./AdminUserTable";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  const session = await getSession();
+
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -30,11 +33,15 @@ export default async function AdminUsersPage() {
           Users & Role Management
         </h1>
         <p className="text-xs text-neutral-400 mt-1">
-          Manage buyers, vendors, and super-administrators with role-based access control.
+          Manage buyers, vendors, administrators, and super-administrators with role-based access control.
         </p>
       </div>
 
-      <AdminUserTable initialUsers={users as any} />
+      <AdminUserTable
+        initialUsers={users as any}
+        currentAdminRole={session?.role}
+        currentAdminId={session?.id}
+      />
     </div>
   );
 }

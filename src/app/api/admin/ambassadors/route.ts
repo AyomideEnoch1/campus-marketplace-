@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSession } from "@/lib/auth";
-import { getReferralRewardConfig } from "@/lib/referral";
+import { getReferralRewardConfig, getAmbassadorPayoutLockStatus } from "@/lib/referral";
 
 export async function GET() {
   try {
@@ -72,11 +72,13 @@ export async function GET() {
     });
 
     const rewardConfig = await getReferralRewardConfig();
+    const payoutRequestsLocked = await getAmbassadorPayoutLockStatus();
 
     return NextResponse.json({
       ambassadors: formatted,
       campuses,
       rewardConfig,
+      payoutRequestsLocked,
     });
   } catch (err: any) {
     console.error("GET /api/admin/ambassadors error:", err);
@@ -171,14 +173,37 @@ export async function POST(request: Request) {
   }
 }
 
-// Regulate Ambassador Referral Reward Rates
+// Regulate Ambassador Referral Reward Rates & Payout Requests Lock
 export async function PATCH(request: Request) {
   try {
     const admin = await requireAdmin();
     const body = await request.json();
-    const { vendorBonus, buyerBonus, qualifiedVendorBonus } = body;
+    const { vendorBonus, buyerBonus, qualifiedVendorBonus, payoutRequestsLocked } = body;
 
     const updates = [];
+
+    // Super Admin privilege check for locking/unlocking ambassador earning requests
+    if (payoutRequestsLocked !== undefined) {
+      if (admin.role !== "SUPERADMIN") {
+        return NextResponse.json(
+          { error: "Forbidden: Only Super Administrators have authority to lock or unlock ambassador earning requests." },
+          { status: 403 }
+        );
+      }
+
+      const isLocked = Boolean(payoutRequestsLocked);
+      updates.push(
+        prisma.siteSetting.upsert({
+          where: { key: "ambassador_payout_requests_locked" },
+          update: { value: isLocked ? "true" : "false" },
+          create: {
+            key: "ambassador_payout_requests_locked",
+            value: isLocked ? "true" : "false",
+            description: "Controls whether the request earning action button is locked in the ambassador dashboard",
+          },
+        })
+      );
+    }
 
     if (vendorBonus !== undefined) {
       const num = Number(vendorBonus);
@@ -249,19 +274,30 @@ export async function PATCH(request: Request) {
       await prisma.activityLog.create({
         data: {
           userId: admin.id,
-          action: "AMBASSADOR_REWARD_RATES_UPDATED",
+          action: payoutRequestsLocked !== undefined ? "AMBASSADOR_PAYOUT_LOCK_TOGGLED" : "AMBASSADOR_REWARD_RATES_UPDATED",
           entityType: "AmbassadorProfile",
-          metadataJson: JSON.stringify({ vendorBonus, buyerBonus, qualifiedVendorBonus }),
+          metadataJson: JSON.stringify({
+            vendorBonus,
+            buyerBonus,
+            qualifiedVendorBonus,
+            payoutRequestsLocked,
+            updatedBy: admin.email,
+            updatedByRole: admin.role,
+          }),
         },
       });
     }
 
     const newConfig = await getReferralRewardConfig();
+    const currentLockStatus = await getAmbassadorPayoutLockStatus();
 
     return NextResponse.json({
       success: true,
-      message: "Ambassador referral reward rates updated successfully",
+      message: payoutRequestsLocked !== undefined
+        ? `Ambassador earning requests are now ${currentLockStatus ? "locked" : "unlocked"}`
+        : "Ambassador referral reward rates updated successfully",
       rewardConfig: newConfig,
+      payoutRequestsLocked: currentLockStatus,
     });
   } catch (err: any) {
     console.error("PATCH /api/admin/ambassadors error:", err);

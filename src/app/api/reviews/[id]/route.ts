@@ -114,7 +114,7 @@ export async function DELETE(
 
     // Only author or admin can delete
     const isAuthor = review.buyerId === session.userId;
-    const isAdmin = session.role === "ADMIN";
+    const isAdmin = session.role === "ADMIN" || session.role === "SUPERADMIN";
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json(

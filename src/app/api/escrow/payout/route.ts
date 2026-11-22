@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     // Only admin or automated job can trigger release early
-    const isAdmin = session.role === "ADMIN";
+    const isAdmin = session.role === "ADMIN" || session.role === "SUPERADMIN";
     const updated = await releaseEscrowPayout(orderId, isAdmin ? session.id : undefined);
 
     return NextResponse.json({

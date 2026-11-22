@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (session) {
       const isBuyer =
         order.buyerId === session.id || order.buyerEmail === session.email;
-      const isAdmin = session.role === "ADMIN";
+      const isAdmin = session.role === "ADMIN" || session.role === "SUPERADMIN";
       if (!isBuyer && !isAdmin) {
         return NextResponse.json(
           { error: "You are not authorized to pay for this order" },

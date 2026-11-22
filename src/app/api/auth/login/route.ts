@@ -85,19 +85,27 @@ export async function POST(request: Request) {
 
     // Email verification check: if user email is not verified, require verification
     if (!user.emailVerified && user.role !== "ADMIN" && user.role !== "SUPERADMIN" && !user.email.endsWith("@guest.campustrade.ng")) {
-      createAndSendVerificationEmail({
+      const result = await createAndSendVerificationEmail({
         userId: user.id,
         email: user.email,
         fullName: user.fullName,
         origin,
-      }).catch((e) => console.error("Verification dispatch error on login:", e));
+      }).catch((e) => {
+        console.error("Verification dispatch error on login:", e);
+        return null;
+      });
+
+      const params = new URLSearchParams({ email: user.email });
+      if (result?.code) {
+        params.set("hint", result.code);
+      }
 
       return NextResponse.json(
         {
-          error: "Your email address is not verified yet. We have sent a 6-digit verification code to your email.",
+          error: "Your email address is not verified yet. Please enter the 6-digit verification code sent to your email to continue.",
           requiresVerification: true,
           email: user.email,
-          redirectTo: `/auth/verify-email?email=${encodeURIComponent(user.email)}`,
+          redirectTo: `/auth/verify-email?${params.toString()}`,
         },
         { status: 403 }
       );

@@ -8,8 +8,9 @@ import { WelcomeEmail, WelcomeEmailProps } from "@/emails/WelcomeEmail";
 import { VerifyEmail, VerifyEmailProps } from "@/emails/VerifyEmail";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-// Default to Resend's sandbox domain 'onboarding@resend.dev' until a custom verified domain is supplied
-const fromEmail = process.env.EMAIL_FROM || "ọjà <onboarding@resend.dev>";
+// Uses the verified custom domain xn--j-sfa590u.com (ọjà.com) on Resend for safe inbox delivery
+const fromEmail = process.env.EMAIL_FROM || "ọjà. <notifications@xn--j-sfa590u.com>";
+const fallbackFromEmail = "notifications@xn--j-sfa590u.com";
 
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
@@ -29,7 +30,7 @@ export async function sendOrderConfirmationEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Order #${props.orderNumber} Confirmed — ọjà Escrow`,
+      subject: `Order #${props.orderNumber} Confirmed — ọjà. Escrow`,
       react: OrderConfirmationEmail(props),
     });
 
@@ -80,9 +81,9 @@ export async function sendVendorStatusEmail(
   }
 
   const subjectMap = {
-    APPROVED: `Congratulations! Your store ${props.storeName} is approved — ọjà`,
-    REJECTED: `Update on your ọjà vendor application for ${props.storeName}`,
-    SUSPENDED: `Important notice regarding your ọjà vendor account`,
+    APPROVED: `Congratulations! Your store ${props.storeName} is approved — ọjà.`,
+    REJECTED: `Update on your ọjà. vendor application for ${props.storeName}`,
+    SUSPENDED: `Important notice regarding your ọjà. vendor account`,
     INFO_REQUESTED: `Action required: More information needed for ${props.storeName}`,
   };
 
@@ -90,7 +91,7 @@ export async function sendVendorStatusEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: subjectMap[props.status] || `ọjà Vendor Application Update`,
+      subject: subjectMap[props.status] || `ọjà. Vendor Application Update`,
       react: VendorStatusEmail(props),
     });
 
@@ -117,7 +118,7 @@ export async function sendPasswordResetEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Reset your ọjà password`,
+      subject: `Reset your ọjà. password`,
       react: PasswordResetEmail(props),
     });
 
@@ -136,7 +137,7 @@ export async function sendEmailVerificationEmail(
   props: EmailVerificationEmailProps
 ) {
   if (!resend) {
-    console.log(`[Email Simulated] Email verification link for ${to}: ${props.verifyUrl}`);
+    console.log(`[Email Simulated] Email verification for ${to}: code=${props.verificationCode}, link=${props.verifyUrl}`);
     return { success: true, simulated: true };
   }
 
@@ -144,14 +145,25 @@ export async function sendEmailVerificationEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Verify your email address — ọjà`,
+      subject: `Verify your email address — ọjà.`,
       react: EmailVerificationEmail(props),
     });
 
     return { success: true, data };
   } catch (error: any) {
-    console.error("Failed to send email verification email:", error);
-    return { success: false, error: error.message };
+    console.warn("[Resend Primary Error]", error?.message);
+    try {
+      const fallbackData = await resend.emails.send({
+        from: fallbackFromEmail,
+        to,
+        subject: `Verify your email address — ọjà.`,
+        react: EmailVerificationEmail(props),
+      });
+      return { success: true, data: fallbackData };
+    } catch (fallbackError: any) {
+      console.error("[Resend Fallback Error]:", fallbackError?.message);
+      return { success: false, error: fallbackError?.message || error?.message };
+    }
   }
 }
 
@@ -171,14 +183,25 @@ export async function sendVerifyEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Verify your email address — ọjà`,
+      subject: `Verify your email address — ọjà.`,
       react: VerifyEmail(props),
     });
 
     return { success: true, data };
   } catch (error: any) {
-    console.error("Failed to send verification email:", error);
-    return { success: false, error: error.message };
+    console.warn("[Resend Primary Error]", error?.message);
+    try {
+      const fallbackData = await resend.emails.send({
+        from: fallbackFromEmail,
+        to,
+        subject: `Verify your email address — ọjà.`,
+        react: VerifyEmail(props),
+      });
+      return { success: true, data: fallbackData };
+    } catch (fallbackError: any) {
+      console.error("[Resend Fallback Error]:", fallbackError?.message);
+      return { success: false, error: fallbackError?.message || error?.message };
+    }
   }
 }
 
@@ -198,13 +221,24 @@ export async function sendWelcomeEmail(
     const data = await resend.emails.send({
       from: fromEmail,
       to,
-      subject: `Welcome to ọjà, ${props.userName || "Campus Member"}! 🎓🛍️`,
+      subject: `Welcome to ọjà., ${props.userName || "Campus Member"}! 🎓🛍️`,
       react: WelcomeEmail(props),
     });
 
     return { success: true, data };
   } catch (error: any) {
-    console.error("Failed to send welcome email:", error);
-    return { success: false, error: error.message };
+    console.warn("[Resend Primary Error]", error?.message);
+    try {
+      const fallbackData = await resend.emails.send({
+        from: fallbackFromEmail,
+        to,
+        subject: `Welcome to ọjà., ${props.userName || "Campus Member"}! 🎓🛍️`,
+        react: WelcomeEmail(props),
+      });
+      return { success: true, data: fallbackData };
+    } catch (fallbackError: any) {
+      console.error("[Resend Fallback Error]:", fallbackError?.message);
+      return { success: false, error: fallbackError?.message || error?.message };
+    }
   }
 }

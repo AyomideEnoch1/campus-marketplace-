@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     // Verify caller is the seller of the order or admin
     const isSeller = order.vendor.userId === session.id || order.vendor.userId === (session as any).userId;
-    const isAdmin = (session as any).role === "ADMIN";
+    const isAdmin = (session as any).role === "ADMIN" || (session as any).role === "SUPERADMIN";
 
     if (!isSeller && !isAdmin) {
       return NextResponse.json({ error: "Only the seller or admin can verify the delivery code" }, { status: 403 });

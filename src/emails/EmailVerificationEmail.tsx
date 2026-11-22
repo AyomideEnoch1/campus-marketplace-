@@ -23,24 +23,18 @@ export function EmailVerificationEmail({
   verificationCode,
   verifyUrl = "https://xn--j-sfa590u.com/auth/verify-email",
 }: EmailVerificationEmailProps) {
-  // Ensure the link always uses ASCII Punycode so email clients cannot strip diacritics to foreign domains like oja.com or campustrade.ng
-  const safeVerifyUrl =
-    verifyUrl.includes("localhost") || verifyUrl.includes("127.0.0.1")
-      ? verifyUrl
-      : verifyUrl
-          .replace(/https?:\/\/campustrade\.ng[^\/]*/, "https://xn--j-sfa590u.com")
-          .replace(/https?:\/\/[^\/]+/, "https://xn--j-sfa590u.com");
+  const safeVerifyUrl = verifyUrl;
 
   return (
     <Html>
       <Head />
-      <Preview>Verify your email address on ọjà</Preview>
+      <Preview>Verify your email address on ọjà.</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              ọ<span style={{ color: "#10b981" }}>jà</span>
+              ọ<span style={{ color: "#10b981" }}>jà.</span>
             </Text>
             <Text style={headerSub}>Campus Marketplace &bull; Account Verification</Text>
           </Section>
@@ -50,7 +44,7 @@ export function EmailVerificationEmail({
             <Heading style={heading}>Verify Your Email Address ✉️</Heading>
             <Text style={paragraph}>Hello {userName},</Text>
             <Text style={paragraph}>
-              Welcome to <strong>ọjà</strong>, Nigeria&apos;s leading student campus marketplace! To complete your registration and secure your account, please verify your email address.
+              Welcome to <strong>ọjà.</strong>, Nigeria&apos;s leading student campus marketplace! To complete your registration and secure your account, please verify your email address.
             </Text>
 
             {/* 6-Digit Code Box */}
@@ -70,7 +64,7 @@ export function EmailVerificationEmail({
             </Section>
 
             <Text style={subtext}>
-              This verification link and code will expire in <strong>24 hours</strong>. If you did not create an account on ọjà, you can safely ignore this email.
+              This verification link and code will expire in <strong>24 hours</strong>. If you did not create an account on ọjà., you can safely ignore this email.
             </Text>
 
             <Hr style={divider} />
@@ -87,7 +81,7 @@ export function EmailVerificationEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              &copy; {new Date().getFullYear()} ọjà Marketplace (ọjà.com). Built for Nigerian campus students.
+              &copy; {new Date().getFullYear()} ọjà. Built for Nigerian campus students.
             </Text>
           </Section>
         </Container>
@@ -119,17 +113,17 @@ const header: React.CSSProperties = {
 };
 
 const logoText: React.CSSProperties = {
-  fontSize: "24px",
-  fontWeight: "900",
   color: "#ffffff",
-  margin: "0",
+  fontSize: "28px",
+  fontWeight: "bold",
+  margin: 0,
+  letterSpacing: "-0.5px",
 };
 
 const headerSub: React.CSSProperties = {
-  fontSize: "11px",
   color: "#a1a1aa",
-  margin: "4px 0 0 0",
-  textTransform: "uppercase" as const,
+  fontSize: "12px",
+  margin: "4px 0 0",
   letterSpacing: "0.5px",
 };
 
@@ -138,9 +132,9 @@ const content: React.CSSProperties = {
 };
 
 const heading: React.CSSProperties = {
-  fontSize: "22px",
-  fontWeight: "800",
   color: "#09090b",
+  fontSize: "22px",
+  fontWeight: "700",
   margin: "0 0 16px 0",
 };
 

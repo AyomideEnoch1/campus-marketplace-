@@ -9,12 +9,14 @@ import {
 } from "@/lib/email";
 
 export function getAppBaseUrl(origin?: string): string {
-  if (origin && (origin.includes("localhost") || origin.includes("127.0.0.1"))) {
+  if (origin && !origin.includes("localhost") && !origin.includes("127.0.0.1")) {
     return origin.replace(/\/$/, "");
   }
-  // For production emails, always use the canonical ASCII Punycode representation of ọjà.com
-  // so email clients (Gmail, Apple Mail, Outlook) will NEVER strip accents and route to oja.com (which is an unrelated third-party domain)
-  return "https://xn--j-sfa590u.com";
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (envUrl && !envUrl.includes("localhost") && !envUrl.includes("127.0.0.1")) {
+    return envUrl.replace(/\/$/, "");
+  }
+  return origin ? origin.replace(/\/$/, "") : "https://xn--j-sfa590u.com";
 }
 
 /**

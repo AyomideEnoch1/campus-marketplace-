@@ -61,6 +61,22 @@ export async function getReferralRewardConfig(): Promise<ReferralRewardConfig> {
 }
 
 /**
+ * Fetch ambassador payout request lock status regulated by Super Admin in SiteSetting.
+ * Returns true if locked (requests disabled), false if unlocked (requests allowed).
+ */
+export async function getAmbassadorPayoutLockStatus(): Promise<boolean> {
+  try {
+    const setting = await prisma.siteSetting.findUnique({
+      where: { key: "ambassador_payout_requests_locked" },
+    });
+    return setting?.value === "true";
+  } catch (err) {
+    console.error("Error reading ambassador payout lock status:", err);
+    return false;
+  }
+}
+
+/**
  * Increment ambassador click/scan count idempotently
  */
 export async function recordReferralClick(code: string) {

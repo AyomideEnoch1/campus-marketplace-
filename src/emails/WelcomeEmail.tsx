@@ -23,32 +23,26 @@ export function WelcomeEmail({
   userRole = "BUYER",
   exploreUrl = "https://xn--j-sfa590u.com/shop",
 }: WelcomeEmailProps) {
-  // Ensure the link always uses ASCII Punycode so email clients cannot strip diacritics to foreign domains like oja.com or campustrade.ng
-  const safeExploreUrl =
-    exploreUrl.includes("localhost") || exploreUrl.includes("127.0.0.1")
-      ? exploreUrl
-      : exploreUrl
-          .replace(/https?:\/\/campustrade\.ng[^\/]*/, "https://xn--j-sfa590u.com")
-          .replace(/https?:\/\/[^\/]+/, "https://xn--j-sfa590u.com");
   const isVendor = userRole === "VENDOR";
+  const safeExploreUrl = exploreUrl;
 
   return (
     <Html>
       <Head />
-      <Preview>Welcome to ọjà — Campus Student Marketplace!</Preview>
+      <Preview>Welcome to ọjà. — Campus Student Marketplace!</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              ọ<span style={{ color: "#10b981" }}>jà</span>
+              ọ<span style={{ color: "#10b981" }}>jà.</span>
             </Text>
             <Text style={headerSub}>Campus Marketplace &bull; Welcome Aboard</Text>
           </Section>
 
           {/* Hero Banner inside content */}
           <Section style={heroBanner}>
-            <Heading style={heading}>Welcome to ọjà, {userName}! 🎓🛍️</Heading>
+            <Heading style={heading}>Welcome to ọjà., {userName}! 🎓🛍️</Heading>
             <Text style={heroText}>
               {isVendor
                 ? "Your campus storefront is ready. Connect directly with students and start selling with escrow protection."
@@ -58,7 +52,7 @@ export function WelcomeEmail({
 
           {/* Core Value Props */}
           <Section style={content}>
-            <Text style={sectionTitle}>What makes ọjà special for campus students:</Text>
+            <Text style={sectionTitle}>What makes ọjà. special for campus students:</Text>
 
             {/* Feature 1 */}
             <Section style={featureCard}>
@@ -101,7 +95,7 @@ export function WelcomeEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              &copy; {new Date().getFullYear()} ọjà Marketplace. Built for Nigerian campus students.
+              &copy; {new Date().getFullYear()} ọjà. Built for Nigerian campus students.
             </Text>
           </Section>
         </Container>

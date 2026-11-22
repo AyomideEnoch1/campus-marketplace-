@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getReferralRewardConfig } from "@/lib/referral";
+import { getReferralRewardConfig, getAmbassadorPayoutLockStatus } from "@/lib/referral";
 import { AmbassadorDashboardClient } from "./AmbassadorDashboardClient";
 import { AmbassadorOnboarding } from "./AmbassadorOnboarding";
 
@@ -43,8 +43,15 @@ export default async function AmbassadorPage() {
     return <AmbassadorOnboarding campuses={campuses} userName={session.fullName} />;
   }
 
-  // Compute stats and fetch regulated referral reward rates
-  const [totalVendors, qualifiedVendors, totalBuyers, rewardConfig] = await Promise.all([
+  // Compute stats, active pending requests, and lock status
+  const [
+    totalVendors,
+    qualifiedVendors,
+    totalBuyers,
+    rewardConfig,
+    payoutRequestsLocked,
+    activePayoutRequest,
+  ] = await Promise.all([
     prisma.referral.count({
       where: { ambassadorId: ambassador.id, roleAtSignup: "VENDOR" },
     }),
@@ -55,6 +62,11 @@ export default async function AmbassadorPage() {
       where: { ambassadorId: ambassador.id, roleAtSignup: "BUYER" },
     }),
     getReferralRewardConfig(),
+    getAmbassadorPayoutLockStatus(),
+    prisma.ambassadorPayout.findFirst({
+      where: { ambassadorId: ambassador.id, status: "PENDING" },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const sanitizedAmbassador = {
@@ -69,6 +81,16 @@ export default async function AmbassadorPage() {
     bankName: ambassador.bankName,
     bankVerified: ambassador.bankVerified,
     campus: ambassador.campus,
+    payoutRequestsLocked,
+    activePayoutRequest: activePayoutRequest
+      ? {
+          id: activePayoutRequest.id,
+          amount: activePayoutRequest.amount,
+          reference: activePayoutRequest.reference,
+          status: activePayoutRequest.status,
+          createdAt: activePayoutRequest.createdAt.toISOString(),
+        }
+      : null,
     stats: {
       totalReferrals: ambassador._count.referrals,
       totalVendors,
@@ -83,7 +105,7 @@ export default async function AmbassadorPage() {
 
   return (
     <AmbassadorDashboardClient
-      initialAmbassador={sanitizedAmbassador}
+      initialAmbassador={sanitizedAmbassador as any}
       rewardConfig={rewardConfig}
     />
   );

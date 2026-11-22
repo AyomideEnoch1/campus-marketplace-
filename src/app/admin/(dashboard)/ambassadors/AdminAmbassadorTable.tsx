@@ -19,6 +19,11 @@ import {
   SlidersHorizontal,
   Save,
   RotateCcw,
+  Lock,
+  Unlock,
+  Loader2,
+  ShieldAlert,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,10 +69,14 @@ export function AdminAmbassadorTable({
   initialAmbassadors,
   campuses,
   initialRewardConfig,
+  initialPayoutRequestsLocked,
+  currentAdminRole,
 }: {
   initialAmbassadors: AmbassadorItem[];
   campuses: CampusItem[];
   initialRewardConfig?: ReferralRewardRates;
+  initialPayoutRequestsLocked?: boolean;
+  currentAdminRole?: string;
 }) {
   const [ambassadors, setAmbassadors] = React.useState<AmbassadorItem[]>(initialAmbassadors);
   const [search, setSearch] = React.useState("");
@@ -76,6 +85,47 @@ export function AdminAmbassadorTable({
   const [payoutAmount, setPayoutAmount] = React.useState<number>(0);
   const [payoutNotes, setPayoutNotes] = React.useState("");
   const [processingPayout, setProcessingPayout] = React.useState(false);
+  const [payoutRequestsLocked, setPayoutRequestsLocked] = React.useState<boolean>(
+    Boolean(initialPayoutRequestsLocked)
+  );
+  const [togglingLock, setTogglingLock] = React.useState(false);
+  const isSuperAdmin = currentAdminRole === "SUPERADMIN";
+
+  async function handleTogglePayoutLock() {
+    if (!isSuperAdmin) {
+      toast.error("Forbidden: Only Super Administrators can lock or unlock earning requests.");
+      return;
+    }
+
+    const nextState = !payoutRequestsLocked;
+    const confirmPrompt = nextState
+      ? "Are you sure you want to LOCK ambassador earning requests?\n\nAmbassadors will NOT be able to submit payout requests from their dashboard while this is locked."
+      : "Are you sure you want to UNLOCK ambassador earning requests?\n\nAmbassadors with verified Nigerian bank accounts will be able to request their pending referral earnings.";
+
+    if (!window.confirm(confirmPrompt)) return;
+
+    try {
+      setTogglingLock(true);
+      const res = await fetch("/api/admin/ambassadors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payoutRequestsLocked: nextState }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update lock status");
+
+      setPayoutRequestsLocked(Boolean(data.payoutRequestsLocked));
+      toast.success(
+        nextState
+          ? "Ambassador earning request button has been LOCKED."
+          : "Ambassador earning request button has been UNLOCKED."
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update payout request lock");
+    } finally {
+      setTogglingLock(false);
+    }
+  }
 
   // Referral Reward Rates State
   const [rewardRates, setRewardRates] = React.useState<ReferralRewardRates>(
@@ -241,6 +291,79 @@ export function AdminAmbassadorTable({
           <span className="text-xs text-neutral-400 block mb-1">Total Paid to Date</span>
           <span className="text-2xl font-bold text-teal-400">₦{totalPaidOut.toLocaleString()}</span>
           <span className="text-[11px] text-neutral-400 block mt-1">Direct student rewards</span>
+        </div>
+      </div>
+
+      {/* Super Admin Control: Ambassador Earning Requests Lock */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+              payoutRequestsLocked
+                ? "bg-amber-950/80 border-amber-800/80 text-amber-400"
+                : "bg-emerald-950/80 border-emerald-800/80 text-emerald-400"
+            }`}
+          >
+            {payoutRequestsLocked ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-white">
+                Ambassador Earning Request Button:
+              </h2>
+              <span
+                className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border ${
+                  payoutRequestsLocked
+                    ? "bg-amber-950/80 text-amber-300 border-amber-800"
+                    : "bg-emerald-950/80 text-emerald-300 border-emerald-800"
+                }`}
+              >
+                {payoutRequestsLocked ? "Locked (Requests Disabled)" : "Unlocked (Requests Allowed)"}
+              </span>
+            </div>
+            <p className="text-xs text-neutral-400 mt-0.5">
+              {payoutRequestsLocked
+                ? "The 'Request Earnings' button is locked in ambassador dashboards. Ambassadors cannot submit payout requests until unlocked."
+                : "Ambassadors with verified Nigerian bank accounts can request their pending referral earnings directly from their dashboard."}
+            </p>
+          </div>
+        </div>
+
+        <div className="shrink-0">
+          {isSuperAdmin ? (
+            <Button
+              type="button"
+              disabled={togglingLock}
+              onClick={handleTogglePayoutLock}
+              className={`text-xs font-bold gap-1.5 px-4 h-10 rounded-xl transition-colors ${
+                payoutRequestsLocked
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  : "bg-amber-600 hover:bg-amber-700 text-white"
+              }`}
+            >
+              {togglingLock ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : payoutRequestsLocked ? (
+                <>
+                  <Unlock className="w-4 h-4" />
+                  <span>Unlock Request Button</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Lock Request Button</span>
+                </>
+              )}
+            </Button>
+          ) : (
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-neutral-500 text-xs cursor-not-allowed"
+              title="Super Administrator privilege required"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-neutral-600" />
+              <span>Superadmin Control Only</span>
+            </div>
+          )}
         </div>
       </div>
 

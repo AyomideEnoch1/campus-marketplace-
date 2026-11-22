@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
     }
 
-    const isAdmin = (session as any)?.role === "ADMIN";
+    const isAdmin = (session as any)?.role === "ADMIN" || (session as any)?.role === "SUPERADMIN";
 
     // 1. Fetch Order and Seller Details with row-level integrity
     const order = await prisma.order.findUnique({

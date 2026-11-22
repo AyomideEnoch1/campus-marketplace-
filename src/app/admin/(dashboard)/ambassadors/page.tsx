@@ -2,11 +2,13 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { prisma } from "@/lib/prisma";
-import { getReferralRewardConfig } from "@/lib/referral";
+import { getSession } from "@/lib/auth";
+import { getReferralRewardConfig, getAmbassadorPayoutLockStatus } from "@/lib/referral";
 import { AdminAmbassadorTable } from "./AdminAmbassadorTable";
 
 export default async function AdminAmbassadorsPage() {
-  const [ambassadors, campuses, rewardConfig] = await Promise.all([
+  const [session, ambassadors, campuses, rewardConfig, payoutRequestsLocked] = await Promise.all([
+    getSession(),
     prisma.ambassadorProfile.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -30,6 +32,7 @@ export default async function AdminAmbassadorsPage() {
       orderBy: { name: "asc" },
     }),
     getReferralRewardConfig(),
+    getAmbassadorPayoutLockStatus(),
   ]);
 
   const formatted = ambassadors.map((a) => {
@@ -80,6 +83,8 @@ export default async function AdminAmbassadorsPage() {
         initialAmbassadors={formatted}
         campuses={campuses}
         initialRewardConfig={rewardConfig}
+        initialPayoutRequestsLocked={payoutRequestsLocked}
+        currentAdminRole={session?.role}
       />
     </div>
   );

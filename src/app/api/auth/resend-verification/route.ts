@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     // Generate fresh OTP, JWT token and dispatch email
-    await createAndSendVerificationEmail({
+    const result = await createAndSendVerificationEmail({
       userId: user.id,
       email: user.email,
       fullName: user.fullName,
@@ -49,6 +49,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      hint: result?.code,
       message: "A fresh 6-digit verification code and link has been sent to your email.",
     });
   } catch (err: any) {

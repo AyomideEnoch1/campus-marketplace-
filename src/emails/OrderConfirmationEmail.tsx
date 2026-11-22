@@ -34,13 +34,13 @@ export function OrderConfirmationEmail({
   return (
     <Html>
       <Head />
-      <Preview>Your ọjà order #{orderNumber} is confirmed!</Preview>
+      <Preview>Your ọjà. order #{orderNumber} is confirmed!</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              ọ<span style={{ color: "#10b981" }}>jà</span>
+              ọ<span style={{ color: "#10b981" }}>jà.</span>
             </Text>
             <Text style={headerSub}>Campus Student Marketplace &bull; Escrow Protected</Text>
           </Section>

@@ -23,23 +23,18 @@ export function VerifyEmail({
   verificationCode = "123456",
   verifyUrl = "https://xn--j-sfa590u.com/auth/verify-email",
 }: VerifyEmailProps) {
-  // Ensure the link always uses ASCII Punycode so email clients cannot strip diacritics to foreign domains like oja.com or campustrade.ng
-  const safeVerifyUrl =
-    verifyUrl.includes("localhost") || verifyUrl.includes("127.0.0.1")
-      ? verifyUrl
-      : verifyUrl
-          .replace(/https?:\/\/campustrade\.ng[^\/]*/, "https://xn--j-sfa590u.com")
-          .replace(/https?:\/\/[^\/]+/, "https://xn--j-sfa590u.com");
+  const safeVerifyUrl = verifyUrl;
+
   return (
     <Html>
       <Head />
-      <Preview>Verify your email address for ọjà</Preview>
+      <Preview>Verify your email address for ọjà.</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              ọ<span style={{ color: "#10b981" }}>jà</span>
+              ọ<span style={{ color: "#10b981" }}>jà.</span>
             </Text>
             <Text style={headerSub}>Campus Marketplace &bull; Email Verification</Text>
           </Section>
@@ -49,7 +44,7 @@ export function VerifyEmail({
             <Heading style={heading}>Verify Your Email Address 📬</Heading>
             <Text style={paragraph}>Hello {userName},</Text>
             <Text style={paragraph}>
-              Thank you for signing up on <strong>ọjà</strong>, the verified student campus marketplace. Please verify your email to secure your account and unlock trading.
+              Thank you for signing up on <strong>ọjà.</strong>, the verified student campus marketplace. Please verify your email to secure your account and unlock trading.
             </Text>
 
             {/* 6-Digit Code Box */}
@@ -71,7 +66,7 @@ export function VerifyEmail({
             </Section>
 
             <Text style={subtext}>
-              This code and link will expire in <strong>24 hours</strong>. If you did not create an account on ọjà, please disregard this email.
+              This code and link will expire in <strong>24 hours</strong>. If you did not create an account on ọjà., please disregard this email.
             </Text>
 
             <Hr style={divider} />
@@ -88,7 +83,7 @@ export function VerifyEmail({
           {/* Footer */}
           <Section style={footer}>
             <Text style={footerText}>
-              &copy; {new Date().getFullYear()} ọjà Marketplace. Built for Nigerian campus students.
+              &copy; {new Date().getFullYear()} ọjà. Built for Nigerian campus students.
             </Text>
           </Section>
         </Container>

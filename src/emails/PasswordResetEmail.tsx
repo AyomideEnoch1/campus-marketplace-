@@ -21,21 +21,17 @@ export function PasswordResetEmail({
   userName = "Student",
   resetUrl = "https://xn--j-sfa590u.com/auth/reset-password",
 }: PasswordResetEmailProps) {
-  // Ensure the link always uses ASCII Punycode so email clients cannot strip diacritics to foreign domains like oja.com
-  const safeResetUrl =
-    resetUrl.includes("localhost") || resetUrl.includes("127.0.0.1")
-      ? resetUrl
-      : resetUrl.replace(/https?:\/\/[^\/]+/, "https://xn--j-sfa590u.com");
+  const safeResetUrl = resetUrl;
   return (
     <Html>
       <Head />
-      <Preview>Reset your ọjà password</Preview>
+      <Preview>Reset your ọjà. password</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
             <Text style={logoText}>
-              ọ<span style={{ color: "#10b981" }}>jà</span>
+              ọ<span style={{ color: "#10b981" }}>jà.</span>
             </Text>
             <Text style={headerSub}>Campus Marketplace &bull; Account Security</Text>
           </Section>
