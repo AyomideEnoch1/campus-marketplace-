@@ -9,10 +9,8 @@ import {
   ShoppingBag,
   ShieldCheck,
   Building2,
-  UploadCloud,
   CheckCircle2,
   AlertCircle,
-  FileText,
   Camera,
   MapPin,
   Clock,
@@ -103,17 +101,6 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   // Guest Vendor Fields
   const [businessName, setBusinessName] = React.useState("");
   const [businessCategory, setBusinessCategory] = React.useState("Fashion & Apparel");
-  const [businessAddress, setBusinessAddress] = React.useState("");
-  const [businessPhotoPath, setBusinessPhotoPath] = React.useState("");
-  const [governmentIdType, setGovernmentIdType] = React.useState<
-    "voters_card" | "drivers_license" | "international_passport" | "school_work_id"
-  >("voters_card");
-  const [governmentIdNumber, setGovernmentIdNumber] = React.useState("");
-  const [idDocumentPath, setIdDocumentPath] = React.useState("");
-  const [selfieDocumentPath, setSelfieDocumentPath] = React.useState("");
-  const [cacNumber, setCacNumber] = React.useState("");
-  const [cacDocumentPath, setCacDocumentPath] = React.useState("");
-  const [voucherCode, setVoucherCode] = React.useState("");
 
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -135,7 +122,6 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         if (d.faculty) setFaculty(d.faculty);
         if (d.department) setDepartment(d.department);
         if (d.businessName) setBusinessName(d.businessName);
-        if (d.businessAddress) setBusinessAddress(d.businessAddress);
         if (d.sellerType) setSellerType(d.sellerType);
       }
     } catch {}
@@ -157,7 +143,6 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
           faculty,
           department,
           businessName,
-          businessAddress,
           sellerType,
         })
       );
@@ -173,16 +158,8 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
     faculty,
     department,
     businessName,
-    businessAddress,
     sellerType,
   ]);
-
-  // Selected campus details
-  const selectedCampus = campuses.find((c) => c.id === campusId);
-  const guestVendorsEnabled = selectedCampus?.settings ? selectedCampus.settings.guestVendorsEnabled : true;
-  const guestVendorCap = selectedCampus?.settings ? selectedCampus.settings.guestVendorCap : 50;
-  const currentGuestCount = selectedCampus?._count?.vendors || 0;
-  const isCapReached = currentGuestCount >= guestVendorCap;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,6 +184,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
     }
 
     if (sellerType === "student") {
+      if (!campusId) {
+        setError("Please select a target campus.");
+        return;
+      }
       if (!email.trim() || !email.includes("@")) {
         setError("Please enter a valid student email address.");
         return;
@@ -220,22 +201,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         return;
       }
     }
-    // Validate Guest specifics
+
     if (sellerType === "guest") {
-      if (!guestVendorsEnabled) {
-        setError(`Guest registration is temporarily disabled on ${selectedCampus?.name || "this campus"}. Only verified students can sell.`);
-        return;
-      }
       if (!businessName.trim() && !storeName.trim()) {
         setError("Please enter your Business / Trade name.");
-        return;
-      }
-      if (!businessAddress.trim()) {
-        setError("Please enter your physical shop or business address.");
-        return;
-      }
-      if (!idDocumentPath || !selfieDocumentPath) {
-        setError("Please upload your government-issued ID and selfie holding your ID for Tier 2 verification.");
         return;
       }
     }
@@ -252,27 +221,18 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         role: "VENDOR",
         sellerType,
         storeName: storeName || businessName,
-        campusId,
         storeDescription,
         referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
       };
 
       if (sellerType === "student") {
+        payload.campusId = campusId;
         payload.faculty = faculty;
         payload.department = department;
         payload.studentIdUrl = studentIdUrl || undefined;
       } else {
         payload.businessName = businessName || storeName;
         payload.businessCategory = businessCategory;
-        payload.businessAddress = businessAddress;
-        payload.businessPhotoPath = businessPhotoPath || undefined;
-        payload.governmentIdType = governmentIdType;
-        payload.governmentIdNumber = governmentIdNumber;
-        payload.idDocumentPath = idDocumentPath;
-        payload.selfieDocumentPath = selfieDocumentPath;
-        payload.cacNumber = cacNumber || undefined;
-        payload.cacDocumentPath = cacDocumentPath || undefined;
-        payload.vouchedBy = voucherCode || undefined;
       }
 
       const res = await fetch("/api/auth/register", {
@@ -301,38 +261,45 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50/70 py-10 sm:py-16 px-4">
-      <div className="container mx-auto max-w-3xl space-y-8">
-        {/* Top Header */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/30">
-              <ShoppingCart className="w-5 h-5" />
-            </div>
-            <span className="font-black text-2xl tracking-tight text-neutral-900 lowercase">
-              ọ<span className="text-emerald-600">jà</span>
-            </span>
+    <div className="min-h-screen bg-neutral-50/50 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-2xl mx-auto space-y-8">
+        {/* Navigation Breadcrumb / Header */}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-500 hover:text-neutral-900 transition-colors"
+          >
+            &larr; Back to Marketplace
           </Link>
-          <h1 className="text-2xl sm:text-4xl font-black text-neutral-950 tracking-tight">
-            Start Selling on ọjà
-          </h1>
-          <p className="text-xs sm:text-sm text-neutral-500 max-w-lg mx-auto">
-            Sell directly to thousands of Nigerian university students. Choose whether you&apos;re a student or an external business to get started.
+          <span className="text-xs text-neutral-400">
+            Already registered?{" "}
+            <Link href="/auth/login" className="text-emerald-600 font-bold hover:underline">
+              Sign In
+            </Link>
+          </span>
+        </div>
+
+        {/* Page Title & Intro */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
+              <ShoppingBag className="w-5 h-5" />
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+              Create Your Campus Store
+            </h1>
+          </div>
+          <p className="text-sm text-neutral-500">
+            Join thousands of student and local merchants selling directly to verified campus buyers with escrow protection.
           </p>
         </div>
 
-        {/* Seller Type Selector Tabs */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
-              Who is selling?
-            </span>
-            <span className="text-[11px] text-neutral-400">
-              Select your seller account
-            </span>
-          </div>
-          <div className="bg-white rounded-3xl border border-neutral-200/80 p-3 sm:p-4 shadow-sm">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Seller Type Selection Cards */}
+        <div className="space-y-3">
+          <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+            Account Type
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {/* Student Vendor Option */}
             <button
               type="button"
@@ -423,11 +390,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
               </div>
               <div className="mt-3 pt-2.5 border-t border-emerald-200/60 text-[11px] text-emerald-800 font-semibold flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                Safe meetup points &bull; Government ID review
+                Safe meetup points &bull; Off-campus seller
               </div>
             </button>
           </div>
-        </div>
         </div>
 
         {/* Guest Warning / Info Alert */}
@@ -435,14 +401,11 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
           <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-4 text-xs text-amber-950 space-y-1.5">
             <div className="flex items-center gap-2 font-bold text-amber-900">
               <ShieldCheck className="w-4 h-4 text-amber-700" />
-              Guest Vendor Safeguards & Verification Protocol
+              Guest Vendor Safeguards &amp; Selling Protocol
             </div>
             <ul className="list-disc pl-4 space-y-1 text-amber-800 leading-relaxed">
               <li>
-                <strong>Tier 1 (Instant):</strong> Phone OTP verification allows up to 3 listings with ₦10,000 order cap.
-              </li>
-              <li>
-                <strong>Tier 2 (Within 24 Hours):</strong> Admin manual review of Government ID + Selfie + Business location.
+                <strong>Instant Selling:</strong> Register and list products to reach students on campus.
               </li>
               <li>
                 <strong>Designated Meetups:</strong> All campus orders are delivered at verified campus safe meetup points chosen by buyers at checkout.
@@ -468,9 +431,9 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
           <div className="space-y-4">
             <div className="border-b border-neutral-100 pb-3">
               <h2 className="text-base font-bold text-neutral-900">
-                1. Account Credentials & Campus
+                1. Account &amp; Contact Information
               </h2>
-              <p className="text-xs text-neutral-500">Your login credentials and primary university market</p>
+              <p className="text-xs text-neutral-500">Your personal login and store management credentials</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -493,7 +456,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <Input
                   type="tel"
                   required
-                  placeholder="e.g. 0801 000 0008"
+                  placeholder="e.g. 0801 234 5678"
                   value={phone}
                   onChange={(e) => {
                     const formatted = formatNigerianPhone(e.target.value);
@@ -502,7 +465,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                   }}
                   className="rounded-xl text-xs h-10"
                 />
-                <span className="text-[10px] text-neutral-400">Used for customer communication & meetup alerts</span>
+                <span className="text-[10px] text-neutral-400">Used for customer communication &amp; meetup alerts</span>
               </div>
             </div>
 
@@ -597,36 +560,24 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
               <PasswordStrengthGauge password={password} />
             )}
 
-            {/* Campus Selection */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-neutral-700">Select Target Campus *</label>
-              <select
-                aria-label="Target University Campus"
-                value={campusId}
-                onChange={(e) => setCampusId(e.target.value)}
-                className="flex h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-600"
-              >
-                {campuses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} &mdash; {c.city}
-                  </option>
-                ))}
-              </select>
-
-              {sellerType === "guest" && (
-                <div className="mt-1 text-[11px] text-neutral-500">
-                  {!guestVendorsEnabled ? (
-                    <span className="text-rose-600 font-semibold flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" /> Guest vendors are currently disabled on this campus.
-                    </span>
-                  ) : (
-                    <span className="text-emerald-700 font-medium flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Guest vendors accepted ({currentGuestCount} / {guestVendorCap} active slots taken).
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Campus Selection (Student Vendor only) */}
+            {sellerType === "student" && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-neutral-700">Select Target Campus *</label>
+                <select
+                  aria-label="Target University Campus"
+                  value={campusId}
+                  onChange={(e) => setCampusId(e.target.value)}
+                  className="flex h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-600"
+                >
+                  {campuses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} &mdash; {c.city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Ambassador / Referral Code */}
             <div className="space-y-1 pt-1">
@@ -728,37 +679,21 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 className="w-full rounded-xl border border-neutral-300 p-3 text-xs outline-none focus:border-emerald-600"
               />
             </div>
-
-            {sellerType === "guest" && (
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-neutral-700">
-                  Shop Physical Address / Campus Operating Area *
-                </label>
-                <Input
-                  required
-                  maxLength={200}
-                  placeholder="e.g. Shop 4, Commercial Hub Beside Unilag Back Gate, Akoka"
-                  value={businessAddress}
-                  onChange={(e) => setBusinessAddress(e.target.value)}
-                  className="rounded-xl text-xs h-10"
-                />
-              </div>
-            )}
           </div>
 
-          {/* Section 3: Verification Documents */}
-          <div className="space-y-6">
-            <div className="border-b border-neutral-100 pb-3">
-              <h2 className="text-base font-bold text-neutral-900">
-                3. Identity & Verification Documents
-              </h2>
-              <p className="text-xs text-neutral-500">
-                Protected and encrypted in compliance with NDPA guidelines. Only platform administrators can inspect review documents.
-              </p>
-            </div>
+          {/* Section 3: Verification Documents (Student Vendor only) */}
+          {sellerType === "student" && (
+            <div className="space-y-6">
+              <div className="border-b border-neutral-100 pb-3">
+                <h2 className="text-base font-bold text-neutral-900">
+                  3. Identity &amp; Verification Documents
+                </h2>
+                <p className="text-xs text-neutral-500">
+                  Protected and encrypted in compliance with NDPA guidelines. Only platform administrators can inspect review documents.
+                </p>
+              </div>
 
-            {sellerType === "student" ? (
-              /* Student Verification */
+              {/* Student Verification */}
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-2.5">
                   <div className="flex flex-wrap items-center gap-2">
@@ -799,135 +734,8 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                   )}
                 </div>
               </div>
-            ) : (
-              /* Guest Verification (Government ID, Selfie, Shop Photo, Optional CAC) */
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-neutral-700">Government ID Type *</label>
-                    <select
-                      aria-label="Government ID Type"
-                      value={governmentIdType}
-                      onChange={(e: any) => setGovernmentIdType(e.target.value)}
-                      className="flex h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-600"
-                    >
-                      <option value="voters_card">National Voter&apos;s Card (INEC)</option>
-                      <option value="drivers_license">FRSC Driver&apos;s License</option>
-                      <option value="international_passport">International Passport</option>
-                      <option value="school_work_id">Official Institution / Staff / Work ID</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-neutral-700">
-                      Government ID Number *
-                    </label>
-                    <Input
-                      required
-                      placeholder="e.g. VIN / License / Passport Number"
-                      value={governmentIdNumber}
-                      onChange={(e) => setGovernmentIdNumber(e.target.value)}
-                      className="rounded-xl text-xs h-10"
-                    />
-                    <span className="text-[10px] text-neutral-400">
-                      Hashed cryptographically for duplicate detection; never stored in plaintext.
-                    </span>
-                  </div>
-                </div>
-
-                {/* ID Photo & Selfie Uploads */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-700 block">
-                      1. Government ID Photo *
-                    </label>
-                    <SingleImageUpload
-                      value={idDocumentPath}
-                      onChange={setIdDocumentPath}
-                      folder="stores"
-                      label="Upload ID Document"
-                      hint="Clear photo of the front of your government ID card"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-700 block">
-                      2. Selfie Holding Your ID *
-                    </label>
-                    <SingleImageUpload
-                      value={selfieDocumentPath}
-                      onChange={setSelfieDocumentPath}
-                      folder="stores"
-                      label="Upload Selfie with ID"
-                      hint="Hold your ID card next to your face in a well-lit area"
-                    />
-                  </div>
-                </div>
-
-                {/* Shop Photo */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-neutral-700 block">
-                    Shop / Stall Photo (Optional)
-                  </label>
-                  <SingleImageUpload
-                    value={businessPhotoPath}
-                    onChange={setBusinessPhotoPath}
-                    folder="stores"
-                    label="Upload Shop / Storefront Photo"
-                    hint="A photo of your stall, physical shop, or inventory"
-                  />
-                </div>
-
-                {/* CAC Registration (Optional) */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span className="text-xs font-bold text-neutral-900">
-                        Registered Business Verification (Optional)
-                      </span>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-300 w-fit shrink-0">
-                      Grants &quot;Registered Business&quot; Badge
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-neutral-500">
-                    If your business is registered with the Corporate Affairs Commission (CAC), provide your RC/BN number to receive a verified business checkmark.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Input
-                      placeholder="e.g. RC 1234567 or BN 987654"
-                      value={cacNumber}
-                      onChange={(e) => setCacNumber(e.target.value)}
-                      className="rounded-xl text-xs h-10 bg-white"
-                    />
-                    <Input
-                      placeholder="CAC Document URL or certificate reference"
-                      value={cacDocumentPath}
-                      onChange={(e) => setCacDocumentPath(e.target.value)}
-                      className="rounded-xl text-xs h-10 bg-white"
-                    />
-                  </div>
-                </div>
-
-                {/* Vouching by Trusted Seller (Optional) */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-neutral-700">
-                    Trusted Seller Voucher ID (Optional)
-                  </label>
-                  <Input
-                    placeholder="User ID or store code of an existing Trusted Seller who vouches for you"
-                    value={voucherCode}
-                    onChange={(e) => setVoucherCode(e.target.value)}
-                    className="rounded-xl text-xs h-10"
-                  />
-                  <span className="text-[10px] text-neutral-400">
-                    If vouched, your account gains expedited trust; note that upheld scam reports will impact both parties.
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Submit Button */}
           <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -952,9 +760,13 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 phone.trim().length < 7 ||
                 password.length < 6 ||
                 (confirmPassword.length > 0 && password !== confirmPassword) ||
-                !campusId ||
-                (sellerType === "student" && (!email.trim() || !email.includes("@") || !storeName.trim())) ||
-                (sellerType === "guest" && (!guestVendorsEnabled || !businessName.trim() || !businessAddress.trim() || !idDocumentPath || !selfieDocumentPath))
+                (sellerType === "student" &&
+                  (!campusId ||
+                    !email.trim() ||
+                    !email.includes("@") ||
+                    !storeName.trim())) ||
+                (sellerType === "guest" &&
+                  (!businessName.trim() && !storeName.trim()))
               }
               className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold px-8 h-11 shadow-md shadow-emerald-600/20 transition-all inline-flex items-center justify-center gap-2"
             >

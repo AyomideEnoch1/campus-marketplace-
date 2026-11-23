@@ -2,7 +2,6 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
@@ -163,26 +162,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Duplicate Government ID check for Guest Vendors
-    let governmentIdHash: string | null = null;
-    if (governmentIdNumber && governmentIdNumber.trim()) {
-      governmentIdHash = crypto
-        .createHash("sha256")
-        .update(governmentIdNumber.trim().toUpperCase())
-        .digest("hex");
-
-      const existingId = await prisma.vendorProfile.findFirst({
-        where: { governmentIdHash },
-      });
-
-      if (existingId) {
-        return NextResponse.json(
-          { error: "This government ID has already been registered with another vendor account. Duplicate registrations are prohibited." },
-          { status: 409 }
-        );
-      }
-    }
-
     // Campus Guest Vendor Control Verification
     if (role === "VENDOR" && sellerType === "guest" && campusId) {
       const campusSetting = await prisma.campusSetting.findUnique({
@@ -230,16 +209,8 @@ export async function POST(request: Request) {
 
     // Determine verification tier
     let verificationTier = 1;
-    if (sellerType === "guest") {
-      // If government ID document and selfie are provided, applicant advances to Tier 2 (under manual review)
-      if (idDocumentPath && selfieDocumentPath) {
-        verificationTier = 2;
-      }
-    } else {
-      // Student vendor with student ID uploaded
-      if (studentIdUrl) {
-        verificationTier = 2;
-      }
+    if (sellerType === "student" && studentIdUrl) {
+      verificationTier = 2;
     }
 
     // Payout delay: 72 hours for guest sellers (students get 48 hours)
@@ -336,7 +307,6 @@ export async function POST(request: Request) {
               cacDocumentPath: cacDocumentPath || null,
               isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
               governmentIdType: governmentIdType || null,
-              governmentIdHash: governmentIdHash || null,
               idDocumentPath: idDocumentPath || null,
               selfieDocumentPath: selfieDocumentPath || null,
               vouchedBy: vouchedBy || null,

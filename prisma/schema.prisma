@@ -130,7 +130,6 @@ model VendorProfile {
   cacDocumentPath  String?
   isRegisteredBusiness Boolean   @default(false)
   governmentIdType String?      // voters_card, drivers_license, international_passport, school_work_id
-  governmentIdHash String?      // SHA-256 hash for duplicate check
   idDocumentPath   String?
   selfieDocumentPath String?
   vouchedBy        String?      // User/Vendor ID who vouched
@@ -168,7 +167,6 @@ model VendorProfile {
   @@index([campusId])
   @@index([status])
   @@index([sellerType])
-  @@index([governmentIdHash])
 }
 
 model Campus {
