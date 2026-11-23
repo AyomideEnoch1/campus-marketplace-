@@ -167,7 +167,6 @@ model VendorProfile {
   cacDocumentPath  String?
   isRegisteredBusiness Boolean   @default(false)
   governmentIdType String?      // nin, voters_card, drivers_license, international_passport, school_work_id
-  governmentIdHash String?      // SHA-256 hash for duplicate check
   nin              String?      // 11-digit National Identity Number (NIN)
   idDocumentPath   String?
   selfieDocumentPath String?
@@ -214,7 +213,6 @@ model VendorProfile {
   @@index([status])
   @@index([accessState])
   @@index([sellerType])
-  @@index([governmentIdHash])
 }
 
 model Campus {

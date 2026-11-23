@@ -67,7 +67,7 @@ const slides: SlideItem[] = [
     highlightText: "Income!",
     description: "Launch your verified student storefront in under 3 minutes.",
     buttonText: "Open Store!",
-    buttonHref: "/vendor/register",
+    buttonHref: "/auth/register?role=vendor",
     imageSrc: "/images/hero-shopping-cart.png",
     imageAlt: "Student entrepreneur storefront cart",
     bgGradient: "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-700",

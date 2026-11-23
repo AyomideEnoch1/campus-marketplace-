@@ -219,7 +219,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Orders from unverified Tier 1 Guest Vendors are capped at ₦10,000. Please reduce quantity or order from a verified Tier 2+ seller.",
+            "Orders from unverified Tier 1 Non-Student Vendors are capped at ₦10,000. Please reduce quantity or order from a verified Tier 2+ seller.",
         },
         { status: 400 }
       );
@@ -240,7 +240,7 @@ export async function POST(request: Request) {
           finalDeliveryAddress = `${firstPoint.name} - ${firstPoint.description || ""}`.trim();
         } else {
           return NextResponse.json(
-            { error: "Safe campus meetup point selection is required for orders from guest vendors." },
+            { error: "Safe campus meetup point selection is required for orders from Non-Student Vendors." },
             { status: 400 }
           );
         }

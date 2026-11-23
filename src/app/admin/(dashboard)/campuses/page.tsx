@@ -38,10 +38,10 @@ export default async function AdminCampusesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-white tracking-tight">
-          Campus Directory & Guest Vendor Governance
+          Campus Directory & Non-Student Vendor Governance
         </h1>
         <p className="text-xs text-neutral-400 mt-1">
-          Activate universities, configure guest vendor registration caps, safe campus meetup zones, and manage student vs guest policies.
+          Activate universities, configure non-student vendor registration caps, safe campus meetup zones, and manage student vs guest policies.
         </p>
       </div>
 

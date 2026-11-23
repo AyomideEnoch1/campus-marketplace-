@@ -38,6 +38,12 @@ export async function GET(request: Request) {
     const roleIntent =
       rawRole === "VENDOR" || rawRole === "BUYER" ? (rawRole as "BUYER" | "VENDOR") : undefined;
 
+    const rawSellerType = searchParams.get("sellerType")?.toLowerCase();
+    const sellerType =
+      rawSellerType === "student" || rawSellerType === "guest"
+        ? (rawSellerType as "student" | "guest")
+        : undefined;
+
     const rawRedirect = searchParams.get("redirect");
     const redirect = rawRedirect ? sanitizeRedirectUrl(rawRedirect) : undefined;
 
@@ -46,6 +52,7 @@ export async function GET(request: Request) {
     // Generate signed, tamper-resistant state
     const { stateString, cookieValue } = generateOAuthState({
       roleIntent,
+      sellerType,
       redirect,
     });
 

@@ -143,7 +143,7 @@ export default function AboutPage() {
                 Explore Marketplace &rarr;
               </Button>
             </Link>
-            <Link href="/vendor/register">
+            <Link href="/auth/register?role=vendor">
               <Button size="lg" variant="outline" className="bg-transparent border-white/60 text-white hover:bg-white hover:text-emerald-900 font-bold px-6 text-xs transition-colors">
                 Open a Student Store
               </Button>

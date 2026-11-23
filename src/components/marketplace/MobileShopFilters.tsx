@@ -682,7 +682,7 @@ export function MobileShopFilters({
 
           {currentSellerType && (
             <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0">
-              <span>{currentSellerType === "student" ? "Student Vendors" : "Guest Vendors"}</span>
+              <span>{currentSellerType === "student" ? "Student Vendors" : "Non-Student Vendors"}</span>
               <button
                 onClick={() => removeFilter("sellerType")}
                 className="hover:text-emerald-950 p-0.5"
@@ -982,7 +982,7 @@ export function MobileShopFilters({
                   {[
                     { label: "All Sellers", value: "" },
                     { label: "Student Sellers", value: "student" },
-                    { label: "Guest Vendors", value: "guest" },
+                    { label: "Non-Student Vendors", value: "guest" },
                   ].map((st) => {
                     const isSelected = draftSellerType === st.value;
                     return (

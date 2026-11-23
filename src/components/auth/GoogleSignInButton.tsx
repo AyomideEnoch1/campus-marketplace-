@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 export interface GoogleSignInButtonProps {
   role?: "BUYER" | "VENDOR";
+  sellerType?: "student" | "guest";
   redirect?: string;
   text?: string;
   className?: string;
@@ -15,6 +16,7 @@ export interface GoogleSignInButtonProps {
 
 export function GoogleSignInButton({
   role,
+  sellerType,
   redirect,
   text = "Continue with Google",
   className = "",
@@ -30,6 +32,7 @@ export function GoogleSignInButton({
 
     const query = new URLSearchParams();
     if (role) query.set("role", role);
+    if (sellerType) query.set("sellerType", sellerType);
     if (redirect) query.set("redirect", redirect);
 
     const targetUrl = `/api/auth/google${query.toString() ? `?${query.toString()}` : ""}`;

@@ -173,8 +173,9 @@ export async function GET(request: Request) {
 
     if (isNewUser) {
       if (statePayload.roleIntent === "VENDOR") {
-        // User explicitly registered as vendor -> Direct to vendor onboarding
-        destination = "/vendor/register";
+        // User explicitly registered as vendor -> Direct to consolidated vendor onboarding
+        const sellerTypeParam = statePayload.sellerType ? `&sellerType=${statePayload.sellerType}` : "";
+        destination = `/auth/register?onboarding=vendor${sellerTypeParam}`;
       } else if (!statePayload.roleIntent) {
         // Authenticated before selecting role -> Continuation screen to choose role
         destination = "/auth/role-select";
@@ -189,6 +190,10 @@ export async function GET(request: Request) {
         destination = "/admin";
       } else if (targetUser.role === "VENDOR" || targetUser.vendorProfile) {
         destination = "/dashboard";
+      } else if (statePayload.roleIntent === "VENDOR" && !targetUser.vendorProfile) {
+        // Existing user attempting vendor onboarding who does not yet have a storefront
+        const sellerTypeParam = statePayload.sellerType ? `&sellerType=${statePayload.sellerType}` : "";
+        destination = `/auth/register?onboarding=vendor${sellerTypeParam}`;
       } else {
         destination = "/shop";
       }

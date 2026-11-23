@@ -81,7 +81,7 @@ export default function RoleSelectPage() {
           <button
             type="button"
             onClick={() => {
-              router.push("/vendor/register");
+              router.push("/auth/register?role=vendor");
               router.refresh();
             }}
             className="w-full group p-4 sm:p-5 rounded-2xl border border-neutral-200/90 hover:border-neutral-400 bg-neutral-50/50 hover:bg-neutral-100/60 text-left transition-all duration-200 hover:shadow-xs flex items-center gap-4 cursor-pointer"

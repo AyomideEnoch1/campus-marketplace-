@@ -64,8 +64,8 @@ export const ROLE_LOOKUP: Record<`${IntentType}_${AffiliationType}`, RoleConfig>
     affiliation: "guest",
     role: "VENDOR",
     sellerType: "guest",
-    title: "Guest Vendor",
-    description: "Sell on ọjà without student verification.",
+    title: "Non-Student Vendor",
+    description: "Sell on ọjà as a local merchant or off-campus business.",
     icon: Building,
   },
 };
@@ -250,7 +250,7 @@ export function JoinOnboardingScreen({
                 : "text-neutral-600 hover:text-neutral-900 font-medium bg-transparent"
             }`}
           >
-            Guest
+            {intent === "sell" ? "Non-Student" : "Guest"}
           </button>
         </div>
       </div>

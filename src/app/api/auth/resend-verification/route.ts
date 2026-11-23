@@ -31,7 +31,35 @@ export async function POST(request: Request) {
       });
     }
 
-    // Generate fresh OTP, JWT token and dispatch email
+    if (user.emailVerified) {
+      return NextResponse.json({
+        success: true,
+        alreadyVerified: true,
+        message: "Your email address is already verified.",
+      });
+    }
+
+    // Rate limiting: Check if an OTP was sent in the last 45 seconds
+    const existingOtpSetting = await prisma.siteSetting.findUnique({
+      where: { key: `email_otp:${normalizedEmail}` },
+    });
+    if (existingOtpSetting) {
+      try {
+        const parsed = JSON.parse(existingOtpSetting.value);
+        // expiresAt is Date.now() + 24 * 60 * 60 * 1000
+        const createdAt = (parsed.expiresAt || 0) - 24 * 60 * 60 * 1000;
+        const timeSince = Date.now() - createdAt;
+        if (timeSince < 45000) {
+          const secondsRemaining = Math.ceil((45000 - timeSince) / 1000);
+          return NextResponse.json(
+            { error: `Please wait ${secondsRemaining}s before requesting a new code.` },
+            { status: 429 }
+          );
+        }
+      } catch {}
+    }
+
+    // Generate fresh OTP, JWT token and dispatch email via Resend
     await createAndSendVerificationEmail({
       userId: user.id,
       email: user.email,

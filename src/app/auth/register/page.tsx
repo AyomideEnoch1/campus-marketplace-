@@ -17,14 +17,12 @@ import {
   Mail,
   User,
   MapPin,
-  Building,
-  ShoppingCart,
-  GraduationCap,
   Store,
-  UserCheck,
   Sparkles,
   Loader2,
   Camera,
+  KeyRound,
+  RefreshCw,
 } from "lucide-react";
 import { SingleImageUpload } from "@/components/ui/single-image-upload";
 import { Button } from "@/components/ui/button";
@@ -49,26 +47,19 @@ function RegisterContent() {
 
   // Role selection: "BUYER" | "VENDOR" | null (null = initial account type selection screen)
   const [role, setRole] = React.useState<RoleType | null>(null);
-  const [buyerType, setBuyerType] = React.useState<"student" | "guest">(
-    "student",
-  );
-  const [sellerType, setSellerType] = React.useState<"student" | "guest">(
-    "student",
-  );
+  const [buyerType, setBuyerType] = React.useState<"student" | "guest">("student");
+  const [sellerType, setSellerType] = React.useState<"student" | "guest">("student");
   const [intent, setIntent] = React.useState<"buy" | "sell">("buy");
-  const [affiliation, setAffiliation] = React.useState<"student" | "guest">(
-    "student",
-  );
+  const [affiliation, setAffiliation] = React.useState<"student" | "guest">("student");
 
   // Stepper state:
   // Step 0: Account Type Selection
   // Step 1: Personal Information (Buyer & Vendor)
-  // Step 2: Account Security (Final for Buyer; Step 2 of 3 for Vendor)
-  // Step 3: Store Information (Final for Vendor)
+  // Step 2: Account Security (Final for Buyer; Step 2 of 3 for Student Vendor / Google Onboarding)
+  // Step 3: Store Information
+  // Step 4: Email Verification (Non-Student Vendor email/password flow)
   const [currentStep, setCurrentStep] = React.useState<number>(0);
-  const [slideDirection, setSlideDirection] = React.useState<
-    "forward" | "backward"
-  >("forward");
+  const [slideDirection, setSlideDirection] = React.useState<"forward" | "backward">("forward");
 
   // Step 1 Fields: Personal Information
   const [fullName, setFullName] = React.useState("");
@@ -90,6 +81,20 @@ function RegisterContent() {
   const [storeDescription, setStoreDescription] = React.useState("");
   const [studentIdUrl, setStudentIdUrl] = React.useState("");
 
+  // Non-Student Vendor specific: Category of Goods
+  const [businessCategory, setBusinessCategory] = React.useState("Fashion & Apparel");
+
+  // Google OAuth Onboarding state
+  const [isGoogleOnboarding, setIsGoogleOnboarding] = React.useState(false);
+
+  // Step 4 Fields: Email Verification
+  const [verificationCode, setVerificationCode] = React.useState("");
+  const [verifyingCode, setVerifyingCode] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [resendCooldown, setResendCooldown] = React.useState(0);
+  const [resendNotice, setResendNotice] = React.useState("");
+  const [isVerifiedSuccess, setIsVerifiedSuccess] = React.useState(false);
+
   // Referral / Ambassador code
   const [referralCode, setReferralCode] = React.useState<string>("");
 
@@ -102,6 +107,50 @@ function RegisterContent() {
       if (stored) setReferralCode(stored.trim().toUpperCase());
     }
   }, [searchParams]);
+
+  // Handle URL params for direct routing (e.g. role=vendor, onboarding=vendor, type=guest)
+  React.useEffect(() => {
+    const roleParam = searchParams.get("role")?.toUpperCase();
+    const typeParam =
+      searchParams.get("type")?.toLowerCase() ||
+      searchParams.get("sellerType")?.toLowerCase();
+    const onboardingParam = searchParams.get("onboarding");
+
+    if (onboardingParam === "vendor" || roleParam === "VENDOR") {
+      setRole("VENDOR");
+      setIntent("sell");
+      if (typeParam === "guest") {
+        setSellerType("guest");
+        setAffiliation("guest");
+      } else if (typeParam === "student") {
+        setSellerType("student");
+        setAffiliation("student");
+      }
+      if (currentStep === 0) {
+        setCurrentStep(1);
+      }
+    }
+
+    if (onboardingParam === "vendor") {
+      setIsGoogleOnboarding(true);
+      fetch("/api/auth/me")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.user) {
+            if (data.user.fullName) setFullName(data.user.fullName);
+            if (data.user.email) setEmail(data.user.email);
+            if (data.user.phone && data.user.phone !== "+234 ") {
+              setPhone(data.user.phone);
+              setWhatsapp(data.user.phone);
+            }
+            if (data.user.vendorProfile) {
+              router.push("/dashboard");
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [searchParams, currentStep, router]);
 
   // Campuses for vendor selection
   const { data: campusData } = useCampuses();
@@ -129,6 +178,15 @@ function RegisterContent() {
     }
   }, [errorParam]);
 
+  // Resend cooldown timer effect
+  React.useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   // Default campus selection
   React.useEffect(() => {
     if (campuses.length > 0 && (!campusId || campusId === "clunilag001")) {
@@ -142,7 +200,7 @@ function RegisterContent() {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatNigerianPhone(e.target.value);
     setPhone(formatted);
-    if (!whatsappUserEdited) {
+    if (!whatsappUserEdited || sellerType === "guest") {
       setWhatsapp(formatted);
     }
   };
@@ -157,52 +215,191 @@ function RegisterContent() {
   const goToStep = (step: number, direction: "forward" | "backward") => {
     setSlideDirection(direction);
     setError("");
+    if (step !== 4) {
+      setResendNotice("");
+    }
     setCurrentStep(step);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const handleSelectRole = (
-    selectedRole: RoleType,
-    selectedBuyerType?: "student" | "guest",
-    selectedSellerType?: "student" | "guest",
-  ) => {
-    setRole(selectedRole);
-    if (selectedBuyerType) {
-      setBuyerType(selectedBuyerType);
-    }
-    if (selectedSellerType) {
-      setSellerType(selectedSellerType);
-    }
-    goToStep(1, "forward");
-  };
-
   // Field validations
   const isNameValid = fullName.trim().length >= 2;
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const isPhoneValid = cleanPhoneNumber(phone).replace(/\D/g, "").length >= 10;
-  const isStep1Valid = isNameValid && isEmailValid;
+  const isWhatsappValid =
+    cleanPhoneNumber(whatsapp).replace(/\D/g, "").length >= 10;
 
+  // Step 1 Validation
+  const isStep1Valid =
+    role === "VENDOR" && sellerType === "guest"
+      ? isNameValid && isEmailValid && (isPhoneValid || isWhatsappValid)
+      : isNameValid && isEmailValid;
+
+  // Step 2 Validation (Google users bypass password)
   const isPasswordValid = password.length >= 6;
   const passwordsMatch =
     confirmPassword.length > 0 && password === confirmPassword;
   const passwordsMismatch =
     confirmPassword.length > 0 && password !== confirmPassword;
-  const isStep2Valid = isPasswordValid && passwordsMatch;
+  const isStep2Valid = isGoogleOnboarding
+    ? true
+    : isPasswordValid && passwordsMatch;
 
+  // Step 3 Validation
   const isStoreNameValid = storeName.trim().length >= 2;
   const isCampusValid = Boolean(campusId && campusId.trim().length > 0);
-  const isWhatsappValid =
-    cleanPhoneNumber(whatsapp).replace(/\D/g, "").length >= 10;
   const isStudentIdValid =
     sellerType !== "student" || Boolean(studentIdUrl && studentIdUrl.trim().length > 0);
+
   const isStep3Valid =
-    isStoreNameValid && isCampusValid && isWhatsappValid && isStudentIdValid;
+    sellerType === "guest"
+      ? isStoreNameValid && Boolean(businessCategory)
+      : isStoreNameValid && isCampusValid && isWhatsappValid && isStudentIdValid;
 
-  const totalSteps = role === "VENDOR" ? 3 : 2;
+  // Total Steps: Non-Student Vendor (standard) has 4 steps (including email verification).
+  // Google-authenticated users skip step 4. Student Vendor has 3 steps. Buyer has 2 steps.
+  const totalSteps =
+    role === "VENDOR"
+      ? sellerType === "guest" && !isGoogleOnboarding
+        ? 4
+        : 3
+      : 2;
 
-  // Form Submission
+  // Step 3 Next Action: Trigger Email Verification for Non-Student Vendor
+  const handleInitiateVerification = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (loading) return;
+
+    if (!isStoreNameValid) {
+      setError("Please enter your business or store name (at least 2 characters).");
+      return;
+    }
+    if (!businessCategory) {
+      setError("Please select a category of goods for your storefront.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const cleanPhone = cleanPhoneNumber(phone);
+      const cleanWhatsapp = whatsapp ? cleanPhoneNumber(whatsapp) : cleanPhone;
+
+      const payload: any = {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password: password || undefined,
+        phone: cleanPhone,
+        role: "VENDOR",
+        sellerType: "guest",
+        storeName: storeName.trim(),
+        businessName: storeName.trim(),
+        businessCategory: businessCategory,
+        storeDescription: storeDescription.trim(),
+        whatsapp: cleanWhatsapp || cleanPhone,
+        referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
+      };
+
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to initiate registration");
+      }
+
+      // If user was already verified (e.g. Google user), redirect directly
+      if (!data.requiresVerification) {
+        window.location.href = data.redirectTo || "/dashboard";
+        return;
+      }
+
+      // Smoothly advance to Step 4: Email Verification screen!
+      setResendCooldown(60);
+      goToStep(4, "forward");
+    } catch (err: any) {
+      console.error("Initiate verification error:", err);
+      setError(err.message || "Failed to initiate email verification. Please check your details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 4: Verify 6-digit code and finalize registration
+  const handleVerifyCode = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (verifyingCode) return;
+
+    const cleanCode = verificationCode.trim().replace(/\D/g, "");
+    if (cleanCode.length !== 6) {
+      setError("Please enter the complete 6-digit verification code.");
+      return;
+    }
+
+    setVerifyingCode(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: cleanCode,
+          email: email.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Verification failed. Please check the code.");
+      }
+
+      setIsVerifiedSuccess(true);
+      setTimeout(() => {
+        window.location.href = data.redirectTo || "/dashboard";
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || "Failed to verify code. Please try again.");
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
+  // Step 4: Resend verification code
+  const handleResendCode = async () => {
+    if (resending || resendCooldown > 0) return;
+    setResending(true);
+    setError("");
+    setResendNotice("");
+
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to resend verification email.");
+      }
+
+      setResendNotice("A new 6-digit verification code has been dispatched to your email address!");
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError(err.message || "Could not resend email. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // Standard Form Submission for Buyer & Student Vendor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -228,17 +425,28 @@ function RegisterContent() {
     }
 
     if (role === "VENDOR") {
-      if (!isStoreNameValid || !isCampusValid || !isWhatsappValid) {
-        setError(
-          "Please fill out the required store name, university campus, and valid WhatsApp number.",
-        );
-        return;
-      }
-      if (sellerType === "student" && !studentIdUrl.trim()) {
-        setError(
-          "Student ID verification photo is mandatory. Please upload a clear photo of yourself holding your student ID card next to your face.",
-        );
-        return;
+      if (sellerType === "guest") {
+        if (!isStoreNameValid) {
+          setError("Please enter your business or store name (at least 2 characters).");
+          return;
+        }
+        if (!businessCategory) {
+          setError("Please select a category of goods for your storefront.");
+          return;
+        }
+      } else {
+        if (!isStoreNameValid || !isCampusValid || !isWhatsappValid) {
+          setError(
+            "Please fill out the required store name, university campus, and valid WhatsApp number.",
+          );
+          return;
+        }
+        if (!studentIdUrl.trim()) {
+          setError(
+            "Student ID verification photo is mandatory. Please upload a clear photo of yourself holding your student ID card next to your face.",
+          );
+          return;
+        }
       }
     }
 
@@ -253,7 +461,7 @@ function RegisterContent() {
       const payload: any = {
         fullName: fullName.trim(),
         email: email.trim(),
-        password,
+        password: password || undefined,
         phone: effectivePhone,
         role,
         buyerType: role === "BUYER" ? buyerType : undefined,
@@ -265,15 +473,21 @@ function RegisterContent() {
 
       if (role === "VENDOR") {
         payload.storeName = storeName.trim();
-        payload.campusId = campusId;
         payload.whatsapp = cleanWhatsapp || effectivePhone;
-        payload.faculty = faculty.trim();
-        payload.department = department.trim();
         payload.storeDescription = storeDescription.trim();
-        payload.studentIdUrl = studentIdUrl.trim() || undefined;
+
+        if (sellerType === "guest") {
+          payload.businessName = storeName.trim();
+          payload.businessCategory = businessCategory;
+        } else {
+          payload.campusId = campusId;
+          payload.faculty = faculty.trim();
+          payload.department = department.trim();
+          payload.studentIdUrl = studentIdUrl.trim() || undefined;
+        }
       }
 
-      if (studentIdUrl.trim()) {
+      if (studentIdUrl.trim() && sellerType === "student") {
         payload.studentIdUrl = studentIdUrl.trim();
       }
 
@@ -323,13 +537,14 @@ function RegisterContent() {
         } else if (role === "BUYER" && isStep2Valid && !loading) {
           handleSubmit(e as any);
         }
-      } else if (
-        currentStep === 3 &&
-        role === "VENDOR" &&
-        isStep3Valid &&
-        !loading
-      ) {
-        handleSubmit(e as any);
+      } else if (currentStep === 3 && role === "VENDOR" && isStep3Valid && !loading) {
+        if (sellerType === "guest" && !isGoogleOnboarding) {
+          handleInitiateVerification(e as any);
+        } else {
+          handleSubmit(e as any);
+        }
+      } else if (currentStep === 4 && verificationCode.trim().length === 6 && !verifyingCode) {
+        handleVerifyCode(e as any);
       }
     }
   };
@@ -352,13 +567,6 @@ function RegisterContent() {
           onClearReferral={() => setReferralCode("")}
           error={error}
           onContinue={(config: RoleConfig) => {
-            if (config.role === "VENDOR" && config.sellerType === "guest") {
-              const refParam = referralCode
-                ? `&ref=${encodeURIComponent(referralCode)}`
-                : "";
-              router.push(`/vendor/register?type=guest${refParam}`);
-              return;
-            }
             setIntent(config.intent);
             setAffiliation(config.affiliation);
             setRole(config.role);
@@ -369,18 +577,22 @@ function RegisterContent() {
         />
       ) : (
         /* =================================================================== */
-        /* REGISTRATION FLOW (Steps 1, 2, and 3)                               */
+        /* REGISTRATION FLOW (Steps 1, 2, 3, and 4)                           */
         /* =================================================================== */
         <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-6 sm:p-9 space-y-7 transition-all">
           <form
-            onSubmit={handleSubmit}
+            onSubmit={
+              currentStep === 3 && sellerType === "guest" && !isGoogleOnboarding
+                ? handleInitiateVerification
+                : currentStep === 4
+                ? handleVerifyCode
+                : handleSubmit
+            }
             onKeyDown={handleKeyDown}
             className="space-y-6"
           >
             {/* Top Stepper Header */}
             <div className="space-y-3">
-              {/* Prominent Selected Role Banner on Top */}
-
               {/* Navigation & Step Indicator */}
               <div className="flex items-center justify-between pt-0.5">
                 <button
@@ -392,6 +604,8 @@ function RegisterContent() {
                   <span>
                     {currentStep === 1
                       ? "Change account type"
+                      : currentStep === 4
+                      ? "Back to Store Info"
                       : "Previous step"}
                   </span>
                 </button>
@@ -406,20 +620,34 @@ function RegisterContent() {
                 <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
                   {currentStep === 1 &&
                     (role === "VENDOR"
-                      ? "Vendor Personal Information"
+                      ? sellerType === "guest"
+                        ? "Non-Student Vendor Personal Information"
+                        : "Student Vendor Personal Information"
                       : "Buyer Personal Information")}
                   {currentStep === 2 && "Account Security & Password"}
-                  {currentStep === 3 && "Store Setup & University Campus"}
+                  {currentStep === 3 &&
+                    (sellerType === "guest"
+                      ? "Storefront Information"
+                      : "Store Setup & University Campus")}
+                  {currentStep === 4 && "Verify Your Email Address"}
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
                   {currentStep === 1 &&
                     (role === "VENDOR"
-                      ? "Enter your name and email to start setting up your campus seller account."
+                      ? sellerType === "guest"
+                        ? "Enter your personal details to start setting up your off-campus seller account."
+                        : "Enter your name and email to start setting up your campus seller account."
                       : "Enter your basic personal details to create your campus buyer account.")}
                   {currentStep === 2 &&
-                    "Create a strong password to keep your campus account safe and secure."}
+                    (isGoogleOnboarding
+                      ? "Your account is authenticated with Google. You can proceed directly to store setup."
+                      : "Create a strong password to keep your campus account safe and secure.")}
                   {currentStep === 3 &&
-                    "Set up your store name, university campus, and WhatsApp ordering line."}
+                    (sellerType === "guest"
+                      ? "Set up your storefront name, category of goods, and store description."
+                      : "Set up your store name, university campus, and WhatsApp ordering line.")}
+                  {currentStep === 4 &&
+                    "Enter the 6-digit confirmation code sent to your email to verify and activate your store."}
                 </p>
               </div>
             </div>
@@ -432,17 +660,20 @@ function RegisterContent() {
             )}
 
             {/* =============================================================== */}
-            {/* STEP 1: Personal Information (Both Buyer & Vendor)              */}
+            {/* STEP 1: Personal Information                                    */}
             {/* =============================================================== */}
             {currentStep === 1 && (
               <div key="step-1" className={`space-y-4 ${animationClass}`}>
-                {/* Fast-track Google Sign-Up with chosen role */}
+                {/* Fast-track Google Sign-Up with chosen role & sellerType */}
                 <div className="space-y-3 pb-1">
                   <GoogleSignInButton
                     role={role || "BUYER"}
+                    sellerType={role === "VENDOR" ? sellerType : undefined}
                     text={
                       role === "VENDOR"
-                        ? "Sign up as Vendor with Google"
+                        ? sellerType === "guest"
+                          ? "Sign up as Non-Student Vendor with Google"
+                          : "Sign up as Student Vendor with Google"
                         : "Sign up as Buyer with Google"
                     }
                     redirect={searchParams.get("redirect") || undefined}
@@ -456,7 +687,7 @@ function RegisterContent() {
                   </div>
                 </div>
 
-                {/* Full Name */}
+                {/* 1. Full Name */}
                 <div className="space-y-1.5">
                   <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
                     Full Name <span className="text-rose-500">*</span>
@@ -480,7 +711,35 @@ function RegisterContent() {
                   )}
                 </div>
 
-                {/* Email Address */}
+                {/* 2. WhatsApp Number (Required for Non-Student Vendor) */}
+                {role === "VENDOR" && sellerType === "guest" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      WhatsApp Number <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <Input
+                        type="tel"
+                        required
+                        placeholder="e.g. 08012345678"
+                        value={phone}
+                        onChange={handlePhoneChange}
+                        className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                      />
+                    </div>
+                    {phone.length > 5 && !isPhoneValid && (
+                      <p className="text-[11px] text-rose-500 font-medium">
+                        Please enter a valid WhatsApp phone number (at least 10 digits).
+                      </p>
+                    )}
+                    <p className="text-[11px] text-neutral-400">
+                      Buyers will coordinate orders and communication with you directly via WhatsApp.
+                    </p>
+                  </div>
+                )}
+
+                {/* 3. Email Address */}
                 <div className="space-y-1.5">
                   <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
                     Email Address <span className="text-rose-500">*</span>
@@ -491,7 +750,7 @@ function RegisterContent() {
                       type="email"
                       required
                       placeholder={
-                        buyerType === "guest"
+                        buyerType === "guest" || sellerType === "guest"
                           ? "personal@email.com"
                           : "student@unilag.edu.ng or personal@email.com"
                       }
@@ -507,12 +766,12 @@ function RegisterContent() {
                   )}
                 </div>
 
-                {/* Ambassador / Referral Code (Optional) */}
+                {/* 4. Campus Ambassador / Referral Code (Optional) */}
                 <div className="space-y-1.5 pt-1">
                   <label className="text-xs font-bold text-neutral-700 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                      Campus Ambassador Code{" "}
+                      Campus Ambassador / Referral Code{" "}
                       <span className="text-neutral-400 font-normal">
                         (Optional)
                       </span>
@@ -534,15 +793,13 @@ function RegisterContent() {
                     className="h-11 rounded-xl text-xs font-mono uppercase bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
                   />
                   <p className="text-[11px] text-neutral-400">
-                    Have an ambassador code from a student rep? Enter it here to
-                    link to your campus hub.
+                    Have an ambassador code from a student rep? Enter it here to link to your campus hub.
                   </p>
                 </div>
 
-                {/* Student ID Card Upload & Matriculation Number (Shown for student accounts) */}
+                {/* Student ID Card Upload (Only for Student Accounts) */}
                 {affiliation === "student" && (
                   <div className="space-y-4 pt-2 border-t border-neutral-100">
-                    {/* Student ID Card Photo Upload Field */}
                     <div className="space-y-1.5">
                       <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
@@ -572,6 +829,7 @@ function RegisterContent() {
                     </div>
                   </div>
                 )}
+
                 {/* Step 1 Navigation Buttons */}
                 <div className="pt-3 flex items-center justify-between gap-3">
                   <Button
@@ -598,93 +856,110 @@ function RegisterContent() {
             )}
 
             {/* =============================================================== */}
-            {/* STEP 2: Account Security (Both Buyer & Vendor)                  */}
+            {/* STEP 2: Account Security                                        */}
             {/* =============================================================== */}
             {currentStep === 2 && (
               <div key="step-2" className={`space-y-4 ${animationClass}`}>
-                {/* Password Input */}
-                <div className="space-y-1.5">
-                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                    Password <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      autoFocus
-                      placeholder="Minimum 6 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Password Strength Gauge */}
-                {password && <PasswordStrengthGauge password={password} />}
-
-                {/* Confirm Password Input */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                      Confirm Password <span className="text-rose-500">*</span>
-                    </label>
-                    {passwordsMatch && (
-                      <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Passwords match
+                {isGoogleOnboarding ? (
+                  /* Google OAuth continuation info */
+                  <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-800">
+                      <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span className="text-xs font-bold text-emerald-950">
+                        Authenticated with Google
                       </span>
-                    )}
-                    {passwordsMismatch && (
-                      <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1 animate-in fade-in">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        Passwords do not match
-                      </span>
-                    )}
+                    </div>
+                    <p className="text-xs text-emerald-900 leading-relaxed">
+                      Signed in as <strong>{email}</strong>. No separate password is required. You can proceed directly to store setup.
+                    </p>
                   </div>
-                  <div className="relative">
-                    <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <Input
-                      type={showConfirmPassword ? "text" : "password"}
-                      required
-                      placeholder="Re-enter your password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`pl-10 pr-10 h-12 rounded-xl text-sm bg-neutral-50/60 text-neutral-900 ${
-                        passwordsMismatch
-                          ? "border-rose-400 focus-visible:ring-rose-500/20"
-                          : passwordsMatch
-                            ? "border-emerald-400 focus-visible:ring-emerald-500/20"
-                            : "border-neutral-200 focus:bg-white"
-                      }`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Password Input */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                        Password <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          required
+                          autoFocus
+                          placeholder="Minimum 6 characters"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="pl-10 pr-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Password Strength Gauge */}
+                    {password && <PasswordStrengthGauge password={password} />}
+
+                    {/* Confirm Password Input */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                          Confirm Password <span className="text-rose-500">*</span>
+                        </label>
+                        {passwordsMatch && (
+                          <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Passwords match
+                          </span>
+                        )}
+                        {passwordsMismatch && (
+                          <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1 animate-in fade-in">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            Passwords do not match
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          required
+                          placeholder="Re-enter your password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className={`pl-10 pr-10 h-12 rounded-xl text-sm bg-neutral-50/60 text-neutral-900 ${
+                            passwordsMismatch
+                              ? "border-rose-400 focus-visible:ring-rose-500/20"
+                              : passwordsMatch
+                                ? "border-emerald-400 focus-visible:ring-emerald-500/20"
+                                : "border-neutral-200 focus:bg-white"
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 cursor-pointer"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Step 2 Navigation Buttons */}
                 <div className="pt-3 flex items-center justify-between gap-3">
@@ -744,7 +1019,7 @@ function RegisterContent() {
             )}
 
             {/* =============================================================== */}
-            {/* STEP 3: Store Information (Vendor Only - Final Step)            */}
+            {/* STEP 3: Store Information                                       */}
             {/* =============================================================== */}
             {currentStep === 3 && role === "VENDOR" && (
               <div key="step-3" className={`space-y-4 ${animationClass}`}>
@@ -752,170 +1027,249 @@ function RegisterContent() {
                 <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-xs text-emerald-900 flex items-center gap-2.5">
                   <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
                   <span>
-                    Your storefront will be visible to students on your campus.
-                    Buyers can browse your products and place direct WhatsApp
-                    orders.
+                    {sellerType === "guest"
+                      ? "Your storefront will be featured on CampusTrade. Students and buyers can browse your listings and place orders directly."
+                      : "Your storefront will be visible to students on your campus. Buyers can browse your products and place direct WhatsApp orders."}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Store Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                      Store Name <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <ShoppingBag className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                      <Input
-                        type="text"
-                        required
-                        autoFocus
-                        placeholder="e.g. Unilag Drip Corner"
-                        value={storeName}
-                        onChange={(e) => setStoreName(e.target.value)}
-                        className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Campus Location */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                      Campus Location <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <select
-                        aria-label="Select Campus Location"
-                        className="flex h-12 w-full rounded-xl border border-neutral-200 bg-neutral-50/60 pl-10 pr-4 text-sm text-neutral-900 focus-visible:outline-none focus:bg-white focus-visible:ring-2 focus-visible:ring-emerald-500/20"
-                        value={campusId}
-                        onChange={(e) => setCampusId(e.target.value)}
-                      >
-                        {campuses.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                        {campuses.length === 0 && (
-                          <>
-                            <option value="unilag">
-                              University of Lagos (UNILAG)
-                            </option>
-                            <option value="ui">
-                              University of Ibadan (UI)
-                            </option>
-                            <option value="oau">
-                              Obafemi Awolowo University (OAU)
-                            </option>
-                          </>
-                        )}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* WhatsApp Number for Orders */}
-                <div className="space-y-1.5">
-                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                    WhatsApp for Orders <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <Input
-                      type="tel"
-                      required
-                      placeholder="e.g. 08012345678"
-                      value={whatsapp}
-                      onChange={handleWhatsappChange}
-                      className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                    />
-                  </div>
-                </div>
-
-                {/* Faculty & Department */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                      Faculty (Optional)
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="e.g. Engineering"
-                      value={faculty}
-                      onChange={(e) => setFaculty(e.target.value)}
-                      className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                      Department (Optional)
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="e.g. Electrical Engineering"
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                    />
-                  </div>
-                </div>
-
-                {/* Store Bio */}
-                <div className="space-y-1.5">
-                  <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                    Store Short Bio (Optional)
-                  </label>
-                  <textarea
-                    className="w-full rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-20"
-                    placeholder="Describe what you sell, hostel pickup locations, and active sales hours..."
-                    value={storeDescription}
-                    onChange={(e) => setStoreDescription(e.target.value)}
-                  />
-                </div>
-
-                {/* Mandatory Student ID Verification for Student Vendors */}
-                {sellerType === "student" && (
-                  <div className="space-y-4 pt-3 border-t border-neutral-100">
-                    <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="p-1.5 rounded-lg bg-amber-200/80 text-amber-900">
-                          <Camera className="w-4 h-4" />
-                        </span>
-                        <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-2">
-                          Mandatory Student ID Verification
-                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-200 text-amber-950 font-extrabold">
-                            Required
-                          </span>
-                        </h3>
-                      </div>
-
-                      <p className="text-xs text-amber-950 leading-relaxed font-semibold">
-                        You must upload a clear photo of yourself <strong>holding your university student ID card next to your face</strong> (selfie holding student ID).
-                      </p>
-
-                      <ul className="text-[11px] text-amber-900/90 space-y-1 list-disc list-inside">
-                        <li>Hold your physical student ID card right beside your face.</li>
-                        <li>Both your face and all card details (full name, matriculation number, photo) must be distinctly visible and unblurred.</li>
-                        <li>Do not cover your face or use digital crops/screenshots.</li>
-                      </ul>
-                    </div>
-
-                    {/* Student ID Photo Upload */}
+                {sellerType === "guest" ? (
+                  /* ========================================================= */
+                  /* NON-STUDENT VENDOR STOREFRONT FIELDS                      */
+                  /* ========================================================= */
+                  <>
+                    {/* Store / Business Name */}
                     <div className="space-y-1.5">
-                      <SingleImageUpload
-                        value={studentIdUrl}
-                        onChange={setStudentIdUrl}
-                        folder="stores"
-                        label="Upload Photo: Holding Student ID Next to Face *"
-                        hint="Selfie holding your university student ID card next to your face (PNG, JPG, or WEBP)"
-                      />
-                      {!studentIdUrl && (
-                        <p className="text-[11px] font-semibold text-rose-500">
-                          * Uploading your student ID selfie is mandatory to approve your campus store.
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                        Business / Store Name <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <ShoppingBag className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <Input
+                          type="text"
+                          required
+                          autoFocus
+                          placeholder="e.g. Lagos Drip Corner or Adebayo Provisions"
+                          value={storeName}
+                          onChange={(e) => setStoreName(e.target.value)}
+                          className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                        />
+                      </div>
+                      {storeName.length > 0 && !isStoreNameValid && (
+                        <p className="text-[11px] text-rose-500 font-medium">
+                          Store name must be at least 2 characters.
                         </p>
                       )}
                     </div>
-                  </div>
+
+                    {/* Category of Goods (Dropdown) */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                        Category of Goods <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Store className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <select
+                          aria-label="Category of Goods"
+                          value={businessCategory}
+                          onChange={(e) => setBusinessCategory(e.target.value)}
+                          className="flex h-12 w-full rounded-xl border border-neutral-200 bg-neutral-50/60 pl-10 pr-4 text-sm text-neutral-900 focus-visible:outline-none focus:bg-white focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                        >
+                          <option value="Fashion & Apparel">Fashion & Apparel</option>
+                          <option value="Electronics & Gadgets">Electronics & Gadgets</option>
+                          <option value="Food & Groceries">Food & Groceries</option>
+                          <option value="Beauty & Personal Care">Beauty & Personal Care</option>
+                          <option value="Hostel & Living Essentials">Hostel & Living Essentials</option>
+                          <option value="Campus Services">Campus Services</option>
+                          <option value="Books & Academics">Books & Academics</option>
+                        </select>
+                      </div>
+                      <p className="text-[11px] text-neutral-400">
+                        Select the primary category that best describes what you sell.
+                      </p>
+                    </div>
+
+                    {/* Storefront Bio */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                        Storefront Bio <span className="text-neutral-400 font-normal">(Optional)</span>
+                      </label>
+                      <textarea
+                        rows={3}
+                        maxLength={400}
+                        className="w-full rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-24"
+                        placeholder="Briefly describe what you sell, your specialties, operating hours, delivery options..."
+                        value={storeDescription}
+                        onChange={(e) => setStoreDescription(e.target.value)}
+                      />
+                      <p className="text-[11px] text-neutral-400 text-right">
+                        {storeDescription.length}/400 characters
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  /* ========================================================= */
+                  /* STUDENT VENDOR STOREFRONT FIELDS                          */
+                  /* ========================================================= */
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Store Name */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                          Store Name <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <ShoppingBag className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <Input
+                            type="text"
+                            required
+                            autoFocus
+                            placeholder="e.g. Unilag Drip Corner"
+                            value={storeName}
+                            onChange={(e) => setStoreName(e.target.value)}
+                            className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Campus Location */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                          Campus Location <span className="text-rose-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <MapPin className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <select
+                            aria-label="Select Campus Location"
+                            className="flex h-12 w-full rounded-xl border border-neutral-200 bg-neutral-50/60 pl-10 pr-4 text-sm text-neutral-900 focus-visible:outline-none focus:bg-white focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                            value={campusId}
+                            onChange={(e) => setCampusId(e.target.value)}
+                          >
+                            {campuses.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                            {campuses.length === 0 && (
+                              <>
+                                <option value="unilag">
+                                  University of Lagos (UNILAG)
+                                </option>
+                                <option value="ui">
+                                  University of Ibadan (UI)
+                                </option>
+                                <option value="oau">
+                                  Obafemi Awolowo University (OAU)
+                                </option>
+                              </>
+                            )}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Number for Orders */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                        WhatsApp for Orders <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <Input
+                          type="tel"
+                          required
+                          placeholder="e.g. 08012345678"
+                          value={whatsapp}
+                          onChange={handleWhatsappChange}
+                          className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Faculty & Department */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                          Faculty (Optional)
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="e.g. Engineering"
+                          value={faculty}
+                          onChange={(e) => setFaculty(e.target.value)}
+                          className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                          Department (Optional)
+                        </label>
+                        <Input
+                          type="text"
+                          placeholder="e.g. Electrical Engineering"
+                          value={department}
+                          onChange={(e) => setDepartment(e.target.value)}
+                          className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Store Bio */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                        Store Short Bio (Optional)
+                      </label>
+                      <textarea
+                        className="w-full rounded-xl border border-neutral-200 bg-neutral-50/60 p-3.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20 resize-none h-20"
+                        placeholder="Describe what you sell, hostel pickup locations, and active sales hours..."
+                        value={storeDescription}
+                        onChange={(e) => setStoreDescription(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Mandatory Student ID Verification for Student Vendors */}
+                    <div className="space-y-4 pt-3 border-t border-neutral-100">
+                      <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1.5 rounded-lg bg-amber-200/80 text-amber-900">
+                            <Camera className="w-4 h-4" />
+                          </span>
+                          <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-2">
+                            Mandatory Student ID Verification
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-200 text-amber-950 font-extrabold">
+                              Required
+                            </span>
+                          </h3>
+                        </div>
+
+                        <p className="text-xs text-amber-950 leading-relaxed font-semibold">
+                          You must upload a clear photo of yourself <strong>holding your university student ID card next to your face</strong> (selfie holding student ID).
+                        </p>
+
+                        <ul className="text-[11px] text-amber-900/90 space-y-1 list-disc list-inside">
+                          <li>Hold your physical student ID card right beside your face.</li>
+                          <li>Both your face and all card details (full name, matriculation number, photo) must be distinctly visible and unblurred.</li>
+                          <li>Do not cover your face or use digital crops/screenshots.</li>
+                        </ul>
+                      </div>
+
+                      {/* Student ID Photo Upload */}
+                      <div className="space-y-1.5">
+                        <SingleImageUpload
+                          value={studentIdUrl}
+                          onChange={setStudentIdUrl}
+                          folder="stores"
+                          label="Upload Photo: Holding Student ID Next to Face *"
+                          hint="Selfie holding your university student ID card next to your face (PNG, JPG, or WEBP)"
+                        />
+                        {!studentIdUrl && (
+                          <p className="text-[11px] font-semibold text-rose-500">
+                            * Uploading your student ID selfie is mandatory to approve your campus store.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 {/* Step 3 Navigation Buttons */}
@@ -930,30 +1284,199 @@ function RegisterContent() {
                     <span>Back</span>
                   </Button>
 
-                  <Button
-                    type="submit"
-                    disabled={!isStep3Valid || loading}
-                    className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
-                      loading
-                        ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
-                        : !isStep3Valid
-                          ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
-                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
-                    }`}
-                  >
-                    {loading ? (
-                      <div className="flex items-center gap-2 text-neutral-500">
-                        <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
-                        <span>Creating your store...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <span>Register Student Store</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </Button>
+                  {sellerType === "guest" && !isGoogleOnboarding ? (
+                    /* Next: Verify Email Button for Non-Student Vendor */
+                    <Button
+                      type="button"
+                      disabled={!isStep3Valid || loading}
+                      onClick={() => handleInitiateVerification()}
+                      className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
+                        loading
+                          ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
+                          : !isStep3Valid
+                            ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                      }`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center gap-2 text-neutral-500">
+                          <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+                          <span>Sending verification email...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span>Next: Verify Email</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    /* Direct Submit Button for Student Vendor or Google Onboarding */
+                    <Button
+                      type="submit"
+                      disabled={!isStep3Valid || loading}
+                      className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
+                        loading
+                          ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
+                          : !isStep3Valid
+                            ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                      }`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center gap-2 text-neutral-500">
+                          <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+                          <span>Creating your store...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span>
+                            {sellerType === "guest"
+                              ? "Complete Store Setup"
+                              : "Register Student Store"}
+                          </span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
+              </div>
+            )}
+
+            {/* =============================================================== */}
+            {/* STEP 4: Email Verification (Non-Student Vendor)                 */}
+            {/* =============================================================== */}
+            {currentStep === 4 && role === "VENDOR" && sellerType === "guest" && (
+              <div key="step-4" className={`space-y-5 ${animationClass}`}>
+                {isVerifiedSuccess ? (
+                  /* Success View */
+                  <div className="space-y-5 text-center animate-in fade-in-50 py-4">
+                    <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+                      <CheckCircle2 className="w-10 h-10" />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <h3 className="text-xl font-extrabold text-neutral-900">
+                        Email Verified Successfully! 🎉
+                      </h3>
+                      <p className="text-xs text-neutral-600 leading-relaxed max-w-sm mx-auto">
+                        Your store <strong className="text-emerald-700">{storeName}</strong> has been created and verified. Redirecting you to your vendor dashboard...
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-emerald-600 mx-auto" />
+                    </div>
+                  </div>
+                ) : (
+                  /* Code Input View */
+                  <>
+                    {/* Verification Info Banner */}
+                    <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-xs text-emerald-950 flex items-start gap-3">
+                      <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shrink-0 mt-0.5">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-bold text-xs text-emerald-950">Verification code sent!</p>
+                        <p className="text-[11px] text-emerald-800 leading-relaxed">
+                          We sent a 6-digit confirmation code and link to{" "}
+                          <strong className="text-neutral-900 font-bold">{email}</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Resend Notice Banner if code resent */}
+                    {resendNotice && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in-50">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="font-medium">{resendNotice}</span>
+                      </div>
+                    )}
+
+                    {/* 6-Digit Code Field */}
+                    <div className="space-y-2 text-left pt-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center gap-1.5">
+                          <KeyRound className="w-4 h-4 text-emerald-600" />
+                          <span>6-Digit Verification Code</span>
+                          <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="text-[11px] text-neutral-400 font-normal">Check Spam or Promotions</span>
+                      </div>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        autoFocus
+                        placeholder="123456"
+                        value={verificationCode}
+                        onChange={(e) => {
+                          setVerificationCode(e.target.value.replace(/\D/g, ""));
+                          if (error) setError("");
+                        }}
+                        className="h-14 text-center text-2xl font-black tracking-[8px] sm:tracking-[10px] rounded-2xl bg-neutral-50/80 border-neutral-300 font-mono text-emerald-700 focus:bg-white focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                      />
+                      <p className="text-[11px] text-neutral-400">
+                        Enter the 6 digits from the email sent by Resend, or click the direct verification link in your inbox.
+                      </p>
+                    </div>
+
+                    {/* Step 4 Navigation & Verification Buttons */}
+                    <div className="pt-3 flex items-center justify-between gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={verifyingCode}
+                        onClick={() => goToStep(3, "backward")}
+                        className="h-11 px-5 rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-100 cursor-pointer"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-1.5" />
+                        <span>Back to Store Info</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        disabled={verifyingCode || verificationCode.trim().length !== 6}
+                        onClick={() => handleVerifyCode()}
+                        className="h-11 px-7 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 ml-auto"
+                      >
+                        {verifyingCode ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-white" />
+                            <span>Activating store...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Verify &amp; Activate Store</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Resend Action */}
+                    <div className="pt-2 text-center space-y-1.5 border-t border-neutral-100">
+                      <p className="text-xs text-neutral-500">Didn&apos;t receive the code or link?</p>
+                      <button
+                        type="button"
+                        onClick={handleResendCode}
+                        disabled={resending || resendCooldown > 0}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 disabled:text-neutral-400 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${resending ? "animate-spin" : ""}`} />
+                        <span>
+                          {resendCooldown > 0
+                            ? `Resend code in ${resendCooldown}s`
+                            : resending
+                            ? "Sending fresh code..."
+                            : "Resend verification code"}
+                        </span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -966,7 +1489,11 @@ function RegisterContent() {
                 <span className="text-neutral-800 normal-case font-semibold">
                   {currentStep === 1 && "Personal Information"}
                   {currentStep === 2 && "Account Security"}
-                  {currentStep === 3 && "Store Information"}
+                  {currentStep === 3 &&
+                    (sellerType === "guest"
+                      ? "Storefront Information"
+                      : "Store Information")}
+                  {currentStep === 4 && "Email Verification"}
                 </span>
               </span>
 
@@ -1023,8 +1550,7 @@ function RegisterContent() {
                   : "Creating Your Account..."}
               </h3>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Please hold on while we save your credentials and initialize
-                your profile.
+                Please hold on while we save your credentials and prepare your verification email.
               </p>
             </div>
 
@@ -1035,7 +1561,7 @@ function RegisterContent() {
               </div>
               <div className="flex items-center gap-2 text-neutral-800 font-bold animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <span>Finalizing setup &amp; redirecting...</span>
+                <span>Dispatching verification email via Resend...</span>
               </div>
             </div>
           </div>

@@ -817,7 +817,7 @@ async function main() {
         primaryCtaText: 'Browse Marketplace',
         primaryCtaLink: '/shop',
         secondaryCtaText: 'Become a Student Vendor',
-        secondaryCtaLink: '/vendor/register',
+        secondaryCtaLink: '/auth/register?role=vendor',
       }),
     },
     {

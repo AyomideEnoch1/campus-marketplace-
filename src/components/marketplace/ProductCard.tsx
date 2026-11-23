@@ -200,7 +200,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <>
                 {product.vendor?.sellerType === "guest" ? (
                   <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
-                    Guest Vendor
+                    Non-Student Vendor
                   </Badge>
                 ) : (
                   <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">

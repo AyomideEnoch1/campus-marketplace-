@@ -299,7 +299,7 @@ export function AccountClient({ initialUser }: AccountClientProps) {
               </div>
             </Link>
           ) : (
-            <Link href="/vendor/register" className="group">
+            <Link href="/auth/register?role=vendor" className="group">
               <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-5 shadow-md shadow-emerald-600/20 group-hover:scale-[1.02] transition-transform">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">Sell on Campus</span>

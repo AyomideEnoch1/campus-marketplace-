@@ -10,7 +10,7 @@ export default async function VendorOrdersPage() {
   const vendor = await prisma.vendorProfile.findUnique({
     where: { userId: session.id },
   });
-  if (!vendor) redirect("/vendor/register");
+  if (!vendor) redirect("/auth/register?role=vendor");
 
   const orders = await prisma.order.findMany({
     where: {

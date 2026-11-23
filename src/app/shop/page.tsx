@@ -518,7 +518,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   {[
                     { label: "All Sellers", value: "" },
                     { label: "Student Vendors", value: "student" },
-                    { label: "Guest Vendors", value: "guest" },
+                    { label: "Non-Student Vendors", value: "guest" },
                   ].map((st) => {
                     const isSelected = (sellerType || "") === st.value;
                     return (

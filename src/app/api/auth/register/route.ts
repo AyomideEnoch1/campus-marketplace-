@@ -2,9 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, signToken, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { hashPassword, signToken, verifyToken, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
 import { attributeReferral } from "@/lib/referral";
 import { createAndSendVerificationEmail } from "@/lib/email-service";
@@ -13,7 +13,7 @@ import { notificationService } from "@/lib/email/notification-service";
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please provide a valid email address").optional().or(z.literal("")),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   role: z.enum(["BUYER", "VENDOR"]).default("BUYER"),
   buyerType: z.enum(["student", "guest"]).optional(),
@@ -94,6 +94,21 @@ export async function POST(request: Request) {
     const cleanPhone = cleanPhoneCandidate || cleanWhatsappCandidate || null;
     const cleanWhatsapp = cleanWhatsappCandidate || cleanPhone;
 
+    // Check if user is already authenticated via session cookie (e.g. Google OAuth continuation)
+    const cookieStore = cookies();
+    const sessionToken = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+    let sessionUser: { userId: string; role: string; email: string } | null = null;
+    if (sessionToken) {
+      sessionUser = verifyToken(sessionToken);
+    }
+
+    if (!sessionUser && (!password || password.length < 6)) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters" },
+        { status: 400 }
+      );
+    }
+
     // In Student flow, mandatory student ID photo verification holding ID next to face
     if (role === "VENDOR" && sellerType === "student") {
       if (!studentIdUrl || !studentIdUrl.trim()) {
@@ -107,12 +122,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // In Guest flow, phone is required for Tier 1 OTP/Instant flow, email is optional
-    if (role === "VENDOR" && sellerType === "guest" && !cleanPhone) {
-      return NextResponse.json(
-        { error: "Phone number is required for guest vendor registration" },
-        { status: 400 }
-      );
+    // In Non-Student Vendor (guest) flow, WhatsApp phone is required, email is required
+    if (role === "VENDOR" && sellerType === "guest") {
+      if (!cleanPhone) {
+        return NextResponse.json(
+          { error: "WhatsApp number is required for Non-Student Vendor registration" },
+          { status: 400 }
+        );
+      }
+      if (!email || !email.trim()) {
+        return NextResponse.json(
+          { error: "Email address is required for Non-Student Vendor registration" },
+          { status: 400 }
+        );
+      }
     }
 
     // Determine email
@@ -129,6 +152,35 @@ export async function POST(request: Request) {
       }
     }
 
+    // Duplicate Email Check scoped strictly to the selected role/account type
+    let pendingUserId: string | null = null;
+    const existingEmail = await prisma.user.findFirst({
+      where: {
+        email: userEmail,
+        role,
+        ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
+      },
+      include: {
+        vendorProfile: true,
+      },
+    });
+
+    if (existingEmail) {
+      if (existingEmail.emailVerified !== null) {
+        return NextResponse.json(
+          {
+            error: `An account with this email address already exists for a ${
+              role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
+            }. Please sign in or use another email.`,
+          },
+          { status: 409 }
+        );
+      } else {
+        // Safe continuation for pending unverified registration
+        pendingUserId = existingEmail.id;
+      }
+    }
+
     // Duplicate Phone Check scoped strictly to the selected role/account type
     if (cleanPhone && cleanPhone.length >= 7) {
       const digits = cleanPhone.replace(/\D/g, "");
@@ -141,6 +193,8 @@ export async function POST(request: Request) {
             { phone: cleanPhone },
             ...(altLocalPhone ? [{ phone: altLocalPhone }] : []),
           ],
+          ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
+          ...(pendingUserId ? { id: { not: pendingUserId } } : {}),
         },
       });
       if (existingPhone) {
@@ -155,68 +209,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Duplicate Email Check scoped strictly to the selected role/account type
-    const existingEmail = await prisma.user.findFirst({
-      where: {
-        email: userEmail,
-        role,
-      },
-    });
-    if (existingEmail) {
-      return NextResponse.json(
-        {
-          error: `An account with this email address already exists for a ${
-            role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
-          }. Please sign in or use another email.`,
-        },
-        { status: 409 }
-      );
-    }
-
-    // Duplicate Government ID check for Guest Vendors
-    let governmentIdHash: string | null = null;
-    if (governmentIdNumber && governmentIdNumber.trim()) {
-      governmentIdHash = crypto
-        .createHash("sha256")
-        .update(governmentIdNumber.trim().toUpperCase())
-        .digest("hex");
-
-      const existingId = await prisma.vendorProfile.findFirst({
-        where: { governmentIdHash },
-      });
-
-      if (existingId) {
-        return NextResponse.json(
-          { error: "This government ID has already been registered with another vendor account. Duplicate registrations are prohibited." },
-          { status: 409 }
-        );
-      }
-    }
-
-    // NIN Registration Number Check for Guest Vendors
-    let finalNin: string | null = null;
-    const rawNinCandidate = (governmentIdType === "nin" ? governmentIdNumber : nin) || nin;
-    if (rawNinCandidate && rawNinCandidate.trim()) {
-      const cleanNin = rawNinCandidate.trim().replace(/\D/g, "");
-      if (cleanNin.length !== 11) {
-        return NextResponse.json(
-          { error: "National Identification Number (NIN) must be an 11-digit number." },
-          { status: 400 }
-        );
-      }
-      finalNin = cleanNin;
-
-      const existingNin = await prisma.vendorProfile.findFirst({
-        where: { nin: finalNin },
-      });
-
-      if (existingNin) {
-        return NextResponse.json(
-          { error: "This NIN registration number is already registered with another vendor account. Duplicate registrations are prohibited." },
-          { status: 409 }
-        );
-      }
-    }
 
     // Campus Guest Vendor Control Verification
     if (role === "VENDOR" && sellerType === "guest" && campusId) {
@@ -226,7 +218,7 @@ export async function POST(request: Request) {
 
       if (campusSetting && !campusSetting.guestVendorsEnabled) {
         return NextResponse.json(
-          { error: "Guest vendor registration is currently disabled for this campus. Student vendors only." },
+          { error: "Non-Student Vendor registration is currently disabled for this campus. Student vendors only." },
           { status: 403 }
         );
       }
@@ -242,14 +234,12 @@ export async function POST(request: Request) {
 
         if (activeGuestCount >= campusSetting.guestVendorCap) {
           return NextResponse.json(
-            { error: "Guest vendor capacity cap reached for this campus. Please contact campus admin." },
+            { error: "Non-Student Vendor capacity cap reached for this campus. Please contact campus admin." },
             { status: 403 }
           );
         }
       }
     }
-
-    const passwordHash = await hashPassword(password);
 
     // Initial vendor status:
     // Students with auto-approval can be approved if site setting allows,
@@ -265,16 +255,8 @@ export async function POST(request: Request) {
 
     // Determine verification tier
     let verificationTier = 1;
-    if (sellerType === "guest") {
-      // If government ID document and selfie are provided, applicant advances to Tier 2 (under manual review)
-      if (idDocumentPath && selfieDocumentPath) {
-        verificationTier = 2;
-      }
-    } else {
-      // Student vendor with student ID uploaded
-      if (studentIdUrl) {
-        verificationTier = 2;
-      }
+    if (sellerType === "student" && studentIdUrl) {
+      verificationTier = 2;
     }
 
     // Payout delay: 72 hours for guest sellers (students get 48 hours)
@@ -331,57 +313,116 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create user and vendor profile in a transaction with extended timeout for cloud Supabase
+    // Check if authenticated session user already has vendor profile
+    if (sessionUser && role === "VENDOR") {
+      const existingUserWithProfile = await prisma.user.findUnique({
+        where: { id: sessionUser.userId },
+        include: { vendorProfile: true },
+      });
+      if (existingUserWithProfile?.vendorProfile) {
+        return NextResponse.json({
+          success: true,
+          user: existingUserWithProfile,
+          redirectTo: "/dashboard",
+        });
+      }
+    }
+
+    const passwordHash = password ? await hashPassword(password) : null;
+
+    // Create or update user and vendor profile in a transaction with extended timeout for cloud Supabase
     const newUser = await prisma.$transaction(
       async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            fullName,
-            email: userEmail,
-            passwordHash,
-            phone: cleanPhone || finalWhatsapp || null,
-            role,
-            avatarUrl: studentIdUrl || null,
-          },
-        });
-
-        if (role === "VENDOR" && finalCampusId) {
-          const vendorProfile = await tx.vendorProfile.create({
+        let user;
+        if (sessionUser) {
+          user = await tx.user.update({
+            where: { id: sessionUser.userId },
             data: {
-              userId: user.id,
-              storeName: finalStoreName,
-              slug: uniqueSlug,
-              campusId: finalCampusId,
-              whatsapp: finalWhatsapp,
-              storeDescription: storeDescription || null,
-              sellerType,
-              verificationTier,
-              payoutDelayHours,
-              // Student fields
-              faculty: faculty || null,
-              department: department || null,
-              studentIdUrl: studentIdUrl || null,
-              adminNotes: (studentIdNumber || studentId) ? `Matric / Student ID: ${studentIdNumber || studentId}` : null,
-              // Guest fields
-              businessName: businessName || finalStoreName,
-              businessCategory: businessCategory || null,
-              businessAddress: businessAddress || null,
-              businessPhotoPath: businessPhotoPath || null,
-              cacNumber: cacNumber || null,
-              cacDocumentPath: cacDocumentPath || null,
-              isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
-              governmentIdType: governmentIdType || null,
-              governmentIdHash: governmentIdHash || null,
-              nin: finalNin || null,
-              idDocumentPath: idDocumentPath || null,
-              selfieDocumentPath: selfieDocumentPath || null,
-              vouchedBy: vouchedBy || null,
-              status: vendorStatus as any,
+              role,
+              fullName: fullName || undefined,
+              phone: cleanPhone || undefined,
+              avatarUrl: studentIdUrl || undefined,
             },
           });
+        } else if (pendingUserId) {
+          user = await tx.user.update({
+            where: { id: pendingUserId },
+            data: {
+              fullName,
+              passwordHash: passwordHash || undefined,
+              phone: cleanPhone || null,
+              role,
+              avatarUrl: studentIdUrl || null,
+            },
+          });
+        } else {
+          user = await tx.user.create({
+            data: {
+              fullName,
+              email: userEmail,
+              passwordHash,
+              phone: cleanPhone || null,
+              role,
+              avatarUrl: studentIdUrl || null,
+            },
+          });
+        }
+
+        if (role === "VENDOR" && finalCampusId) {
+          let vendorProfileId: string | null = null;
+          if (pendingUserId && existingEmail?.vendorProfile) {
+            await tx.vendorProfile.update({
+              where: { id: existingEmail.vendorProfile.id },
+              data: {
+                storeName: finalStoreName,
+                slug: uniqueSlug,
+                campusId: finalCampusId,
+                whatsapp: finalWhatsapp,
+                storeDescription: storeDescription || null,
+                sellerType,
+                businessName: businessName || finalStoreName,
+                businessCategory: businessCategory || null,
+                status: vendorStatus as any,
+              },
+            });
+            vendorProfileId = existingEmail.vendorProfile.id;
+          } else {
+            const vendorProfile = await tx.vendorProfile.create({
+              data: {
+                userId: user.id,
+                storeName: finalStoreName,
+                slug: uniqueSlug,
+                campusId: finalCampusId,
+                whatsapp: finalWhatsapp,
+                storeDescription: storeDescription || null,
+                sellerType,
+                verificationTier,
+                payoutDelayHours,
+                // Student fields
+                faculty: faculty || null,
+                department: department || null,
+                studentIdUrl: studentIdUrl || null,
+                adminNotes: (studentIdNumber || studentId) ? `Matric / Student ID: ${studentIdNumber || studentId}` : null,
+                // Guest fields
+                businessName: businessName || finalStoreName,
+                businessCategory: businessCategory || null,
+                businessAddress: businessAddress || null,
+                businessPhotoPath: businessPhotoPath || null,
+                cacNumber: cacNumber || null,
+                cacDocumentPath: cacDocumentPath || null,
+                isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
+                governmentIdType: governmentIdType || null,
+                idDocumentPath: idDocumentPath || null,
+                selfieDocumentPath: selfieDocumentPath || null,
+                vouchedBy: vouchedBy || null,
+                status: vendorStatus as any,
+              },
+            });
+            vendorProfileId = vendorProfile.id;
+          }
 
           // If vouched by an existing user/vendor, record vouch entry
-          if (vouchedBy) {
+          if (vouchedBy && vendorProfileId) {
             const voucherUser = await tx.user.findUnique({
               where: { id: vouchedBy },
             });
@@ -389,7 +430,7 @@ export async function POST(request: Request) {
               await tx.vouch.create({
                 data: {
                   voucherId: voucherUser.id,
-                  guestId: vendorProfile.id,
+                  guestId: vendorProfileId,
                   status: "ACCEPTED",
                   notes: `Vouched at registration for ${finalStoreName}`,
                 },
@@ -417,13 +458,15 @@ export async function POST(request: Request) {
       console.error("Referral attribution error:", refErr);
     }
 
-    // Dispatch email verification OTP and email
+    // Dispatch email verification OTP and email only for new unverified accounts
     const requestUrl = new URL(request.url);
     const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
     const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
     const origin = `${proto}://${host}`;
 
-    if (newUser.email && !newUser.email.endsWith("@guest.campustrade.ng")) {
+    const isAlreadyVerified = Boolean(sessionUser || newUser.emailVerified);
+
+    if (!isAlreadyVerified && newUser.email && !newUser.email.endsWith("@guest.campustrade.ng")) {
       try {
         await createAndSendVerificationEmail({
           userId: newUser.id,
@@ -469,23 +512,27 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       success: true,
-      requiresVerification: true,
+      requiresVerification: !isAlreadyVerified,
       user: {
         id: newUser.id,
         email: newUser.email,
         fullName: newUser.fullName,
         role: newUser.role,
       },
-      redirectTo: `/auth/verify-email?email=${encodeURIComponent(newUser.email)}`,
+      redirectTo: isAlreadyVerified
+        ? (newUser.role === "VENDOR" ? "/dashboard" : "/shop")
+        : `/auth/verify-email?email=${encodeURIComponent(newUser.email)}`,
     });
 
-    response.cookies.set(AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production" || proto === "https",
-      sameSite: "lax",
-      path: "/",
-      maxAge: AUTH_COOKIE_MAX_AGE,
-    });
+    if (isAlreadyVerified) {
+      response.cookies.set(AUTH_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production" || proto === "https",
+        sameSite: "lax",
+        path: "/",
+        maxAge: AUTH_COOKIE_MAX_AGE,
+      });
+    }
 
     return response;
   } catch (error: any) {

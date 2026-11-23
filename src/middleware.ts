@@ -49,7 +49,8 @@ export function middleware(request: NextRequest) {
     // If navigating to sign-in/sign-up without explicit buyer intent, redirect to dashboard
     if (pathname === "/auth/login" || pathname === "/auth/register") {
       const targetRole = searchParams.get("role");
-      if (targetRole !== "buyer") {
+      const onboarding = searchParams.get("onboarding");
+      if (targetRole !== "buyer" && onboarding !== "vendor") {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     }

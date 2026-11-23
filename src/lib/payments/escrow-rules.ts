@@ -190,7 +190,7 @@ export async function evaluateEscrowOrder(
   // Override 1: Seller is a guest vendor
   if (rules.guest_vendor && seller.sellerType === "guest") {
     isForced = true;
-    forcedReason = "Escrow is mandatory for guest vendors.";
+    forcedReason = "Escrow is mandatory for Non-Student Vendors.";
   }
 
   // Override 2: Seller is below Tier 4 (not yet a Trusted seller)

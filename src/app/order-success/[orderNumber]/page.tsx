@@ -90,9 +90,7 @@ export default async function OrderSuccessPage({
               <div className="flex items-center gap-1.5 mt-0.5">
                 <strong className="text-neutral-900">{order.vendor.storeName}</strong>
                 {isGuestSeller ? (
-                  <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] px-1.5 py-0">
-                    Guest Vendor
-                  </Badge>
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] px-1.5 py-0">Non-Student Vendor</Badge>
                 ) : (
                   <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] px-1.5 py-0">
                     Student Vendor

@@ -212,7 +212,7 @@ function CheckoutForm() {
 
     if (isTier1Capped) {
       setError(
-        "Orders from Tier 1 Guest Vendors are capped at ₦10,000 for buyer security. Please adjust your order.",
+        "Orders from Tier 1 Non-Student Vendors are capped at ₦10,000 for buyer security. Please adjust your order.",
       );
       return;
     }
@@ -372,7 +372,7 @@ function CheckoutForm() {
                 {isGuestSeller ? (
                   <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs font-bold flex items-center gap-1">
                     <ShoppingBag className="w-3 h-3" />
-                    Guest Vendor Order
+                    Non-Student Vendor Order
                   </Badge>
                 ) : (
                   <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-xs font-semibold flex items-center gap-1.5 shadow-2xs">
@@ -431,7 +431,7 @@ function CheckoutForm() {
                   Order Amount Exceeds Tier 1 Guest Cap
                 </div>
                 <p className="text-[11px] text-amber-800">
-                  Orders from newly registered Tier 1 Guest Vendors are capped
+                  Orders from newly registered Tier 1 Non-Student Vendors are capped
                   at <strong>₦10,000</strong> for security. Your cart total is{" "}
                   <strong>{formatNGN(group.subtotal)}</strong>. Please reduce
                   item quantity or order from a verified Tier 2+ seller.

@@ -15,7 +15,7 @@ export default function VendorGuidelinesPage() {
           {/* Navigation Bar: Smart Back Button + Home */}
           <div className="flex items-center justify-between pb-4 border-b border-neutral-100 mb-5">
             <SmartBackButton
-              fallbackUrl="/vendor/register"
+              fallbackUrl="/auth/register?role=vendor"
               fallbackLabel="Back to Vendor Registration"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 hover:bg-neutral-200 text-xs font-bold text-neutral-800 transition-colors"
             />
@@ -73,7 +73,7 @@ export default function VendorGuidelinesPage() {
             <p className="font-bold text-sm text-neutral-900">Ready to complete your store setup?</p>
             <p className="text-xs text-neutral-500">Return to your form to finish onboarding your vendor account.</p>
           </div>
-          <Link href="/vendor/register">
+          <Link href="/auth/register?role=vendor">
             <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold px-6 h-11 shadow-sm gap-2">
               <ShoppingBag className="w-4 h-4" />
               <span>Continue Registration</span>

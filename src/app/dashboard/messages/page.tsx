@@ -21,7 +21,7 @@ export default async function VendorMessagesPage({
   });
 
   if (!vendor) {
-    redirect("/vendor/register");
+    redirect("/auth/register?role=vendor");
   }
 
   if (searchParams?.buyer) {
