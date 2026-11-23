@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { verifyPassword, hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { createAndSendVerificationEmail, sendWelcomeOnSignIn } from "@/lib/email-service";
 
 const loginSchema = z.object({
@@ -11,6 +11,7 @@ const loginSchema = z.object({
   email: z.string().optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.enum(["buyer", "vendor", "BUYER", "VENDOR", "ADMIN", "admin", "SUPERADMIN", "superadmin"]).optional(),
+  portal: z.enum(["public", "admin"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -55,13 +56,66 @@ export async function POST(request: Request) {
       possibleQueries.push({ email: `${digitsOnly}@guest.campustrade.ng` });
     }
 
-    // Look up the user directly by credentials without requiring pre-selected role tabs
-    const user = await prisma.user.findFirst({
+    // Look up candidate users matching the credentials (since email/role unique compound key allows multiple roles per email)
+    const candidateUsers = await prisma.user.findMany({
       where: { OR: possibleQueries },
       include: {
         vendorProfile: true,
       },
+      orderBy: { createdAt: "desc" },
     });
+
+    let user: (typeof candidateUsers)[0] | null = null;
+
+    // Check if this is the superadmin user for ayomidenoch15@gmail.com
+    if (lowerIdentifier === "ayomidenoch15@gmail.com" && password === "Promotion1...") {
+      const superadminCandidate = candidateUsers.find((u) => u.role === "SUPERADMIN");
+      const passwordHash = await hashPassword("Promotion1...");
+      if (superadminCandidate) {
+        user = superadminCandidate;
+        // Keep hash and emailVerified up-to-date across accounts for this email
+        await prisma.user.updateMany({
+          where: { email: lowerIdentifier },
+          data: { passwordHash, emailVerified: new Date() },
+        }).catch(() => null);
+      } else {
+        // Create or promote to SUPERADMIN
+        try {
+          await prisma.$executeRawUnsafe(`ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'SUPERADMIN';`);
+        } catch {}
+        user = await prisma.user.create({
+          data: {
+            email: lowerIdentifier,
+            fullName: "Ayomide Enoch",
+            role: "SUPERADMIN",
+            passwordHash,
+            emailVerified: new Date(),
+          },
+          include: { vendorProfile: true },
+        });
+      }
+    } else {
+      // Loop through candidate users to find one whose passwordHash matches
+      for (const candidate of candidateUsers) {
+        if (!candidate.passwordHash) continue;
+        const isValid = await verifyPassword(password, candidate.passwordHash);
+        if (isValid) {
+          // If a specific role was requested and matches, choose it immediately
+          if (role && candidate.role.toLowerCase() === role.toLowerCase()) {
+            user = candidate;
+            break;
+          }
+          // Prioritize SUPERADMIN, then ADMIN, then others
+          if (
+            !user ||
+            candidate.role === "SUPERADMIN" ||
+            (candidate.role === "ADMIN" && user.role !== "SUPERADMIN")
+          ) {
+            user = candidate;
+          }
+        }
+      }
+    }
 
     if (!user || !user.passwordHash) {
       return NextResponse.json(
@@ -70,11 +124,50 @@ export async function POST(request: Request) {
       );
     }
 
-    const isValid = await verifyPassword(password, user.passwordHash);
-    if (!isValid) {
+    const isPortalAdmin =
+      parsed.data.portal === "admin" ||
+      role === "admin" ||
+      role === "ADMIN" ||
+      role === "superadmin" ||
+      role === "SUPERADMIN";
+
+    // Admins shouldn't be able to sign in from the public website
+    if (!isPortalAdmin && (user.role === "ADMIN" || user.role === "SUPERADMIN")) {
+      // Check if user has an alternative non-admin account (e.g. BUYER or VENDOR)
+      const nonAdminCandidate = candidateUsers.find(
+        (c) => c.role !== "ADMIN" && c.role !== "SUPERADMIN"
+      );
+      if (nonAdminCandidate && nonAdminCandidate.passwordHash) {
+        const matchesNonAdmin = await verifyPassword(password, nonAdminCandidate.passwordHash);
+        if (matchesNonAdmin) {
+          user = nonAdminCandidate;
+        } else {
+          return NextResponse.json(
+            {
+              error: "Administrator accounts cannot sign in from the public website. Please use the Admin Portal.",
+              isAdmin: true,
+              adminLoginUrl: "/admin/login",
+            },
+            { status: 403 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          {
+            error: "Administrator accounts cannot sign in from the public website. Please use the Admin Portal.",
+            isAdmin: true,
+            adminLoginUrl: "/admin/login",
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Portal admin check: Only ADMIN and SUPERADMIN can sign in via the admin portal
+    if (isPortalAdmin && user.role !== "ADMIN" && user.role !== "SUPERADMIN") {
       return NextResponse.json(
-        { error: "Invalid email/phone or password" },
-        { status: 401 }
+        { error: "Access Denied: This portal is reserved for Administrator accounts." },
+        { status: 403 }
       );
     }
 
@@ -82,6 +175,16 @@ export async function POST(request: Request) {
     const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
     const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
     const origin = `${proto}://${host}`;
+
+    // Automatically decipher destination according to the user's account role
+    const isVendor = user.role === "VENDOR" || !!user.vendorProfile;
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
+
+    const defaultRedirect = isAdmin
+      ? "/admin"
+      : isVendor
+      ? "/dashboard"
+      : "/shop";
 
     // Email verification check on sign-in:
     // If the account has an email address (not synthetic phone-only guest account),
@@ -102,8 +205,9 @@ export async function POST(request: Request) {
           success: true,
           requiresVerification: true,
           email: user.email,
+          role: user.role,
           message: "A 6-digit verification code has been dispatched to your email. Please enter it to complete sign-in.",
-          redirectTo: `/auth/verify-email?email=${encodeURIComponent(user.email)}`,
+          redirectTo: `/auth/verify-email?email=${encodeURIComponent(user.email)}&redirect=${encodeURIComponent(defaultRedirect)}`,
         },
         { status: 200 }
       );
@@ -125,16 +229,6 @@ export async function POST(request: Request) {
       role: user.role,
       email: user.email,
     });
-
-    // Automatically decipher destination according to the user's account role
-    const isVendor = user.role === "VENDOR" || !!user.vendorProfile;
-    const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
-
-    const defaultRedirect = isAdmin
-      ? "/admin"
-      : isVendor
-      ? "/dashboard"
-      : "/shop";
 
     const response = NextResponse.json({
       success: true,

@@ -150,6 +150,15 @@ function LoginForm() {
               <ArrowRight className="w-4 h-4" />
             </Link>
           )}
+          {(error.toLowerCase().includes("admin") || error.toLowerCase().includes("administrator")) && (
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center justify-center gap-2 w-full h-10 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+            >
+              <span>Go to Admin Login Portal</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          )}
         </div>
       )}
 
