@@ -74,7 +74,6 @@ function RegisterContent() {
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("+234 ");
-  const [studentIdNumber, setStudentIdNumber] = React.useState("");
 
   // Step 2 Fields: Security
   const [password, setPassword] = React.useState("");
@@ -273,9 +272,6 @@ function RegisterContent() {
         payload.studentIdUrl = studentIdUrl.trim() || undefined;
       }
 
-      if (studentIdNumber.trim()) {
-        payload.studentIdNumber = studentIdNumber.trim();
-      }
       if (studentIdUrl.trim()) {
         payload.studentIdUrl = studentIdUrl.trim();
       }
@@ -572,28 +568,6 @@ function RegisterContent() {
                           ? "Upload a photo holding your student ID card or a clear photo of your student ID card."
                           : "Upload your student ID card image to unlock verified student buyer perks, hostel delivery, and discounts."}
                       </p>
-                    </div>
-
-                    {/* Student ID / Matriculation Number */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center justify-between">
-                        <span className="flex items-center gap-1.5">
-                          <GraduationCap className="w-4 h-4 text-emerald-600" />
-                          Student ID / Matric Number
-                          <span className="text-neutral-400 font-normal text-xs">
-                            (Optional)
-                          </span>
-                        </span>
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          placeholder="e.g. 190404012 or UNILAG/2021/1234"
-                          value={studentIdNumber}
-                          onChange={(e) => setStudentIdNumber(e.target.value)}
-                          className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                        />
-                      </div>
                     </div>
                   </div>
                 )}
@@ -923,21 +897,6 @@ function RegisterContent() {
                         <li>Both your face and all card details (full name, matriculation number, photo) must be distinctly visible and unblurred.</li>
                         <li>Do not cover your face or use digital crops/screenshots.</li>
                       </ul>
-                    </div>
-
-                    {/* Student ID / Matric Number */}
-                    <div className="space-y-1.5">
-                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
-                        Student ID / Matriculation Number <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        type="text"
-                        required
-                        placeholder="e.g. 190404012"
-                        value={studentIdNumber}
-                        onChange={(e) => setStudentIdNumber(e.target.value)}
-                        className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                      />
                     </div>
 
                     {/* Student ID Photo Upload */}
