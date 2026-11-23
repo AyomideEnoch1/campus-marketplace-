@@ -885,15 +885,15 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 </div>
 
                 {/* CAC Registration (Optional) */}
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-3 overflow-hidden">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span className="text-xs font-bold text-neutral-900">
+                      <span className="text-xs font-bold text-neutral-900 leading-snug">
                         Registered Business Verification (Optional)
                       </span>
                     </div>
-                    <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-300 w-fit shrink-0">
+                    <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-300 w-fit shrink-0 self-start sm:self-auto max-w-full">
                       Grants &quot;Registered Business&quot; Badge
                     </Badge>
                   </div>

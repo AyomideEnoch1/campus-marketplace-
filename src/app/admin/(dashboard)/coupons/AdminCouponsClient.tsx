@@ -111,7 +111,7 @@ function renderAuditDetails(log: any) {
   const tryParse = (str?: string | null) => {
     if (!str) return null;
     try {
-      return JSON.parse(str);
+      return typeof str === "string" ? JSON.parse(str) : str;
     } catch {
       return str;
     }
@@ -119,38 +119,48 @@ function renderAuditDetails(log: any) {
 
   const parsedNew = tryParse(log.newValue);
   const parsedOld = tryParse(log.oldValue);
+  const actionUpper = (log.action || "").toUpperCase();
 
-  if (log.action === "CREATE" && typeof parsedNew === "object" && parsedNew !== null) {
+  if (actionUpper === "CREATE" && typeof parsedNew === "object" && parsedNew !== null) {
     return (
       <div className="space-y-1.5 mt-1">
         <p className="text-[11px] text-neutral-400">
-          Created coupon <strong className="text-emerald-400 font-mono">{parsedNew.code}</strong> with parameters:
+          Created coupon <strong className="text-emerald-400 font-mono">{parsedNew.code || "COUPON"}</strong> with parameters:
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
-            Max Uses: <strong>{parsedNew.maxRedemptions}</strong>
-          </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
-            Free Period: <strong>{parsedNew.freePeriodDays} days</strong>
-          </span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
-            Inactivity Window: <strong>{parsedNew.inactivityDays} days</strong>
-          </span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${
-              parsedNew.isActive
-                ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800"
-                : "bg-rose-950/80 text-rose-300 border border-rose-800"
-            }`}
-          >
-            {parsedNew.isActive ? "Active" : "Inactive"}
-          </span>
+          {parsedNew.maxRedemptions !== undefined && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
+              Max Uses: <strong>{parsedNew.maxRedemptions}</strong>
+            </span>
+          )}
+          {parsedNew.freePeriodDays !== undefined && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
+              Free Period: <strong>{parsedNew.freePeriodDays} days</strong>
+            </span>
+          )}
+          {parsedNew.inactivityDays !== undefined && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
+              Inactivity Window: <strong>{parsedNew.inactivityDays} days</strong>
+            </span>
+          )}
+          {parsedNew.isActive !== undefined && (
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                parsedNew.isActive
+                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800"
+                  : "bg-rose-950/80 text-rose-300 border border-rose-800"
+              }`}
+            >
+              {parsedNew.isActive ? "Active" : "Inactive"}
+            </span>
+          )}
           {parsedNew.expiresAt && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-400 text-[10px]">
               Expires: {new Date(parsedNew.expiresAt).toLocaleDateString()}
             </span>
           )}
         </div>
+        {log.metadata && <p className="text-[11px] text-neutral-400 mt-0.5">{log.metadata}</p>}
       </div>
     );
   }
@@ -185,7 +195,7 @@ function renderAuditDetails(log: any) {
       )}
       {log.newValue && (
         <span>
-          {log.action === "CREATE" ? "Initial:" : "Updated:"}{" "}
+          {actionUpper === "CREATE" ? "Initial:" : "Updated:"}{" "}
           <strong className="text-white">{log.newValue}</strong>
         </span>
       )}
@@ -815,8 +825,10 @@ export function AdminCouponsClient({
                 <p className="text-neutral-400 text-center py-4">No audit events recorded yet.</p>
               ) : (
                 selectedCoupon.auditLogs?.map((log) => {
-                  const actorName = log.actorName || (log as any).actor?.fullName || "Super Admin";
-                  const actorEmail = log.actorEmail || (log as any).actor?.email;
+                  const rawName = (log.actorName || (log as any).actor?.fullName || "").trim();
+                  const rawEmail = (log.actorEmail || (log as any).actor?.email || "").trim();
+                  const actorName = rawName || (rawEmail ? rawEmail.split("@")[0] : "Super Admin");
+                  const showEmail = rawEmail && rawEmail.toLowerCase() !== actorName.toLowerCase();
 
                   return (
                     <div
@@ -828,9 +840,9 @@ export function AdminCouponsClient({
                           {getAuditActionBadge(log.action)}
                           <span className="font-semibold text-neutral-200 text-xs truncate">
                             {actorName}
-                            {actorEmail && (
+                            {showEmail && (
                               <span className="text-neutral-400 font-normal ml-1 text-[11px]">
-                                ({actorEmail})
+                                ({rawEmail})
                               </span>
                             )}
                           </span>
