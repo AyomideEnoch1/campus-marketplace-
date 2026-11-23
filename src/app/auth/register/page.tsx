@@ -542,36 +542,59 @@ function RegisterContent() {
                   </p>
                 </div>
 
-                {/* Student ID / Matriculation Number (Shown for student accounts) */}
+                {/* Student ID Card Upload & Matriculation Number (Shown for student accounts) */}
                 {affiliation === "student" && (
-                  <div className="space-y-1.5 pt-1">
-                    <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <GraduationCap className="w-4 h-4 text-emerald-600" />
-                        Student ID / Matriculation Number
-                        {role === "VENDOR" ? (
-                          <span className="text-rose-500">*</span>
-                        ) : (
+                  <div className="space-y-4 pt-2 border-t border-neutral-100">
+                    {/* Student ID Card Photo Upload Field */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Camera className="w-4 h-4 text-emerald-600" />
+                          Student ID Card Photo
+                          {role === "VENDOR" ? (
+                            <span className="text-rose-500">* (Required)</span>
+                          ) : (
+                            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-bold border border-emerald-200">
+                              Verification Badge
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                      <SingleImageUpload
+                        value={studentIdUrl}
+                        onChange={setStudentIdUrl}
+                        folder="stores"
+                        label="Upload Student ID Card Photo"
+                        hint="Upload a clear photo or scan of your university student ID card (PNG, JPG, or WEBP)"
+                      />
+                      <p className="text-[11px] text-neutral-500 leading-relaxed">
+                        {role === "VENDOR"
+                          ? "Upload a photo holding your student ID card or a clear photo of your student ID card."
+                          : "Upload your student ID card image to unlock verified student buyer perks, hostel delivery, and discounts."}
+                      </p>
+                    </div>
+
+                    {/* Student ID / Matriculation Number */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <GraduationCap className="w-4 h-4 text-emerald-600" />
+                          Student ID / Matric Number
                           <span className="text-neutral-400 font-normal text-xs">
                             (Optional)
                           </span>
-                        )}
-                      </span>
-                    </label>
-                    <div className="relative">
-                      <Input
-                        type="text"
-                        placeholder="e.g. 190404012 or UNILAG/2021/1234"
-                        value={studentIdNumber}
-                        onChange={(e) => setStudentIdNumber(e.target.value)}
-                        className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
-                      />
+                        </span>
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          placeholder="e.g. 190404012 or UNILAG/2021/1234"
+                          value={studentIdNumber}
+                          onChange={(e) => setStudentIdNumber(e.target.value)}
+                          className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                        />
+                      </div>
                     </div>
-                    <p className="text-[11px] text-neutral-500">
-                      {role === "VENDOR"
-                        ? "Enter your genuine university matriculation number. Verification photo required in Step 3."
-                        : "Enter your student ID or matric number to unlock campus student perks and discounts."}
-                    </p>
                   </div>
                 )}
                 {/* Step 1 Navigation Buttons */}

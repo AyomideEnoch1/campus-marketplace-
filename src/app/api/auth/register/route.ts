@@ -306,6 +306,7 @@ export async function POST(request: Request) {
             passwordHash,
             phone: cleanPhone || rawContactPhone || null,
             role,
+            avatarUrl: studentIdUrl || null,
           },
         });
 
