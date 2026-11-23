@@ -148,6 +148,35 @@ export async function POST(request: Request) {
       }
     }
 
+    // Duplicate Email Check scoped strictly to the selected role/account type
+    let pendingUserId: string | null = null;
+    const existingEmail = await prisma.user.findFirst({
+      where: {
+        email: userEmail,
+        role,
+        ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
+      },
+      include: {
+        vendorProfile: true,
+      },
+    });
+
+    if (existingEmail) {
+      if (existingEmail.emailVerified !== null) {
+        return NextResponse.json(
+          {
+            error: `An account with this email address already exists for a ${
+              role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
+            }. Please sign in or use another email.`,
+          },
+          { status: 409 }
+        );
+      } else {
+        // Safe continuation for pending unverified registration
+        pendingUserId = existingEmail.id;
+      }
+    }
+
     // Duplicate Phone Check scoped strictly to the selected role/account type
     if (cleanPhone) {
       const existingPhone = await prisma.user.findFirst({
@@ -155,6 +184,7 @@ export async function POST(request: Request) {
           phone: cleanPhone,
           role,
           ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
+          ...(pendingUserId ? { id: { not: pendingUserId } } : {}),
         },
       });
       if (existingPhone) {
@@ -167,25 +197,6 @@ export async function POST(request: Request) {
           { status: 409 }
         );
       }
-    }
-
-    // Duplicate Email Check scoped strictly to the selected role/account type
-    const existingEmail = await prisma.user.findFirst({
-      where: {
-        email: userEmail,
-        role,
-        ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
-      },
-    });
-    if (existingEmail) {
-      return NextResponse.json(
-        {
-          error: `An account with this email address already exists for a ${
-            role === "VENDOR" ? "Campus Vendor" : "Student Buyer"
-          }. Please sign in or use another email.`,
-        },
-        { status: 409 }
-      );
     }
 
     // Campus Guest Vendor Control Verification
@@ -322,6 +333,17 @@ export async function POST(request: Request) {
               avatarUrl: studentIdUrl || undefined,
             },
           });
+        } else if (pendingUserId) {
+          user = await tx.user.update({
+            where: { id: pendingUserId },
+            data: {
+              fullName,
+              passwordHash: passwordHash || undefined,
+              phone: cleanPhone || rawContactPhone || null,
+              role,
+              avatarUrl: studentIdUrl || null,
+            },
+          });
         } else {
           user = await tx.user.create({
             data: {
@@ -336,40 +358,60 @@ export async function POST(request: Request) {
         }
 
         if (role === "VENDOR" && finalCampusId) {
-          const vendorProfile = await tx.vendorProfile.create({
-            data: {
-              userId: user.id,
-              storeName: finalStoreName,
-              slug: uniqueSlug,
-              campusId: finalCampusId,
-              whatsapp: finalWhatsapp,
-              storeDescription: storeDescription || null,
-              sellerType,
-              verificationTier,
-              payoutDelayHours,
-              // Student fields
-              faculty: faculty || null,
-              department: department || null,
-              studentIdUrl: studentIdUrl || null,
-              adminNotes: (studentIdNumber || studentId) ? `Matric / Student ID: ${studentIdNumber || studentId}` : null,
-              // Guest fields
-              businessName: businessName || finalStoreName,
-              businessCategory: businessCategory || null,
-              businessAddress: businessAddress || null,
-              businessPhotoPath: businessPhotoPath || null,
-              cacNumber: cacNumber || null,
-              cacDocumentPath: cacDocumentPath || null,
-              isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
-              governmentIdType: governmentIdType || null,
-              idDocumentPath: idDocumentPath || null,
-              selfieDocumentPath: selfieDocumentPath || null,
-              vouchedBy: vouchedBy || null,
-              status: vendorStatus as any,
-            },
-          });
+          let vendorProfileId: string | null = null;
+          if (pendingUserId && existingEmail?.vendorProfile) {
+            await tx.vendorProfile.update({
+              where: { id: existingEmail.vendorProfile.id },
+              data: {
+                storeName: finalStoreName,
+                slug: uniqueSlug,
+                campusId: finalCampusId,
+                whatsapp: finalWhatsapp,
+                storeDescription: storeDescription || null,
+                sellerType,
+                businessName: businessName || finalStoreName,
+                businessCategory: businessCategory || null,
+                status: vendorStatus as any,
+              },
+            });
+            vendorProfileId = existingEmail.vendorProfile.id;
+          } else {
+            const vendorProfile = await tx.vendorProfile.create({
+              data: {
+                userId: user.id,
+                storeName: finalStoreName,
+                slug: uniqueSlug,
+                campusId: finalCampusId,
+                whatsapp: finalWhatsapp,
+                storeDescription: storeDescription || null,
+                sellerType,
+                verificationTier,
+                payoutDelayHours,
+                // Student fields
+                faculty: faculty || null,
+                department: department || null,
+                studentIdUrl: studentIdUrl || null,
+                adminNotes: (studentIdNumber || studentId) ? `Matric / Student ID: ${studentIdNumber || studentId}` : null,
+                // Guest fields
+                businessName: businessName || finalStoreName,
+                businessCategory: businessCategory || null,
+                businessAddress: businessAddress || null,
+                businessPhotoPath: businessPhotoPath || null,
+                cacNumber: cacNumber || null,
+                cacDocumentPath: cacDocumentPath || null,
+                isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
+                governmentIdType: governmentIdType || null,
+                idDocumentPath: idDocumentPath || null,
+                selfieDocumentPath: selfieDocumentPath || null,
+                vouchedBy: vouchedBy || null,
+                status: vendorStatus as any,
+              },
+            });
+            vendorProfileId = vendorProfile.id;
+          }
 
           // If vouched by an existing user/vendor, record vouch entry
-          if (vouchedBy) {
+          if (vouchedBy && vendorProfileId) {
             const voucherUser = await tx.user.findUnique({
               where: { id: vouchedBy },
             });
@@ -377,7 +419,7 @@ export async function POST(request: Request) {
               await tx.vouch.create({
                 data: {
                   voucherId: voucherUser.id,
-                  guestId: vendorProfile.id,
+                  guestId: vendorProfileId,
                   status: "ACCEPTED",
                   notes: `Vouched at registration for ${finalStoreName}`,
                 },
@@ -446,13 +488,15 @@ export async function POST(request: Request) {
         : `/auth/verify-email?email=${encodeURIComponent(newUser.email)}`,
     });
 
-    response.cookies.set(AUTH_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    if (isAlreadyVerified) {
+      response.cookies.set(AUTH_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
 
     return response;
   } catch (error: any) {

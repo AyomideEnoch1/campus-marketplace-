@@ -21,6 +21,8 @@ import {
   Sparkles,
   Loader2,
   Camera,
+  KeyRound,
+  RefreshCw,
 } from "lucide-react";
 import { SingleImageUpload } from "@/components/ui/single-image-upload";
 import { Button } from "@/components/ui/button";
@@ -53,8 +55,9 @@ function RegisterContent() {
   // Stepper state:
   // Step 0: Account Type Selection
   // Step 1: Personal Information (Buyer & Vendor)
-  // Step 2: Account Security (Final for Buyer; Step 2 of 3 for Vendor)
-  // Step 3: Store Information (Final for Vendor)
+  // Step 2: Account Security (Final for Buyer; Step 2 of 3 for Student Vendor / Google Onboarding)
+  // Step 3: Store Information
+  // Step 4: Email Verification (Non-Student Vendor email/password flow)
   const [currentStep, setCurrentStep] = React.useState<number>(0);
   const [slideDirection, setSlideDirection] = React.useState<"forward" | "backward">("forward");
 
@@ -83,6 +86,14 @@ function RegisterContent() {
 
   // Google OAuth Onboarding state
   const [isGoogleOnboarding, setIsGoogleOnboarding] = React.useState(false);
+
+  // Step 4 Fields: Email Verification
+  const [verificationCode, setVerificationCode] = React.useState("");
+  const [verifyingCode, setVerifyingCode] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [resendCooldown, setResendCooldown] = React.useState(0);
+  const [resendNotice, setResendNotice] = React.useState("");
+  const [isVerifiedSuccess, setIsVerifiedSuccess] = React.useState(false);
 
   // Referral / Ambassador code
   const [referralCode, setReferralCode] = React.useState<string>("");
@@ -167,6 +178,15 @@ function RegisterContent() {
     }
   }, [errorParam]);
 
+  // Resend cooldown timer effect
+  React.useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   // Default campus selection
   React.useEffect(() => {
     if (campuses.length > 0 && (!campusId || campusId === "clunilag001")) {
@@ -195,6 +215,9 @@ function RegisterContent() {
   const goToStep = (step: number, direction: "forward" | "backward") => {
     setSlideDirection(direction);
     setError("");
+    if (step !== 4) {
+      setResendNotice("");
+    }
     setCurrentStep(step);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -235,9 +258,148 @@ function RegisterContent() {
       ? isStoreNameValid && Boolean(businessCategory)
       : isStoreNameValid && isCampusValid && isWhatsappValid && isStudentIdValid;
 
-  const totalSteps = role === "VENDOR" ? 3 : 2;
+  // Total Steps: Non-Student Vendor (standard) has 4 steps (including email verification).
+  // Google-authenticated users skip step 4. Student Vendor has 3 steps. Buyer has 2 steps.
+  const totalSteps =
+    role === "VENDOR"
+      ? sellerType === "guest" && !isGoogleOnboarding
+        ? 4
+        : 3
+      : 2;
 
-  // Form Submission
+  // Step 3 Next Action: Trigger Email Verification for Non-Student Vendor
+  const handleInitiateVerification = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (loading) return;
+
+    if (!isStoreNameValid) {
+      setError("Please enter your business or store name (at least 2 characters).");
+      return;
+    }
+    if (!businessCategory) {
+      setError("Please select a category of goods for your storefront.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const cleanPhone = cleanPhoneNumber(phone);
+      const cleanWhatsapp = whatsapp ? cleanPhoneNumber(whatsapp) : cleanPhone;
+
+      const payload: any = {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password: password || undefined,
+        phone: cleanPhone,
+        role: "VENDOR",
+        sellerType: "guest",
+        storeName: storeName.trim(),
+        businessName: storeName.trim(),
+        businessCategory: businessCategory,
+        storeDescription: storeDescription.trim(),
+        whatsapp: cleanWhatsapp || cleanPhone,
+        referralCode: referralCode ? referralCode.trim().toUpperCase() : undefined,
+      };
+
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to initiate registration");
+      }
+
+      // If user was already verified (e.g. Google user), redirect directly
+      if (!data.requiresVerification) {
+        window.location.href = data.redirectTo || "/dashboard";
+        return;
+      }
+
+      // Smoothly advance to Step 4: Email Verification screen!
+      setResendCooldown(60);
+      goToStep(4, "forward");
+    } catch (err: any) {
+      console.error("Initiate verification error:", err);
+      setError(err.message || "Failed to initiate email verification. Please check your details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 4: Verify 6-digit code and finalize registration
+  const handleVerifyCode = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (verifyingCode) return;
+
+    const cleanCode = verificationCode.trim().replace(/\D/g, "");
+    if (cleanCode.length !== 6) {
+      setError("Please enter the complete 6-digit verification code.");
+      return;
+    }
+
+    setVerifyingCode(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: cleanCode,
+          email: email.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Verification failed. Please check the code.");
+      }
+
+      setIsVerifiedSuccess(true);
+      setTimeout(() => {
+        window.location.href = data.redirectTo || "/dashboard";
+      }, 1200);
+    } catch (err: any) {
+      setError(err.message || "Failed to verify code. Please try again.");
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
+  // Step 4: Resend verification code
+  const handleResendCode = async () => {
+    if (resending || resendCooldown > 0) return;
+    setResending(true);
+    setError("");
+    setResendNotice("");
+
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to resend verification email.");
+      }
+
+      setResendNotice("A new 6-digit verification code has been dispatched to your email address!");
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError(err.message || "Could not resend email. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // Standard Form Submission for Buyer & Student Vendor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -374,13 +536,14 @@ function RegisterContent() {
         } else if (role === "BUYER" && isStep2Valid && !loading) {
           handleSubmit(e as any);
         }
-      } else if (
-        currentStep === 3 &&
-        role === "VENDOR" &&
-        isStep3Valid &&
-        !loading
-      ) {
-        handleSubmit(e as any);
+      } else if (currentStep === 3 && role === "VENDOR" && isStep3Valid && !loading) {
+        if (sellerType === "guest" && !isGoogleOnboarding) {
+          handleInitiateVerification(e as any);
+        } else {
+          handleSubmit(e as any);
+        }
+      } else if (currentStep === 4 && verificationCode.trim().length === 6 && !verifyingCode) {
+        handleVerifyCode(e as any);
       }
     }
   };
@@ -413,11 +576,17 @@ function RegisterContent() {
         />
       ) : (
         /* =================================================================== */
-        /* REGISTRATION FLOW (Steps 1, 2, and 3)                               */
+        /* REGISTRATION FLOW (Steps 1, 2, 3, and 4)                           */
         /* =================================================================== */
         <div className="w-full max-w-xl bg-white rounded-3xl border border-neutral-200/80 shadow-2xl shadow-neutral-900/5 p-6 sm:p-9 space-y-7 transition-all">
           <form
-            onSubmit={handleSubmit}
+            onSubmit={
+              currentStep === 3 && sellerType === "guest" && !isGoogleOnboarding
+                ? handleInitiateVerification
+                : currentStep === 4
+                ? handleVerifyCode
+                : handleSubmit
+            }
             onKeyDown={handleKeyDown}
             className="space-y-6"
           >
@@ -434,6 +603,8 @@ function RegisterContent() {
                   <span>
                     {currentStep === 1
                       ? "Change account type"
+                      : currentStep === 4
+                      ? "Back to Store Info"
                       : "Previous step"}
                   </span>
                 </button>
@@ -457,6 +628,7 @@ function RegisterContent() {
                     (sellerType === "guest"
                       ? "Storefront Information"
                       : "Store Setup & University Campus")}
+                  {currentStep === 4 && "Verify Your Email Address"}
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
                   {currentStep === 1 &&
@@ -473,6 +645,8 @@ function RegisterContent() {
                     (sellerType === "guest"
                       ? "Set up your storefront name, category of goods, and store description."
                       : "Set up your store name, university campus, and WhatsApp ordering line.")}
+                  {currentStep === 4 &&
+                    "Enter the 6-digit confirmation code sent to your email to verify and activate your store."}
                 </p>
               </div>
             </div>
@@ -844,7 +1018,7 @@ function RegisterContent() {
             )}
 
             {/* =============================================================== */}
-            {/* STEP 3: Store Information (Vendor Only - Final Step)            */}
+            {/* STEP 3: Store Information                                       */}
             {/* =============================================================== */}
             {currentStep === 3 && role === "VENDOR" && (
               <div key="step-3" className={`space-y-4 ${animationClass}`}>
@@ -1109,34 +1283,199 @@ function RegisterContent() {
                     <span>Back</span>
                   </Button>
 
-                  <Button
-                    type="submit"
-                    disabled={!isStep3Valid || loading}
-                    className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
-                      loading
-                        ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
-                        : !isStep3Valid
-                          ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
-                          : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
-                    }`}
-                  >
-                    {loading ? (
-                      <div className="flex items-center gap-2 text-neutral-500">
-                        <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
-                        <span>Creating your store...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <span>
-                          {sellerType === "guest"
-                            ? "Create Non-Student Store"
-                            : "Register Student Store"}
-                        </span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </Button>
+                  {sellerType === "guest" && !isGoogleOnboarding ? (
+                    /* Next: Verify Email Button for Non-Student Vendor */
+                    <Button
+                      type="button"
+                      disabled={!isStep3Valid || loading}
+                      onClick={() => handleInitiateVerification()}
+                      className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
+                        loading
+                          ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
+                          : !isStep3Valid
+                            ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                      }`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center gap-2 text-neutral-500">
+                          <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+                          <span>Sending verification email...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span>Next: Verify Email</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    /* Direct Submit Button for Student Vendor or Google Onboarding */
+                    <Button
+                      type="submit"
+                      disabled={!isStep3Valid || loading}
+                      className={`h-11 px-7 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto ${
+                        loading
+                          ? "bg-neutral-200 text-neutral-400 border border-neutral-300 cursor-not-allowed pointer-events-none shadow-none opacity-80"
+                          : !isStep3Valid
+                            ? "bg-neutral-200 text-neutral-400 border border-neutral-200 cursor-not-allowed opacity-60"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
+                      }`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center gap-2 text-neutral-500">
+                          <Loader2 className="w-4 h-4 animate-spin text-neutral-500" />
+                          <span>Creating your store...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span>
+                            {sellerType === "guest"
+                              ? "Complete Store Setup"
+                              : "Register Student Store"}
+                          </span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
+              </div>
+            )}
+
+            {/* =============================================================== */}
+            {/* STEP 4: Email Verification (Non-Student Vendor)                 */}
+            {/* =============================================================== */}
+            {currentStep === 4 && role === "VENDOR" && sellerType === "guest" && (
+              <div key="step-4" className={`space-y-5 ${animationClass}`}>
+                {isVerifiedSuccess ? (
+                  /* Success View */
+                  <div className="space-y-5 text-center animate-in fade-in-50 py-4">
+                    <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+                      <CheckCircle2 className="w-10 h-10" />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <h3 className="text-xl font-extrabold text-neutral-900">
+                        Email Verified Successfully! 🎉
+                      </h3>
+                      <p className="text-xs text-neutral-600 leading-relaxed max-w-sm mx-auto">
+                        Your store <strong className="text-emerald-700">{storeName}</strong> has been created and verified. Redirecting you to your vendor dashboard...
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-emerald-600 mx-auto" />
+                    </div>
+                  </div>
+                ) : (
+                  /* Code Input View */
+                  <>
+                    {/* Verification Info Banner */}
+                    <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-xs text-emerald-950 flex items-start gap-3">
+                      <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 shrink-0 mt-0.5">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-bold text-xs text-emerald-950">Verification code sent!</p>
+                        <p className="text-[11px] text-emerald-800 leading-relaxed">
+                          We sent a 6-digit confirmation code and link to{" "}
+                          <strong className="text-neutral-900 font-bold">{email}</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Resend Notice Banner if code resent */}
+                    {resendNotice && (
+                      <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 animate-in fade-in-50">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="font-medium">{resendNotice}</span>
+                      </div>
+                    )}
+
+                    {/* 6-Digit Code Field */}
+                    <div className="space-y-2 text-left pt-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center gap-1.5">
+                          <KeyRound className="w-4 h-4 text-emerald-600" />
+                          <span>6-Digit Verification Code</span>
+                          <span className="text-rose-500">*</span>
+                        </label>
+                        <span className="text-[11px] text-neutral-400 font-normal">Check Spam or Promotions</span>
+                      </div>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        autoFocus
+                        placeholder="123456"
+                        value={verificationCode}
+                        onChange={(e) => {
+                          setVerificationCode(e.target.value.replace(/\D/g, ""));
+                          if (error) setError("");
+                        }}
+                        className="h-14 text-center text-2xl font-black tracking-[8px] sm:tracking-[10px] rounded-2xl bg-neutral-50/80 border-neutral-300 font-mono text-emerald-700 focus:bg-white focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                      />
+                      <p className="text-[11px] text-neutral-400">
+                        Enter the 6 digits from the email sent by Resend, or click the direct verification link in your inbox.
+                      </p>
+                    </div>
+
+                    {/* Step 4 Navigation & Verification Buttons */}
+                    <div className="pt-3 flex items-center justify-between gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={verifyingCode}
+                        onClick={() => goToStep(3, "backward")}
+                        className="h-11 px-5 rounded-xl text-xs font-bold border-neutral-200 text-neutral-700 hover:bg-neutral-100 cursor-pointer"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-1.5" />
+                        <span>Back to Store Info</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        disabled={verifyingCode || verificationCode.trim().length !== 6}
+                        onClick={() => handleVerifyCode()}
+                        className="h-11 px-7 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 ml-auto"
+                      >
+                        {verifyingCode ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-white" />
+                            <span>Activating store...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Verify &amp; Activate Store</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {/* Resend Action */}
+                    <div className="pt-2 text-center space-y-1.5 border-t border-neutral-100">
+                      <p className="text-xs text-neutral-500">Didn&apos;t receive the code or link?</p>
+                      <button
+                        type="button"
+                        onClick={handleResendCode}
+                        disabled={resending || resendCooldown > 0}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 disabled:text-neutral-400 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${resending ? "animate-spin" : ""}`} />
+                        <span>
+                          {resendCooldown > 0
+                            ? `Resend code in ${resendCooldown}s`
+                            : resending
+                            ? "Sending fresh code..."
+                            : "Resend verification code"}
+                        </span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -1153,6 +1492,7 @@ function RegisterContent() {
                     (sellerType === "guest"
                       ? "Storefront Information"
                       : "Store Information")}
+                  {currentStep === 4 && "Email Verification"}
                 </span>
               </span>
 
@@ -1209,8 +1549,7 @@ function RegisterContent() {
                   : "Creating Your Account..."}
               </h3>
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Please hold on while we save your credentials and initialize
-                your profile.
+                Please hold on while we save your credentials and prepare your verification email.
               </p>
             </div>
 
@@ -1221,7 +1560,7 @@ function RegisterContent() {
               </div>
               <div className="flex items-center gap-2 text-neutral-800 font-bold animate-pulse">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <span>Finalizing setup &amp; redirecting...</span>
+                <span>Dispatching verification email via Resend...</span>
               </div>
             </div>
           </div>
