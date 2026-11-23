@@ -85,10 +85,11 @@ export async function POST(request: Request) {
       referralCode,
     } = parsed.data;
 
-    // Clean whitespaces from phone numbers for database consistency
-    const rawContactPhone = phone?.trim() || whatsapp?.trim();
-    const cleanPhone = rawContactPhone ? cleanPhoneNumber(rawContactPhone) : null;
-    const cleanWhatsapp = whatsapp?.trim() ? cleanPhoneNumber(whatsapp.trim()) : cleanPhone;
+    // Clean whitespaces and standardize phone numbers for database consistency
+    const cleanPhoneCandidate = phone ? cleanPhoneNumber(phone) : "";
+    const cleanWhatsappCandidate = whatsapp ? cleanPhoneNumber(whatsapp) : "";
+    const cleanPhone = cleanPhoneCandidate || cleanWhatsappCandidate || null;
+    const cleanWhatsapp = cleanWhatsappCandidate || cleanPhone;
 
     // In Student flow, mandatory student ID photo verification holding ID next to face
     if (role === "VENDOR" && sellerType === "student") {
@@ -126,11 +127,17 @@ export async function POST(request: Request) {
     }
 
     // Duplicate Phone Check scoped strictly to the selected role/account type
-    if (cleanPhone) {
+    if (cleanPhone && cleanPhone.length >= 7) {
+      const digits = cleanPhone.replace(/\D/g, "");
+      const altLocalPhone = digits.startsWith("234") ? `0${digits.slice(3)}` : null;
+
       const existingPhone = await prisma.user.findFirst({
         where: {
-          phone: cleanPhone,
           role,
+          OR: [
+            { phone: cleanPhone },
+            ...(altLocalPhone ? [{ phone: altLocalPhone }] : []),
+          ],
         },
       });
       if (existingPhone) {
@@ -252,7 +259,7 @@ export async function POST(request: Request) {
 
     if (role === "VENDOR") {
       finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
-      finalWhatsapp = cleanWhatsapp || cleanPhone || whatsapp?.trim() || rawContactPhone || "";
+      finalWhatsapp = cleanWhatsapp || cleanPhone || "";
 
       if (!finalWhatsapp) {
         return NextResponse.json(
@@ -304,7 +311,7 @@ export async function POST(request: Request) {
             fullName,
             email: userEmail,
             passwordHash,
-            phone: cleanPhone || rawContactPhone || null,
+            phone: cleanPhone || finalWhatsapp || null,
             role,
             avatarUrl: studentIdUrl || null,
           },

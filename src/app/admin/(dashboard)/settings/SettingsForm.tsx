@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Sliders, ShieldCheck, Percent, Phone, Globe, Check } from "lucide-react";
+import { Sliders, ShieldCheck, Percent, Phone, Globe, Check, CreditCard, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatNGN } from "@/lib/utils";
 
 interface Props {
   initialSettings: Record<string, string>;
@@ -16,6 +17,8 @@ export function SettingsForm({ initialSettings }: Props) {
     support_email: initialSettings.support_email || "support@campustrade.ng",
     require_vendor_approval: initialSettings.require_vendor_approval ?? "true",
     commission_percent: initialSettings.commission_percent || "5.0",
+    vendor_access_fee: initialSettings.vendor_access_fee || "15000",
+    vendor_access_duration_days: initialSettings.vendor_access_duration_days || "365",
     seo_meta_title:
       initialSettings.seo_meta_title ||
       "ọjà — Multi-Campus Student Marketplace",
@@ -192,6 +195,69 @@ export function SettingsForm({ initialSettings }: Props) {
             />
             <p className="text-[11px] text-neutral-400 mt-1">
               Used for future Paystack automated transaction fee split (Phase 2).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Vendor Storefront Access & Subscription Pricing */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="font-bold text-sm text-white flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-emerald-400" />
+            Standard Vendor Storefront Access Pricing
+          </h3>
+          <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800">
+            Preview: {formatNGN(Number(formData.vendor_access_fee) || 0)} / {formData.vendor_access_duration_days || "365"} Days
+          </span>
+        </div>
+        <p className="text-xs text-neutral-400">
+          This controls the public subscription fee displayed on the vendor activation screen (<code>/dashboard/activate</code>) when vendors activate access without a free Founding Coupon.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div>
+            <label className="text-xs font-semibold text-neutral-300 block mb-1">
+              Standard Access Fee in Naira (₦)
+            </label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs">₦</span>
+              <input
+                type="number"
+                min="0"
+                step="500"
+                required
+                value={formData.vendor_access_fee}
+                onChange={(e) =>
+                  setFormData({ ...formData, vendor_access_fee: e.target.value })
+                }
+                className="w-full pl-8 pr-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                placeholder="15000"
+              />
+            </div>
+            <p className="text-[11px] text-neutral-500 mt-1">
+              Currently set to {formatNGN(Number(formData.vendor_access_fee) || 0)}.
+            </p>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-neutral-300 block mb-1">
+              Access Validity Duration (Days)
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="1825"
+              required
+              value={formData.vendor_access_duration_days}
+              onChange={(e) =>
+                setFormData({ ...formData, vendor_access_duration_days: e.target.value })
+              }
+              className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 font-mono focus:outline-none focus:border-emerald-500"
+              placeholder="365"
+            />
+            <p className="text-[11px] text-neutral-500 mt-1">
+              Default is 365 days (1 year access).
             </p>
           </div>
         </div>

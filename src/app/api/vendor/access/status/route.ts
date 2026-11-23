@@ -30,6 +30,19 @@ export async function GET() {
     const entitlements = computeVendorEntitlements(vendor);
     const latestRedemption = vendor.couponRedemptions?.[0] || null;
 
+    const settings = await prisma.siteSetting.findMany({
+      where: {
+        key: { in: ["vendor_access_fee", "vendor_access_duration_days"] },
+      },
+    });
+    const settingsMap: Record<string, string> = {};
+    settings.forEach((s) => {
+      settingsMap[s.key] = s.value;
+    });
+
+    const vendorAccessFee = Number(settingsMap["vendor_access_fee"]) || 15000;
+    const vendorAccessDurationDays = Number(settingsMap["vendor_access_duration_days"]) || 365;
+
     return NextResponse.json({
       success: true,
       vendor: {
@@ -43,6 +56,8 @@ export async function GET() {
         approvedAt: vendor.approvedAt,
       },
       entitlements,
+      vendorAccessFee,
+      vendorAccessDurationDays,
       latestRedemption: latestRedemption
         ? {
             code: latestRedemption.coupon.code,

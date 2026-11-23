@@ -115,7 +115,9 @@ export function AdminVendorTable({
       v.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (v.businessName && v.businessName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      v.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      v.user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (v.whatsapp && v.whatsapp.includes(searchTerm)) ||
+      (v.user?.phone && v.user.phone.includes(searchTerm));
 
     const matchesCampus = campusFilter === "all" || v.campusId === campusFilter;
     const matchesStatus = statusFilter === "all" || v.status === statusFilter;
@@ -455,15 +457,22 @@ export function AdminVendorTable({
 
                       {/* Contact */}
                       <td className="py-3.5 px-4 text-neutral-300 whitespace-nowrap">
-                        <a
-                          href={`https://wa.me/${vendor.whatsapp?.replace(/[^0-9]/g, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 shrink-0 whitespace-nowrap"
-                        >
-                          <MessageCircle className="w-3 h-3 shrink-0" />
-                          <span>{vendor.whatsapp}</span>
-                        </a>
+                        <div className="space-y-0.5">
+                          <a
+                            href={`https://wa.me/${vendor.whatsapp?.replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 shrink-0 whitespace-nowrap font-medium"
+                          >
+                            <MessageCircle className="w-3 h-3 shrink-0" />
+                            <span>{vendor.whatsapp}</span>
+                          </a>
+                          {vendor.user?.phone && vendor.user.phone !== vendor.whatsapp && (
+                            <p className="text-[10px] text-neutral-400 font-mono">
+                              Phone: {vendor.user.phone}
+                            </p>
+                          )}
+                        </div>
                       </td>
 
                       {/* Action */}

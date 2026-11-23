@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { VendorEntitlements } from "@/lib/vendor-entitlements";
+import { formatNGN } from "@/lib/utils";
 
 interface VendorActivateClientProps {
   vendor: {
@@ -34,6 +35,8 @@ interface VendorActivateClientProps {
     approvedAt: string | null;
   };
   entitlements: VendorEntitlements;
+  vendorAccessFee?: number;
+  vendorAccessDurationDays?: number;
   latestRedemption: {
     code: string;
     status: string;
@@ -47,6 +50,8 @@ interface VendorActivateClientProps {
 export function VendorActivateClient({
   vendor,
   entitlements: initialEntitlements,
+  vendorAccessFee = 15000,
+  vendorAccessDurationDays = 365,
   latestRedemption,
 }: VendorActivateClientProps) {
   const router = useRouter();
@@ -103,7 +108,7 @@ export function VendorActivateClient({
       const res = await fetch("/api/vendor/access/pay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ durationDays: 365 }),
+        body: JSON.stringify({ durationDays: vendorAccessDurationDays }),
       });
 
       const data = await res.json();
@@ -338,7 +343,10 @@ export function VendorActivateClient({
 
               <div className="space-y-1">
                 <div className="text-2xl sm:text-3xl font-black text-neutral-900">
-                  ₦15,000 <span className="text-xs font-normal text-neutral-500">/ 1 Year Access</span>
+                  {formatNGN(vendorAccessFee)}{" "}
+                  <span className="text-xs font-normal text-neutral-500">
+                    / {vendorAccessDurationDays === 365 ? "1 Year" : `${vendorAccessDurationDays} Days`} Access
+                  </span>
                 </div>
                 <p className="text-xs text-neutral-500">
                   Instant activation via card, bank transfer, or USSD.
@@ -348,7 +356,7 @@ export function VendorActivateClient({
               <ul className="space-y-2 text-xs text-neutral-600">
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>365 days continuous campus selling</span>
+                  <span>{vendorAccessDurationDays} days continuous campus selling</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -372,7 +380,7 @@ export function VendorActivateClient({
                   <Loader2 className="w-4 h-4 animate-spin" /> Processing Activation...
                 </span>
               ) : (
-                "Pay ₦15,000 &amp; Activate Now"
+                `Pay ${formatNGN(vendorAccessFee)} & Activate Now`
               )}
             </Button>
 

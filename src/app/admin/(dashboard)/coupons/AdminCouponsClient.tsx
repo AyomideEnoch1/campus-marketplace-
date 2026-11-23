@@ -21,11 +21,13 @@ import {
   Layers,
   History,
   Lock,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { formatNGN } from "@/lib/utils";
 
 interface CouponData {
   id: string;
@@ -73,13 +75,29 @@ interface RedemptionData {
   hasPublishedProducts: boolean;
 }
 
-export function AdminCouponsClient({ initialCoupons }: { initialCoupons: CouponData[] }) {
+export function AdminCouponsClient({
+  initialCoupons,
+  initialVendorAccessFee = 15000,
+  initialVendorAccessDurationDays = 365,
+}: {
+  initialCoupons: CouponData[];
+  initialVendorAccessFee?: number;
+  initialVendorAccessDurationDays?: number;
+}) {
   const [coupons, setCoupons] = React.useState<CouponData[]>(initialCoupons);
   const [selectedCouponId, setSelectedCouponId] = React.useState<string>(coupons[0]?.id || "");
   const [redemptions, setRedemptions] = React.useState<RedemptionData[]>([]);
   const [loadingRedemptions, setLoadingRedemptions] = React.useState<boolean>(false);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [statusFilter, setStatusFilter] = React.useState<string>("ALL");
+
+  // Standard Vendor Access Pricing Modal
+  const [vendorAccessFee, setVendorAccessFee] = React.useState<number>(initialVendorAccessFee);
+  const [vendorAccessDurationDays, setVendorAccessDurationDays] = React.useState<number>(initialVendorAccessDurationDays);
+  const [showPriceModal, setShowPriceModal] = React.useState<boolean>(false);
+  const [priceInput, setPriceInput] = React.useState<number>(initialVendorAccessFee);
+  const [durationInput, setDurationInput] = React.useState<number>(initialVendorAccessDurationDays);
+  const [savingPrice, setSavingPrice] = React.useState<boolean>(false);
 
   // Create Modal
   const [showCreateModal, setShowCreateModal] = React.useState<boolean>(false);
@@ -252,6 +270,38 @@ export function AdminCouponsClient({ initialCoupons }: { initialCoupons: CouponD
     }
   };
 
+  // Handle Save Standard Vendor Access Fee
+  const handleSavePrice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (priceInput < 0) {
+      toast.error("Access fee cannot be negative.");
+      return;
+    }
+    setSavingPrice(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendor_access_fee: String(priceInput),
+          vendor_access_duration_days: String(durationInput || 365),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update price settings");
+      }
+      setVendorAccessFee(priceInput);
+      setVendorAccessDurationDays(durationInput);
+      setShowPriceModal(false);
+      toast.success(`Standard vendor access fee updated to ${formatNGN(priceInput)}!`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save vendor access fee");
+    } finally {
+      setSavingPrice(false);
+    }
+  };
+
   // Filtered redemptions by search query
   const filteredRedemptions = React.useMemo(() => {
     if (!searchQuery.trim()) return redemptions;
@@ -282,14 +332,30 @@ export function AdminCouponsClient({ initialCoupons }: { initialCoupons: CouponD
           </p>
         </div>
 
-        <Button
-          type="button"
-          onClick={() => setShowCreateModal(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md gap-1.5 self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Create New Coupon</span>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <Button
+            type="button"
+            onClick={() => {
+              setPriceInput(vendorAccessFee);
+              setDurationInput(vendorAccessDurationDays);
+              setShowPriceModal(true);
+            }}
+            variant="outline"
+            className="border-neutral-700 bg-neutral-900 text-white hover:bg-neutral-800 font-bold text-xs rounded-xl shadow-xs gap-1.5"
+          >
+            <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Storefront Fee: {formatNGN(vendorAccessFee)}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={() => setShowCreateModal(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Create New Coupon</span>
+          </Button>
+        </div>
       </div>
 
       {/* Coupon Selection & Cap Usage Cards */}
@@ -866,6 +932,90 @@ export function AdminCouponsClient({ initialCoupons }: { initialCoupons: CouponD
                 {isSubmitting ? "Revoking..." : "Confirm Revocation"}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* STANDARD VENDOR ACCESS PRICING MODAL */}
+      {showPriceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 flex items-center justify-center shrink-0">
+                <CreditCard className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  Vendor Storefront Pricing
+                </h3>
+                <p className="text-xs text-neutral-400">
+                  Update standard subscription fee & duration
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              This price is displayed on the vendor activation page (<code>/dashboard/activate</code>) for vendors who do not have a free Founding Coupon.
+            </p>
+
+            <form onSubmit={handleSavePrice} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-neutral-300 block mb-1">
+                  Access Fee in Naira (₦)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs">₦</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="500"
+                    required
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                    className="bg-neutral-800 border-neutral-700 pl-8 text-xs font-mono font-bold text-white"
+                  />
+                </div>
+                <p className="text-[10px] text-emerald-400 mt-1">
+                  Preview: {formatNGN(priceInput)}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-300 block mb-1">
+                  Validity Duration (Days)
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="1825"
+                  required
+                  value={durationInput}
+                  onChange={(e) => setDurationInput(Math.max(1, parseInt(e.target.value, 10) || 365))}
+                  className="bg-neutral-800 border-neutral-700 text-xs font-mono text-white"
+                />
+                <p className="text-[10px] text-neutral-400 mt-1">
+                  Default is 365 days (1 year access).
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPriceModal(false)}
+                  className="border-neutral-700 text-neutral-300 text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={savingPrice}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                >
+                  {savingPrice ? "Updating..." : "Save Pricing"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

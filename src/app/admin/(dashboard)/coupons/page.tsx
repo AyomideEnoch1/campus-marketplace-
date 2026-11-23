@@ -76,5 +76,25 @@ export default async function AdminCouponsPage() {
     })
   );
 
-  return <AdminCouponsClient initialCoupons={couponsWithUsage} />;
+  const settings = await prisma.siteSetting.findMany({
+    where: {
+      key: { in: ["vendor_access_fee", "vendor_access_duration_days"] },
+    },
+  });
+
+  const settingsMap: Record<string, string> = {};
+  settings.forEach((s) => {
+    settingsMap[s.key] = s.value;
+  });
+
+  const vendorAccessFee = Number(settingsMap["vendor_access_fee"]) || 15000;
+  const vendorAccessDurationDays = Number(settingsMap["vendor_access_duration_days"]) || 365;
+
+  return (
+    <AdminCouponsClient
+      initialCoupons={couponsWithUsage}
+      initialVendorAccessFee={vendorAccessFee}
+      initialVendorAccessDurationDays={vendorAccessDurationDays}
+    />
+  );
 }

@@ -22,7 +22,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const durationDays = Number(body.durationDays) || 365;
+    let durationDays = Number(body.durationDays);
+    if (!durationDays || durationDays <= 0) {
+      const durationSetting = await prisma.siteSetting.findUnique({
+        where: { key: "vendor_access_duration_days" },
+      });
+      durationDays = Number(durationSetting?.value) || 365;
+    }
 
     // In production, this completes following successful payment verification / Flutterwave callback
     const result = await activatePaidVendorAccess({

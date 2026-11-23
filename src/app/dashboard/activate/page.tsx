@@ -41,6 +41,21 @@ export default async function VendorActivatePage() {
   const entitlements = computeVendorEntitlements(vendor);
   const latestRedemption = vendor.couponRedemptions?.[0] || null;
 
+  // Retrieve dynamic vendor access fee and duration configured by admin
+  const settings = await prisma.siteSetting.findMany({
+    where: {
+      key: { in: ["vendor_access_fee", "vendor_access_duration_days"] },
+    },
+  });
+
+  const settingsMap: Record<string, string> = {};
+  settings.forEach((s) => {
+    settingsMap[s.key] = s.value;
+  });
+
+  const vendorAccessFee = Number(settingsMap["vendor_access_fee"]) || 15000;
+  const vendorAccessDurationDays = Number(settingsMap["vendor_access_duration_days"]) || 365;
+
   return (
     <VendorActivateClient
       vendor={{
@@ -52,6 +67,8 @@ export default async function VendorActivatePage() {
         approvedAt: vendor.approvedAt ? vendor.approvedAt.toISOString() : null,
       }}
       entitlements={entitlements}
+      vendorAccessFee={vendorAccessFee}
+      vendorAccessDurationDays={vendorAccessDurationDays}
       latestRedemption={
         latestRedemption
           ? {

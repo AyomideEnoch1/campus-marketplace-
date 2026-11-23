@@ -243,12 +243,16 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
     setLoading(true);
 
     try {
+      const cleanPhone = cleanPhoneNumber(phone);
+      const cleanWhatsapp = cleanPhoneNumber(whatsapp) || cleanPhone;
+      const effectivePhone = cleanPhone || cleanWhatsapp || undefined;
+
       const payload: any = {
         fullName,
         email: email || undefined,
         password,
-        phone: cleanPhoneNumber(phone),
-        whatsapp: cleanPhoneNumber(whatsapp || phone),
+        phone: effectivePhone,
+        whatsapp: cleanWhatsapp || effectivePhone,
         role: "VENDOR",
         sellerType,
         storeName: storeName || businessName,
