@@ -566,9 +566,17 @@ export function AdminVendorTable({
                       <div>
                         <span className="text-neutral-500 block">Government ID Type:</span>
                         <strong className="uppercase">
-                          {inspectVendor.governmentIdType?.replace("_", " ") || "Government ID"}
+                          {inspectVendor.governmentIdType === "nin"
+                            ? "National Identification Number (NIN)"
+                            : inspectVendor.governmentIdType?.replace("_", " ") || "Government ID"}
                         </strong>
                       </div>
+                      {inspectVendor.nin && (
+                        <div>
+                          <span className="text-neutral-500 block">NIN Registration #:</span>
+                          <strong className="text-emerald-400 font-mono tracking-wider">{inspectVendor.nin}</strong>
+                        </div>
+                      )}
                       <div className="col-span-2">
                         <span className="text-neutral-500 block">Physical Address:</span>
                         <span>{inspectVendor.businessAddress || "Not provided"}</span>

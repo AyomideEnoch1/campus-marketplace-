@@ -106,9 +106,10 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
   const [businessAddress, setBusinessAddress] = React.useState("");
   const [businessPhotoPath, setBusinessPhotoPath] = React.useState("");
   const [governmentIdType, setGovernmentIdType] = React.useState<
-    "voters_card" | "drivers_license" | "international_passport" | "school_work_id"
-  >("voters_card");
+    "nin" | "voters_card" | "drivers_license" | "international_passport" | "school_work_id"
+  >("nin");
   const [governmentIdNumber, setGovernmentIdNumber] = React.useState("");
+  const [ninNumber, setNinNumber] = React.useState("");
   const [idDocumentPath, setIdDocumentPath] = React.useState("");
   const [selfieDocumentPath, setSelfieDocumentPath] = React.useState("");
   const [cacNumber, setCacNumber] = React.useState("");
@@ -234,8 +235,21 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         setError("Please enter your physical shop or business address.");
         return;
       }
+      if (governmentIdType === "nin") {
+        const cleanNin = governmentIdNumber.trim().replace(/\D/g, "");
+        if (cleanNin.length !== 11) {
+          setError("National Identification Number (NIN) must be an 11-digit number.");
+          return;
+        }
+      } else if (ninNumber.trim()) {
+        const cleanNin = ninNumber.trim().replace(/\D/g, "");
+        if (cleanNin.length !== 11) {
+          setError("National Identification Number (NIN) must be an 11-digit number.");
+          return;
+        }
+      }
       if (!idDocumentPath || !selfieDocumentPath) {
-        setError("Please upload your government-issued ID and selfie holding your ID for Tier 2 verification.");
+        setError("Please upload your government-issued ID (or NIN slip) and selfie holding your ID for Tier 2 verification.");
         return;
       }
     }
@@ -272,6 +286,9 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
         payload.businessPhotoPath = businessPhotoPath || undefined;
         payload.governmentIdType = governmentIdType;
         payload.governmentIdNumber = governmentIdNumber;
+        payload.nin = governmentIdType === "nin"
+          ? governmentIdNumber.trim().replace(/\D/g, "")
+          : (ninNumber.trim() ? ninNumber.trim().replace(/\D/g, "") : undefined);
         payload.idDocumentPath = idDocumentPath;
         payload.selfieDocumentPath = selfieDocumentPath;
         payload.cacNumber = cacNumber || undefined;
@@ -446,7 +463,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <strong>Tier 1 (Instant):</strong> Phone OTP verification allows up to 3 listings with ₦10,000 order cap.
               </li>
               <li>
-                <strong>Tier 2 (Within 24 Hours):</strong> Admin manual review of Government ID + Selfie + Business location.
+                <strong>Tier 2 (Within 24 Hours):</strong> Admin manual review of National Identity (NIN) / Government ID + Selfie + Business location.
               </li>
               <li>
                 <strong>Designated Meetups:</strong> All campus orders are delivered at verified campus safe meetup points chosen by buyers at checkout.
@@ -815,6 +832,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                       onChange={(e: any) => setGovernmentIdType(e.target.value)}
                       className="flex h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-xs outline-none focus:border-emerald-600"
                     >
+                      <option value="nin">National Identification Number (NIN / NIMC Slip)</option>
                       <option value="voters_card">National Voter&apos;s Card (INEC)</option>
                       <option value="drivers_license">FRSC Driver&apos;s License</option>
                       <option value="international_passport">International Passport</option>
@@ -824,19 +842,52 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-neutral-700">
-                      Government ID Number *
+                      {governmentIdType === "nin"
+                        ? "NIN Registration Number (11 Digits) *"
+                        : "Government ID Number *"}
                     </label>
                     <Input
                       required
-                      placeholder="e.g. VIN / License / Passport Number"
+                      maxLength={governmentIdType === "nin" ? 11 : 40}
+                      placeholder={
+                        governmentIdType === "nin"
+                          ? "Enter 11-digit NIN (e.g. 12345678901)"
+                          : "e.g. VIN / License / Passport Number"
+                      }
                       value={governmentIdNumber}
-                      onChange={(e) => setGovernmentIdNumber(e.target.value)}
-                      className="rounded-xl text-xs h-10"
+                      onChange={(e) =>
+                        setGovernmentIdNumber(
+                          governmentIdType === "nin"
+                            ? e.target.value.replace(/\D/g, "")
+                            : e.target.value
+                        )
+                      }
+                      className="rounded-xl text-xs h-10 font-mono"
                     />
                     <span className="text-[10px] text-neutral-400">
-                      Hashed cryptographically for duplicate detection; never stored in plaintext.
+                      {governmentIdType === "nin"
+                        ? "11-digit National Identity Number. Hashed cryptographically to prevent duplicate accounts."
+                        : "Hashed cryptographically for duplicate detection; never stored in plaintext."}
                     </span>
                   </div>
+
+                  {governmentIdType !== "nin" && (
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-xs font-bold text-neutral-700">
+                        National Identification Number (NIN) Registration Number
+                      </label>
+                      <Input
+                        maxLength={11}
+                        placeholder="e.g. 11-digit NIN (e.g. 12345678901)"
+                        value={ninNumber}
+                        onChange={(e) => setNinNumber(e.target.value.replace(/\D/g, ""))}
+                        className="rounded-xl text-xs h-10 font-mono"
+                      />
+                      <span className="text-[10px] text-neutral-400">
+                        Optional if providing alternate ID above. Hashed for verified security.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* ID Photo & Selfie Uploads */}
@@ -850,7 +901,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                       onChange={setIdDocumentPath}
                       folder="stores"
                       label="Upload ID Document"
-                      hint="Clear photo of the front of your government ID card"
+                      hint="Clear photo of the front of your NIN slip, National e-ID card, or government ID"
                     />
                   </div>
 
@@ -863,7 +914,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                       onChange={setSelfieDocumentPath}
                       folder="stores"
                       label="Upload Selfie with ID"
-                      hint="Hold your ID card next to your face in a well-lit area"
+                      hint="Hold your NIN slip or ID card next to your face in a well-lit area"
                     />
                   </div>
                 </div>

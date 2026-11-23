@@ -36,8 +36,9 @@ const registerSchema = z.object({
   businessPhotoPath: z.string().optional(),
   cacNumber: z.string().optional(),
   cacDocumentPath: z.string().optional(),
-  governmentIdType: z.enum(["voters_card", "drivers_license", "international_passport", "school_work_id"]).optional(),
+  governmentIdType: z.enum(["nin", "voters_card", "drivers_license", "international_passport", "school_work_id"]).optional(),
   governmentIdNumber: z.string().optional(), // Raw number will be hashed with SHA-256 and never stored in plain text
+  nin: z.string().optional(), // 11-digit National Identity Number
   idDocumentPath: z.string().optional(),
   selfieDocumentPath: z.string().optional(),
   vouchedBy: z.string().optional(),
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
       cacDocumentPath,
       governmentIdType,
       governmentIdNumber,
+      nin,
       idDocumentPath,
       selfieDocumentPath,
       vouchedBy,
@@ -186,6 +188,31 @@ export async function POST(request: Request) {
       if (existingId) {
         return NextResponse.json(
           { error: "This government ID has already been registered with another vendor account. Duplicate registrations are prohibited." },
+          { status: 409 }
+        );
+      }
+    }
+
+    // NIN Registration Number Check for Guest Vendors
+    let finalNin: string | null = null;
+    const rawNinCandidate = (governmentIdType === "nin" ? governmentIdNumber : nin) || nin;
+    if (rawNinCandidate && rawNinCandidate.trim()) {
+      const cleanNin = rawNinCandidate.trim().replace(/\D/g, "");
+      if (cleanNin.length !== 11) {
+        return NextResponse.json(
+          { error: "National Identification Number (NIN) must be an 11-digit number." },
+          { status: 400 }
+        );
+      }
+      finalNin = cleanNin;
+
+      const existingNin = await prisma.vendorProfile.findFirst({
+        where: { nin: finalNin },
+      });
+
+      if (existingNin) {
+        return NextResponse.json(
+          { error: "This NIN registration number is already registered with another vendor account. Duplicate registrations are prohibited." },
           { status: 409 }
         );
       }
@@ -345,6 +372,7 @@ export async function POST(request: Request) {
               isRegisteredBusiness: Boolean(cacNumber || cacDocumentPath),
               governmentIdType: governmentIdType || null,
               governmentIdHash: governmentIdHash || null,
+              nin: finalNin || null,
               idDocumentPath: idDocumentPath || null,
               selfieDocumentPath: selfieDocumentPath || null,
               vouchedBy: vouchedBy || null,
