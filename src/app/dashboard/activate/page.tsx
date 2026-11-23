@@ -7,8 +7,8 @@ import { VendorActivateClient } from "./VendorActivateClient";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Activate Vendor Access | Founding Vendor Coupon & Plans | ọjà",
-  description: "Activate your campus vendor access with a Founding Vendor Coupon or subscription.",
+  title: "Storefront Pricing & Access Plans | Vendor Dashboard | ọjà",
+  description: "Check campus vendor subscription pricing, manage active entitlements, or redeem a Founding Vendor coupon.",
 };
 
 export default async function VendorActivatePage() {

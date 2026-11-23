@@ -395,6 +395,94 @@ export function VendorActivateClient({
         </div>
       )}
 
+      {/* ACTIVE VENDOR STOREFRONT PRICING & RENEWAL CARD */}
+      {hasActiveAccess && (
+        <div className="bg-white rounded-3xl border border-neutral-200/90 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-neutral-900">
+                  Storefront Access &amp; Subscription Pricing
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  Official platform rates for your campus vendor account
+                </p>
+              </div>
+            </div>
+
+            <div className="text-left sm:text-right">
+              <span className="text-2xl sm:text-3xl font-black text-neutral-900 block">
+                {formatNGN(vendorAccessFee)}
+              </span>
+              <span className="text-xs text-neutral-500 font-medium">
+                per {vendorAccessDurationDays === 365 ? "1 Year Access" : `${vendorAccessDurationDays} Days Access`}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 space-y-1">
+              <span className="text-neutral-400 font-medium text-[11px] uppercase tracking-wider block">Your Current Plan</span>
+              <p className="font-extrabold text-neutral-900 text-sm">
+                {entitlements.planType === "coupon" ? "Founding Vendor Coupon" : "Standard Annual Plan"}
+              </p>
+              <p className="text-[11px] text-neutral-500">
+                Expires {entitlements.accessExpiresAt ? new Date(entitlements.accessExpiresAt).toLocaleDateString() : "Active"} ({entitlements.daysRemaining} days left)
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 space-y-1">
+              <span className="text-neutral-400 font-medium text-[11px] uppercase tracking-wider block">Standard Platform Rate</span>
+              <p className="font-extrabold text-neutral-900 text-sm">
+                {formatNGN(vendorAccessFee)} / {vendorAccessDurationDays === 365 ? "1 Year" : `${vendorAccessDurationDays} Days`}
+              </p>
+              <p className="text-[11px] text-neutral-500">
+                Transparent flat fee with no hidden monthly costs
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 space-y-1">
+              <span className="text-neutral-400 font-medium text-[11px] uppercase tracking-wider block">Commission Deduction</span>
+              <p className="font-extrabold text-emerald-600 text-sm">
+                0% Commission
+              </p>
+              <p className="text-[11px] text-neutral-500">
+                You keep 100% of your earnings on all completed orders
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-neutral-100">
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold text-neutral-800">
+                Extend or Top-Up Access Early
+              </p>
+              <p className="text-xs text-neutral-500">
+                You can add {vendorAccessDurationDays === 365 ? "another year" : `${vendorAccessDurationDays} days`} of uninterrupted storefront selling to your account at any time.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              onClick={handlePayActivation}
+              disabled={loadingPayment}
+              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl h-11 px-5 shadow-sm shrink-0"
+            >
+              {loadingPayment ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                </span>
+              ) : (
+                `Renew / Extend Access (${formatNGN(vendorAccessFee)})`
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* DOUBLE GATE NOTICE (APPROVAL + ACCESS) */}
       <div className="p-4 sm:p-5 rounded-2xl bg-neutral-100/80 border border-neutral-200/80 text-xs text-neutral-600 flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 text-neutral-700 shrink-0 mt-0.5" />

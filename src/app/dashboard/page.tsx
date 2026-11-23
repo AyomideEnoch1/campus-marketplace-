@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Lock,
   ArrowRight,
+  CreditCard,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -79,6 +80,16 @@ export default async function VendorDashboardPage() {
 
   const { vendor, totalProducts, publishedProducts, totalViews, totalOrders } = data;
   const entitlements = computeVendorEntitlements(vendor);
+
+  // Fetch dynamic platform pricing from SiteSetting
+  const feeSetting = await prisma.siteSetting.findUnique({
+    where: { key: "vendor_access_fee" },
+  });
+  const durationSetting = await prisma.siteSetting.findUnique({
+    where: { key: "vendor_access_duration_days" },
+  });
+  const vendorAccessFee = feeSetting ? parseInt(feeSetting.value, 10) || 15000 : 15000;
+  const vendorAccessDurationDays = durationSetting ? parseInt(durationSetting.value, 10) || 365 : 365;
 
   const stats = [
     {
@@ -243,6 +254,60 @@ export default async function VendorDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Storefront Access & Pricing Plan */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-neutral-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+            <CreditCard className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-extrabold text-sm sm:text-base text-neutral-900">
+                Storefront Access &amp; Pricing
+              </h3>
+              <Badge
+                className={`text-[10px] font-bold ${
+                  entitlements.hasAccess
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                    : "bg-amber-100 text-amber-800 border-amber-300"
+                }`}
+              >
+                {entitlements.hasAccess
+                  ? entitlements.planType === "coupon"
+                    ? "Founding Coupon (Active)"
+                    : "Standard Plan (Active)"
+                  : "Access Inactive"}
+              </Badge>
+            </div>
+            <p className="text-xs text-neutral-600">
+              Platform Fee: <strong className="text-neutral-900 font-bold">{formatNGN(vendorAccessFee)}</strong> / {vendorAccessDurationDays === 365 ? "1 Year" : `${vendorAccessDurationDays} Days`} &bull; 0% Commission &bull; 50 listing slots
+            </p>
+            {entitlements.hasAccess && entitlements.accessExpiresAt && (
+              <p className="text-[11px] text-emerald-700 font-medium">
+                Active until {formatDate(entitlements.accessExpiresAt)} ({entitlements.daysRemaining} days remaining)
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="shrink-0 self-start md:self-auto">
+          <Link href="/dashboard/activate">
+            <Button
+              variant={entitlements.hasAccess ? "outline" : "default"}
+              size="sm"
+              className={
+                entitlements.hasAccess
+                  ? "border-neutral-300 hover:bg-neutral-100 text-neutral-800 font-bold text-xs rounded-xl"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs"
+              }
+            >
+              <span>{entitlements.hasAccess ? "Check Pricing & Options" : `Activate Now (${formatNGN(vendorAccessFee)})`}</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

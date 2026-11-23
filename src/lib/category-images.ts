@@ -10,7 +10,11 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   "hostel-essentials":
     "https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=400&q=80&crop=center",
   "books-academics":
-    "https://images.unsplash.com/photo-1532012164546-f432f2e3777a?auto=format&fit=crop&w=400&q=80&crop=center",
+    "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80&crop=center",
+  books:
+    "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80&crop=center",
+  academics:
+    "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=400&q=80&crop=center",
   "beauty-care":
     "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=400&q=80&crop=center",
   "food-groceries":
@@ -28,7 +32,11 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   "shoes-sneakers":
     "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80&crop=center",
   "phones-tablets":
-    "https://images.unsplash.com/photo-1511707171634-5f897ff02560?auto=format&fit=crop&w=400&q=80&crop=center",
+    "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=400&q=80&crop=center",
+  phones:
+    "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=400&q=80&crop=center",
+  tablets:
+    "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?auto=format&fit=crop&w=400&q=80&crop=center",
   "laptops-computers":
     "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=400&q=80&crop=center",
   "audio-accessories":
@@ -40,7 +48,7 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   "hostel-appliances":
     "https://images.unsplash.com/photo-1585338107529-13afc5f02586?auto=format&fit=crop&w=400&q=80&crop=center",
   "course-textbooks":
-    "https://images.unsplash.com/photo-1532012164546-f432f2e3777a?auto=format&fit=crop&w=400&q=80&crop=center",
+    "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=400&q=80&crop=center",
   "past-questions":
     "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=400&q=80&crop=center",
   stationery:
@@ -70,5 +78,45 @@ export const DEFAULT_CATEGORY_IMAGE =
 
 export function getCategoryImage(slug?: string): string {
   if (!slug) return DEFAULT_CATEGORY_IMAGE;
-  return CATEGORY_IMAGES[slug] || DEFAULT_CATEGORY_IMAGE;
+  const s = slug.toLowerCase().trim();
+
+  // Direct lookup
+  if (CATEGORY_IMAGES[s]) return CATEGORY_IMAGES[s];
+
+  // Keyword-based fallback for robust matching
+  if (s.includes("book") || s.includes("academic") || s.includes("textbook") || s.includes("read")) {
+    return CATEGORY_IMAGES["books-academics"];
+  }
+  if (s.includes("phone") || s.includes("tablet") || s.includes("iphone") || s.includes("android")) {
+    return CATEGORY_IMAGES["phones-tablets"];
+  }
+  if (s.includes("laptop") || s.includes("computer") || s.includes("macbook")) {
+    return CATEGORY_IMAGES["laptops-computers"];
+  }
+  if (s.includes("audio") || s.includes("headphone") || s.includes("earbud") || s.includes("speaker")) {
+    return CATEGORY_IMAGES["audio-accessories"];
+  }
+  if (s.includes("fashion") || s.includes("cloth") || s.includes("wear") || s.includes("dress")) {
+    return CATEGORY_IMAGES["fashion"];
+  }
+  if (s.includes("electron") || s.includes("gadget") || s.includes("tech")) {
+    return CATEGORY_IMAGES["electronics"];
+  }
+  if (s.includes("hostel") || s.includes("living") || s.includes("bed") || s.includes("room")) {
+    return CATEGORY_IMAGES["hostel-essentials"];
+  }
+  if (s.includes("beauty") || s.includes("fragrance") || s.includes("perfume") || s.includes("cosmetic")) {
+    return CATEGORY_IMAGES["beauty-care"];
+  }
+  if (s.includes("food") || s.includes("snack") || s.includes("grocer") || s.includes("meal")) {
+    return CATEGORY_IMAGES["food-groceries"];
+  }
+  if (s.includes("sport") || s.includes("fit") || s.includes("gym")) {
+    return CATEGORY_IMAGES["sports-fitness"];
+  }
+  if (s.includes("service") || s.includes("barb") || s.includes("hair")) {
+    return CATEGORY_IMAGES["services"];
+  }
+
+  return DEFAULT_CATEGORY_IMAGE;
 }
