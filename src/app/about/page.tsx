@@ -144,7 +144,7 @@ export default function AboutPage() {
               </Button>
             </Link>
             <Link href="/vendor/register">
-              <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10 font-bold px-6 text-xs">
+              <Button size="lg" variant="outline" className="bg-transparent border-white/60 text-white hover:bg-white hover:text-emerald-900 font-bold px-6 text-xs transition-colors">
                 Open a Student Store
               </Button>
             </Link>
