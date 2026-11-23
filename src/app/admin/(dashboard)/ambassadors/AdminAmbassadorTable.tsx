@@ -190,8 +190,8 @@ export function AdminAmbassadorTable({
 
     const nextState = !payoutRequestsLocked;
     const confirmPrompt = nextState
-      ? "Are you sure you want to LOCK ambassador earning requests?\n\nAmbassadors will NOT be able to submit payout requests from their dashboard while this is locked."
-      : "Are you sure you want to UNLOCK ambassador earning requests?\n\nAmbassadors with verified Nigerian bank accounts will be able to request their pending referral earnings.";
+      ? "Are you sure you want to pause ambassador payout requests?\n\nAmbassadors accumulate earnings throughout the week and cash out weekly."
+      : "Are you sure you want to open ambassador payout requests?\n\nAmbassadors with verified Nigerian bank accounts will be able to request their pending referral earnings.";
 
     if (!window.confirm(confirmPrompt)) return;
 
@@ -414,7 +414,7 @@ export function AdminAmbassadorTable({
             </div>
             <p className="text-xs text-neutral-400 mt-0.5">
               {payoutRequestsLocked
-                ? "The 'Request Earnings' button is locked in ambassador dashboards. Ambassadors cannot submit payout requests until unlocked."
+                ? "Ambassador payout requests are paused for weekly accumulation. Earnings cash out weekly."
                 : "Ambassadors with verified Nigerian bank accounts can request their pending referral earnings directly from their dashboard."}
             </p>
           </div>
