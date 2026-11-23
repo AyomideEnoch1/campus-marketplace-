@@ -145,50 +145,54 @@ export function VendorActivateClient({
 
       {/* Current Status Card if already active or expired */}
       {hasActiveAccess ? (
-        <div className="p-6 rounded-3xl bg-emerald-50/80 border border-emerald-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/30">
-              <CheckCircle2 className="w-6 h-6" />
+        <div className="p-4 sm:p-6 rounded-3xl bg-emerald-50/80 border border-emerald-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/30">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-extrabold text-neutral-900">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <h3 className="text-sm sm:text-base font-extrabold text-neutral-900 leading-snug">
                   Vendor Access is Active
                 </h3>
-                <Badge className="bg-emerald-600 text-white text-[10px] uppercase font-bold">
-                  {entitlements.planType === "coupon" ? "Founding Coupon" : "Paid Plan"}
-                </Badge>
+                <div className="flex">
+                  <Badge className="bg-emerald-600 text-white text-[9px] sm:text-[10px] uppercase font-bold shrink-0 py-0.5 px-2">
+                    {entitlements.planType === "coupon" ? "Founding Coupon" : "Paid Plan"}
+                  </Badge>
+                </div>
               </div>
-              <p className="text-xs text-neutral-600 mt-1">
+              <p className="text-xs text-neutral-600 mt-1 leading-snug">
                 Expires on{" "}
-                <strong>
+                <strong className="text-neutral-800">
                   {entitlements.accessExpiresAt
                     ? new Date(entitlements.accessExpiresAt).toLocaleDateString()
                     : "Active"}
                 </strong>{" "}
-                ({entitlements.daysRemaining} days remaining)
+                <span className="text-neutral-500 whitespace-nowrap">
+                  ({entitlements.daysRemaining} days remaining)
+                </span>
               </p>
             </div>
           </div>
 
-          <Link href="/dashboard">
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm">
+          <Link href="/dashboard" className="w-full sm:w-auto shrink-0">
+            <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm h-10">
               <span>Go to Dashboard</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
         </div>
       ) : isExpired ? (
-        <div className="p-6 rounded-3xl bg-rose-50 border border-rose-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-600/30">
-              <AlertTriangle className="w-6 h-6" />
+        <div className="p-4 sm:p-6 rounded-3xl bg-rose-50 border border-rose-200 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-3.5 min-w-0 flex-1">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-600/30">
+              <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <div>
-              <h3 className="text-base font-extrabold text-rose-950">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm sm:text-base font-extrabold text-rose-950 leading-snug">
                 Your Access Period Has Expired
               </h3>
-              <p className="text-xs text-rose-800 mt-1 max-w-md">
+              <p className="text-xs text-rose-800 mt-1 max-w-md leading-snug">
                 Your published listings have been temporarily hidden from the public shop. Renew access now to restore your products and commission-free selling instantly.
               </p>
             </div>
@@ -197,7 +201,7 @@ export function VendorActivateClient({
           <Button
             onClick={handlePayActivation}
             disabled={loadingPayment}
-            className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md shrink-0"
+            className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md shrink-0 h-10"
           >
             {loadingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pay to Restore Access"}
           </Button>
@@ -293,7 +297,7 @@ export function VendorActivateClient({
                       setCouponCode(e.target.value.toUpperCase().replace(/\s+/g, ""));
                       setCouponError(null);
                     }}
-                    className="rounded-xl text-xs font-mono font-bold uppercase mt-1 h-11 border-neutral-300"
+                    className="rounded-xl text-xs font-mono font-bold uppercase mt-1 h-11 border-neutral-300 text-neutral-900 bg-white placeholder:text-neutral-400"
                   />
                 </div>
 

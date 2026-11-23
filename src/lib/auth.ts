@@ -175,8 +175,8 @@ export async function requireAdmin(): Promise<SessionUser> {
 
 export async function requireSuperAdmin(): Promise<SessionUser> {
   const user = await requireAuth();
-  if (user.role !== "SUPERADMIN") {
-    throw new Error("Forbidden: Super Administrator access required");
+  if (user.role !== "SUPERADMIN" && user.role !== "ADMIN") {
+    throw new Error("Forbidden: Administrator access required");
   }
   return user;
 }

@@ -241,6 +241,9 @@ export function AdminCouponsClient({
   // Revoke confirmation modal
   const [revokingRedemption, setRevokingRedemption] = React.useState<RedemptionData | null>(null);
 
+  // Delete Coupon confirmation modal
+  const [deletingCoupon, setDeletingCoupon] = React.useState<CouponData | null>(null);
+
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) || coupons[0] || null;
 
   // Fetch redemptions when selectedCouponId or statusFilter changes
@@ -389,6 +392,35 @@ export function AdminCouponsClient({
     }
   };
 
+  // Handle Delete Coupon
+  const handleDeleteCoupon = async () => {
+    if (!deletingCoupon) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/admin/coupons/${deletingCoupon.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete coupon");
+      }
+
+      toast.success(data.message || `Coupon ${deletingCoupon.code} deleted successfully.`);
+      setCoupons((prev) => {
+        const remaining = prev.filter((c) => c.id !== deletingCoupon.id);
+        if (selectedCouponId === deletingCoupon.id) {
+          setSelectedCouponId(remaining[0]?.id || "");
+        }
+        return remaining;
+      });
+      setDeletingCoupon(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete coupon");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Handle Save Standard Vendor Access Fee
   const handleSavePrice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -443,7 +475,7 @@ export function AdminCouponsClient({
               Founding Vendor Coupons & Access
             </h1>
             <Badge className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">
-              SUPER ADMIN ONLY
+              ADMIN & SUPER ADMIN
             </Badge>
           </div>
           <p className="text-xs text-neutral-400 mt-1">
@@ -529,6 +561,17 @@ export function AdminCouponsClient({
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingCoupon(coupon);
+                      }}
+                      className="p-1 rounded-lg text-neutral-400 hover:text-rose-400 hover:bg-rose-950/40"
+                      title="Delete coupon"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
@@ -576,6 +619,22 @@ export function AdminCouponsClient({
             </div>
           );
         })}
+
+        {coupons.length === 0 && (
+          <div className="col-span-full p-8 rounded-3xl bg-neutral-900/60 border border-neutral-800 text-center space-y-3">
+            <Ticket className="w-8 h-8 text-neutral-500 mx-auto" />
+            <p className="text-sm font-bold text-neutral-300">No Founding Coupons Created Yet</p>
+            <p className="text-xs text-neutral-500">Create your first founding vendor coupon to grant free commission-free selling periods.</p>
+            <Button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Create First Coupon
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Selected Coupon Detail & Redemptions Section */}
@@ -604,7 +663,7 @@ export function AdminCouponsClient({
                   placeholder="Search store / vendor..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-neutral-800 border-neutral-700 text-xs h-9 pl-8 w-44 sm:w-56 rounded-xl"
+                  className="bg-neutral-800 border-neutral-700 text-xs h-9 pl-8 w-44 sm:w-56 rounded-xl text-white placeholder:text-neutral-500"
                 />
               </div>
 
@@ -807,7 +866,7 @@ export function AdminCouponsClient({
                   placeholder="e.g. FOUNDING50"
                   value={createCode}
                   onChange={(e) => setCreateCode(e.target.value.toUpperCase().replace(/\s+/g, ""))}
-                  className="bg-neutral-800 border-neutral-700 text-xs font-mono font-bold mt-1 uppercase"
+                  className="bg-neutral-800 border-neutral-700 text-xs font-mono font-bold mt-1 uppercase text-white placeholder:text-neutral-500"
                 />
               </div>
 
@@ -821,7 +880,7 @@ export function AdminCouponsClient({
                     required
                     value={createCap}
                     onChange={(e) => setCreateCap(parseInt(e.target.value, 10) || 1)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500"
                   />
                   <span className="text-[10px] text-neutral-400">Default: 50 slots</span>
                 </div>
@@ -834,7 +893,7 @@ export function AdminCouponsClient({
                     required
                     value={createFreeDays}
                     onChange={(e) => setCreateFreeDays(parseInt(e.target.value, 10) || 1)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500"
                   />
                   <span className="text-[10px] text-neutral-400">Default: 180 days</span>
                 </div>
@@ -849,7 +908,7 @@ export function AdminCouponsClient({
                     required
                     value={createInactivityDays}
                     onChange={(e) => setCreateInactivityDays(parseInt(e.target.value, 10) || 1)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500"
                   />
                   <span className="text-[10px] text-neutral-400">Release if 0 products in X days</span>
                 </div>
@@ -860,7 +919,7 @@ export function AdminCouponsClient({
                     type="datetime-local"
                     value={createExpiresAt}
                     onChange={(e) => setCreateExpiresAt(e.target.value)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500 [color-scheme:dark]"
                   />
                   <span className="text-[10px] text-neutral-400">Optional deadline</span>
                 </div>
@@ -919,7 +978,7 @@ export function AdminCouponsClient({
                   required
                   value={editCode}
                   onChange={(e) => setEditCode(e.target.value.toUpperCase().replace(/\s+/g, ""))}
-                  className="bg-neutral-800 border-neutral-700 text-xs font-mono font-bold mt-1 uppercase"
+                  className="bg-neutral-800 border-neutral-700 text-xs font-mono font-bold mt-1 uppercase text-white placeholder:text-neutral-500"
                 />
                 <span className="text-[10px] text-neutral-400">
                   Changing code blocks NEW redemptions of old code; active vendors keep access.
@@ -936,7 +995,7 @@ export function AdminCouponsClient({
                     required
                     value={editCap}
                     onChange={(e) => setEditCap(parseInt(e.target.value, 10) || 1)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500"
                   />
                   <span className="text-[10px] text-neutral-400">Min: {editingCoupon.activeRedemptions} (active count)</span>
                 </div>
@@ -949,7 +1008,7 @@ export function AdminCouponsClient({
                     required
                     value={editFreeDays}
                     onChange={(e) => setEditFreeDays(parseInt(e.target.value, 10) || 1)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500"
                   />
                   <span className="text-[10px] text-neutral-400">Future claims only</span>
                 </div>
@@ -964,7 +1023,7 @@ export function AdminCouponsClient({
                     required
                     value={editInactivityDays}
                     onChange={(e) => setEditInactivityDays(parseInt(e.target.value, 10) || 1)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500"
                   />
                   <span className="text-[10px] text-neutral-400">Future claims only</span>
                 </div>
@@ -975,7 +1034,7 @@ export function AdminCouponsClient({
                     type="datetime-local"
                     value={editExpiresAt}
                     onChange={(e) => setEditExpiresAt(e.target.value)}
-                    className="bg-neutral-800 border-neutral-700 text-xs mt-1"
+                    className="bg-neutral-800 border-neutral-700 text-xs mt-1 text-white placeholder:text-neutral-500 [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -993,22 +1052,38 @@ export function AdminCouponsClient({
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800">
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-neutral-800">
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() => setShowEditModal(false)}
-                  className="border-neutral-700 text-neutral-300 text-xs"
+                  variant="destructive"
+                  onClick={() => {
+                    const toDelete = editingCoupon;
+                    setShowEditModal(false);
+                    setDeletingCoupon(toDelete);
+                  }}
+                  className="bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-bold flex items-center gap-1.5"
                 >
-                  Cancel
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Delete Coupon
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
-                >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEditModal(false)}
+                    className="border-neutral-700 text-neutral-300 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                  >
+                    {isSubmitting ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
@@ -1053,6 +1128,62 @@ export function AdminCouponsClient({
                 className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
               >
                 {isSubmitting ? "Revoking..." : "Confirm Revocation"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE COUPON CONFIRMATION MODAL */}
+      {deletingCoupon && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-950/80 border border-rose-800/80 text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-white">
+                  Delete Coupon ({deletingCoupon.code})?
+                </h3>
+                <p className="text-xs text-neutral-400">
+                  Permanent action &amp; slot removal
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-300 leading-relaxed">
+              Are you sure you want to permanently delete coupon <span className="font-mono font-bold text-white bg-neutral-800 px-1.5 py-0.5 rounded">{deletingCoupon.code}</span>?
+            </p>
+
+            {deletingCoupon.activeRedemptions > 0 && (
+              <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-800/60 space-y-1">
+                <div className="flex items-center gap-1.5 text-rose-300 text-xs font-bold">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>Active Vendors Affected</span>
+                </div>
+                <p className="text-[11px] text-rose-200/90 leading-relaxed">
+                  There are currently <strong>{deletingCoupon.activeRedemptions} active vendor(s)</strong> using this coupon. Deleting will release their coupon access and remove the coupon and all its redemption records.
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeletingCoupon(null)}
+                className="border-neutral-700 text-neutral-300 text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isSubmitting}
+                onClick={handleDeleteCoupon}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs"
+              >
+                {isSubmitting ? "Deleting..." : "Confirm Delete"}
               </Button>
             </div>
           </div>

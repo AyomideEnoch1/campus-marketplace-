@@ -13,9 +13,8 @@ export const metadata = {
 export default async function AdminCouponsPage() {
   const session = await getSession();
 
-  // Strict Server-Side Super Admin Enforcement:
-  // Regular admins, vendors, and customers get 403 / redirect
-  if (!session || session.role !== "SUPERADMIN") {
+  // Server-Side Role Enforcement: Admin / Super Admin access required
+  if (!session || (session.role !== "SUPERADMIN" && session.role !== "ADMIN")) {
     redirect("/admin");
   }
 

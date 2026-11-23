@@ -56,10 +56,10 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = React.useState<boolean>(false);
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
 
-  // Requirement: ONLY super_admin can see the Coupons page
+  // Administrators and Super Administrators can access the Coupons page
   const filteredNavItems = React.useMemo(() => {
     const items = [...adminNavItems];
-    if (session.role === "SUPERADMIN") {
+    if (session.role === "SUPERADMIN" || session.role === "ADMIN") {
       items.splice(2, 0, {
         label: "Coupons & Access",
         href: "/admin/coupons",
