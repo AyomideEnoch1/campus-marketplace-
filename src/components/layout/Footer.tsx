@@ -9,9 +9,11 @@ export function Footer() {
 
   // Hide footer completely on chat / messages pages and admin dashboard
   if (
-    pathname?.startsWith("/messages") ||
-    pathname?.startsWith("/dashboard/messages") ||
-    pathname?.startsWith("/admin")
+    !pathname ||
+    pathname.startsWith("/messages") ||
+    pathname.startsWith("/dashboard/messages") ||
+    pathname.startsWith("/admin") ||
+    (typeof window !== "undefined" && window.location.pathname.startsWith("/admin"))
   ) {
     return null;
   }

@@ -14,6 +14,7 @@ import {
   Plus,
   Check,
   Eye,
+  Images,
 } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -278,6 +279,14 @@ export function ProductCard({ product }: ProductCardProps) {
               </Link>
             )}
           </div>
+
+          {/* Multiple Photos Count Indicator */}
+          {product.images && product.images.length > 1 && (
+            <div className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 bg-black/60 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 pointer-events-none group-hover:opacity-0 transition-opacity z-5 shadow-xs">
+              <Images className="w-3 h-3 text-neutral-300" />
+              <span>{product.images.length}</span>
+            </div>
+          )}
         </div>
 
         {/* Product Content Details */}

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import "./globals.css";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Navbar } from "@/components/layout/Navbar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Footer } from "@/components/layout/Footer";
+import { AppMainContent } from "@/components/layout/AppMainContent";
 import { getSession } from "@/lib/auth";
 import { QueryProvider } from "@/lib/react-query/query-provider";
 import { CartProvider } from "@/lib/cart";
@@ -37,10 +39,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const sessionUser = await getSession();
+  const headersList = headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAdminRoute = pathname.startsWith("/admin");
 
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className="min-h-screen flex flex-col bg-white text-neutral-900 font-sans antialiased">
+    <html lang="en" className={`scroll-smooth ${isAdminRoute ? "dark" : ""}`}>
+      <body
+        className={`min-h-screen flex flex-col font-sans antialiased ${
+          isAdminRoute
+            ? "bg-neutral-950 text-neutral-100"
+            : "bg-white text-neutral-900"
+        }`}
+      >
         <QueryProvider>
           <CartProvider initialUser={sessionUser}>
             <WishlistProvider>
@@ -48,11 +59,11 @@ export default async function RootLayout({
                 <ReferralTracker />
               </Suspense>
               <RouteNavigationLoader />
-              <AnnouncementBar />
-              <Navbar initialUser={sessionUser} />
-              <main className="flex-grow pb-16 md:pb-0">{children}</main>
-              <MobileNav initialUser={sessionUser} />
-              <Footer />
+              {!isAdminRoute && <AnnouncementBar />}
+              {!isAdminRoute && <Navbar initialUser={sessionUser} />}
+              <AppMainContent isAdmin={isAdminRoute}>{children}</AppMainContent>
+              {!isAdminRoute && <MobileNav initialUser={sessionUser} />}
+              {!isAdminRoute && <Footer />}
             </WishlistProvider>
           </CartProvider>
         </QueryProvider>

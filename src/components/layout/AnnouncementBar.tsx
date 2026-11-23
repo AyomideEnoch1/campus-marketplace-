@@ -1,8 +1,15 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Sparkles, Truck, ShieldCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 export async function AnnouncementBar() {
+  const headersList = headers();
+  const pathname = headersList.get("x-pathname") || "";
+  if (pathname.startsWith("/admin")) {
+    return null;
+  }
+
   let tickerText = "Semester Rush Deals: Up to 40% Off";
   try {
     const setting = await prisma.siteSetting.findUnique({

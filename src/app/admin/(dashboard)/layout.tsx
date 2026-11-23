@@ -17,14 +17,14 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col md:flex-row pb-0 mb-0">
       {/* Collapsible Left Admin Sidebar */}
       <AdminSidebar session={session} />
 
       {/* Main Admin Content Area */}
-      <main className="flex-1 p-3.5 sm:p-6 md:p-10 overflow-y-auto max-w-7xl min-w-0">
+      <div className="flex-1 p-3.5 sm:p-6 md:p-10 overflow-y-auto max-w-7xl min-w-0 pb-12">
         {children}
-      </main>
+      </div>
     </div>
   );
 }
