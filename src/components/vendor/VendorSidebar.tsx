@@ -153,8 +153,8 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
           />
 
           {/* Drawer Content */}
-          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between p-5 overflow-y-auto z-10 animate-in slide-in-from-left duration-200">
-            <div className="space-y-5">
+          <div className="relative w-4/5 max-w-xs bg-white h-full h-[100dvh] max-h-[100dvh] shadow-2xl flex flex-col justify-between p-5 overflow-y-auto overscroll-contain [scrollbar-width:thin] z-10 animate-in slide-in-from-left duration-200">
+            <div className="space-y-5 shrink-0">
               {/* Drawer Header */}
               <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                 <div className="flex items-center gap-2.5">
@@ -216,7 +216,7 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-4 border-t border-neutral-100 space-y-2 mt-6">
+            <div className="pt-4 border-t border-neutral-100 space-y-2 mt-6 shrink-0">
               <Link
                 href={`/store/${vendor.slug}`}
                 target="_blank"
@@ -245,11 +245,11 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
 
       {/* Desktop Collapsible Left Sidebar */}
       <aside
-        className={`hidden md:flex flex-col justify-between shrink-0 bg-white border-r border-neutral-200/80 transition-all duration-300 ease-in-out shadow-xs select-none ${
+        className={`hidden md:flex flex-col justify-between shrink-0 bg-white border-r border-neutral-200/80 transition-all duration-300 ease-in-out shadow-xs select-none sticky top-0 h-screen max-h-screen overflow-y-auto overscroll-contain [scrollbar-width:thin] ${
           collapsed ? "w-20 p-3" : "w-64 p-5"
         }`}
       >
-        <div className="space-y-6">
+        <div className="space-y-6 shrink-0">
           {/* Store Brand Header */}
           {collapsed ? (
             <div className="flex flex-col items-center gap-2.5 pb-4 border-b border-neutral-100">
@@ -418,7 +418,7 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
 
         {/* Bottom Store Link & User */}
         <div
-          className={`pt-4 border-t border-neutral-100 space-y-2 ${
+          className={`shrink-0 pt-4 border-t border-neutral-100 space-y-2 mt-6 ${
             collapsed ? "flex flex-col items-center" : ""
           }`}
         >

@@ -54,6 +54,7 @@ export function VendorSidebarNav({
                 href={item.href}
                 onClick={onItemClick}
                 aria-label={item.label}
+                title={item.label}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
                   isActive
                     ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
