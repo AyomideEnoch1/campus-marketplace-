@@ -108,26 +108,32 @@ export async function verifyEmailAddress({
     try {
       const user = await prisma.user.findUnique({
         where: { id: payload.userId },
+        include: { vendorProfile: true },
       });
 
       if (!user) {
         return { success: false, error: "Account not found." };
       }
 
-      if (!user.emailVerified) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { emailVerified: new Date() },
-        });
-      }
+      const normEmail = (user.email || payload.email).toLowerCase().trim();
+
+      // Ensure all accounts associated with this email address are marked verified
+      await prisma.user.updateMany({
+        where: { email: { equals: normEmail, mode: "insensitive" } },
+        data: { emailVerified: new Date() },
+      });
 
       // Clean up any pending OTP setting
-      const normEmail = (user.email || payload.email).toLowerCase().trim();
       await prisma.siteSetting.deleteMany({
         where: { key: `email_otp:${normEmail}` },
       }).catch(() => {});
 
-      return { success: true, user };
+      const updatedUser = {
+        ...user,
+        emailVerified: new Date(),
+      };
+
+      return { success: true, user: updatedUser };
     } catch (err: any) {
       console.error("[Email Verification Token Error]:", err);
       return { success: false, error: "Database error during verification." };
@@ -172,18 +178,33 @@ export async function verifyEmailAddress({
         };
       }
 
-      // Mark user as verified
-      const user = await prisma.user.update({
-        where: { id: parsed.userId },
+      // Mark all accounts with this email as verified
+      await prisma.user.updateMany({
+        where: { email: { equals: normalizedEmail, mode: "insensitive" } },
         data: { emailVerified: new Date() },
       });
+
+      const user = await prisma.user.findUnique({
+        where: { id: parsed.userId },
+        include: { vendorProfile: true },
+      });
+
+      if (!user) {
+        return { success: false, error: "Account not found." };
+      }
 
       // Remove the OTP record
       await prisma.siteSetting.delete({
         where: { key: `email_otp:${normalizedEmail}` },
       }).catch(() => {});
 
-      return { success: true, user };
+      return {
+        success: true,
+        user: {
+          ...user,
+          emailVerified: new Date(),
+        },
+      };
     } catch (err: any) {
       console.error("[Email Verification Code Error]:", err);
       return { success: false, error: "Database error during code verification." };

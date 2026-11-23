@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { signToken, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE } from "@/lib/auth";
 import {
   exchangeGoogleCodeForTokens,
   fetchGoogleUserProfile,
@@ -199,10 +199,10 @@ export async function GET(request: Request) {
     // 9. Set secure HTTP-only session cookie (identical to existing login/register)
     response.cookies.set(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" || proto === "https",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: AUTH_COOKIE_MAX_AGE, // 30 days
     });
 
     // Delete state cookie

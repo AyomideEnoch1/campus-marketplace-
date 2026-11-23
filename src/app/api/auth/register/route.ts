@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { hashPassword, signToken, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
 import { attributeReferral } from "@/lib/referral";
 import { createAndSendVerificationEmail } from "@/lib/email-service";
@@ -463,6 +463,7 @@ export async function POST(request: Request) {
     const token = signToken({
       userId: newUser.id,
       role: newUser.role,
+      activeRole: newUser.role,
       email: newUser.email,
     });
 
@@ -480,10 +481,10 @@ export async function POST(request: Request) {
 
     response.cookies.set(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" || proto === "https",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: AUTH_COOKIE_MAX_AGE,
     });
 
     return response;

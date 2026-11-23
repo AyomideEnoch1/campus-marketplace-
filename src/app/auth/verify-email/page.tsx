@@ -43,6 +43,20 @@ function VerifyEmailContent() {
   );
   const [errorMessage, setErrorMessage] = React.useState("");
   const [destinationUrl, setDestinationUrl] = React.useState(redirectParam || "/shop");
+  const [redirectCountdown, setRedirectCountdown] = React.useState(3);
+
+  // Auto-redirect countdown effect upon success
+  React.useEffect(() => {
+    if (status !== "success") return;
+    if (redirectCountdown <= 0) {
+      window.location.href = destinationUrl;
+      return;
+    }
+    const timer = setTimeout(() => {
+      setRedirectCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [status, redirectCountdown, destinationUrl]);
 
   // Cooldown timer effect
   React.useEffect(() => {
@@ -198,7 +212,10 @@ function VerifyEmailContent() {
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-neutral-900">Email Verified Successfully! 🎉</h2>
             <p className="text-xs text-neutral-600 leading-relaxed max-w-xs mx-auto">
-              Your email address has been verified. A welcome message has also been sent to your inbox.
+              Your email address has been verified and your account is active. You are now securely signed in.
+            </p>
+            <p className="text-[11px] text-emerald-700 font-semibold">
+              Redirecting automatically in {redirectCountdown}s...
             </p>
           </div>
 
@@ -333,9 +350,16 @@ function VerifyEmailContent() {
 
       {/* Footer */}
       <div className="pt-2 text-center text-xs text-neutral-500 border-t border-neutral-100 flex items-center justify-between">
-        <Link href="/auth/login" className="hover:text-neutral-900 font-semibold transition-colors">
-          &larr; Back to Sign In
-        </Link>
+        {status === "success" ? (
+          <span className="text-emerald-700 font-semibold flex items-center gap-1.5 text-xs">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Signed In</span>
+          </span>
+        ) : (
+          <Link href="/auth/login" className="hover:text-neutral-900 font-semibold transition-colors">
+            &larr; Back to Sign In
+          </Link>
+        )}
         <Link href="/shop" className="hover:text-neutral-900 font-semibold transition-colors">
           Explore as Guest
         </Link>

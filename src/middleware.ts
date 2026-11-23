@@ -25,8 +25,26 @@ export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const token = request.cookies.get("campus_market_session")?.value;
   const role = token ? getSessionRole(token) : null;
+  const isAdmin = role === "ADMIN" || role === "SUPERADMIN";
 
-  // 1. Role: VENDOR routing rules
+  // 1. Role: ADMIN routing rules
+  if (isAdmin) {
+    // If already signed in as admin and visiting admin login, redirect to admin dashboard
+    if (pathname === "/admin/login") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+  }
+
+  // Enforce admin portal access
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    if (!isAdmin) {
+      const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 2. Role: VENDOR routing rules
   if (role === "VENDOR") {
     // If navigating to sign-in/sign-up without explicit buyer intent, redirect to dashboard
     if (pathname === "/auth/login" || pathname === "/auth/register") {
@@ -37,8 +55,15 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 2. Role: BUYER routing rules
+  // 3. Role: BUYER routing rules
   if (role === "BUYER") {
+    // If already signed in as buyer and navigating to sign-in/sign-up, redirect to shop
+    if (pathname === "/auth/login" || pathname === "/auth/register") {
+      const targetRole = searchParams.get("role");
+      if (targetRole !== "vendor") {
+        return NextResponse.redirect(new URL("/shop", request.url));
+      }
+    }
     // Buyers should not view vendor dashboard
     if (pathname.startsWith("/dashboard")) {
       const loginUrl = new URL("/auth/login", request.url);
@@ -48,7 +73,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 3. Unauthenticated access to protected dashboard
+  // 4. Unauthenticated access to protected dashboard
   if (!role && pathname.startsWith("/dashboard")) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);

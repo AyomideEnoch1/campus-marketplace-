@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { AUTH_COOKIE_NAME, verifyToken, signToken } from "@/lib/auth";
+import { AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE, verifyToken, signToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: AUTH_COOKIE_MAX_AGE,
     });
 
     const redirectUrl = targetRole === "VENDOR" ? "/dashboard" : "/shop";
