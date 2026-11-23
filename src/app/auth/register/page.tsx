@@ -24,7 +24,9 @@ import {
   UserCheck,
   Sparkles,
   Loader2,
+  Camera,
 } from "lucide-react";
+import { SingleImageUpload } from "@/components/ui/single-image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/Loader";
@@ -72,6 +74,7 @@ function RegisterContent() {
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("+234 ");
+  const [studentIdNumber, setStudentIdNumber] = React.useState("");
 
   // Step 2 Fields: Security
   const [password, setPassword] = React.useState("");
@@ -86,6 +89,7 @@ function RegisterContent() {
   const [faculty, setFaculty] = React.useState("");
   const [department, setDepartment] = React.useState("");
   const [storeDescription, setStoreDescription] = React.useState("");
+  const [studentIdUrl, setStudentIdUrl] = React.useState("");
 
   // Referral / Ambassador code
   const [referralCode, setReferralCode] = React.useState<string>("");
@@ -192,7 +196,10 @@ function RegisterContent() {
   const isCampusValid = Boolean(campusId && campusId.trim().length > 0);
   const isWhatsappValid =
     cleanPhoneNumber(whatsapp).replace(/\D/g, "").length >= 10;
-  const isStep3Valid = isStoreNameValid && isCampusValid && isWhatsappValid;
+  const isStudentIdValid =
+    sellerType !== "student" || Boolean(studentIdUrl && studentIdUrl.trim().length > 0);
+  const isStep3Valid =
+    isStoreNameValid && isCampusValid && isWhatsappValid && isStudentIdValid;
 
   const totalSteps = role === "VENDOR" ? 3 : 2;
 
@@ -221,11 +228,19 @@ function RegisterContent() {
       return;
     }
 
-    if (role === "VENDOR" && !isStep3Valid) {
-      setError(
-        "Please fill out the required store name and valid WhatsApp number.",
-      );
-      return;
+    if (role === "VENDOR") {
+      if (!isStoreNameValid || !isCampusValid || !isWhatsappValid) {
+        setError(
+          "Please fill out the required store name, university campus, and valid WhatsApp number.",
+        );
+        return;
+      }
+      if (sellerType === "student" && !studentIdUrl.trim()) {
+        setError(
+          "Student ID verification photo is mandatory. Please upload a clear photo of yourself holding your student ID card next to your face.",
+        );
+        return;
+      }
     }
 
     setLoading(true);
@@ -255,6 +270,14 @@ function RegisterContent() {
         payload.faculty = faculty.trim();
         payload.department = department.trim();
         payload.storeDescription = storeDescription.trim();
+        payload.studentIdUrl = studentIdUrl.trim() || undefined;
+      }
+
+      if (studentIdNumber.trim()) {
+        payload.studentIdNumber = studentIdNumber.trim();
+      }
+      if (studentIdUrl.trim()) {
+        payload.studentIdUrl = studentIdUrl.trim();
       }
 
       const res = await fetch("/api/auth/register", {
@@ -518,6 +541,39 @@ function RegisterContent() {
                     link to your campus hub.
                   </p>
                 </div>
+
+                {/* Student ID / Matriculation Number (Shown for student accounts) */}
+                {affiliation === "student" && (
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <GraduationCap className="w-4 h-4 text-emerald-600" />
+                        Student ID / Matriculation Number
+                        {role === "VENDOR" ? (
+                          <span className="text-rose-500">*</span>
+                        ) : (
+                          <span className="text-neutral-400 font-normal text-xs">
+                            (Optional)
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type="text"
+                        placeholder="e.g. 190404012 or UNILAG/2021/1234"
+                        value={studentIdNumber}
+                        onChange={(e) => setStudentIdNumber(e.target.value)}
+                        className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                      />
+                    </div>
+                    <p className="text-[11px] text-neutral-500">
+                      {role === "VENDOR"
+                        ? "Enter your genuine university matriculation number. Verification photo required in Step 3."
+                        : "Enter your student ID or matric number to unlock campus student perks and discounts."}
+                    </p>
+                  </div>
+                )}
                 {/* Step 1 Navigation Buttons */}
                 <div className="pt-3 flex items-center justify-between gap-3">
                   <Button
@@ -818,6 +874,66 @@ function RegisterContent() {
                     onChange={(e) => setStoreDescription(e.target.value)}
                   />
                 </div>
+
+                {/* Mandatory Student ID Verification for Student Vendors */}
+                {sellerType === "student" && (
+                  <div className="space-y-4 pt-3 border-t border-neutral-100">
+                    <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1.5 rounded-lg bg-amber-200/80 text-amber-900">
+                          <Camera className="w-4 h-4" />
+                        </span>
+                        <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-2">
+                          Mandatory Student ID Verification
+                          <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-200 text-amber-950 font-extrabold">
+                            Required
+                          </span>
+                        </h3>
+                      </div>
+
+                      <p className="text-xs text-amber-950 leading-relaxed font-semibold">
+                        You must upload a clear photo of yourself <strong>holding your university student ID card next to your face</strong> (selfie holding student ID).
+                      </p>
+
+                      <ul className="text-[11px] text-amber-900/90 space-y-1 list-disc list-inside">
+                        <li>Hold your physical student ID card right beside your face.</li>
+                        <li>Both your face and all card details (full name, matriculation number, photo) must be distinctly visible and unblurred.</li>
+                        <li>Do not cover your face or use digital crops/screenshots.</li>
+                      </ul>
+                    </div>
+
+                    {/* Student ID / Matric Number */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                        Student ID / Matriculation Number <span className="text-rose-500">*</span>
+                      </label>
+                      <Input
+                        type="text"
+                        required
+                        placeholder="e.g. 190404012"
+                        value={studentIdNumber}
+                        onChange={(e) => setStudentIdNumber(e.target.value)}
+                        className="h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                      />
+                    </div>
+
+                    {/* Student ID Photo Upload */}
+                    <div className="space-y-1.5">
+                      <SingleImageUpload
+                        value={studentIdUrl}
+                        onChange={setStudentIdUrl}
+                        folder="stores"
+                        label="Upload Photo: Holding Student ID Next to Face *"
+                        hint="Selfie holding your university student ID card next to your face (PNG, JPG, or WEBP)"
+                      />
+                      {!studentIdUrl && (
+                        <p className="text-[11px] font-semibold text-rose-500">
+                          * Uploading your student ID selfie is mandatory to approve your campus store.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Step 3 Navigation Buttons */}
                 <div className="pt-3 flex items-center justify-between gap-3">

@@ -26,6 +26,8 @@ const registerSchema = z.object({
   faculty: z.string().optional(),
   department: z.string().optional(),
   studentIdUrl: z.string().optional(),
+  studentIdNumber: z.string().optional(),
+  studentId: z.string().optional(),
   // Guest-specific fields
   businessName: z.string().optional(),
   businessCategory: z.string().optional(),
@@ -67,6 +69,8 @@ export async function POST(request: Request) {
       faculty,
       department,
       studentIdUrl,
+      studentIdNumber,
+      studentId,
       businessName,
       businessCategory,
       businessAddress,
@@ -321,6 +325,7 @@ export async function POST(request: Request) {
               faculty: faculty || null,
               department: department || null,
               studentIdUrl: studentIdUrl || null,
+              adminNotes: (studentIdNumber || studentId) ? `Matric / Student ID: ${studentIdNumber || studentId}` : null,
               // Guest fields
               businessName: businessName || finalStoreName,
               businessCategory: businessCategory || null,

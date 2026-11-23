@@ -656,14 +656,28 @@ export function AdminVendorTable({
               ) : (
                 /* Student Vendor Credentials */
                 <div className="space-y-3">
-                  <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800">
+                  <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-1.5">
                     <p className="font-bold text-emerald-400">Academic Affiliation</p>
-                    <p className="text-neutral-300 mt-1">
+                    <p className="text-neutral-300">
                       Faculty / Department:{" "}
                       <strong>
                         {inspectVendor.faculty || "Not Stated"} &mdash; {inspectVendor.department || "General"}
                       </strong>
                     </p>
+                    {inspectVendor.adminNotes && (
+                      <p className="text-neutral-300">
+                        {inspectVendor.adminNotes.startsWith("Matric / Student ID: ") ? (
+                          <>
+                            Matric / Student ID:{" "}
+                            <strong className="text-white font-mono bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800">
+                              {inspectVendor.adminNotes.replace("Matric / Student ID: ", "")}
+                            </strong>
+                          </>
+                        ) : (
+                          <>Notes: <strong>{inspectVendor.adminNotes}</strong></>
+                        )}
+                      </p>
+                    )}
                   </div>
 
                   <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">
