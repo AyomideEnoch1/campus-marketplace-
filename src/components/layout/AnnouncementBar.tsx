@@ -34,7 +34,7 @@ export async function AnnouncementBar() {
         </div>
 
         <div className="flex items-center gap-4 text-neutral-300">
-          <Link href="/vendor/register" className="hover:text-white transition-colors text-white font-semibold">
+          <Link href="/auth/register" className="hover:text-white transition-colors text-white font-semibold">
             Become a Seller &rarr;
           </Link>
         </div>

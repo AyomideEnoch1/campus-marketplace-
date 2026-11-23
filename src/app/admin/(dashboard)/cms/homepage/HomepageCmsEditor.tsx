@@ -31,27 +31,34 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
     announcement_bar:
       initialSettings.announcement_bar ||
       "🔥 BACK TO CAMPUS DEALS: Up to 40% OFF Laptops, Textbooks, and Dorm Essentials across all campuses!",
-    hero_badge: initialSettings.hero_badge || "⚡ VERIFIED STUDENT MERCHANTS ONLY",
+    hero_badge:
+      initialSettings.hero_badge || "⚡ VERIFIED STUDENT MERCHANTS ONLY",
     hero_title: initialSettings.hero_title || "Latest Campus Gear & Essentials",
     hero_subtitle:
       initialSettings.hero_subtitle ||
       "Buy and sell textbooks, laptops, hostel appliances, and thrift streetwear directly from verified student vendors across UNILAG, UI, and OAU.",
     hero_cta_text: initialSettings.hero_cta_text || "Shop Campus Drops",
     flash_sale_badge: initialSettings.flash_sale_badge || "Semester Rush Deals",
-    flash_sale_title: initialSettings.flash_sale_title || "Up To 50% Off Campus Essentials",
+    flash_sale_title:
+      initialSettings.flash_sale_title || "Up To 50% Off Campus Essentials",
     flash_sale_subtitle:
       initialSettings.flash_sale_subtitle ||
       "Limited inventory discounts from graduating students wrapping up their clearance sales.",
     seller_promo_title:
-      initialSettings.seller_promo_title || "Turn Your Drip or Skills Into Campus Income",
+      initialSettings.seller_promo_title ||
+      "Turn Your Drip or Skills Into Campus Income",
     seller_promo_subtitle:
       initialSettings.seller_promo_subtitle ||
       "Launch your storefront in under 3 minutes. Pick your storefront layout, upload items, and receive WhatsApp orders with zero listing fees.",
   };
 
   const [formData, setFormData] = useState(defaultValues);
-  const [activeTab, setActiveTab] = useState<"all" | "announcement" | "hero" | "promo">("all");
-  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "announcement" | "hero" | "promo"
+  >("all");
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">(
+    "desktop",
+  );
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -250,7 +257,8 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                   1. Top Announcement Bar (Global Ticker)
                 </h2>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Replicated exactly as it appears across the very top of all public marketplace pages.
+                  Replicated exactly as it appears across the very top of all
+                  public marketplace pages.
                 </p>
               </div>
               <Badge className="bg-neutral-800 text-neutral-300 border-neutral-700 text-[10px]">
@@ -268,7 +276,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                   </span>
                   <span className="flex items-center gap-1.5 text-amber-300 font-semibold truncate">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="truncate">{formData.announcement_bar}</span>
+                    <span className="truncate">
+                      {formData.announcement_bar}
+                    </span>
                   </span>
                   <span className="hidden lg:flex items-center gap-1.5 shrink-0 text-neutral-400">
                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -289,7 +299,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
               <input
                 type="text"
                 value={formData.announcement_bar}
-                onChange={(e) => updateField("announcement_bar", e.target.value)}
+                onChange={(e) =>
+                  updateField("announcement_bar", e.target.value)
+                }
                 placeholder="Enter alert text, promo discounts, or campus news..."
                 className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500 transition-colors"
               />
@@ -327,7 +339,8 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                   2. Hero Header Banner (NovaTrend Style)
                 </h2>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  The primary flagship banner that prospective student buyers and vendors see first.
+                  The primary flagship banner that prospective student buyers
+                  and vendors see first.
                 </p>
               </div>
               <Badge className="bg-emerald-950 text-emerald-300 border-emerald-800 text-[10px]">
@@ -428,7 +441,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                       <div className="px-3 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px]">
                         {formData.hero_cta_text}
                       </div>
-                      <span className="text-[10px] text-amber-300 font-bold">50% Clearance</span>
+                      <span className="text-[10px] text-amber-300 font-bold">
+                        50% Clearance
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -461,7 +476,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                   <input
                     type="text"
                     value={formData.hero_cta_text}
-                    onChange={(e) => updateField("hero_cta_text", e.target.value)}
+                    onChange={(e) =>
+                      updateField("hero_cta_text", e.target.value)
+                    }
                     placeholder="e.g. Shop Campus Drops"
                     className="w-full px-4 py-2.5 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors"
                   />
@@ -512,7 +529,8 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                   3. Promotional Mid-Page Cards (Clearance & Seller Pitch)
                 </h2>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Replicas of the dual promotional cards on the homepage that drive flash sales and vendor onboarding.
+                  Replicas of the dual promotional cards on the homepage that
+                  drive flash sales and vendor onboarding.
                 </p>
               </div>
               <Badge className="bg-orange-950 text-orange-300 border-orange-800 text-[10px]">
@@ -541,22 +559,30 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                       <div className="flex items-center gap-1.5 pt-2">
                         <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[36px]">
                           <span className="font-extrabold text-xs">02</span>
-                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">Days</span>
+                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">
+                            Days
+                          </span>
                         </div>
                         <span>:</span>
                         <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[36px]">
                           <span className="font-extrabold text-xs">14</span>
-                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">Hours</span>
+                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">
+                            Hours
+                          </span>
                         </div>
                         <span>:</span>
                         <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[36px]">
                           <span className="font-extrabold text-xs">38</span>
-                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">Mins</span>
+                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">
+                            Mins
+                          </span>
                         </div>
                         <span>:</span>
                         <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[36px]">
                           <span className="font-extrabold text-xs">45</span>
-                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">Secs</span>
+                          <span className="block text-[7px] uppercase tracking-wider text-amber-200">
+                            Secs
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -579,7 +605,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                     <input
                       type="text"
                       value={formData.flash_sale_badge}
-                      onChange={(e) => updateField("flash_sale_badge", e.target.value)}
+                      onChange={(e) =>
+                        updateField("flash_sale_badge", e.target.value)
+                      }
                       className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                     />
                   </div>
@@ -591,7 +619,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                     <input
                       type="text"
                       value={formData.flash_sale_title}
-                      onChange={(e) => updateField("flash_sale_title", e.target.value)}
+                      onChange={(e) =>
+                        updateField("flash_sale_title", e.target.value)
+                      }
                       className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500 font-bold"
                     />
                   </div>
@@ -603,7 +633,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                     <textarea
                       rows={2}
                       value={formData.flash_sale_subtitle}
-                      onChange={(e) => updateField("flash_sale_subtitle", e.target.value)}
+                      onChange={(e) =>
+                        updateField("flash_sale_subtitle", e.target.value)
+                      }
                       className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500"
                     />
                   </div>
@@ -628,11 +660,15 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                       <ul className="text-xs text-neutral-300 space-y-1.5 pt-1">
                         <li className="flex items-center gap-1.5">
                           <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Zero upfront listing fees for student sellers</span>
+                          <span>
+                            Zero upfront listing fees for student sellers
+                          </span>
                         </li>
                         <li className="flex items-center gap-1.5">
                           <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Direct instant WhatsApp buyer communication</span>
+                          <span>
+                            Direct instant WhatsApp buyer communication
+                          </span>
                         </li>
                       </ul>
                     </div>
@@ -655,7 +691,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                     <input
                       type="text"
                       value={formData.seller_promo_title}
-                      onChange={(e) => updateField("seller_promo_title", e.target.value)}
+                      onChange={(e) =>
+                        updateField("seller_promo_title", e.target.value)
+                      }
                       className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 font-bold"
                     />
                   </div>
@@ -667,7 +705,9 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                     <textarea
                       rows={3}
                       value={formData.seller_promo_subtitle}
-                      onChange={(e) => updateField("seller_promo_subtitle", e.target.value)}
+                      onChange={(e) =>
+                        updateField("seller_promo_subtitle", e.target.value)
+                      }
                       className="w-full px-3.5 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -688,7 +728,8 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                 4. Value Propositions & Trust Bar (Reference Layout)
               </h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Displays directly below the Hero Banner to build immediate buyer and seller trust.
+                Displays directly below the Hero Banner to build immediate buyer
+                and seller trust.
               </p>
             </div>
 
@@ -700,8 +741,12 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                       <Truck className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-neutral-900 leading-tight">Free Campus Pickup</p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Meet safely at designated gates</p>
+                      <p className="text-xs font-bold text-neutral-900 leading-tight">
+                        Free Campus Pickup
+                      </p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Meet safely at designated gates
+                      </p>
                     </div>
                   </div>
 
@@ -710,8 +755,12 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-neutral-900 leading-tight">100% Student Verified</p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Student IDs checked by admins</p>
+                      <p className="text-xs font-bold text-neutral-900 leading-tight">
+                        100% Student Verified
+                      </p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Student IDs checked by admins
+                      </p>
                     </div>
                   </div>
 
@@ -720,8 +769,12 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-neutral-900 leading-tight">Direct WhatsApp Chat</p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Instant deal negotiation</p>
+                      <p className="text-xs font-bold text-neutral-900 leading-tight">
+                        Direct WhatsApp Chat
+                      </p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Instant deal negotiation
+                      </p>
                     </div>
                   </div>
 
@@ -730,8 +783,12 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
                       <Check className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-neutral-900 leading-tight">Escrow Protection</p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Payment held until delivery</p>
+                      <p className="text-xs font-bold text-neutral-900 leading-tight">
+                        Escrow Protection
+                      </p>
+                      <p className="text-[10px] text-neutral-400 mt-0.5">
+                        Payment held until delivery
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -745,7 +802,8 @@ export function HomepageCmsEditor({ initialSettings }: Props) {
           <div className="flex items-center gap-2">
             {success ? (
               <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold">
-                <Check className="w-4 h-4" /> Published to Homepage! Changes are live.
+                <Check className="w-4 h-4" /> Published to Homepage! Changes are
+                live.
               </span>
             ) : hasChanges ? (
               <span className="text-xs text-amber-400 font-semibold flex items-center gap-1.5">

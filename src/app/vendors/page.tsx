@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { ShoppingBag, MapPin, Package, ShieldCheck, ArrowRight, MessageCircle, MessageSquare } from "lucide-react";
+import {
+  ShoppingBag,
+  MapPin,
+  Package,
+  ShieldCheck,
+  ArrowRight,
+  MessageCircle,
+  MessageSquare,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +16,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Student Vendors Directory | ọjà",
-  description: "Browse verified student-run businesses and independent campus sellers.",
+  description:
+    "Browse verified student-run businesses and independent campus sellers.",
 };
 
 interface VendorsPageProps {
@@ -49,7 +58,8 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
             Verified Campus Storefronts
           </h1>
           <p className="text-sm sm:text-base text-neutral-600 max-w-2xl mx-auto">
-            Discover peer-owned campus stores across all universities and campuses. Chat with student sellers directly on WhatsApp.
+            Discover peer-owned campus stores across all universities and
+            campuses. Chat with student sellers directly on WhatsApp.
           </p>
         </div>
       </section>
@@ -62,7 +72,7 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
             <span>{vendors.length} Verified Student Stores Active</span>
           </div>
 
-          <Link href="/vendor/register">
+          <Link href="/auth/register">
             <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">
               Become a Seller &rarr;
             </Button>
@@ -96,7 +106,10 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
                     />
                   )}
                   <div className="absolute top-3 right-3">
-                    <Badge variant="dark" className="bg-black/60 backdrop-blur-md text-[10px] uppercase font-bold text-white border-0 shrink-0 whitespace-nowrap">
+                    <Badge
+                      variant="dark"
+                      className="bg-black/60 backdrop-blur-md text-[10px] uppercase font-bold text-white border-0 shrink-0 whitespace-nowrap"
+                    >
                       {v.layout} template
                     </Badge>
                   </div>
@@ -134,12 +147,15 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
                     <p className="text-xs text-neutral-500 flex items-center gap-1 mt-0.5 truncate">
                       <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                       <span className="truncate">{v.campus?.name}</span>
-                      {v.faculty && <span className="truncate">&bull; {v.faculty}</span>}
+                      {v.faculty && (
+                        <span className="truncate">&bull; {v.faculty}</span>
+                      )}
                     </p>
                   </div>
 
                   <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
-                    {v.storeDescription || "Verified campus student storefront."}
+                    {v.storeDescription ||
+                      "Verified campus student storefront."}
                   </p>
 
                   <div className="pt-2 flex items-center justify-between text-xs text-neutral-500 border-t border-neutral-100">
