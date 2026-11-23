@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { evaluateEscrowOrder, checkOrderSplittingRisk } from "@/lib/payments/escrow-rules";
+import { getEffectiveProductPrice } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,14 @@ export async function POST(req: NextRequest) {
             createdAt: true,
           },
         },
+        promotions: {
+          where: {
+            status: "ACTIVE",
+            startAt: { lte: new Date() },
+            endAt: { gt: new Date() },
+          },
+          take: 1,
+        },
       },
     });
 
@@ -43,12 +52,23 @@ export async function POST(req: NextRequest) {
 
     let subtotal = 0;
     const evaluatedItems: any[] = [];
+    let priceAdjustedNotice: string | null = null;
+    const serverNow = new Date();
 
     for (const item of items) {
       const prod = dbProducts.find((p) => p.id === (item.productId || item.id));
       if (!prod || prod.vendorId !== vendorId) continue;
       const qty = Math.max(1, Number(item.quantity) || 1);
-      subtotal += Number(prod.price) * qty;
+
+      // Server-side promo price calculation
+      const { effectivePrice, originalPrice, hasActivePromo } = getEffectiveProductPrice(prod, serverNow);
+      subtotal += effectivePrice * qty;
+
+      // Detect if user had a lower promo price in their cart that has expired
+      const clientPrice = Number(item.price);
+      if (!isNaN(clientPrice) && clientPrice < effectivePrice) {
+        priceAdjustedNotice = "A promotion on one or more items in your cart has expired. Prices have been updated.";
+      }
 
       evaluatedItems.push({
         categoryId: prod.category?.id,
@@ -105,6 +125,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      priceAdjustedNotice,
       quote: {
         escrow_mode: quote.escrow_mode,
         canToggle: quote.canToggle,

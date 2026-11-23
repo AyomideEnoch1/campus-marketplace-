@@ -14,12 +14,15 @@ import {
   Sparkles,
   ShieldCheck,
   AlertTriangle,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN, formatDate } from "@/lib/utils";
+import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
 
 async function getVendorDashboardData(userId: string) {
   const vendor = await prisma.vendorProfile.findUnique({
@@ -75,6 +78,7 @@ export default async function VendorDashboardPage() {
   if (!data) return null;
 
   const { vendor, totalProducts, publishedProducts, totalViews, totalOrders } = data;
+  const entitlements = computeVendorEntitlements(vendor);
 
   const stats = [
     {
@@ -145,6 +149,100 @@ export default async function VendorDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Access & Status Banners */}
+      {entitlements.accessState === "EXPIRED" && (
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-red-950">Store Access Expired</h3>
+              <p className="text-xs text-red-700 mt-0.5">
+                Your vendor access has expired and your public products are hidden. Pay now to restore instant dashboard publishing and public storefront visibility.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/activate" className="shrink-0">
+            <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs gap-1.5 shadow-sm">
+              Pay to Restore Access <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {(entitlements.accessState === "UNPAID" || entitlements.accessState === "RELEASED") && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-amber-950">Store Access Inactive</h3>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Activate your store access by redeeming a Founding Vendor coupon code or completing payment to unlock 0% commission selling and publish products.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/activate" className="shrink-0">
+            <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs gap-1.5 shadow-sm">
+              Activate Store Access <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {entitlements.hasAccess && entitlements.isExpiringSoon && (
+        <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0 text-yellow-800">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-yellow-950">
+                Access Expiring in {entitlements.daysUntilExpiry} Day{entitlements.daysUntilExpiry === 1 ? "" : "s"}
+              </h3>
+              <p className="text-xs text-yellow-800 mt-0.5">
+                Your store access ends on {formatDate(vendor.accessExpiresAt!)}. Pay now to maintain uninterrupted access, keep 0% commission, and prevent your products from being hidden.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/activate" className="shrink-0">
+            <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-xs gap-1.5 shadow-sm">
+              Pay to Keep Access <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {entitlements.hasAccess && vendor.status === "PENDING" && (
+        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 text-blue-700">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-blue-950">Credentials Under Review</h3>
+            <p className="text-xs text-blue-800 mt-0.5">
+              Your store access is active, and your credentials are being reviewed by administrators. Once approved, your products will automatically appear live on the public campus marketplace.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {entitlements.hasAccess && vendor.status === "REJECTED" && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0 text-rose-700">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-rose-950">Vendor Application Rejected</h3>
+            <p className="text-xs text-rose-800 mt-0.5">
+              Your vendor registration was rejected. Please contact campus support to update your verification documents.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

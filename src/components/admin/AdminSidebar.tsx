@@ -22,6 +22,7 @@ import {
   PanelLeftOpen,
   Menu,
   X,
+  Ticket,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { VendorLogoutButton } from "@/components/vendor/VendorLogoutButton";
@@ -54,6 +55,19 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState<boolean>(false);
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
+
+  // Requirement: ONLY super_admin can see the Coupons page
+  const filteredNavItems = React.useMemo(() => {
+    const items = [...adminNavItems];
+    if (session.role === "SUPERADMIN") {
+      items.splice(2, 0, {
+        label: "Coupons & Access",
+        href: "/admin/coupons",
+        icon: Ticket,
+      });
+    }
+    return items;
+  }, [session.role]);
 
   // Restore saved collapse state from localStorage
   React.useEffect(() => {
@@ -166,7 +180,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
 
               {/* Mobile Nav Links */}
               <nav className="space-y-1">
-                {adminNavItems.map((item) => {
+                {filteredNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive =
                     item.href === "/admin"
@@ -316,7 +330,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
 
           {/* Navigation Links */}
           <nav className="space-y-1 overflow-y-auto max-h-[calc(100vh-220px)] scrollbar-none">
-            {adminNavItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const isActive =
                 item.href === "/admin"

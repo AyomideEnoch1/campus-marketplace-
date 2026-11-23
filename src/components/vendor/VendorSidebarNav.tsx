@@ -7,16 +7,20 @@ import {
   LayoutDashboard,
   Package,
   PlusCircle,
+  Timer,
   Palette,
   ShoppingBag,
   MessageSquare,
   Settings,
+  ShieldCheck,
 } from "lucide-react";
 
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Products", href: "/dashboard/products", icon: Package },
   { label: "Add Product", href: "/dashboard/products/new", icon: PlusCircle },
+  { label: "Store Access", href: "/dashboard/activate", icon: ShieldCheck },
+  { label: "Promotions", href: "/dashboard/promotions", icon: Timer },
   { label: "Store Customizer", href: "/dashboard/customize", icon: Palette },
   { label: "Orders", href: "/dashboard/orders", icon: ShoppingBag },
   { label: "Customer Chat", href: "/dashboard/messages", icon: MessageSquare },

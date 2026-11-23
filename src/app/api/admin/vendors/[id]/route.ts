@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { propagateVoucherStrike } from "@/lib/vouches";
 import { sendVendorStatusEmail } from "@/lib/email";
+import { releaseCouponSlot } from "@/lib/coupons";
 
 export async function PATCH(
   request: Request,
@@ -35,11 +36,12 @@ export async function PATCH(
     if (payoutDelayHours !== undefined) dataToUpdate.payoutDelayHours = Number(payoutDelayHours);
 
     // Convenience action shortcuts
-    if (action === "APPROVE") {
+    if (action === "APPROVE" || status === "APPROVED") {
       dataToUpdate.status = "APPROVED";
       dataToUpdate.rejectionReason = null;
       dataToUpdate.verificationTier = 2;
-    } else if (action === "REJECT") {
+      dataToUpdate.approvedAt = new Date();
+    } else if (action === "REJECT" || status === "REJECTED") {
       dataToUpdate.status = "REJECTED";
       if (rejectionReason) dataToUpdate.rejectionReason = rejectionReason;
     } else if (action === "REQUEST_MORE_INFO") {
@@ -53,6 +55,12 @@ export async function PATCH(
       await propagateVoucherStrike(params.id, adminNotes || "Vendor suspended by administration");
     }
 
+    // Edge case / Requirement: If admin rejects vendor, release their coupon slot immediately
+    if (dataToUpdate.status === "REJECTED") {
+      await releaseCouponSlot(params.id, "ADMIN_REJECTED");
+      dataToUpdate.accessState = "RELEASED";
+    }
+
     const updated = await prisma.vendorProfile.update({
       where: { id: params.id },
       data: dataToUpdate,
@@ -62,12 +70,18 @@ export async function PATCH(
       },
     });
 
-    // When approving a vendor, automatically activate their drafted products
-    if (dataToUpdate.status === "APPROVED") {
-      await prisma.product.updateMany({
-        where: { vendorId: params.id, status: "DRAFT" },
-        data: { status: "PUBLISHED" },
-      });
+    // Gate 5: When approving a vendor, automatically activate their drafted products
+    // ONLY IF both gates pass: access is active AND admin has approved.
+    if (updated.status === "APPROVED") {
+      const hasActiveAccess =
+        updated.accessState === "ACTIVE_PAID" || updated.accessState === "ACTIVE_COUPON";
+
+      if (hasActiveAccess) {
+        await prisma.product.updateMany({
+          where: { vendorId: params.id, status: "DRAFT" },
+          data: { status: "PUBLISHED" },
+        });
+      }
     }
 
     // Log admin activity

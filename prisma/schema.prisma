@@ -69,6 +69,41 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum PromoDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum PromoStatus {
+  SCHEDULED
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum VendorAccessState {
+  UNPAID
+  ACTIVE_PAID
+  ACTIVE_COUPON
+  EXPIRED
+  RELEASED
+}
+
+enum CouponRedemptionStatus {
+  ACTIVE
+  EXPIRED
+  RELEASED
+  REVOKED
+}
+
+enum CouponReleaseReason {
+  ADMIN_REJECTED
+  INACTIVITY
+  REVOKED
+  EXPIRED
+  PAID_UPGRADE
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String
@@ -97,6 +132,7 @@ model User {
   notifications      Notification[]
   ambassadorProfile  AmbassadorProfile?
   referredBy         Referral?           @relation("ReferredUser")
+  couponAuditLogs    CouponAuditLog[]
 
   @@unique([email, role])
   @@index([role])
@@ -151,6 +187,11 @@ model VendorProfile {
   communicationAvg Float        @default(0.0)
   punctualityAvg   Float        @default(0.0)
   behaviorAvg      Float        @default(0.0)
+  accessState      VendorAccessState @default(UNPAID)
+  accessExpiresAt  DateTime?
+  accessActivatedAt DateTime?
+  accessPaidAt     DateTime?
+  approvedAt       DateTime?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -163,10 +204,13 @@ model VendorProfile {
   reviewReplies          ReviewReply[]
   vouchesReceived        Vouch[]         @relation("GuestVouches")
   vendorConversations    Conversation[]  @relation("VendorConversations")
+  promotions             Promotion[]
+  couponRedemptions      CouponRedemption[]
 
   @@index([slug])
   @@index([campusId])
   @@index([status])
+  @@index([accessState])
   @@index([sellerType])
   @@index([governmentIdHash])
 }
@@ -243,6 +287,7 @@ model Product {
   favorites      Favorite[]
   reports        Report[]
   conversations  Conversation[]
+  promotions     Promotion[]
 
   @@index([slug])
   @@index([vendorId])
@@ -869,6 +914,89 @@ model AmbassadorPayout {
 
   @@index([ambassadorId])
   @@index([status])
+}
+
+model Promotion {
+  id            String            @id @default(cuid())
+  productId     String
+  product       Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vendorId      String
+  vendor        VendorProfile     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  discountType  PromoDiscountType @default(PERCENTAGE)
+  discountValue Float
+  promoPrice    Float
+  startAt       DateTime
+  endAt         DateTime
+  label         String?
+  status        PromoStatus       @default(SCHEDULED)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([productId])
+  @@index([vendorId])
+  @@index([status])
+  @@index([startAt, endAt])
+  @@index([productId, status])
+}
+
+model Coupon {
+  id              String             @id @default(cuid())
+  code            String             @unique
+  type            String             @default("free_access")
+  maxRedemptions  Int                @default(50)
+  freePeriodDays  Int                @default(180)
+  inactivityDays  Int                @default(60)
+  isActive        Boolean            @default(true)
+  expiresAt       DateTime?
+  createdBy       String
+  updatedBy       String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  redemptions     CouponRedemption[]
+  auditLogs       CouponAuditLog[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model CouponRedemption {
+  id                      String                 @id @default(cuid())
+  couponId                String
+  coupon                  Coupon                 @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  vendorId                String
+  vendor                  VendorProfile          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  status                  CouponRedemptionStatus @default(ACTIVE)
+  redeemedAt              DateTime               @default(now())
+  accessExpiresAt         DateTime
+  releasedAt              DateTime?
+  releaseReason           CouponReleaseReason?
+  warningSentAt           DateTime?
+  inactivityWarningSentAt DateTime?
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
+  @@unique([couponId, vendorId])
+  @@index([vendorId])
+  @@index([status])
+  @@index([accessExpiresAt])
+}
+
+model CouponAuditLog {
+  id        String   @id @default(cuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  action    String
+  oldValue  String?
+  newValue  String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@index([couponId])
+  @@index([actorId])
+  @@index([createdAt])
 }
 
 

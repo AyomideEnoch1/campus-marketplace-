@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createPayment } from "@/lib/payments/flutterwave";
 import { evaluateEscrowOrder, getPlatformSettings, checkOrderSplittingRisk } from "@/lib/payments/escrow-rules";
+import { getEffectiveProductPrice } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,14 @@ export async function POST(req: NextRequest) {
             createdAt: true,
           },
         },
+        promotions: {
+          where: {
+            status: "ACTIVE",
+            startAt: { lte: new Date() },
+            endAt: { gt: new Date() },
+          },
+          take: 1,
+        },
       },
     });
 
@@ -74,13 +83,16 @@ export async function POST(req: NextRequest) {
     let subtotal = 0;
     const orderItemsData: any[] = [];
     const evaluatedItems: any[] = [];
+    const serverNow = new Date();
 
     for (const item of items) {
       const prod = dbProducts.find((p) => p.id === (item.productId || item.id));
       if (!prod || prod.vendorId !== vendorId) continue;
 
       const qty = Math.max(1, Number(item.quantity) || 1);
-      const unitPrice = Number(prod.price);
+      // Strictly calculate effective promotional price on the server
+      const { effectivePrice } = getEffectiveProductPrice(prod, serverNow);
+      const unitPrice = effectivePrice;
       subtotal += unitPrice * qty;
 
       orderItemsData.push({
