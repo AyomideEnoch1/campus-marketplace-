@@ -763,13 +763,13 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
               /* Student Verification */
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 space-y-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-lg bg-amber-200/80 text-amber-900">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="p-1 rounded-lg bg-amber-200/80 text-amber-900 shrink-0">
                       <Camera className="w-4 h-4" />
                     </span>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 flex items-center gap-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-amber-950 flex flex-wrap items-center gap-2">
                       Mandatory Verification Requirement
-                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-200 text-amber-950 font-extrabold">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-200 text-amber-950 font-extrabold shrink-0">
                         Required
                       </span>
                     </h3>
@@ -882,12 +882,14 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
 
                 {/* CAC Registration (Optional) */}
                 <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200/80 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs font-bold text-neutral-900">
-                      Registered Business Verification (Optional)
-                    </span>
-                    <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="text-xs font-bold text-neutral-900">
+                        Registered Business Verification (Optional)
+                      </span>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] text-emerald-700 border-emerald-300 w-fit shrink-0">
                       Grants &quot;Registered Business&quot; Badge
                     </Badge>
                   </div>
