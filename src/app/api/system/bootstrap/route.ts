@@ -17,6 +17,13 @@ export async function GET(request: Request) {
     const password = "Promotion1...";
     const passwordHash = await hashPassword(password);
 
+    // Ensure the Postgres Role enum contains SUPERADMIN
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'SUPERADMIN';`);
+    } catch (e: any) {
+      console.log("Enum update notice:", e?.message);
+    }
+
     // Check if SUPERADMIN record already exists
     const existingSuperadmin = await prisma.user.findFirst({
       where: { email, role: "SUPERADMIN" },
