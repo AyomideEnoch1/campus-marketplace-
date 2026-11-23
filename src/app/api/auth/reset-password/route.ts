@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPasswordResetToken, hashPassword } from "@/lib/auth";
+import { notificationService } from "@/lib/email/notification-service";
 
 export async function POST(request: Request) {
   try {
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Log the security activity
+    // Log the security activity & dispatch security alert
     try {
       await prisma.activityLog.create({
         data: {
@@ -65,6 +66,13 @@ export async function POST(request: Request) {
           metadataJson: JSON.stringify({ email: user.email }),
         },
       });
+
+      if (user.email && !user.email.endsWith("@guest.campustrade.ng")) {
+        notificationService.notifyBuyerPasswordChanged({
+          email: user.email,
+          userName: "Campus Member",
+        }).catch(() => {});
+      }
     } catch (logErr) {
       console.warn("Failed to create activity log for password reset:", logErr);
     }

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireSuperAdmin } from "@/lib/auth";
+import { notificationService } from "@/lib/email/notification-service";
 
 export async function PATCH(
   request: Request,
@@ -65,6 +66,16 @@ export async function PATCH(
         }),
       },
     });
+
+    // Alert Super Admin if an administrative role was modified
+    if (role === "SUPERADMIN" || role === "ADMIN" || targetUser.role === "SUPERADMIN" || targetUser.role === "ADMIN") {
+      notificationService.notifyAdminSecurityAlert({
+        eventType: "ADMIN_ROLE_CHANGED",
+        description: `Administrator ${admin.email} (${admin.role}) changed the role of account ${updated.email} from ${targetUser.role} to ${updated.role}.`,
+        actorEmail: admin.email,
+        targetEmail: updated.email,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({ success: true, user: updated });
   } catch (error: any) {

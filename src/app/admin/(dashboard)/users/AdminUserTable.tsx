@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   Shield,
@@ -13,9 +14,11 @@ import {
   ArrowLeftRight,
   Users,
   Lock,
+  UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { AddAdminModal } from "@/components/admin/AddAdminModal";
 
 interface UserItem {
   id: string;
@@ -52,8 +55,32 @@ export function AdminUserTable({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams?.get("action") === "add" || searchParams?.get("add") === "true") {
+      setShowAddModal(true);
+    }
+  }, [searchParams]);
 
   const isSuperAdmin = currentAdminRole === "SUPERADMIN";
+
+  const handleAdminCreated = (newAdmin: any) => {
+    setUsers((prev) => {
+      const exists = prev.some((u) => u.id === newAdmin.id);
+      if (exists) {
+        return prev.map((u) => (u.id === newAdmin.id ? { ...u, role: newAdmin.role } : u));
+      }
+      return [newAdmin, ...prev];
+    });
+    setFeedback({
+      message: `${newAdmin.fullName} (${newAdmin.email}) added as ${
+        newAdmin.role === "SUPERADMIN" ? "Super Administrator" : "Administrator"
+      } successfully.`,
+      type: "success",
+    });
+  };
 
   const filtered = users.filter((u) => {
     const matchesSearch =
@@ -175,8 +202,8 @@ export function AdminUserTable({
 
   return (
     <div className="space-y-6">
-      {/* Superadmin Indicator Notice */}
-      <div className="flex items-center justify-between bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
+      {/* Superadmin Indicator Notice & Add Administrator Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
         <div className="flex items-center gap-3">
           <div
             className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
@@ -200,11 +227,20 @@ export function AdminUserTable({
             </div>
             <p className="text-[11px] text-neutral-400 mt-0.5">
               {isSuperAdmin
-                ? "Full control: You have authority to assign any role and permanently delete user accounts completely."
-                : "Standard Admin: You can view and manage user roles (Buyer, Vendor, Admin). Only Superadmins can delete users completely."}
+                ? "Full control: You have authority to assign any role, create administrators, and permanently delete user accounts."
+                : "Standard Admin: You can view and manage user roles (Buyer, Vendor, Admin) and add new platform administrators."}
             </p>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/50 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>Add Administrator</span>
+        </button>
       </div>
 
       {/* KPI Stats Header - Total Amount of Users & Role Breakdown */}
@@ -488,6 +524,14 @@ export function AdminUserTable({
           </table>
         </div>
       </div>
+
+      {/* Add Administrator Modal */}
+      <AddAdminModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        currentAdminRole={currentAdminRole}
+        onSuccess={handleAdminCreated}
+      />
     </div>
   );
 }

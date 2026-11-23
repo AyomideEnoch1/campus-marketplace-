@@ -8,6 +8,7 @@ import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
 import { attributeReferral } from "@/lib/referral";
 import { createAndSendVerificationEmail } from "@/lib/email-service";
+import { notificationService } from "@/lib/email/notification-service";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -402,6 +403,30 @@ export async function POST(request: Request) {
           fullName: newUser.fullName,
           origin,
         });
+
+        // If vendor registration, dispatch vendor acknowledgement & super admin alert
+        if (newUser.role === "VENDOR") {
+          const vStore = storeName || businessName || `${newUser.fullName}'s Store`;
+          notificationService.notifyVendorRegistrationReceived({
+            email: newUser.email,
+            storeName: vStore,
+            vendorName: newUser.fullName,
+          }).catch(() => {});
+
+          notificationService.notifyAdminNewVendor({
+            storeName: vStore,
+            applicantName: newUser.fullName,
+            sellerType: sellerType || "student",
+          }).catch(() => {});
+
+          if (cacNumber || cacDocumentPath || idDocumentPath) {
+            notificationService.notifyAdminKycSubmitted({
+              storeName: vStore,
+              vendorName: newUser.fullName,
+              documentType: cacNumber ? "CAC Business Registration" : "Government ID Document",
+            }).catch(() => {});
+          }
+        }
       } catch (emailErr) {
         console.error("Failed to dispatch email verification on registration:", emailErr);
       }

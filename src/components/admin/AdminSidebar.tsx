@@ -23,6 +23,8 @@ import {
   Menu,
   X,
   Ticket,
+  Mail,
+  UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { VendorLogoutButton } from "@/components/vendor/VendorLogoutButton";
@@ -36,7 +38,9 @@ const adminNavItems = [
   { label: "Campuses", href: "/admin/campuses", icon: MapPin },
   { label: "Orders Overview", href: "/admin/orders", icon: ShoppingBag },
   { label: "Review Moderation", href: "/admin/reviews", icon: Star },
-  { label: "Users & Roles", href: "/admin/users", icon: ShieldCheck },
+  { label: "Users & Admins", href: "/admin/users", icon: ShieldCheck },
+  { label: "+ Add Admin", href: "/admin/users?action=add", icon: UserPlus },
+  { label: "Emails & Logs", href: "/admin/emails", icon: Mail },
   { label: "CMS Homepage", href: "/admin/cms/homepage", icon: FileText },
   { label: "Static Pages", href: "/admin/cms/pages", icon: FileText },
   { label: "Platform Settings", href: "/admin/settings", icon: Sliders },

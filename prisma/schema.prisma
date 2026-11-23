@@ -133,6 +133,7 @@ model User {
   ambassadorProfile  AmbassadorProfile?
   referredBy         Referral?           @relation("ReferredUser")
   couponAuditLogs    CouponAuditLog[]
+  emailPreference    EmailPreference?
 
   @@unique([email, role])
   @@index([role])
@@ -998,5 +999,77 @@ model CouponAuditLog {
   @@index([actorId])
   @@index([createdAt])
 }
+
+// ----------------------------------------------------
+// TRANSACTIONAL & MARKETING EMAIL SYSTEM MODELS
+// ----------------------------------------------------
+
+model EmailQueue {
+  id           String    @id @default(cuid())
+  recipient    String
+  subject      String
+  templateId   String
+  payloadJson  String    // JSON stringified variables for template
+  priority     String    @default("NORMAL") // HIGH | NORMAL | LOW
+  status       String    @default("PENDING") // PENDING | PROCESSING | SENT | FAILED
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(5)
+  nextRetryAt  DateTime? @default(now())
+  error        String?
+  metadataJson String?
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([status, nextRetryAt])
+  @@index([recipient])
+  @@index([createdAt])
+}
+
+model EmailLog {
+  id                String   @id @default(cuid())
+  recipient         String
+  subject           String
+  templateId        String
+  status            String   // SENT | FAILED | SIMULATED | BOUNCED
+  providerMessageId String?
+  error             String?
+  metadataJson      String?
+  sentAt            DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  @@index([recipient])
+  @@index([templateId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model EmailSuppression {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  reason    String   // BOUNCE | COMPLAINT | MANUAL | UNSUBSCRIBE
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model EmailPreference {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marketingEmails  Boolean  @default(true)
+  orderUpdates     Boolean  @default(true)
+  securityAlerts   Boolean  @default(true)
+  cartReminders    Boolean  @default(true)
+  adminDigestMode  String   @default("INSTANT") // INSTANT | DIGEST | OFF
+  unsubscribeToken String   @unique @default(cuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([unsubscribeToken])
+}
+
 
 

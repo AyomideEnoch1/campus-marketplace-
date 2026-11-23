@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyWebhook } from "@/lib/payments/flutterwave";
 import { verifyOrderPayment } from "@/lib/payments/verify-order-payment";
+import { notificationService } from "@/lib/email/notification-service";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,17 @@ export async function POST(req: NextRequest) {
         if (reference) {
           const payout = await prisma.payout.findUnique({
             where: { reference },
-            include: { order: true },
+            include: {
+              order: {
+                include: {
+                  vendor: {
+                    include: {
+                      user: { select: { email: true } },
+                    },
+                  },
+                },
+              },
+            },
           });
 
           if (payout) {
@@ -86,6 +97,18 @@ export async function POST(req: NextRequest) {
                 },
               }),
             ]);
+
+            // Notify vendor that payout was deposited
+            if (payout.order?.vendor?.user?.email) {
+              notificationService.notifyVendorPayoutStatus({
+                email: payout.order.vendor.user.email,
+                orderNumber: payout.order.orderNumber,
+                storeName: payout.order.vendor.storeName,
+                amount: payout.amount,
+                status: "PAID",
+              }).catch(() => {});
+            }
+
             console.log(`[Webhook transfer.completed] Payout #${payout.id} marked successful, order released.`);
           }
         }
@@ -95,22 +118,56 @@ export async function POST(req: NextRequest) {
       case "transfer.failed": {
         const reference = eventData.reference;
         if (reference) {
-          const payout = await prisma.payout.findUnique({ where: { reference } });
+          const payout = await prisma.payout.findUnique({
+            where: { reference },
+            include: {
+              order: {
+                include: {
+                  vendor: {
+                    include: {
+                      user: { select: { email: true } },
+                    },
+                  },
+                },
+              },
+            },
+          });
           if (payout) {
             // Schedule retry with exponential backoff if attempts < 5
             const nextAttempts = payout.attempts + 1;
             const nextRetryDelayHours = Math.min(24, Math.pow(2, nextAttempts));
             const nextRetryAt = new Date(Date.now() + nextRetryDelayHours * 60 * 60 * 1000);
+            const failureReason = eventData.complete_message || "Transfer failed by bank network";
 
             await prisma.payout.update({
               where: { id: payout.id },
               data: {
                 status: "failed",
-                failureReason: eventData.complete_message || "Transfer failed by bank network",
+                failureReason,
                 attempts: nextAttempts,
                 nextRetryAt: nextAttempts < 5 ? nextRetryAt : null,
               },
             });
+
+            // Notify Super Admin and Vendor
+            notificationService.notifyAdminPayoutFailed({
+              orderNumber: payout.order?.orderNumber || "Escrow",
+              storeName: payout.order?.vendor?.storeName || "Vendor",
+              amount: payout.amount,
+              failureReason,
+            }).catch(() => {});
+
+            if (payout.order?.vendor?.user?.email) {
+              notificationService.notifyVendorPayoutStatus({
+                email: payout.order.vendor.user.email,
+                orderNumber: payout.order?.orderNumber || "Escrow",
+                storeName: payout.order?.vendor?.storeName || "Vendor",
+                amount: payout.amount,
+                status: "FAILED",
+                errorMessage: failureReason,
+              }).catch(() => {});
+            }
+
             console.log(`[Webhook transfer.failed] Payout #${payout.id} failed, retry scheduled for ${nextRetryAt}`);
           }
         }

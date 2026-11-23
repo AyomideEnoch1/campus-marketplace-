@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
+import { notificationService } from "@/lib/email/notification-service";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
             id: true,
             userId: true,
             storeName: true,
+            user: { select: { email: true, fullName: true } },
           },
         },
       },
@@ -126,6 +128,38 @@ export async function POST(req: NextRequest) {
         title: "Dispute Opened — Payout Frozen",
         message: `Buyer opened a dispute for Order #${order.orderNumber} (${reason}). Payout is frozen pending review.`,
         link: "/dashboard/orders",
+      }).catch(() => {});
+    }
+
+    // Dispatch emails to Super Admin, Vendor, and Buyer
+    notificationService.notifyAdminNewDispute({
+      orderNumber: order.orderNumber,
+      disputeId: newDispute.id,
+      reason,
+      buyerName: order.buyerName || "Student",
+      storeName: order.vendor?.storeName || "Vendor",
+      orderTotal: order.totalAmount || 0,
+    }).catch(() => {});
+
+    if (order.vendor?.user?.email) {
+      notificationService.notifyVendorDisputeOpened({
+        email: order.vendor.user.email,
+        orderNumber: order.orderNumber,
+        storeName: order.vendor.storeName,
+        reason,
+        buyerName: order.buyerName || "Student",
+        amount: order.totalAmount || 0,
+      }).catch(() => {});
+    }
+
+    if (order.buyerEmail) {
+      notificationService.notifyBuyerDisputeUpdate({
+        email: order.buyerEmail,
+        orderNumber: order.orderNumber,
+        buyerName: order.buyerName || "Student",
+        status: "OPENED",
+        reason,
+        notes: "Your dispute has been logged. Escrow funds are held while administrators review the details.",
       }).catch(() => {});
     }
 

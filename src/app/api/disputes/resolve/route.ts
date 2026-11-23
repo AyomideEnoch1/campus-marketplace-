@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { refund, sendPayout } from "@/lib/payments/flutterwave";
+import { notificationService } from "@/lib/email/notification-service";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,17 @@ export async function POST(req: NextRequest) {
           },
         }),
       ]);
+
+      if (order.buyerEmail) {
+        notificationService.notifyBuyerDisputeUpdate({
+          email: order.buyerEmail,
+          orderNumber: order.orderNumber,
+          buyerName: order.buyerName || "Student",
+          status: "RESOLVED_REFUNDED",
+          refundAmount: totalOrderAmount,
+          notes: resolutionNotes || "Full refund credited to buyer.",
+        }).catch(() => {});
+      }
 
       return NextResponse.json({
         success: true,
