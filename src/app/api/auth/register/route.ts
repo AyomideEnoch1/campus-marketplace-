@@ -4,10 +4,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-import { hashPassword, signToken, verifyToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { hashPassword, signToken, verifyToken, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
 import { attributeReferral } from "@/lib/referral";
 import { createAndSendVerificationEmail } from "@/lib/email-service";
+import { notificationService } from "@/lib/email/notification-service";
 
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -35,8 +36,9 @@ const registerSchema = z.object({
   businessPhotoPath: z.string().optional(),
   cacNumber: z.string().optional(),
   cacDocumentPath: z.string().optional(),
-  governmentIdType: z.enum(["voters_card", "drivers_license", "international_passport", "school_work_id"]).optional(),
+  governmentIdType: z.enum(["nin", "voters_card", "drivers_license", "international_passport", "school_work_id"]).optional(),
   governmentIdNumber: z.string().optional(), // Raw number will be hashed with SHA-256 and never stored in plain text
+  nin: z.string().optional(), // 11-digit National Identity Number
   idDocumentPath: z.string().optional(),
   selfieDocumentPath: z.string().optional(),
   vouchedBy: z.string().optional(),
@@ -79,16 +81,18 @@ export async function POST(request: Request) {
       cacDocumentPath,
       governmentIdType,
       governmentIdNumber,
+      nin,
       idDocumentPath,
       selfieDocumentPath,
       vouchedBy,
       referralCode,
     } = parsed.data;
 
-    // Clean whitespaces from phone numbers for database consistency
-    const rawContactPhone = phone?.trim() || whatsapp?.trim();
-    const cleanPhone = rawContactPhone ? cleanPhoneNumber(rawContactPhone) : null;
-    const cleanWhatsapp = whatsapp?.trim() ? cleanPhoneNumber(whatsapp.trim()) : cleanPhone;
+    // Clean whitespaces and standardize phone numbers for database consistency
+    const cleanPhoneCandidate = phone ? cleanPhoneNumber(phone) : "";
+    const cleanWhatsappCandidate = whatsapp ? cleanPhoneNumber(whatsapp) : "";
+    const cleanPhone = cleanPhoneCandidate || cleanWhatsappCandidate || null;
+    const cleanWhatsapp = cleanWhatsappCandidate || cleanPhone;
 
     // Check if user is already authenticated via session cookie (e.g. Google OAuth continuation)
     const cookieStore = cookies();
@@ -178,11 +182,17 @@ export async function POST(request: Request) {
     }
 
     // Duplicate Phone Check scoped strictly to the selected role/account type
-    if (cleanPhone) {
+    if (cleanPhone && cleanPhone.length >= 7) {
+      const digits = cleanPhone.replace(/\D/g, "");
+      const altLocalPhone = digits.startsWith("234") ? `0${digits.slice(3)}` : null;
+
       const existingPhone = await prisma.user.findFirst({
         where: {
-          phone: cleanPhone,
           role,
+          OR: [
+            { phone: cleanPhone },
+            ...(altLocalPhone ? [{ phone: altLocalPhone }] : []),
+          ],
           ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
           ...(pendingUserId ? { id: { not: pendingUserId } } : {}),
         },
@@ -198,6 +208,7 @@ export async function POST(request: Request) {
         );
       }
     }
+
 
     // Campus Guest Vendor Control Verification
     if (role === "VENDOR" && sellerType === "guest" && campusId) {
@@ -258,7 +269,7 @@ export async function POST(request: Request) {
 
     if (role === "VENDOR") {
       finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
-      finalWhatsapp = cleanWhatsapp || cleanPhone || whatsapp?.trim() || rawContactPhone || "";
+      finalWhatsapp = cleanWhatsapp || cleanPhone || "";
 
       if (!finalWhatsapp) {
         return NextResponse.json(
@@ -329,7 +340,7 @@ export async function POST(request: Request) {
             data: {
               role,
               fullName: fullName || undefined,
-              phone: cleanPhone || rawContactPhone || undefined,
+              phone: cleanPhone || undefined,
               avatarUrl: studentIdUrl || undefined,
             },
           });
@@ -339,7 +350,7 @@ export async function POST(request: Request) {
             data: {
               fullName,
               passwordHash: passwordHash || undefined,
-              phone: cleanPhone || rawContactPhone || null,
+              phone: cleanPhone || null,
               role,
               avatarUrl: studentIdUrl || null,
             },
@@ -350,7 +361,7 @@ export async function POST(request: Request) {
               fullName,
               email: userEmail,
               passwordHash,
-              phone: cleanPhone || rawContactPhone || null,
+              phone: cleanPhone || null,
               role,
               avatarUrl: studentIdUrl || null,
             },
@@ -463,6 +474,30 @@ export async function POST(request: Request) {
           fullName: newUser.fullName,
           origin,
         });
+
+        // If vendor registration, dispatch vendor acknowledgement & super admin alert
+        if (newUser.role === "VENDOR") {
+          const vStore = storeName || businessName || `${newUser.fullName}'s Store`;
+          notificationService.notifyVendorRegistrationReceived({
+            email: newUser.email,
+            storeName: vStore,
+            vendorName: newUser.fullName,
+          }).catch(() => {});
+
+          notificationService.notifyAdminNewVendor({
+            storeName: vStore,
+            applicantName: newUser.fullName,
+            sellerType: sellerType || "student",
+          }).catch(() => {});
+
+          if (cacNumber || cacDocumentPath || idDocumentPath) {
+            notificationService.notifyAdminKycSubmitted({
+              storeName: vStore,
+              vendorName: newUser.fullName,
+              documentType: cacNumber ? "CAC Business Registration" : "Government ID Document",
+            }).catch(() => {});
+          }
+        }
       } catch (emailErr) {
         console.error("Failed to dispatch email verification on registration:", emailErr);
       }
@@ -471,6 +506,7 @@ export async function POST(request: Request) {
     const token = signToken({
       userId: newUser.id,
       role: newUser.role,
+      activeRole: newUser.role,
       email: newUser.email,
     });
 
@@ -491,10 +527,10 @@ export async function POST(request: Request) {
     if (isAlreadyVerified) {
       response.cookies.set(AUTH_COOKIE_NAME, token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production" || proto === "https",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: AUTH_COOKIE_MAX_AGE,
       });
     }
 

@@ -46,7 +46,6 @@ export default function AdminLoginPage() {
         body: JSON.stringify({
           email: email.trim(),
           password,
-          role: "SUPERADMIN",
           portal: "admin",
         }),
       });

@@ -296,7 +296,7 @@ export function AmbassadorDashboardClient({
     e.preventDefault();
 
     if (payoutRequestsLocked) {
-      toast.error("Earning requests are currently paused by platform administrators.");
+      toast.error("Earnings accumulate throughout the week and cash out weekly.");
       return;
     }
 
@@ -617,11 +617,11 @@ export function AmbassadorDashboardClient({
                 <button
                   type="button"
                   disabled
-                  title="Earning payout requests are currently paused by platform administrators"
-                  className="w-full text-[11px] font-bold py-1.5 px-2 bg-neutral-100 text-neutral-400 border border-neutral-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-1.5"
+                  title="Earnings accumulate throughout the week and cash out weekly"
+                  className="w-full text-[11px] font-bold py-1.5 px-2 bg-neutral-100 text-neutral-500 border border-neutral-200 rounded-lg cursor-not-allowed flex items-center justify-center gap-1.5"
                 >
-                  <Lock className="w-3 h-3 text-neutral-400" />
-                  <span>Requests Locked</span>
+                  <Clock className="w-3 h-3 text-neutral-400" />
+                  <span>Weekly Cashout</span>
                 </button>
               ) : activePayoutRequest ? (
                 <div className="w-full py-1.5 px-2 bg-blue-50 border border-blue-200 text-blue-700 text-center text-[11px] font-bold rounded-lg flex items-center justify-center gap-1">
@@ -674,24 +674,24 @@ export function AmbassadorDashboardClient({
           </div>
         </div>
 
-        {/* Super Admin Lock Notice Banner */}
+        {/* Weekly Payout Schedule Banner */}
         {payoutRequestsLocked && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-xs">
-            <div className="flex items-start sm:items-center gap-3">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 border border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-950 shadow-xs">
+            <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-amber-200/80 border border-amber-300 text-amber-800 flex items-center justify-center shrink-0">
-                <Lock className="w-5 h-5" />
+                <Clock className="w-4 h-4" />
               </div>
               <div>
-                <p className="font-bold text-xs sm:text-sm text-amber-950 flex items-center gap-1.5">
-                  Earning Payout Requests Temporarily Paused by Administration
+                <p className="font-bold text-xs sm:text-sm text-amber-950">
+                  Weekly Payout Schedule
                 </p>
                 <p className="text-[11px] sm:text-xs text-amber-800/90 mt-0.5">
-                  Platform management has currently locked manual earning requests for review and audit reconciliation. Your referral signups, bounty clicks, and earned commissions will continue to accrue normally.
+                  Earnings accumulate throughout the week and are cashed out weekly.
                 </p>
               </div>
             </div>
             <span className="self-start sm:self-auto text-[10px] uppercase font-mono font-bold px-2.5 py-1 bg-amber-200/60 border border-amber-300 rounded-full text-amber-900 shrink-0">
-              Admin Locked
+              Weekly Cashout
             </span>
           </div>
         )}
@@ -740,10 +740,10 @@ export function AmbassadorDashboardClient({
                 type="button"
                 disabled
                 className="bg-neutral-100 text-neutral-400 border border-neutral-200 cursor-not-allowed font-bold text-xs h-11 px-5 rounded-xl gap-2"
-                title="Super Administrators have locked earning requests"
+                title="Earnings accumulate throughout the week and cash out weekly"
               >
-                <Lock className="w-4 h-4 text-neutral-400" />
-                <span>Request Earnings (Locked)</span>
+                <Clock className="w-4 h-4 text-neutral-400" />
+                <span>Weekly Cashout</span>
               </Button>
             ) : activePayoutRequest ? (
               <div className="px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold flex items-center gap-2">

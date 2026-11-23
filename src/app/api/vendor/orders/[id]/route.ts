@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireVendor } from "@/lib/auth";
+import { notificationService } from "@/lib/email/notification-service";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,17 @@ export async function PATCH(
 
     const existingOrder = await prisma.order.findUnique({
       where: { id: params.id },
-      select: { id: true, vendorId: true, escrow_mode: true, escrow_status: true, status: true },
+      select: {
+        id: true,
+        vendorId: true,
+        escrow_mode: true,
+        escrow_status: true,
+        status: true,
+        orderNumber: true,
+        buyerEmail: true,
+        buyerName: true,
+        deliveryAddress: true,
+      },
     });
 
     if (!existingOrder || existingOrder.vendorId !== vendor.id) {
@@ -46,6 +57,27 @@ export async function PATCH(
       where: { id: params.id, vendorId: vendor.id },
       data: { status: status as any },
     });
+
+    // Notify buyer on status transitions
+    if (existingOrder.buyerEmail) {
+      if (status === "SHIPPED" || status === "READY_FOR_PICKUP") {
+        notificationService.notifyBuyerOrderShipped({
+          email: existingOrder.buyerEmail,
+          orderNumber: existingOrder.orderNumber,
+          buyerName: existingOrder.buyerName || "Student",
+          storeName: vendor.storeName,
+          deliveryCode: "Check dashboard",
+          meetupPoint: existingOrder.deliveryAddress || "Campus Meetup Zone",
+        }).catch(() => {});
+      } else if (status === "CANCELLED") {
+        notificationService.notifyBuyerOrderCancelled({
+          email: existingOrder.buyerEmail,
+          orderNumber: existingOrder.orderNumber,
+          buyerName: existingOrder.buyerName || "Student",
+          reason: body.reason || "Order was cancelled by the vendor.",
+        }).catch(() => {});
+      }
+    }
 
     return NextResponse.json({ success: true, order: updated });
   } catch (error: any) {

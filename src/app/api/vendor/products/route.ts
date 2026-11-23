@@ -5,6 +5,8 @@ import { requireVendor } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { qualifyVendorReferral } from "@/lib/referral";
+import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
+import { calculatePromoPrice } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +33,17 @@ const productSchema = z.object({
       })
     )
     .optional(),
+  promo: z
+    .object({
+      enabled: z.boolean().default(false),
+      discountType: z.enum(["PERCENTAGE", "FIXED"]),
+      discountValue: z.number().positive(),
+      startAt: z.string(),
+      endAt: z.string(),
+      label: z.string().max(50).optional().nullable(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export async function GET() {
@@ -51,6 +64,10 @@ export async function GET() {
         images: { orderBy: { position: "asc" } },
         category: true,
         variants: true,
+        promotions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
         _count: { select: { orderItems: true, productReviews: true } },
       },
     });
@@ -83,6 +100,51 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data;
+
+    // Check vendor entitlements (access state + admin approval gate + listing limit)
+    const entitlements = computeVendorEntitlements(vendor);
+
+    // 1. GATE 1: Administrator Approval Gate
+    // Users cannot upload products until approved by the admin
+    if (!entitlements.isApproved) {
+      const statusMessage =
+        vendor.status === "PENDING"
+          ? "Your vendor account is pending administrator approval. You cannot upload products until your account has been approved."
+          : vendor.status === "REJECTED"
+          ? `Your vendor application was rejected${vendor.rejectionReason ? `: ${vendor.rejectionReason}` : ""}. You cannot upload products.`
+          : "Your vendor account has been suspended. You cannot upload products.";
+
+      return NextResponse.json(
+        { error: statusMessage },
+        { status: 403 }
+      );
+    }
+
+    // 2. Check configurable product listing limit
+    const totalListings = await prisma.product.count({
+      where: { vendorId: vendor.id },
+    });
+
+    if (totalListings >= entitlements.maxListings) {
+      return NextResponse.json(
+        {
+          error: `You have reached your product listing limit of ${entitlements.maxListings} items. Please remove or archive existing listings to add new products.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    // 3. Gate: Active store access required to publish products to the public shop
+    let productStatus = data.status || "PUBLISHED";
+    if (productStatus === "PUBLISHED" && !entitlements.hasAccess) {
+      return NextResponse.json(
+        {
+          error:
+            "Active vendor access required to publish products. Please activate your access via payment or founding coupon code.",
+        },
+        { status: 403 }
+      );
+    }
 
     // GUEST VENDOR SAFEGUARD: Tier 1 guest vendors capped at max 3 listings
     if (vendor.sellerType === "guest" && (vendor.verificationTier || 1) < 2) {
@@ -137,9 +199,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Honor selected product status
-    const productStatus = data.status || "PUBLISHED";
-
     // Generate unique slug
     const baseSlug = slugify(data.title);
     let uniqueSlug = baseSlug;
@@ -190,6 +249,32 @@ export async function POST(request: Request) {
               value: variant.value,
               priceAdjustment: variant.priceAdjustment || 0,
               stock: variant.stock || 0,
+            },
+          });
+        }
+      }
+
+      // Create promotion if specified
+      if (data.promo && data.promo.enabled) {
+        const start = new Date(data.promo.startAt);
+        const end = new Date(data.promo.endAt);
+        const now = new Date();
+
+        if (end.getTime() > start.getTime()) {
+          const calc = calculatePromoPrice(data.price, data.promo.discountType, data.promo.discountValue);
+          const initialStatus = start.getTime() <= now.getTime() ? "ACTIVE" : "SCHEDULED";
+
+          await tx.promotion.create({
+            data: {
+              productId: product.id,
+              vendorId: vendor.id,
+              discountType: data.promo.discountType,
+              discountValue: data.promo.discountValue,
+              promoPrice: calc.promoPrice,
+              startAt: start,
+              endAt: end,
+              label: data.promo.label?.trim() || null,
+              status: initialStatus,
             },
           });
         }

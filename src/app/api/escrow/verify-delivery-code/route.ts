@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
+import { notificationService } from "@/lib/email/notification-service";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
           select: {
             id: true,
             userId: true,
+            storeName: true,
             payoutDelayHours: true,
             isTrustedSeller: true,
             sellerType: true,
@@ -147,6 +149,16 @@ export async function POST(req: NextRequest) {
           title: "Item Handover Confirmed",
           message: `The vendor verified your handover code for Order #${order.orderNumber}. Your 48-hour buyer inspection period is now active.`,
           link: `/orders/${order.id}`,
+        }).catch(() => {});
+      }
+
+      // Email Notification to Buyer
+      if (order.buyerEmail) {
+        notificationService.notifyBuyerOrderDelivered({
+          email: order.buyerEmail,
+          orderNumber: order.orderNumber,
+          buyerName: order.buyerName || "Student",
+          storeName: order.vendor?.storeName || "Vendor",
         }).catch(() => {});
       }
 

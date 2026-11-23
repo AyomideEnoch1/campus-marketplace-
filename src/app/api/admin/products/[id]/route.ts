@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { notificationService } from "@/lib/email/notification-service";
 
 export async function PATCH(
   request: Request,
@@ -20,9 +21,19 @@ export async function PATCH(
         ...(isFeatured !== undefined ? { isFeatured } : {}),
       },
       include: {
-        vendor: { select: { storeName: true } },
+        vendor: { select: { storeName: true, user: { select: { email: true } } } },
       },
     });
+
+    if (status && updated.vendor?.user?.email) {
+      notificationService.notifyVendorProductModeration({
+        email: updated.vendor.user.email,
+        productTitle: updated.title,
+        storeName: updated.vendor.storeName,
+        status: updated.status as any,
+        rejectionReason: body.rejectionReason,
+      }).catch(() => {});
+    }
 
     await prisma.activityLog.create({
       data: {

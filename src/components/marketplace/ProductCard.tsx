@@ -14,12 +14,14 @@ import {
   Plus,
   Check,
   Eye,
+  Images,
 } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useWishlist } from "@/lib/wishlist";
 import { useCart } from "@/lib/cart";
 import { ProductImageLightbox } from "./ProductImageLightbox";
+import { PromoCountdown } from "./PromoCountdown";
 
 interface ProductCardProps {
   product: {
@@ -34,6 +36,22 @@ interface ProductCardProps {
     avgRating?: number;
     images: { url: string; altText?: string | null }[];
     category?: { name: string; slug: string };
+    promo?: {
+      id: string;
+      label?: string | null;
+      discountType: string;
+      discountValue: number;
+      promoPrice: number;
+      discountPercent: number;
+      savingsAmount: number;
+      startAt: string;
+      endAt: string;
+      serverNow: string;
+      secondsRemaining: number;
+      isEndingSoon: boolean;
+    } | null;
+    activePromo?: any;
+    effectivePrice?: number;
     vendor?: {
       id?: string;
       storeName: string;
@@ -54,6 +72,15 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
   const addedTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
+  // Active promo state that can revert live upon countdown expiry
+  const initialPromo = product.promo || (product as any).activePromo || null;
+  const [activePromo, setActivePromo] = React.useState(initialPromo);
+
+  // Sync state if product prop updates
+  React.useEffect(() => {
+    setActivePromo(product.promo || (product as any).activePromo || null);
+  }, [product.promo, (product as any).activePromo]);
+
   React.useEffect(() => {
     return () => {
       if (addedTimeoutRef.current) {
@@ -67,12 +94,24 @@ export function ProductCard({ product }: ProductCardProps) {
     product.images?.[0]?.url ||
     "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80";
 
-  const discountPercent =
-    product.comparePrice && product.comparePrice > product.price
-      ? Math.round(
-          ((product.comparePrice - product.price) / product.comparePrice) * 100,
-        )
-      : null;
+  // Calculate prices based on whether promo is active
+  const currentPrice = activePromo
+    ? activePromo.promoPrice
+    : (product.effectivePrice ?? product.price);
+
+  const displayOriginalPrice = activePromo
+    ? product.price
+    : product.comparePrice && product.comparePrice > product.price
+    ? product.comparePrice
+    : null;
+
+  const discountPercent = activePromo
+    ? activePromo.discountPercent
+    : product.comparePrice && product.comparePrice > product.price
+    ? Math.round(
+        ((product.comparePrice - product.price) / product.comparePrice) * 100
+      )
+    : null;
 
   const conditionLabels: Record<string, string> = {
     NEW: "Brand New",
@@ -90,7 +129,7 @@ export function ProductCard({ product }: ProductCardProps) {
       id: product.id,
       title: product.title,
       slug: product.slug,
-      price: product.price,
+      price: currentPrice,
       image: primaryImage,
       quantity: 1,
       condition: product.condition
@@ -146,17 +185,34 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Top Badges */}
           <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 flex flex-col items-start gap-1 z-10 max-w-[calc(100%-36px)] pointer-events-none">
-            {product.vendor?.sellerType === "guest" ? (
-              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">Non-Student Vendor</Badge>
+            {activePromo ? (
+              <>
+                <Badge className="bg-rose-600 text-white border-0 text-[8px] sm:text-[10px] font-black px-1.5 sm:px-2 py-0.5 shadow-md shrink-0 whitespace-nowrap">
+                  -{discountPercent}%
+                </Badge>
+                {activePromo.label && (
+                  <Badge className="bg-neutral-900/90 backdrop-blur-xs text-white border-0 text-[7.5px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap truncate max-w-[120px]">
+                    {activePromo.label}
+                  </Badge>
+                )}
+              </>
             ) : (
-              <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
-                Student Vendor
-              </Badge>
-            )}
-            {discountPercent && (
-              <Badge className="bg-amber-300 text-amber-950 border border-amber-400/60 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
-                -{discountPercent}%
-              </Badge>
+              <>
+                {product.vendor?.sellerType === "guest" ? (
+                  <Badge className="bg-white/95 backdrop-blur-xs text-neutral-700 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+                    Non-Student Vendor
+                  </Badge>
+                ) : (
+                  <Badge className="bg-white/95 backdrop-blur-xs text-neutral-800 border border-neutral-200/80 text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 shadow-xs shrink-0 whitespace-nowrap">
+                    Student Vendor
+                  </Badge>
+                )}
+                {discountPercent && (
+                  <Badge className="bg-amber-300 text-amber-950 border border-amber-400/60 text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shadow-sm shrink-0 whitespace-nowrap">
+                    -{discountPercent}%
+                  </Badge>
+                )}
+              </>
             )}
             {product.isFeatured && (
               <Badge className="bg-rose-500 text-white text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 shrink-0 whitespace-nowrap shadow-xs">
@@ -175,8 +231,8 @@ export function ProductCard({ product }: ProductCardProps) {
                 id: product.id,
                 title: product.title,
                 slug: product.slug,
-                price: product.price,
-                comparePrice: product.comparePrice,
+                price: currentPrice,
+                comparePrice: displayOriginalPrice,
                 image: primaryImage,
                 condition: product.condition,
                 categoryName: product.category?.name,
@@ -223,6 +279,14 @@ export function ProductCard({ product }: ProductCardProps) {
               </Link>
             )}
           </div>
+
+          {/* Multiple Photos Count Indicator */}
+          {product.images && product.images.length > 1 && (
+            <div className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 bg-black/60 backdrop-blur-xs text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-1 pointer-events-none group-hover:opacity-0 transition-opacity z-5 shadow-xs">
+              <Images className="w-3 h-3 text-neutral-300" />
+              <span>{product.images.length}</span>
+            </div>
+          )}
         </div>
 
         {/* Product Content Details */}
@@ -275,37 +339,55 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Pricing & Add to Bag - Pinned to bottom with mt-auto */}
-          <div className="pt-2 sm:pt-2.5 mt-auto flex items-center justify-between gap-1.5 border-t border-neutral-100">
-            <div className="flex flex-col min-w-0 flex-1 justify-center min-h-[28px]">
-              <span className="font-black text-xs sm:text-sm text-neutral-900 leading-none truncate">
-                {formatNGN(product.price)}
-              </span>
-              {product.comparePrice && product.comparePrice > product.price && (
-                <span className="text-[9px] sm:text-[10px] text-neutral-400 line-through leading-none mt-1 truncate">
-                  {formatNGN(product.comparePrice)}
-                </span>
-              )}
-            </div>
+          {/* Pricing, Promo Countdown & Add to Bag */}
+          <div className="pt-2 sm:pt-2.5 mt-auto flex flex-col gap-1.5 border-t border-neutral-100">
+            {activePromo && (
+              <div className="flex items-center justify-between">
+                <PromoCountdown
+                  endAt={activePromo.endAt}
+                  serverNow={activePromo.serverNow}
+                  compact
+                  onExpire={() => setActivePromo(null)}
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-1.5">
+              <div className="flex flex-col min-w-0 flex-1 justify-center min-h-[28px]">
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span
+                    className={`font-black text-xs sm:text-sm leading-none truncate ${
+                      activePromo ? "text-rose-600 font-extrabold" : "text-neutral-900"
+                    }`}
+                  >
+                    {formatNGN(currentPrice)}
+                  </span>
+                  {displayOriginalPrice && (
+                    <span className="text-[9px] sm:text-[10px] text-neutral-400 line-through leading-none truncate">
+                      {formatNGN(displayOriginalPrice)}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-            {/* Add to Bag Button with Plus Icon */}
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              aria-label={`Add ${product.title} to shopping bag`}
-              title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
-              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
-                isAdded
-                  ? "bg-emerald-600 text-white scale-105 shadow-emerald-200/50"
-                  : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md hover:scale-105"
-              }`}
-            >
-              {isAdded ? (
-                <Check className="w-3.5 h-3.5 animate-in zoom-in-75 duration-150" />
-              ) : (
-                <Plus className="w-3.5 h-3.5 transition-transform duration-200" />
-              )}
-            </button>
+              {/* Add to Bag Button with Plus Icon */}
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                aria-label={`Add ${product.title} to shopping bag`}
+                title={isAdded ? "Added to shopping bag!" : "Add to shopping bag"}
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 shadow-xs active:scale-90 ${
+                  isAdded
+                    ? "bg-emerald-600 text-white scale-105 shadow-emerald-200/50"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md hover:scale-105"
+                }`}
+              >
+                {isAdded ? (
+                  <Check className="w-3.5 h-3.5 animate-in zoom-in-75 duration-150" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5 transition-transform duration-200" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

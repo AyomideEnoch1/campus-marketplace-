@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { verifyPassword, hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { verifyPassword, hashPassword, signToken, AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE } from "@/lib/auth";
 import { createAndSendVerificationEmail, sendWelcomeOnSignIn } from "@/lib/email-service";
 
 const loginSchema = z.object({
@@ -187,9 +187,8 @@ export async function POST(request: Request) {
       : "/shop";
 
     // Email verification check on sign-in:
-    // If the account has an email address (not synthetic phone-only guest account),
-    // require 6-digit email OTP verification before issuing session credentials
-    if (user.email && !user.email.endsWith("@guest.campustrade.ng")) {
+    // Only require verification if the account email has NOT been verified yet
+    if (user.email && !user.email.endsWith("@guest.campustrade.ng") && !user.emailVerified) {
       await createAndSendVerificationEmail({
         userId: user.id,
         email: user.email,
@@ -227,6 +226,7 @@ export async function POST(request: Request) {
     const token = signToken({
       userId: user.id,
       role: user.role,
+      activeRole: user.role,
       email: user.email,
     });
 
@@ -250,13 +250,13 @@ export async function POST(request: Request) {
       redirectTo: defaultRedirect,
     });
 
-    // Set secure HTTP-only cookie
+    // Set secure HTTP-only cookie with extended 30-day session
     response.cookies.set(AUTH_COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production" || proto === "https",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: AUTH_COOKIE_MAX_AGE,
     });
 
     return response;

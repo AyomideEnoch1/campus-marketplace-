@@ -9,6 +9,7 @@ import {
   AlertCircle,
   ExternalLink,
   ArrowUpRight,
+  ShieldCheck,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +120,13 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link href="/admin/users?action=add">
+            <Button size="sm" variant="outline" className="border-neutral-800 bg-neutral-900 text-neutral-300 hover:text-white hover:bg-neutral-800 gap-1.5 font-bold text-xs">
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+              + Add Admin
+            </Button>
+          </Link>
           <Link href="/admin/vendors">
             <Button size="sm" className="bg-emerald-600 hover:bg-emerald-500 text-white gap-2 font-bold text-xs">
               Manage Vendors ({pendingVendors} Pending)

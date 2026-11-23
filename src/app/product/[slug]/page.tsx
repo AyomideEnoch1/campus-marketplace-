@@ -8,6 +8,7 @@ import { ProductReviewsSection } from "@/components/marketplace/ProductReviewsSe
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { TrustBar } from "@/components/marketplace/TrustBar";
 import { getSession } from "@/lib/auth";
+import { getEffectiveProductPrice } from "@/lib/promotions";
 
 interface ProductPageProps {
   params: { slug: string };
@@ -47,6 +48,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       images: { orderBy: { position: "asc" } },
       category: true,
       variants: true,
+      promotions: {
+        where: { status: { in: ["ACTIVE", "SCHEDULED"] } },
+        orderBy: { createdAt: "desc" },
+      },
       vendor: {
         include: {
           campus: true,
@@ -59,6 +64,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  // Server time for promotional calculations
+  const serverNow = new Date();
+  const productPriceInfo = getEffectiveProductPrice(product, serverNow);
+  const enrichedProduct = {
+    ...product,
+    effectivePrice: productPriceInfo.effectivePrice,
+    promo: productPriceInfo.activePromo,
+    activePromo: productPriceInfo.activePromo,
+  };
+
   // Increment views count asynchronously
   try {
     await prisma.product.update({
@@ -70,7 +85,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   // Fetch related products
-  const relatedProducts = await prisma.product.findMany({
+  const relatedRaw = await prisma.product.findMany({
     where: {
       categoryId: product.categoryId,
       id: { not: product.id },
@@ -80,6 +95,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     include: {
       images: { orderBy: { position: "asc" } },
       category: true,
+      promotions: {
+        where: { status: { in: ["ACTIVE", "SCHEDULED"] } },
+        orderBy: { createdAt: "desc" },
+      },
       vendor: {
         select: {
           id: true,
@@ -90,6 +109,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         },
       },
     },
+  });
+
+  const relatedProducts = relatedRaw.map((p) => {
+    const pPriceInfo = getEffectiveProductPrice(p, serverNow);
+    return {
+      ...p,
+      effectivePrice: pPriceInfo.effectivePrice,
+      promo: pPriceInfo.activePromo,
+      activePromo: pPriceInfo.activePromo,
+    };
   });
 
   return (
@@ -120,7 +149,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
       {/* Main Interactive Product View */}
       <div className="container mx-auto px-4 py-8 md:py-12 space-y-12">
-        <ProductInteractiveView product={product as any} />
+        <ProductInteractiveView product={enrichedProduct as any} />
         
         {/* Customer Reviews Section */}
         <ProductReviewsSection

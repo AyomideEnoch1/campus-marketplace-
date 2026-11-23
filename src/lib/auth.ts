@@ -6,6 +6,7 @@ import { Role, SessionUser } from "./types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-for-campus-trade-market-min-32-chars";
 export const AUTH_COOKIE_NAME = "campus_market_session";
+export const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -15,8 +16,11 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export function signToken(payload: { userId: string; role: string; email: string; activeRole?: string }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+export function signToken(
+  payload: { userId: string; role: string; email: string; activeRole?: string },
+  expiresIn: any = "30d"
+): string {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 }
 
 export function verifyToken(token: string): { userId: string; role: string; email: string; activeRole?: string } | null {
@@ -175,8 +179,8 @@ export async function requireAdmin(): Promise<SessionUser> {
 
 export async function requireSuperAdmin(): Promise<SessionUser> {
   const user = await requireAuth();
-  if (user.role !== "SUPERADMIN") {
-    throw new Error("Forbidden: Super Administrator access required");
+  if (user.role !== "SUPERADMIN" && user.role !== "ADMIN") {
+    throw new Error("Forbidden: Administrator access required");
   }
   return user;
 }

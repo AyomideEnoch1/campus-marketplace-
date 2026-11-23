@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireVendor } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
+import { calculatePromoPrice } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,18 @@ const updateSchema = z.object({
   model3dUrl: z.string().optional().nullable(),
   videoUrl: z.string().optional().nullable(),
   images: z.array(z.string().min(1, "Image path cannot be empty")).optional(),
+  promo: z
+    .object({
+      id: z.string().optional(),
+      enabled: z.boolean(),
+      discountType: z.enum(["PERCENTAGE", "FIXED"]),
+      discountValue: z.number().positive(),
+      startAt: z.string(),
+      endAt: z.string(),
+      label: z.string().max(50).optional().nullable(),
+    })
+    .optional()
+    .nullable(),
 });
 
 export async function GET(
@@ -41,6 +55,9 @@ export async function GET(
         images: { orderBy: { position: "asc" } },
         category: true,
         variants: true,
+        promotions: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
@@ -88,6 +105,31 @@ export async function PUT(
 
     const data = parsed.data;
 
+    // Check entitlements if attempting to publish
+    if (data.status === "PUBLISHED") {
+      const entitlements = computeVendorEntitlements(vendor);
+      if (!entitlements.canPublish) {
+        if (!entitlements.hasAccess) {
+          return NextResponse.json(
+            {
+              error:
+                "Active vendor access required to publish products. Please activate your access via payment or coupon code.",
+            },
+            { status: 403 }
+          );
+        }
+        if (!entitlements.isApproved) {
+          return NextResponse.json(
+            {
+              error:
+                "Your vendor account is pending administrator approval. Products can only be published to the public shop after approval.",
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     // Honor status
     const newStatus = data.status;
 
@@ -120,6 +162,102 @@ export async function PUT(
               position: i,
               altText: `${p.title} view ${i + 1}`,
             },
+          });
+        }
+      }
+
+      // Handle Promo Updates
+      const currentBasePrice = data.price !== undefined ? data.price : product.price;
+
+      if (data.promo) {
+        if (data.promo.enabled) {
+          const startAt = new Date(data.promo.startAt);
+          const endAt = new Date(data.promo.endAt);
+
+          if (endAt <= startAt) {
+            throw new Error("Promo end date must be after start date");
+          }
+
+          const { promoPrice } = calculatePromoPrice(
+            currentBasePrice,
+            data.promo.discountType,
+            data.promo.discountValue
+          );
+
+          if (promoPrice <= 0 || promoPrice >= currentBasePrice) {
+            throw new Error("Promo price must be greater than ₦0 and less than regular price");
+          }
+
+          const now = new Date();
+          const promoStatus = startAt > now ? "SCHEDULED" : "ACTIVE";
+
+          // If updating an existing promo
+          if (data.promo.id) {
+            await tx.promotion.update({
+              where: { id: data.promo.id },
+              data: {
+                discountType: data.promo.discountType,
+                discountValue: data.promo.discountValue,
+                promoPrice,
+                startAt,
+                endAt,
+                label: data.promo.label?.trim() || null,
+                status: promoStatus,
+              },
+            });
+          } else {
+            // Cancel any prior active/scheduled promos for this product
+            await tx.promotion.updateMany({
+              where: {
+                productId: p.id,
+                status: { in: ["ACTIVE", "SCHEDULED"] },
+              },
+              data: { status: "CANCELLED" },
+            });
+
+            await tx.promotion.create({
+              data: {
+                productId: p.id,
+                vendorId: vendor.id,
+                discountType: data.promo.discountType,
+                discountValue: data.promo.discountValue,
+                promoPrice,
+                startAt,
+                endAt,
+                label: data.promo.label?.trim() || null,
+                status: promoStatus,
+              },
+            });
+          }
+        } else {
+          // Promo explicitly disabled / ended
+          await tx.promotion.updateMany({
+            where: {
+              productId: p.id,
+              status: { in: ["ACTIVE", "SCHEDULED"] },
+            },
+            data: { status: "CANCELLED" },
+          });
+        }
+      } else if (data.price !== undefined && data.price !== product.price) {
+        // Base price changed, but promo was not explicitly passed in payload:
+        // Update promoPrice on any active/scheduled promos for this product
+        const activePromos = await tx.promotion.findMany({
+          where: {
+            productId: p.id,
+            status: { in: ["ACTIVE", "SCHEDULED"] },
+          },
+        });
+
+        for (const pr of activePromos) {
+          const { promoPrice } = calculatePromoPrice(
+            data.price,
+            pr.discountType as any,
+            pr.discountValue
+          );
+          await tx.promotion.update({
+            where: { id: pr.id },
+            data: { promoPrice },
           });
         }
       }

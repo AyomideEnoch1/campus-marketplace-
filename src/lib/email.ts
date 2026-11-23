@@ -1,278 +1,147 @@
-import { Resend } from "resend";
-import {
-  getEmailVerificationTemplate,
-  getWelcomeTemplate,
-  getPasswordResetTemplate,
-  getOrderConfirmationTemplate,
-  getVendorStatusTemplate,
-  getVendorNotificationTemplate,
-} from "./email-templates";
+import { notificationService } from "./email/notification-service";
+export { notificationService } from "./email/notification-service";
+export { processEmailQueueBatch, processQueueItem } from "./email/queue-processor";
+export { renderEmailTemplate } from "./email/templates";
+export * from "./email/templates/types";
+export * from "./email/sender";
 
-export interface OrderConfirmationEmailProps {
-  buyerName?: string;
-  customerName?: string;
-  orderNumber: string;
-  items: Array<{ title?: string; name?: string; quantity: number; price: number }>;
-  totalAmount: number;
-  currency?: string;
-  deliveryCode?: string;
-  verificationCode?: string;
-  meetupPoint?: string;
-  campusName?: string;
-}
+// Backward-compatible wrappers for existing direct callers
 
-export interface VendorNotificationEmailProps {
-  storeName: string;
-  orderNumber: string;
-  vendorName?: string;
-  buyerName?: string;
-  buyerPhone?: string;
-  items?: Array<{ title?: string; name?: string; quantity: number; price: number }>;
-  payoutAmount?: number;
-  totalAmount?: number;
-  meetupPoint?: string;
-  campusName?: string;
-  dashboardUrl?: string;
-}
-
-export interface VendorStatusEmailProps {
-  storeName: string;
-  applicantName?: string;
-  vendorName?: string;
-  status: "APPROVED" | "REJECTED" | "SUSPENDED" | "INFO_REQUESTED" | string;
-  rejectionReason?: string;
-  tier?: number;
-  dashboardUrl?: string;
-  notes?: string;
-}
-
-export interface PasswordResetEmailProps {
-  userName?: string;
-  resetUrl: string;
-}
-
-export interface EmailVerificationEmailProps {
-  userName?: string;
-  verificationCode?: string;
-  verifyUrl: string;
-}
-
-export interface VerifyEmailProps {
-  userName?: string;
-  verificationCode?: string;
-  verifyUrl: string;
-}
-
-export interface WelcomeEmailProps {
-  userName?: string;
-  userRole?: string;
-  dashboardUrl?: string;
-  exploreUrl?: string;
-}
-
-const resendApiKey = process.env.RESEND_API_KEY;
-// Uses RFC 5322 quoted display name to safely handle unicode and trailing dot in email headers
-const primaryFromEmail = process.env.EMAIL_FROM || '"ọjà." <notifications@xn--j-sfa590u.com>';
-const fallbackFromEmail = "notifications@xn--j-sfa590u.com";
-const replyToEmail = "support@xn--j-sfa590u.com";
-
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
-
-/**
- * Internal robust email sender with fallback from address, deliverability headers, and error detection
- */
-async function sendWithFallback({
-  to,
-  subject,
-  html,
-  text,
-}: {
-  to: string;
-  subject: string;
-  html: string;
-  text: string;
-}): Promise<{ success: boolean; data?: any; error?: string; simulated?: boolean }> {
-  if (!resend) {
-    console.log(`[Email Simulated] to=${to}, subject="${subject}"`);
-    return { success: true, simulated: true };
-  }
-
-  const emailHeaders = {
-    "X-Entity-Ref-ID": `oja-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  };
-
-  try {
-    const response = await resend.emails.send({
-      from: primaryFromEmail,
-      to,
-      replyTo: replyToEmail,
-      subject,
-      html,
-      text,
-      headers: emailHeaders,
-    });
-
-    if (response.error) {
-      console.warn(`[Resend Primary Send Error] from=${primaryFromEmail}:`, response.error);
-      // Attempt fallback with plain sender address
-      const fallbackResponse = await resend.emails.send({
-        from: fallbackFromEmail,
-        to,
-        replyTo: replyToEmail,
-        subject,
-        html,
-        text,
-        headers: emailHeaders,
-      });
-
-      if (fallbackResponse.error) {
-        console.error(`[Resend Fallback Send Error] from=${fallbackFromEmail}:`, fallbackResponse.error);
-        return { success: false, error: fallbackResponse.error.message };
-      }
-
-      console.log(`[Email Sent via Fallback] to=${to}, id=${fallbackResponse.data?.id}`);
-      return { success: true, data: fallbackResponse.data };
-    }
-
-    console.log(`[Email Sent Successfully] to=${to}, id=${response.data?.id}`);
-    return { success: true, data: response.data };
-  } catch (err: any) {
-    console.error("[Resend Network / Exception Error]:", err?.message || err);
-    try {
-      const fallbackResponse = await resend.emails.send({
-        from: fallbackFromEmail,
-        to,
-        replyTo: replyToEmail,
-        subject,
-        html,
-        text,
-        headers: emailHeaders,
-      });
-      if (fallbackResponse.error) {
-        return { success: false, error: fallbackResponse.error.message };
-      }
-      return { success: true, data: fallbackResponse.data };
-    } catch (fallbackErr: any) {
-      return { success: false, error: fallbackErr?.message || err?.message };
-    }
-  }
-}
-
-/**
- * Send order confirmation to student buyer
- */
 export async function sendOrderConfirmationEmail(
   to: string,
-  props: OrderConfirmationEmailProps
+  props: {
+    buyerName?: string;
+    customerName?: string;
+    orderNumber: string;
+    items: Array<{ title?: string; name?: string; quantity: number; price: number }>;
+    totalAmount: number;
+    deliveryCode?: string;
+    verificationCode?: string;
+    meetupPoint?: string;
+    campusName?: string;
+  }
 ) {
-  const { html, text } = getOrderConfirmationTemplate(props);
-  return sendWithFallback({
-    to,
-    subject: `Order #${props.orderNumber} Confirmed — ọjà. Escrow`,
-    html,
-    text,
+  return notificationService.notifyBuyerOrderConfirmed({
+    email: to,
+    orderNumber: props.orderNumber,
+    buyerName: props.buyerName || props.customerName || "Student",
+    items: props.items.map((i) => ({
+      title: i.title || i.name || "Item",
+      quantity: i.quantity,
+      price: i.price,
+    })),
+    totalAmount: props.totalAmount,
+    deliveryCode: props.deliveryCode || props.verificationCode || "123456",
+    meetupPoint: props.meetupPoint,
+    campusName: props.campusName,
   });
 }
 
-/**
- * Send new order alert to vendor
- */
 export async function sendVendorOrderNotificationEmail(
   to: string,
-  props: VendorNotificationEmailProps
+  props: {
+    storeName: string;
+    orderNumber: string;
+    vendorName?: string;
+    buyerName?: string;
+    buyerPhone?: string;
+    items?: Array<{ title?: string; name?: string; quantity: number; price: number }>;
+    payoutAmount?: number;
+    totalAmount?: number;
+    meetupPoint?: string;
+    campusName?: string;
+    dashboardUrl?: string;
+  }
 ) {
-  const { html, text } = getVendorNotificationTemplate(props);
-  return sendWithFallback({
-    to,
-    subject: `New Order #${props.orderNumber} Received — ${props.storeName}`,
-    html,
-    text,
+  return notificationService.notifyVendorNewOrder({
+    email: to,
+    orderNumber: props.orderNumber,
+    storeName: props.storeName,
+    buyerName: props.buyerName || "Student",
+    items: (props.items || []).map((i) => ({
+      title: i.title || i.name || "Item",
+      quantity: i.quantity,
+      price: i.price,
+    })),
+    payoutAmount: props.payoutAmount || props.totalAmount || 0,
+    meetupPoint: props.meetupPoint,
+    campusName: props.campusName,
   });
 }
 
-/**
- * Send vendor application status update (Approved, Rejected, Info Requested)
- */
 export async function sendVendorStatusEmail(
   to: string,
-  props: VendorStatusEmailProps
+  props: {
+    storeName: string;
+    applicantName?: string;
+    vendorName?: string;
+    status: "APPROVED" | "REJECTED" | "SUSPENDED" | "REINSTATED" | "INFO_REQUESTED" | string;
+    rejectionReason?: string;
+    notes?: string;
+    tier?: number;
+    dashboardUrl?: string;
+  }
 ) {
-  const subjectMap: Record<string, string> = {
-    APPROVED: `Congratulations! Your store ${props.storeName} is approved — ọjà.`,
-    REJECTED: `Update on your ọjà. vendor application for ${props.storeName}`,
-    SUSPENDED: `Important notice regarding your ọjà. vendor account`,
-    INFO_REQUESTED: `Action required: More information needed for ${props.storeName}`,
-  };
-
-  const { html, text } = getVendorStatusTemplate(props);
-  return sendWithFallback({
-    to,
-    subject: subjectMap[props.status] || `ọjà. Vendor Application Update`,
-    html,
-    text,
+  return notificationService.notifyVendorStatusUpdate({
+    email: to,
+    storeName: props.storeName,
+    vendorName: props.applicantName || props.vendorName || props.storeName,
+    status: (props.status as any) || "APPROVED",
+    reason: props.rejectionReason || props.notes,
   });
 }
 
-/**
- * Send password reset email with secure link
- */
 export async function sendPasswordResetEmail(
   to: string,
-  props: PasswordResetEmailProps
+  props: {
+    userName?: string;
+    resetUrl: string;
+  }
 ) {
-  const { html, text } = getPasswordResetTemplate(props);
-  return sendWithFallback({
-    to,
-    subject: `Reset your ọjà. password`,
-    html,
-    text,
+  return notificationService.notifyBuyerPasswordReset({
+    email: to,
+    userName: props.userName || "Campus Student",
+    resetUrl: props.resetUrl,
   });
 }
 
-/**
- * Send email address verification email (with 6-digit code & link)
- */
 export async function sendEmailVerificationEmail(
   to: string,
-  props: EmailVerificationEmailProps
+  props: {
+    userName?: string;
+    verificationCode?: string;
+    verifyUrl: string;
+  }
 ) {
-  const { html, text } = getEmailVerificationTemplate(props);
-  return sendWithFallback({
-    to,
-    subject: `Verify your email address — ọjà.`,
-    html,
-    text,
+  return notificationService.notifyBuyerEmailVerification({
+    email: to,
+    userName: props.userName || "Campus Student",
+    verificationCode: props.verificationCode || "123456",
+    verifyUrl: props.verifyUrl,
   });
 }
 
-/**
- * Send 6-digit verification code & link email (alias)
- */
 export async function sendVerifyEmail(
   to: string,
-  props: VerifyEmailProps
+  props: {
+    userName?: string;
+    verificationCode?: string;
+    verifyUrl: string;
+  }
 ) {
-  const { html, text } = getEmailVerificationTemplate(props);
-  return sendWithFallback({
-    to,
-    subject: `Verify your email address — ọjà.`,
-    html,
-    text,
-  });
+  return sendEmailVerificationEmail(to, props);
 }
 
-/**
- * Send welcome email upon initial sign-in / registration
- */
 export async function sendWelcomeEmail(
   to: string,
-  props: WelcomeEmailProps
+  props: {
+    userName?: string;
+    userRole?: string;
+    exploreUrl?: string;
+  }
 ) {
-  const { html, text } = getWelcomeTemplate(props);
-  return sendWithFallback({
-    to,
-    subject: `Welcome to ọjà., ${props.userName || "Campus Member"}! 🎓🛍️`,
-    html,
-    text,
+  return notificationService.notifyBuyerWelcome({
+    email: to,
+    userName: props.userName || "Campus Member",
   });
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProductForm } from "@/components/vendor/ProductForm";
@@ -52,6 +52,20 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
           </p>
         </div>
       </div>
+
+      {vendor.status !== "APPROVED" && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+            <AlertCircle className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="font-bold text-xs sm:text-sm text-amber-950">Store Awaiting Admin Approval</p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Your vendor account is currently pending administrator approval. Changes will be saved, but this product cannot be published to the public campus shop until your store is approved.
+            </p>
+          </div>
+        </div>
+      )}
 
       <ProductForm initialData={product} categories={categories} isEditing={true} />
     </div>

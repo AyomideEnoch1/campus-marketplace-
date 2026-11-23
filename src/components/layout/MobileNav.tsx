@@ -80,9 +80,11 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
 
   // Don't show bottom nav inside admin or chat rooms (to preserve chat viewport)
   if (
+    !pathname ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard/messages") ||
-    pathname.startsWith("/messages")
+    pathname.startsWith("/messages") ||
+    (typeof window !== "undefined" && window.location.pathname.startsWith("/admin"))
   ) {
     return null;
   }

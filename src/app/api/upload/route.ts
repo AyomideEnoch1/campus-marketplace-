@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { uploadToSupabase } from "@/lib/supabase";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
@@ -17,6 +18,18 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+async function checkProductUploadAuthorization(session: any) {
+  if (!session) return false;
+  if (session.role === "ADMIN" || session.role === "SUPERADMIN") {
+    return true;
+  }
+  const vendor = await prisma.vendorProfile.findUnique({
+    where: { userId: session.id },
+    select: { status: true },
+  });
+  return vendor?.status === "APPROVED";
+}
 
 export async function POST(request: Request) {
   try {
@@ -74,6 +87,17 @@ export async function POST(request: Request) {
       }
 
       const safeFolder = folder === "stores" ? "stores" : folder === "verification" ? "verification" : "products";
+
+      if (safeFolder === "products") {
+        const isAuthorized = await checkProductUploadAuthorization(session);
+        if (!isAuthorized) {
+          return NextResponse.json(
+            { error: "You cannot upload product images until your vendor account has been approved by an administrator." },
+            { status: 403 }
+          );
+        }
+      }
+
       const uniqueName = `${safeFolder}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}${ext}`;
 
       // A. Try Cloud Upload via Supabase Storage
@@ -108,6 +132,16 @@ export async function POST(request: Request) {
       const formData = await request.formData();
       const folderParam = (formData.get("folder") as string) || "products";
       const safeFolder = folderParam === "stores" ? "stores" : folderParam === "verification" ? "verification" : "products";
+
+      if (safeFolder === "products") {
+        const isAuthorized = await checkProductUploadAuthorization(session);
+        if (!isAuthorized) {
+          return NextResponse.json(
+            { error: "You cannot upload product images until your vendor account has been approved by an administrator." },
+            { status: 403 }
+          );
+        }
+      }
 
       // Collect all files from "file" or "files" keys
       const files: File[] = [];

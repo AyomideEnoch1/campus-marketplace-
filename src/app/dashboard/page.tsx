@@ -14,12 +14,16 @@ import {
   Sparkles,
   ShieldCheck,
   AlertTriangle,
+  Lock,
+  ArrowRight,
+  CreditCard,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN, formatDate } from "@/lib/utils";
+import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
 
 async function getVendorDashboardData(userId: string) {
   const vendor = await prisma.vendorProfile.findUnique({
@@ -75,6 +79,17 @@ export default async function VendorDashboardPage() {
   if (!data) return null;
 
   const { vendor, totalProducts, publishedProducts, totalViews, totalOrders } = data;
+  const entitlements = computeVendorEntitlements(vendor);
+
+  // Fetch dynamic platform pricing from SiteSetting
+  const feeSetting = await prisma.siteSetting.findUnique({
+    where: { key: "vendor_access_fee" },
+  });
+  const durationSetting = await prisma.siteSetting.findUnique({
+    where: { key: "vendor_access_duration_days" },
+  });
+  const vendorAccessFee = feeSetting ? parseInt(feeSetting.value, 10) || 15000 : 15000;
+  const vendorAccessDurationDays = durationSetting ? parseInt(durationSetting.value, 10) || 365 : 365;
 
   const stats = [
     {
@@ -133,14 +148,173 @@ export default async function VendorDashboardPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Link href="/dashboard/products/new">
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs">
-              <PlusCircle className="w-4 h-4" /> Add Product
+          {vendor.status === "APPROVED" ? (
+            <Link href="/dashboard/products/new">
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs">
+                <PlusCircle className="w-4 h-4" /> Add Product
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              size="sm"
+              disabled
+              className="bg-neutral-200 text-neutral-400 cursor-not-allowed font-bold gap-2 text-xs"
+              title="Administrator approval required to upload products"
+            >
+              <Lock className="w-4 h-4" /> Add Product
             </Button>
-          </Link>
+          )}
           <Link href={`/store/${vendor.slug}`} target="_blank">
             <Button variant="outline" size="sm" className="font-semibold gap-1.5 text-xs">
               <ShoppingBag className="w-4 h-4" /> Live Store
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Access & Status Banners */}
+      {entitlements.accessState === "EXPIRED" && (
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-red-600">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-red-950">Store Access Expired</h3>
+              <p className="text-xs text-red-700 mt-0.5">
+                Your vendor access has expired and your public products are hidden. Pay now to restore instant dashboard publishing and public storefront visibility.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/activate" className="shrink-0">
+            <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs gap-1.5 shadow-sm">
+              Pay to Restore Access <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {(entitlements.accessState === "UNPAID" || entitlements.accessState === "RELEASED") && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-amber-950">Store Access Inactive</h3>
+              <p className="text-xs text-amber-800 mt-0.5">
+                Activate your store access by redeeming a Founding Vendor coupon code or completing payment to unlock 0% commission selling and publish products.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/activate" className="shrink-0">
+            <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs gap-1.5 shadow-sm">
+              Activate Store Access <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {entitlements.hasAccess && entitlements.isExpiringSoon && (
+        <div className="p-4 rounded-2xl bg-yellow-50 border border-yellow-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0 text-yellow-800">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-yellow-950">
+                Access Expiring in {entitlements.daysUntilExpiry} Day{entitlements.daysUntilExpiry === 1 ? "" : "s"}
+              </h3>
+              <p className="text-xs text-yellow-800 mt-0.5">
+                Your store access ends on {formatDate(vendor.accessExpiresAt!)}. Pay now to maintain uninterrupted access, keep 0% commission, and prevent your products from being hidden.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/activate" className="shrink-0">
+            <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold text-xs gap-1.5 shadow-sm">
+              Pay to Keep Access <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {vendor.status === "PENDING" && (
+        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 text-blue-700">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-blue-950">Credentials Under Review</h3>
+            <p className="text-xs text-blue-800 mt-0.5">
+              Your store application and credentials are being reviewed by administrators. Product uploading is disabled until your account has been approved. Once approved, you will be able to upload products and publish them live to the public campus marketplace.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {vendor.status === "REJECTED" && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0 text-rose-700">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-rose-950">Vendor Application Rejected</h3>
+            <p className="text-xs text-rose-800 mt-0.5">
+              Your vendor registration was rejected{vendor.rejectionReason ? `: ${vendor.rejectionReason}` : ""}. Product uploading is disabled. Please contact campus support to update your verification documents.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Storefront Access & Pricing Plan */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-white border border-neutral-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center shrink-0">
+            <CreditCard className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 space-y-0.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-extrabold text-sm sm:text-base text-neutral-900">
+                Storefront Access &amp; Pricing
+              </h3>
+              <Badge
+                className={`text-[10px] font-bold ${
+                  entitlements.hasAccess
+                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                    : "bg-amber-100 text-amber-800 border-amber-300"
+                }`}
+              >
+                {entitlements.hasAccess
+                  ? entitlements.planType === "coupon"
+                    ? "Founding Coupon (Active)"
+                    : "Standard Plan (Active)"
+                  : "Access Inactive"}
+              </Badge>
+            </div>
+            <p className="text-xs text-neutral-600">
+              Platform Fee: <strong className="text-neutral-900 font-bold">{formatNGN(vendorAccessFee)}</strong> / {vendorAccessDurationDays === 365 ? "1 Year" : `${vendorAccessDurationDays} Days`} &bull; 0% Commission &bull; 50 listing slots
+            </p>
+            {entitlements.hasAccess && entitlements.accessExpiresAt && (
+              <p className="text-[11px] text-emerald-700 font-medium">
+                Active until {formatDate(entitlements.accessExpiresAt)} ({entitlements.daysRemaining} days remaining)
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="shrink-0 self-start md:self-auto">
+          <Link href="/dashboard/activate">
+            <Button
+              variant={entitlements.hasAccess ? "outline" : "default"}
+              size="sm"
+              className={
+                entitlements.hasAccess
+                  ? "border-neutral-300 hover:bg-neutral-100 text-neutral-800 font-bold text-xs rounded-xl"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs"
+              }
+            >
+              <span>{entitlements.hasAccess ? "Check Pricing & Options" : `Activate Now (${formatNGN(vendorAccessFee)})`}</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
             </Button>
           </Link>
         </div>

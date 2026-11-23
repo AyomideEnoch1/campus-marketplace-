@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getEffectiveProductPrice } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
 
@@ -112,13 +113,33 @@ export async function GET(request: Request) {
               campus: { select: { id: true, name: true, slug: true, city: true } },
             },
           },
+          promotions: {
+            where: {
+              status: "ACTIVE",
+              startAt: { lte: new Date() },
+              endAt: { gt: new Date() },
+            },
+            take: 1,
+          },
         },
       }),
       prisma.product.count({ where }),
     ]);
 
+    const now = new Date();
+    const formattedProducts = products.map((prod: any) => {
+      const priceInfo = getEffectiveProductPrice(prod, now);
+      return {
+        ...prod,
+        price: priceInfo.effectivePrice,
+        originalPrice: priceInfo.originalPrice,
+        comparePrice: priceInfo.comparePrice,
+        promo: priceInfo.activePromo,
+      };
+    });
+
     return NextResponse.json({
-      products,
+      products: formattedProducts,
       total,
       limit,
       offset,

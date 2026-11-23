@@ -456,12 +456,13 @@ function RegisterContent() {
     try {
       const cleanPhone = cleanPhoneNumber(phone);
       const cleanWhatsapp = whatsapp ? cleanPhoneNumber(whatsapp) : cleanPhone;
+      const effectivePhone = cleanPhone || cleanWhatsapp || undefined;
 
       const payload: any = {
         fullName: fullName.trim(),
         email: email.trim(),
         password: password || undefined,
-        phone: cleanPhone,
+        phone: effectivePhone,
         role,
         buyerType: role === "BUYER" ? buyerType : undefined,
         sellerType: role === "VENDOR" ? sellerType : undefined,
@@ -472,7 +473,7 @@ function RegisterContent() {
 
       if (role === "VENDOR") {
         payload.storeName = storeName.trim();
-        payload.whatsapp = cleanWhatsapp || cleanPhone;
+        payload.whatsapp = cleanWhatsapp || effectivePhone;
         payload.storeDescription = storeDescription.trim();
 
         if (sellerType === "guest") {

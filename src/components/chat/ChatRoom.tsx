@@ -13,12 +13,16 @@ import {
   ExternalLink,
   ShieldCheck,
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   Loader2,
+  Store,
+  Tag,
+  Info,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { formatNGN } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 export interface ChatMessageItem {
   id: string;
@@ -43,12 +47,14 @@ export interface ConversationDetails {
     id: string;
     fullName: string;
     email: string;
+    phone?: string | null;
   };
   vendor: {
     id: string;
     storeName: string;
     slug: string;
     logo?: string | null;
+    whatsapp?: string | null;
     userId: string;
     campus?: {
       name: string;
@@ -82,7 +88,9 @@ export function ChatRoom({
   const [isLoading, setIsLoading] = useState(false);
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [productPinned, setProductPinned] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const isBuyer = currentUserId === conversation.buyerId;
   const otherPartyName =
@@ -112,7 +120,6 @@ export function ChatRoom({
     let isCancelled = false;
 
     async function loadMessages() {
-      // If we already have initialMessages belonging to this exact conversation, no need to show loading
       if (
         initialMessages &&
         initialMessages.length > 0 &&
@@ -156,7 +163,6 @@ export function ChatRoom({
           const data = await res.json();
           if (data.messages && Array.isArray(data.messages)) {
             setMessages((prev) => {
-              // Only update if there are new messages or status changes
               if (
                 data.messages.length !== prev.length ||
                 (data.messages.length > 0 &&
@@ -235,6 +241,10 @@ export function ChatRoom({
     setInputText("");
     setIsSending(true);
 
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+
     // Optimistic message
     const tempId = `temp-${Date.now()}`;
     const optimisticMsg: ChatMessageItem = {
@@ -281,36 +291,100 @@ export function ChatRoom({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputText(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+  };
+
+  // Quick Action Chips tailored to Buyer or Vendor
   const quickChips = isBuyer
     ? [
         "Is this item still available?",
-        "Can we meet at the campus gate?",
-        "Can you do a slight discount?",
-        "What condition is it in?",
+        "Can we meet at the campus library / SUB?",
+        "Can you do a slight student discount?",
+        "What condition is the item in?",
+        "Can I pay via ọjà Escrow for safe pickup?",
       ]
     : [
         "Yes, still available!",
-        "I can meet today on campus.",
-        "Sure, let's agree on that price.",
-        "Please place the order so escrow protects us.",
+        "I'm on campus today, let's meet up.",
+        "Sure, I can accept that offer.",
+        "Item is in perfect condition as described.",
+        "Place your order on ọjà so escrow protects us both.",
       ];
 
+  // Helper for WhatsApp link to vendor
+  const rawWhatsApp = conversation.vendor?.whatsapp;
+  const cleanPhone = rawWhatsApp ? rawWhatsApp.replace(/[^0-9]/g, "") : null;
+  const whatsappUrl = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+        `Hello ${conversation.vendor.storeName}, I'm reaching out from ọjà marketplace regarding ${
+          conversation.product?.title || "your listings"
+        }.`
+      )}`
+    : null;
+
+  // Group messages by calendar day for clean date headers
+  const getMessageDateLabel = (dateStr: string | Date) => {
+    const d = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (d.toDateString() === today.toDateString()) {
+      return "Today";
+    }
+    if (d.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    }
+    return d.toLocaleDateString("en-NG", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
   return (
-    <div className="flex flex-col h-full bg-white border border-neutral-200/80 rounded-3xl overflow-hidden shadow-xs">
-      {/* Header */}
-      <div className="p-4 bg-white border-b border-neutral-100 flex items-center justify-between gap-3 shrink-0">
+    <div className="flex flex-col h-full bg-white border border-neutral-200/90 rounded-3xl overflow-hidden shadow-sm">
+      {/* Sleek Modern Header */}
+      <div className="px-4 py-3 bg-white/95 backdrop-blur-md border-b border-neutral-100 flex items-center justify-between gap-3 shrink-0 z-10 shadow-2xs">
         <div className="flex items-center gap-3 min-w-0">
           {onBack && (
             <button
+              type="button"
               onClick={onBack}
-              className="md:hidden w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 hover:text-neutral-950 shrink-0 cursor-pointer"
+              aria-label="Back to conversations"
+              className="md:hidden w-8 h-8 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
 
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold text-sm shrink-0">
-            {otherPartyName?.[0] || "U"}
+          {/* Avatar with Status Dot */}
+          <div className="relative shrink-0">
+            {conversation.vendor?.logo && !isBuyer ? (
+              <img
+                src={conversation.vendor.logo}
+                alt=""
+                className="w-10 h-10 rounded-2xl object-cover border border-neutral-200"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-500 text-white flex items-center justify-center font-black text-sm shadow-sm">
+                {otherPartyName?.[0]?.toUpperCase() || "U"}
+              </div>
+            )}
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"
+              title="Online"
+            />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -318,54 +392,78 @@ export function ChatRoom({
               <h3 className="font-extrabold text-sm text-neutral-900 truncate">
                 {otherPartyName}
               </h3>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.2 rounded-md font-bold shrink-0">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                Verified
+              </span>
             </div>
-            <p className="text-[11px] text-neutral-500 flex items-center gap-1 truncate">
+            <p className="text-[11px] text-neutral-500 flex items-center gap-1 truncate mt-0.5">
               {conversation.vendor?.campus ? (
                 <>
                   <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
-                  {conversation.vendor.campus.name}
+                  <span className="truncate">{conversation.vendor.campus.name}</span>
                 </>
               ) : (
-                "Verified ọjà Chat"
+                <span className="text-neutral-400">Student Marketplace Chat</span>
               )}
             </p>
           </div>
         </div>
 
+        {/* Action Pills */}
         <div className="flex items-center gap-2 shrink-0">
-          <span className="hidden sm:flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            Escrow Protected
-          </span>
+          {/* Direct WhatsApp Action if available */}
+          {whatsappUrl && (
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Chat on WhatsApp"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 font-bold text-xs transition-all hover:scale-[1.02]"
+            >
+              <WhatsAppIcon className="w-3.5 h-3.5 fill-[#25D366]" />
+              <span>WhatsApp</span>
+            </a>
+          )}
+
+          {/* Storefront Link if buyer */}
           {isBuyer && conversation.vendor?.slug && (
             <Link
               href={`/store/${conversation.vendor.slug}`}
-              className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1 bg-neutral-100 hover:bg-neutral-200/80 px-2.5 py-1 rounded-xl font-semibold transition-colors"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 font-bold text-xs transition-colors"
             >
-              <span>Store</span>
-              <ExternalLink className="w-3 h-3" />
+              <Store className="w-3.5 h-3.5 text-neutral-500" />
+              <span>Visit Store</span>
             </Link>
           )}
+
+          {/* Escrow Badge */}
+          <span className="hidden xl:inline-flex items-center gap-1 text-[11px] text-emerald-900 bg-emerald-50/90 border border-emerald-200 px-2.5 py-1 rounded-xl font-bold">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            Escrow Protected
+          </span>
         </div>
       </div>
 
-      {/* Context Product Card (If pinned) */}
+      {/* Context Product Banner (With Collapse Option) */}
       {conversation.product && (
-        <div className="bg-neutral-50 border-b border-neutral-200/70 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
+        <div className="bg-gradient-to-r from-emerald-50/50 via-neutral-50 to-emerald-50/30 border-b border-neutral-200/80 px-4 py-2.5 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {conversation.product.images?.[0] ? (
               <img
                 src={conversation.product.images[0].url}
                 alt=""
-                className="w-10 h-10 rounded-xl object-cover border border-neutral-200 shrink-0"
+                className="w-11 h-11 rounded-xl object-cover border border-neutral-200/90 shrink-0 shadow-2xs"
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-neutral-200 flex items-center justify-center shrink-0">
-                <Package className="w-5 h-5 text-neutral-500" />
+              <div className="w-11 h-11 rounded-xl bg-emerald-100/60 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200/80">
+                <Package className="w-5 h-5" />
               </div>
             )}
             <div className="min-w-0">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                Inquiry Item
+              </span>
               <p className="text-xs font-bold text-neutral-900 truncate">
                 {conversation.product.title}
               </p>
@@ -375,40 +473,75 @@ export function ChatRoom({
             </div>
           </div>
 
-          <Link
-            href={`/product/${conversation.product.slug}`}
-            className="text-[11px] text-emerald-600 hover:underline font-bold shrink-0"
-          >
-            View Listing &rarr;
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/product/${conversation.product.slug}`}
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-white hover:bg-emerald-50/60 border border-emerald-200/80 px-3 py-1.5 rounded-xl shadow-2xs flex items-center gap-1 transition-colors"
+            >
+              <span>View Product</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
+          </div>
         </div>
       )}
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-neutral-50/50">
-        {/* Safety Banner */}
-        <div className="bg-white border border-neutral-200/80 rounded-2xl p-3 text-center text-xs text-neutral-600 max-w-md mx-auto shadow-xs">
-          <p className="font-bold text-neutral-900 flex items-center justify-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            ọjà Safety Tip
-          </p>
-          <p className="text-[11px] mt-0.5 text-neutral-500">
-            Always meet in designated daytime campus spots. Never release your delivery code until items are inspected.
-          </p>
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gradient-to-b from-neutral-50/80 via-white to-neutral-50/60">
+        {/* Safety Notice Card */}
+        <div className="bg-white/90 border border-emerald-200/70 rounded-2xl p-3 text-xs text-neutral-600 max-w-lg mx-auto shadow-xs flex items-start gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-bold text-neutral-900 text-xs">Campus Safety Guideline</p>
+            <p className="text-[11px] text-neutral-500 mt-0.5 leading-relaxed">
+              Agree on a busy daylight campus hub (Library, SUB, Faculty quad). Never transfer funds directly or release delivery OTP until items are inspected.
+            </p>
+          </div>
         </div>
 
+        {/* Loading History */}
         {isLoading && messages.length === 0 ? (
-          <div className="py-12 flex flex-col items-center justify-center text-neutral-400 text-xs space-y-2">
+          <div className="py-16 flex flex-col items-center justify-center text-neutral-400 text-xs space-y-2">
             <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
             <p className="font-semibold text-neutral-600">Loading conversation history...</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="py-12 text-center text-neutral-400 text-xs">
-            <p>No messages yet. Send a message to start bargaining or arranging meetup!</p>
+          /* Empty Chat State */
+          <div className="py-16 text-center max-w-sm mx-auto space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+              <Sparkles className="w-7 h-7" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-neutral-900">Start the Conversation</h4>
+              <p className="text-xs text-neutral-500 mt-1">
+                Say hello to {otherPartyName}, ask about item availability, or coordinate a convenient campus meetup point!
+              </p>
+            </div>
+            <div className="pt-2 flex flex-wrap justify-center gap-1.5">
+              {quickChips.slice(0, 3).map((chip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSendMessage(chip)}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white hover:bg-emerald-50 border border-neutral-200/80 text-neutral-700 hover:text-emerald-800 transition-colors shadow-2xs"
+                >
+                  "{chip}"
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
-          messages.map((msg) => {
+          /* Message Stream with Date Dividers */
+          messages.map((msg, idx) => {
             const isMe = msg.senderId === currentUserId;
+
+            // Date divider logic
+            const currentDateLabel = getMessageDateLabel(msg.createdAt);
+            const prevDateLabel =
+              idx > 0 ? getMessageDateLabel(messages[idx - 1].createdAt) : null;
+            const showDateHeader = currentDateLabel !== prevDateLabel;
+
             let timeStr = "";
             try {
               timeStr = new Date(msg.createdAt).toLocaleTimeString("en-NG", {
@@ -421,33 +554,51 @@ export function ChatRoom({
             }
 
             return (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] sm:max-w-md rounded-2xl px-4 py-2.5 text-xs ${
-                    isMe
-                      ? "bg-emerald-600 text-white rounded-br-xs shadow-xs"
-                      : "bg-white border border-neutral-200/80 text-neutral-900 rounded-bl-xs shadow-xs"
-                  }`}
-                >
-                  <p className="leading-relaxed whitespace-pre-wrap break-words">
-                    {msg.content}
-                  </p>
+              <div key={msg.id} className="space-y-3">
+                {showDateHeader && (
+                  <div className="flex items-center justify-center my-2">
+                    <span className="px-3 py-1 rounded-full bg-neutral-200/70 border border-neutral-200 text-neutral-600 font-bold text-[10px] uppercase tracking-wider shadow-2xs">
+                      {currentDateLabel}
+                    </span>
+                  </div>
+                )}
+
+                <div className={`flex items-end gap-2 ${isMe ? "justify-end" : "justify-start"}`}>
+                  {/* Left Avatar for Received Messages */}
+                  {!isMe && (
+                    <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-neutral-200 to-neutral-300 text-neutral-700 flex items-center justify-center font-bold text-[11px] shrink-0 mb-0.5">
+                      {otherPartyName?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )}
+
+                  {/* Bubble */}
                   <div
-                    className={`flex items-center justify-end gap-1 text-[9px] mt-1 ${
-                      isMe ? "text-emerald-100" : "text-neutral-400"
+                    className={`max-w-[82%] sm:max-w-md rounded-2xl px-4 py-2.5 text-xs transition-shadow ${
+                      isMe
+                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-br-xs shadow-xs"
+                        : "bg-white border border-neutral-200/90 text-neutral-800 rounded-bl-xs shadow-xs"
                     }`}
                   >
-                    <span>{timeStr}</span>
-                    {isMe && (
-                      msg.isRead ? (
-                        <CheckCheck className="w-3 h-3 text-emerald-200" />
-                      ) : (
-                        <Check className="w-3 h-3 text-emerald-200" />
-                      )
-                    )}
+                    <p className="leading-relaxed whitespace-pre-wrap break-words text-xs">
+                      {msg.content}
+                    </p>
+
+                    <div
+                      className={`flex items-center justify-end gap-1 text-[9px] mt-1 select-none ${
+                        isMe ? "text-emerald-100" : "text-neutral-400"
+                      }`}
+                    >
+                      <span>{timeStr}</span>
+                      {isMe && (
+                        <span title={msg.isRead ? "Read" : "Delivered"}>
+                          {msg.isRead ? (
+                            <CheckCheck className="w-3.5 h-3.5 text-emerald-200" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5 text-emerald-200" />
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -457,44 +608,56 @@ export function ChatRoom({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Action Suggestion Chips */}
-      <div className="px-4 py-2 bg-white border-t border-neutral-100 flex items-center gap-2 overflow-x-auto shrink-0">
-        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+      {/* Modern Suggestion Chips */}
+      <div className="px-4 py-2.5 bg-neutral-50/80 border-t border-neutral-100 flex items-center gap-2 overflow-x-auto shrink-0 scrollbar-none">
+        <div className="flex items-center gap-1.5 text-emerald-800 text-xs font-bold shrink-0">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+          <span className="hidden sm:inline">Quick Suggestions:</span>
+        </div>
         {quickChips.map((chip, i) => (
           <button
             key={i}
+            type="button"
             onClick={() => handleSendMessage(chip)}
-            className="text-[11px] font-semibold text-neutral-700 hover:text-neutral-950 bg-neutral-100 hover:bg-neutral-200/80 border border-neutral-200/60 rounded-full px-3 py-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+            className="text-[11px] font-semibold text-neutral-700 hover:text-emerald-800 bg-white hover:bg-emerald-50 border border-neutral-200/70 hover:border-emerald-300 rounded-full px-3 py-1 whitespace-nowrap shrink-0 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xs cursor-pointer"
           >
             {chip}
           </button>
         ))}
       </div>
 
-      {/* Input Bar */}
-      <div className="p-3 bg-white border-t border-neutral-200/80 shrink-0">
+      {/* Floating-style Input Bar */}
+      <div className="p-3 sm:p-4 bg-white border-t border-neutral-200/80 shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSendMessage();
           }}
-          className="flex items-center gap-2"
+          className="flex items-end gap-2 relative bg-neutral-50 border border-neutral-200/90 rounded-2xl p-2 focus-within:bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/10 transition-all"
         >
-          <Input
-            placeholder={`Message ${otherPartyName}...`}
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            placeholder={`Message ${otherPartyName}... (Press Enter to send)`}
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={handleTextareaInput}
+            onKeyDown={handleKeyDown}
             disabled={isSending}
-            className="bg-neutral-50 border-neutral-200 focus:bg-white text-neutral-900 placeholder:text-neutral-400 h-11 rounded-2xl text-xs flex-1"
+            className="w-full bg-transparent text-neutral-900 placeholder:text-neutral-400 text-xs resize-none outline-none max-h-32 min-h-[36px] py-2 px-2"
           />
-          <Button
+
+          <button
             type="submit"
             disabled={!inputText.trim() || isSending}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-11 px-4 font-bold shrink-0 gap-1.5 shadow-md shadow-emerald-600/20"
+            aria-label="Send message"
+            className="w-10 h-10 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-700/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
           >
-            <Send className="w-4 h-4" />
-            <span className="hidden sm:inline">Send</span>
-          </Button>
+            {isSending ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <Send className="w-4 h-4 text-white" />
+            )}
+          </button>
         </form>
       </div>
     </div>

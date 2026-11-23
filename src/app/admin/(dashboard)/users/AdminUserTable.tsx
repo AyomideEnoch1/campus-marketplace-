@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
   Shield,
@@ -13,9 +14,11 @@ import {
   ArrowLeftRight,
   Users,
   Lock,
+  UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { AddAdminModal } from "@/components/admin/AddAdminModal";
 
 interface UserItem {
   id: string;
@@ -52,8 +55,32 @@ export function AdminUserTable({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams?.get("action") === "add" || searchParams?.get("add") === "true") {
+      setShowAddModal(true);
+    }
+  }, [searchParams]);
 
   const isSuperAdmin = currentAdminRole === "SUPERADMIN";
+
+  const handleAdminCreated = (newAdmin: any) => {
+    setUsers((prev) => {
+      const exists = prev.some((u) => u.id === newAdmin.id);
+      if (exists) {
+        return prev.map((u) => (u.id === newAdmin.id ? { ...u, role: newAdmin.role } : u));
+      }
+      return [newAdmin, ...prev];
+    });
+    setFeedback({
+      message: `${newAdmin.fullName} (${newAdmin.email}) added as ${
+        newAdmin.role === "SUPERADMIN" ? "Super Administrator" : "Administrator"
+      } successfully.`,
+      type: "success",
+    });
+  };
 
   const filtered = users.filter((u) => {
     const matchesSearch =
@@ -133,34 +160,36 @@ export function AdminUserTable({
   };
 
   const getRoleBadge = (role: string) => {
-    switch (role) {
+    const r = (role || "").toUpperCase();
+    switch (r) {
       case "SUPERADMIN":
         return (
-          <Badge className="bg-amber-950/80 text-amber-300 border border-amber-700/80 text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <ShieldAlert className="w-3 h-3 text-amber-400" />
-            Super Admin
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs shadow-amber-950/40 select-none">
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="truncate">Super Admin</span>
+          </span>
         );
       case "ADMIN":
         return (
-          <Badge className="bg-purple-950/80 text-purple-300 border border-purple-800 text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-purple-400" />
-            Admin
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-xs shadow-purple-950/40 select-none">
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span className="truncate">Admin</span>
+          </span>
         );
       case "VENDOR":
         return (
-          <Badge className="bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <ShoppingBag className="w-3 h-3 text-emerald-400" />
-            Vendor
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-xs shadow-emerald-950/40 select-none">
+            <ShoppingBag className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="truncate">Vendor</span>
+          </span>
         );
+      case "BUYER":
       default:
         return (
-          <Badge variant="outline" className="text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <User className="w-3 h-3 text-neutral-400" />
-            Buyer
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-blue-500/15 text-blue-300 border border-blue-500/30 shadow-xs shadow-blue-950/40 select-none">
+            <User className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span className="truncate">Buyer</span>
+          </span>
         );
     }
   };
@@ -173,8 +202,8 @@ export function AdminUserTable({
 
   return (
     <div className="space-y-6">
-      {/* Superadmin Indicator Notice */}
-      <div className="flex items-center justify-between bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
+      {/* Superadmin Indicator Notice & Add Administrator Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
         <div className="flex items-center gap-3">
           <div
             className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
@@ -198,11 +227,20 @@ export function AdminUserTable({
             </div>
             <p className="text-[11px] text-neutral-400 mt-0.5">
               {isSuperAdmin
-                ? "Full control: You have authority to assign any role and permanently delete user accounts completely."
-                : "Standard Admin: You can view and manage user roles (Buyer, Vendor, Admin). Only Superadmins can delete users completely."}
+                ? "Full control: You have authority to assign any role, create administrators, and permanently delete user accounts."
+                : "Standard Admin: You can view and manage user roles (Buyer, Vendor, Admin) and add new platform administrators."}
             </p>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-950/50 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>Add Administrator</span>
+        </button>
       </div>
 
       {/* KPI Stats Header - Total Amount of Users & Role Breakdown */}
@@ -359,7 +397,7 @@ export function AdminUserTable({
             <thead className="bg-neutral-950/80 text-neutral-400 font-semibold border-b border-neutral-800">
               <tr>
                 <th className="py-3.5 px-4">User</th>
-                <th className="py-3.5 px-4">Current Role</th>
+                <th className="py-3.5 px-4 text-center">Current Role</th>
                 <th className="py-3.5 px-4">Associated Store</th>
                 <th className="py-3.5 px-4">Joined Date</th>
                 <th className="py-3.5 px-4 text-center">Change Role</th>
@@ -407,8 +445,10 @@ export function AdminUserTable({
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getRoleBadge(u.role)}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div className="flex justify-center">
+                          {getRoleBadge(u.role)}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -484,6 +524,14 @@ export function AdminUserTable({
           </table>
         </div>
       </div>
+
+      {/* Add Administrator Modal */}
+      <AddAdminModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        currentAdminRole={currentAdminRole}
+        onSuccess={handleAdminCreated}
+      />
     </div>
   );
 }

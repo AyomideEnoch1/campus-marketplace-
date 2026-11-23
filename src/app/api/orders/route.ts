@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { sendOrderConfirmationEmail, sendVendorOrderNotificationEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, sendVendorOrderNotificationEmail, notificationService } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
@@ -289,14 +289,24 @@ export async function POST(request: Request) {
           });
 
           // Decrement stock if in stock
-          await tx.product.update({
+          const updatedProd = await tx.product.update({
             where: { id: item.productId },
             data: {
               stock: {
                 decrement: item.quantity,
               },
             },
+            select: { id: true, title: true, stock: true },
           });
+
+          if (updatedProd.stock <= 3 && vendor.user?.email) {
+            notificationService.notifyVendorStockAlert({
+              email: vendor.user.email,
+              productTitle: updatedProd.title,
+              storeName: vendor.storeName,
+              stockRemaining: updatedProd.stock,
+            }).catch(() => {});
+          }
         }
 
         // Log activity

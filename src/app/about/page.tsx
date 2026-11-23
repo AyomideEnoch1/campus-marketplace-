@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ShoppingCart, GraduationCap, ShieldCheck, Heart, ShoppingBag, Truck, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrustBar } from "@/components/marketplace/TrustBar";
+import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 export const metadata = {
   title: "About ọjà | University Student Marketplace",
@@ -86,8 +87,45 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Trust Bar */}
-      <TrustBar />
+      {/* Trust Bar & Contact Community (Mobile/Tablet only, hidden on large screens) */}
+      <div className="lg:hidden">
+        {/* Trust Bar */}
+        <TrustBar />
+
+        {/* Contact & Community: Join ọjà Family */}
+        <section className="py-12 container mx-auto px-4">
+          <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-neutral-900 via-neutral-900 to-emerald-950 border border-neutral-800 text-white max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+              <div className="space-y-3 max-w-xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-bold border border-emerald-500/30">
+                  <WhatsAppIcon className="w-4 h-4 fill-[#25D366]" />
+                  <span>Contact & Campus Network</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  Join the ọjà Family
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+                  Have questions, suggestions, or need assistance? Reach out to us directly or join hundreds of student buyers, verified campus sellers, and ambassadors across Nigerian universities on WhatsApp.
+                </p>
+              </div>
+
+              <div className="shrink-0 w-full sm:w-auto">
+                <a
+                  href="https://chat.whatsapp.com/JayElX9hkHxI0aikwX4aHH"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-sm shadow-xl shadow-emerald-950/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <WhatsAppIcon className="w-5 h-5 fill-current" />
+                  <span>Join ọjà Family</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* CTA Box */}
       <section className="py-16 container mx-auto px-4">
@@ -106,7 +144,7 @@ export default function AboutPage() {
               </Button>
             </Link>
             <Link href="/auth/register?role=vendor">
-              <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10 font-bold px-6 text-xs">
+              <Button size="lg" variant="outline" className="bg-transparent border-white/60 text-white hover:bg-white hover:text-emerald-900 font-bold px-6 text-xs transition-colors">
                 Open a Student Store
               </Button>
             </Link>

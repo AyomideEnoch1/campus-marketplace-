@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart";
 import { useWishlist } from "@/lib/wishlist";
 import { ProductImageLightbox } from "./ProductImageLightbox";
+import { PromoCountdown } from "./PromoCountdown";
 
 interface ProductInteractiveViewProps {
   product: {
@@ -45,6 +46,22 @@ interface ProductInteractiveViewProps {
     tags?: string | null;
     images: { id: string; url: string; position: number }[];
     category: { id: string; name: string; slug: string };
+    promo?: {
+      id: string;
+      label?: string | null;
+      discountType: string;
+      discountValue: number;
+      promoPrice: number;
+      discountPercent: number;
+      savingsAmount: number;
+      startAt: string;
+      endAt: string;
+      serverNow: string;
+      secondsRemaining: number;
+      isEndingSoon: boolean;
+    } | null;
+    activePromo?: any;
+    effectivePrice?: number;
     vendor: {
       id: string;
       storeName: string;
@@ -74,6 +91,14 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
   const [addedSuccess, setAddedSuccess] = React.useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
 
+  // Active promo state with dynamic client-reversion on countdown expiry
+  const initialPromo = product.promo || (product as any).activePromo || null;
+  const [activePromo, setActivePromo] = React.useState(initialPromo);
+
+  React.useEffect(() => {
+    setActivePromo(product.promo || (product as any).activePromo || null);
+  }, [product.promo, (product as any).activePromo]);
+
   const maxStock = Math.max(1, product.stock);
 
   const handleQuantityChange = (val: number) => {
@@ -88,10 +113,21 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
 
   const currentImage = images[selectedImageIndex] || images[0];
 
-  const discountPercent =
-    product.comparePrice && product.comparePrice > product.price
-      ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
-      : null;
+  const currentPrice = activePromo
+    ? activePromo.promoPrice
+    : (product.effectivePrice ?? product.price);
+
+  const displayOriginalPrice = activePromo
+    ? product.price
+    : product.comparePrice && product.comparePrice > product.price
+    ? product.comparePrice
+    : null;
+
+  const discountPercent = activePromo
+    ? activePromo.discountPercent
+    : product.comparePrice && product.comparePrice > product.price
+    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+    : null;
 
   const conditionLabels: Record<string, string> = {
     NEW: "Brand New",
@@ -106,7 +142,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
       id: product.id,
       title: product.title,
       slug: product.slug,
-      price: product.price,
+      price: currentPrice,
       image: currentImage,
       quantity,
       condition: conditionLabels[product.condition] || product.condition,
@@ -137,8 +173,8 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
       id: product.id,
       title: product.title,
       slug: product.slug,
-      price: product.price,
-      comparePrice: product.comparePrice,
+      price: currentPrice,
+      comparePrice: displayOriginalPrice,
       image: currentImage,
       condition: conditionLabels[product.condition] || product.condition,
       categoryName: product.category.name,
@@ -241,10 +277,23 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
 
           {/* Badges Overlay */}
           <div className="absolute top-3.5 left-3.5 sm:top-4 sm:left-4 flex flex-col items-start gap-1.5 z-10 max-w-[70%]">
-            {discountPercent && (
-              <Badge variant="accent" className="font-extrabold text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-md shrink-0 whitespace-nowrap">
-                Save {discountPercent}%
-              </Badge>
+            {activePromo ? (
+              <>
+                <Badge className="bg-rose-600 text-white font-black text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-md shrink-0 whitespace-nowrap">
+                  -{activePromo.discountPercent}% OFF
+                </Badge>
+                {activePromo.label && (
+                  <Badge className="bg-neutral-900/90 backdrop-blur-md text-white font-bold text-[9px] sm:text-[10px] shrink-0 whitespace-nowrap">
+                    {activePromo.label}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              discountPercent && (
+                <Badge variant="accent" className="font-extrabold text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 shadow-md shrink-0 whitespace-nowrap">
+                  Save {discountPercent}%
+                </Badge>
+              )
             )}
             <Badge variant="dark" className="bg-black/75 backdrop-blur-md text-white text-[10px] sm:text-xs shrink-0 whitespace-nowrap">
               {conditionLabels[product.condition] || product.condition}
@@ -314,22 +363,51 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
             {product.title}
           </h1>
 
+          {/* Promotional Deal Banner */}
+          {activePromo && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-orange-50 border border-rose-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-black text-xs">
+                  -{activePromo.discountPercent}% OFF
+                </span>
+                <span className="font-bold text-xs sm:text-sm text-neutral-900">
+                  {activePromo.label || "Limited-Time Campus Deal"}
+                </span>
+              </div>
+              <PromoCountdown
+                endAt={activePromo.endAt}
+                serverNow={activePromo.serverNow}
+                onExpire={() => setActivePromo(null)}
+              />
+            </div>
+          )}
+
           {/* Pricing & Stock Status */}
           <div className="p-4 rounded-2xl bg-neutral-50/80 border border-neutral-100 flex items-center justify-between">
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-neutral-950">
-                  {formatNGN(product.price)}
+                <span
+                  className={`text-3xl font-extrabold ${
+                    activePromo ? "text-rose-600" : "text-neutral-950"
+                  }`}
+                >
+                  {formatNGN(currentPrice)}
                 </span>
-                {product.comparePrice && product.comparePrice > product.price && (
+                {displayOriginalPrice && (
                   <span className="text-sm text-neutral-400 line-through">
-                    {formatNGN(product.comparePrice)}
+                    {formatNGN(displayOriginalPrice)}
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-neutral-500 mt-0.5">
-                On-campus payment & pickup &bull; Zero interstate delivery charge
-              </p>
+              {activePromo ? (
+                <p className="text-[11px] font-bold text-rose-600 mt-0.5">
+                  Save {formatNGN(activePromo.savingsAmount)} during this promotion!
+                </p>
+              ) : (
+                <p className="text-[11px] text-neutral-500 mt-0.5">
+                  On-campus payment & pickup &bull; Zero interstate delivery charge
+                </p>
+              )}
             </div>
 
             <div className="text-right shrink-0">

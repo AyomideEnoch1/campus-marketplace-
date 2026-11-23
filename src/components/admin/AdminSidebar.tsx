@@ -22,6 +22,9 @@ import {
   PanelLeftOpen,
   Menu,
   X,
+  Ticket,
+  Mail,
+  UserPlus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { VendorLogoutButton } from "@/components/vendor/VendorLogoutButton";
@@ -35,7 +38,9 @@ const adminNavItems = [
   { label: "Campuses", href: "/admin/campuses", icon: MapPin },
   { label: "Orders Overview", href: "/admin/orders", icon: ShoppingBag },
   { label: "Review Moderation", href: "/admin/reviews", icon: Star },
-  { label: "Users & Roles", href: "/admin/users", icon: ShieldCheck },
+  { label: "Users & Admins", href: "/admin/users", icon: ShieldCheck },
+  { label: "+ Add Admin", href: "/admin/users?action=add", icon: UserPlus },
+  { label: "Emails & Logs", href: "/admin/emails", icon: Mail },
   { label: "CMS Homepage", href: "/admin/cms/homepage", icon: FileText },
   { label: "Static Pages", href: "/admin/cms/pages", icon: FileText },
   { label: "Platform Settings", href: "/admin/settings", icon: Sliders },
@@ -54,6 +59,19 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = React.useState<boolean>(false);
   const [mobileOpen, setMobileOpen] = React.useState<boolean>(false);
+
+  // Administrators and Super Administrators can access the Coupons page
+  const filteredNavItems = React.useMemo(() => {
+    const items = [...adminNavItems];
+    if (session.role === "SUPERADMIN" || session.role === "ADMIN") {
+      items.splice(2, 0, {
+        label: "Coupons & Access",
+        href: "/admin/coupons",
+        icon: Ticket,
+      });
+    }
+    return items;
+  }, [session.role]);
 
   // Restore saved collapse state from localStorage
   React.useEffect(() => {
@@ -166,7 +184,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
 
               {/* Mobile Nav Links */}
               <nav className="space-y-1">
-                {adminNavItems.map((item) => {
+                {filteredNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive =
                     item.href === "/admin"
@@ -316,7 +334,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
 
           {/* Navigation Links */}
           <nav className="space-y-1 overflow-y-auto max-h-[calc(100vh-220px)] scrollbar-none">
-            {adminNavItems.map((item) => {
+            {filteredNavItems.map((item) => {
               const Icon = item.icon;
               const isActive =
                 item.href === "/admin"
