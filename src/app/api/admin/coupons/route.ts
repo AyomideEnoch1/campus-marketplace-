@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Audit log creation
-      await tx.couponAuditLog.create({
+      const auditLog = await tx.couponAuditLog.create({
         data: {
           couponId: created.id,
           actorId: superAdmin.id,
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      return created;
+      return { ...created, createdAuditLog: auditLog };
     });
 
     return NextResponse.json({
@@ -143,6 +143,19 @@ export async function POST(req: NextRequest) {
         ...coupon,
         activeRedemptions: 0,
         remainingSlots: coupon.maxRedemptions,
+        totalRedemptions: 0,
+        auditLogs: [
+          {
+            id: coupon.createdAuditLog.id,
+            action: coupon.createdAuditLog.action,
+            oldValue: coupon.createdAuditLog.oldValue,
+            newValue: coupon.createdAuditLog.newValue,
+            metadata: coupon.createdAuditLog.metadata,
+            actorName: superAdmin.fullName || "Super Admin",
+            actorEmail: superAdmin.email,
+            createdAt: coupon.createdAuditLog.createdAt.toISOString(),
+          },
+        ],
       },
     });
   } catch (err: any) {

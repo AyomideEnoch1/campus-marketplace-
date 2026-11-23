@@ -75,6 +75,125 @@ interface RedemptionData {
   hasPublishedProducts: boolean;
 }
 
+// Audit log helpers
+function getAuditActionBadge(action: string) {
+  const a = (action || "").toUpperCase();
+  switch (a) {
+    case "CREATE":
+      return (
+        <Badge className="bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[10px] font-bold">
+          CREATE
+        </Badge>
+      );
+    case "UPDATE":
+      return (
+        <Badge className="bg-amber-950/80 text-amber-300 border border-amber-800 text-[10px] font-bold">
+          UPDATE
+        </Badge>
+      );
+    case "REVOKE":
+    case "DEACTIVATE":
+      return (
+        <Badge className="bg-rose-950/80 text-rose-300 border border-rose-800 text-[10px] font-bold">
+          {action}
+        </Badge>
+      );
+    default:
+      return (
+        <Badge className="bg-neutral-800 text-neutral-300 border border-neutral-700 text-[10px]">
+          {action}
+        </Badge>
+      );
+  }
+}
+
+function renderAuditDetails(log: any) {
+  const tryParse = (str?: string | null) => {
+    if (!str) return null;
+    try {
+      return JSON.parse(str);
+    } catch {
+      return str;
+    }
+  };
+
+  const parsedNew = tryParse(log.newValue);
+  const parsedOld = tryParse(log.oldValue);
+
+  if (log.action === "CREATE" && typeof parsedNew === "object" && parsedNew !== null) {
+    return (
+      <div className="space-y-1.5 mt-1">
+        <p className="text-[11px] text-neutral-400">
+          Created coupon <strong className="text-emerald-400 font-mono">{parsedNew.code}</strong> with parameters:
+        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
+            Max Uses: <strong>{parsedNew.maxRedemptions}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
+            Free Period: <strong>{parsedNew.freePeriodDays} days</strong>
+          </span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-200 text-[10px]">
+            Inactivity Window: <strong>{parsedNew.inactivityDays} days</strong>
+          </span>
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${
+              parsedNew.isActive
+                ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800"
+                : "bg-rose-950/80 text-rose-300 border border-rose-800"
+            }`}
+          >
+            {parsedNew.isActive ? "Active" : "Inactive"}
+          </span>
+          {parsedNew.expiresAt && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-400 text-[10px]">
+              Expires: {new Date(parsedNew.expiresAt).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (typeof parsedNew === "object" && parsedNew !== null) {
+    return (
+      <div className="mt-1 space-y-1">
+        {parsedOld && (
+          <div className="text-[11px] text-neutral-400">
+            <span className="text-neutral-500">Previous:</span>{" "}
+            {typeof parsedOld === "object" ? JSON.stringify(parsedOld) : String(parsedOld)}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {Object.entries(parsedNew).map(([key, val]) => (
+            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 border border-neutral-700 text-neutral-300 text-[10px]">
+              <span className="text-neutral-400 capitalize">{key}:</span> <strong>{String(val)}</strong>
+            </span>
+          ))}
+        </div>
+        {log.metadata && <p className="text-[11px] text-neutral-400 mt-0.5">{log.metadata}</p>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-[11px] text-neutral-300 mt-1">
+      {log.oldValue && (
+        <span className="text-neutral-400">
+          Previous: <span className="font-semibold text-neutral-300 line-through mr-1">{log.oldValue}</span> &rarr;{" "}
+        </span>
+      )}
+      {log.newValue && (
+        <span>
+          {log.action === "CREATE" ? "Initial:" : "Updated:"}{" "}
+          <strong className="text-white">{log.newValue}</strong>
+        </span>
+      )}
+      {log.metadata && <span className="block text-neutral-400 text-[10px] mt-0.5">{log.metadata}</span>}
+    </div>
+  );
+}
+
 export function AdminCouponsClient({
   initialCoupons,
   initialVendorAccessFee = 15000,
@@ -636,31 +755,35 @@ export function AdminCouponsClient({
               {selectedCoupon.auditLogs?.length === 0 ? (
                 <p className="text-neutral-400 text-center py-4">No audit events recorded yet.</p>
               ) : (
-                selectedCoupon.auditLogs?.map((log) => (
-                  <div
-                    key={log.id}
-                    className="p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex items-start justify-between gap-3"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-neutral-800 text-neutral-300 text-[10px]">
-                          {log.action}
-                        </Badge>
-                        <span className="font-semibold text-neutral-200">
-                          {log.actorName} ({log.actorEmail})
-                        </span>
+                selectedCoupon.auditLogs?.map((log) => {
+                  const actorName = log.actorName || (log as any).actor?.fullName || "Super Admin";
+                  const actorEmail = log.actorEmail || (log as any).actor?.email;
+
+                  return (
+                    <div
+                      key={log.id}
+                      className="p-3 rounded-xl bg-neutral-900/60 border border-neutral-800/80 flex items-start justify-between gap-3"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {getAuditActionBadge(log.action)}
+                          <span className="font-semibold text-neutral-200 text-xs truncate">
+                            {actorName}
+                            {actorEmail && (
+                              <span className="text-neutral-400 font-normal ml-1 text-[11px]">
+                                ({actorEmail})
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {renderAuditDetails(log)}
                       </div>
-                      <div className="text-[11px] text-neutral-400 mt-1">
-                        {log.oldValue && <span>Previous: {log.oldValue} &rarr; </span>}
-                        <span>Updated: {log.newValue}</span>
-                        {log.metadata && <span className="block text-neutral-400">{log.metadata}</span>}
-                      </div>
+                      <span className="text-[10px] text-neutral-400 shrink-0 font-mono">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-neutral-400 shrink-0">
-                      {new Date(log.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

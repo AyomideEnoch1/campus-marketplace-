@@ -115,15 +115,27 @@ export async function GET(
       })
     );
 
+    const formattedAuditLogs = coupon.auditLogs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      oldValue: log.oldValue,
+      newValue: log.newValue,
+      metadata: log.metadata,
+      actorName: log.actor?.fullName || "Super Admin",
+      actorEmail: log.actor?.email,
+      createdAt: log.createdAt.toISOString(),
+    }));
+
     return NextResponse.json({
       success: true,
       coupon: {
         ...coupon,
         activeRedemptions: activeCount,
         remainingSlots: Math.max(0, coupon.maxRedemptions - activeCount),
+        auditLogs: formattedAuditLogs,
       },
       redemptions: formattedRedemptions,
-      auditLogs: coupon.auditLogs,
+      auditLogs: formattedAuditLogs,
     });
   } catch (err: any) {
     const isForbidden =
@@ -325,7 +337,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const superAdmin = await requireSuperAdmin();
+    const admin = await requireSuperAdmin();
 
     const coupon = await prisma.coupon.findUnique({
       where: { id: params.id },
@@ -338,48 +350,44 @@ export async function DELETE(
       return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
     }
 
-    // If redemptions exist, safely deactivate to preserve audit history and active vendors
-    if (coupon._count.redemptions > 0) {
-      await prisma.$transaction(async (tx) => {
-        await tx.coupon.update({
-          where: { id: params.id },
-          data: { isActive: false, updatedBy: superAdmin.id },
-        });
+    // Perform atomic deletion:
+    // If any vendors are currently ACTIVE on this coupon, release their access state
+    await prisma.$transaction(async (tx) => {
+      const activeRedemptions = await tx.couponRedemption.findMany({
+        where: { couponId: params.id, status: "ACTIVE" },
+        select: { vendorId: true },
+      });
 
-        await tx.couponAuditLog.create({
+      if (activeRedemptions.length > 0) {
+        const vendorIds = activeRedemptions.map((r) => r.vendorId);
+        await tx.vendorProfile.updateMany({
+          where: {
+            id: { in: vendorIds },
+            accessState: "ACTIVE_COUPON",
+          },
           data: {
-            couponId: params.id,
-            actorId: superAdmin.id,
-            action: "DEACTIVATE_ON_DELETE_REQUEST",
-            oldValue: "true",
-            newValue: "false",
-            metadata: "Deactivated because historical redemptions exist.",
+            accessState: "RELEASED",
           },
         });
-      });
+      }
 
-      return NextResponse.json({
-        success: true,
-        message: "Coupon has active or historical redemptions and was deactivated instead of deleted to protect vendor records.",
+      // Delete the coupon (Cascades to CouponRedemption and CouponAuditLog in schema)
+      await tx.coupon.delete({
+        where: { id: params.id },
       });
-    }
-
-    // Otherwise, clean delete
-    await prisma.coupon.delete({
-      where: { id: params.id },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Coupon deleted successfully.",
+      message: `Coupon ${coupon.code} deleted successfully.`,
     });
   } catch (err: any) {
     const isForbidden =
       err.message?.includes("Forbidden") ||
       err.message?.includes("Unauthorized") ||
-      err.message?.includes("Super Administrator");
+      err.message?.includes("Administrator");
     return NextResponse.json(
-      { error: err.message || "Forbidden: Super Administrator access required" },
+      { error: err.message || "Forbidden: Administrator access required" },
       { status: isForbidden ? 403 : 500 }
     );
   }
