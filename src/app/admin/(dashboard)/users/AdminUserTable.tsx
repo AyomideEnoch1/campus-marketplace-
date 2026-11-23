@@ -133,34 +133,36 @@ export function AdminUserTable({
   };
 
   const getRoleBadge = (role: string) => {
-    switch (role) {
+    const r = (role || "").toUpperCase();
+    switch (r) {
       case "SUPERADMIN":
         return (
-          <Badge className="bg-amber-950/80 text-amber-300 border border-amber-700/80 text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <ShieldAlert className="w-3 h-3 text-amber-400" />
-            Super Admin
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-amber-500/15 text-amber-300 border border-amber-500/30 shadow-xs shadow-amber-950/40 select-none">
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="truncate">Super Admin</span>
+          </span>
         );
       case "ADMIN":
         return (
-          <Badge className="bg-purple-950/80 text-purple-300 border border-purple-800 text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-purple-400" />
-            Admin
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-purple-500/15 text-purple-300 border border-purple-500/30 shadow-xs shadow-purple-950/40 select-none">
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span className="truncate">Admin</span>
+          </span>
         );
       case "VENDOR":
         return (
-          <Badge className="bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <ShoppingBag className="w-3 h-3 text-emerald-400" />
-            Vendor
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-xs shadow-emerald-950/40 select-none">
+            <ShoppingBag className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="truncate">Vendor</span>
+          </span>
         );
+      case "BUYER":
       default:
         return (
-          <Badge variant="outline" className="text-[10px] shrink-0 whitespace-nowrap flex items-center gap-1">
-            <User className="w-3 h-3 text-neutral-400" />
-            Buyer
-          </Badge>
+          <span className="inline-flex items-center justify-center gap-1.5 w-28 py-1 px-2.5 rounded-full text-[11px] font-bold tracking-wide bg-blue-500/15 text-blue-300 border border-blue-500/30 shadow-xs shadow-blue-950/40 select-none">
+            <User className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span className="truncate">Buyer</span>
+          </span>
         );
     }
   };
@@ -359,7 +361,7 @@ export function AdminUserTable({
             <thead className="bg-neutral-950/80 text-neutral-400 font-semibold border-b border-neutral-800">
               <tr>
                 <th className="py-3.5 px-4">User</th>
-                <th className="py-3.5 px-4">Current Role</th>
+                <th className="py-3.5 px-4 text-center">Current Role</th>
                 <th className="py-3.5 px-4">Associated Store</th>
                 <th className="py-3.5 px-4">Joined Date</th>
                 <th className="py-3.5 px-4 text-center">Change Role</th>
@@ -407,8 +409,10 @@ export function AdminUserTable({
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getRoleBadge(u.role)}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div className="flex justify-center">
+                          {getRoleBadge(u.role)}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4">
