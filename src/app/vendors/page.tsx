@@ -72,7 +72,7 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
             <span>{vendors.length} Verified Student Stores Active</span>
           </div>
 
-          <Link href="/vendor/register">
+          <Link href="/auth/register?role=vendor">
             <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">
               Become a Seller &rarr;
             </Button>

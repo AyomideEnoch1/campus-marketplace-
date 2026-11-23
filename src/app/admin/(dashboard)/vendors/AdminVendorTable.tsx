@@ -162,7 +162,7 @@ export function AdminVendorTable({
         >
           <option value="all">All Seller Types</option>
           <option value="student">Student Vendors Only</option>
-          <option value="guest">Guest Vendors Only</option>
+          <option value="guest">Non-Student Vendors Only</option>
         </select>
 
         {/* Campus Filter */}
@@ -394,7 +394,7 @@ export function AdminVendorTable({
                             >
                               {isGuest ? (
                                 <>
-                                  <Building2 className="w-3 h-3" /> Guest Vendor
+                                  <Building2 className="w-3 h-3" /> Non-Student Vendor
                                 </>
                               ) : (
                                 <>
@@ -505,7 +505,7 @@ export function AdminVendorTable({
                           : "bg-emerald-900 text-emerald-200"
                       }`}
                     >
-                      {inspectVendor.sellerType === "guest" ? "Guest Vendor" : "Student Vendor"}
+                      {inspectVendor.sellerType === "guest" ? "Non-Student Vendor" : "Student Vendor"}
                     </Badge>
                     <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-neutral-100 text-neutral-900 border border-neutral-200 shrink-0 whitespace-nowrap select-none">
                       {`Tier ${inspectVendor.verificationTier || 1}`}
@@ -544,7 +544,7 @@ export function AdminVendorTable({
               </div>
 
               {inspectVendor.sellerType === "guest" ? (
-                /* Guest Vendor Credentials */
+                /* Non-Student Vendor Credentials */
                 <div className="space-y-4">
                   {/* Business & Location Info */}
                   <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-800 space-y-2">

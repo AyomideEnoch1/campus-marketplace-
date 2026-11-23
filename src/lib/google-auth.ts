@@ -30,6 +30,7 @@ export interface GoogleUserProfile {
 export interface OAuthStatePayload {
   nonce: string;
   roleIntent?: "BUYER" | "VENDOR";
+  sellerType?: "student" | "guest";
   redirect?: string;
   createdAt: number;
 }
@@ -50,12 +51,14 @@ export function getGoogleCallbackUrl(currentOrigin?: string): string {
  */
 export function generateOAuthState(options: {
   roleIntent?: "BUYER" | "VENDOR";
+  sellerType?: "student" | "guest";
   redirect?: string;
 }): { stateString: string; cookieValue: string } {
   const nonce = crypto.randomBytes(24).toString("hex");
   const payload: OAuthStatePayload = {
     nonce,
     roleIntent: options.roleIntent,
+    sellerType: options.sellerType,
     redirect: sanitizeRedirectUrl(options.redirect),
     createdAt: Date.now(),
   };

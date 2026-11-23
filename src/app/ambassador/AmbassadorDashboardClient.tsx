@@ -156,7 +156,7 @@ export function AmbassadorDashboardClient({
   }, []);
 
   const referralUrl = `${origin}/auth/register?ref=${ambassador.referralCode}`;
-  const vendorReferralUrl = `${origin}/vendor/register?ref=${ambassador.referralCode}`;
+  const vendorReferralUrl = `${origin}/auth/register?role=vendor&ref=${ambassador.referralCode}`;
   const shopReferralUrl = `${origin}/shop?ref=${ambassador.referralCode}`;
 
   // Fetch referrals and banks on mount

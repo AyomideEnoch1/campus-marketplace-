@@ -22,7 +22,7 @@ export default async function CustomizeStorePage() {
     },
   });
 
-  if (!vendor) redirect("/vendor/register");
+  if (!vendor) redirect("/auth/register?role=vendor");
 
   return (
     <div className="space-y-6">

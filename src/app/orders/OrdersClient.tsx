@@ -474,9 +474,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                             )}
                           </span>
                           {order.vendor.sellerType === "guest" ? (
-                            <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] px-1.5 py-0 font-bold">
-                              Guest Vendor
-                            </Badge>
+                            <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-[10px] px-1.5 py-0 font-bold">Non-Student Vendor</Badge>
                           ) : (
                             <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] px-1.5 py-0 font-bold">
                               Student Vendor

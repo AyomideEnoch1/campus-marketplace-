@@ -61,7 +61,7 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
       // Signed-in regular buyer: Exactly 5 items with Shop in center.
       return [
         { label: "Home", href: "/", icon: Home },
-        { label: "Sell", href: "/vendor/register", icon: PlusCircle },
+        { label: "Sell", href: "/auth/register?role=vendor", icon: PlusCircle },
         { label: "Shop", href: "/shop", icon: Compass, highlight: true },
         { label: "Bag", href: "/cart", icon: ShoppingBag, badge: totalCount },
         { label: "Account", href: "/account", icon: UserIcon },
@@ -71,7 +71,7 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
     // Guest / Signed-out user: Exactly 5 items with Shop in center.
     return [
       { label: "Home", href: "/", icon: Home },
-      { label: "Sell", href: "/vendor/register", icon: PlusCircle },
+      { label: "Sell", href: "/auth/register?role=vendor", icon: PlusCircle },
       { label: "Shop", href: "/shop", icon: Compass, highlight: true },
       { label: "Bag", href: "/cart", icon: ShoppingBag, badge: totalCount },
       { label: "Sign In", href: "/auth/login", icon: UserIcon },

@@ -24,7 +24,7 @@ export default async function VendorDashboardLayout({
   });
 
   if (!vendor) {
-    redirect("/vendor/register");
+    redirect("/auth/register?role=vendor");
   }
 
   return (

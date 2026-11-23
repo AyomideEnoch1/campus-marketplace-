@@ -223,7 +223,7 @@ export function AdminCampusManager({
   const handleSuspendGuests = async (campus: CampusItem) => {
     if (
       !confirm(
-        `Suspend ALL active Guest Vendors on ${campus.name}? Student vendors will remain completely unaffected.`
+        `Suspend ALL active Non-Student Vendors on ${campus.name}? Student vendors will remain completely unaffected.`
       )
     )
       return;
@@ -235,7 +235,7 @@ export function AdminCampusManager({
         body: JSON.stringify({ suspendGuestVendors: true }),
       });
       if (res.ok) {
-        alert(`Guest vendors on ${campus.name} have been suspended.`);
+        alert(`Non-Student vendors on ${campus.name} have been suspended.`);
         window.location.reload();
       }
     } catch (err) {
@@ -246,7 +246,7 @@ export function AdminCampusManager({
   const handleReactivateGuests = async (campus: CampusItem) => {
     if (
       !confirm(
-        `Reactivate suspended Guest Vendors on ${campus.name}?`
+        `Reactivate suspended Non-Student Vendors on ${campus.name}?`
       )
     )
       return;
@@ -258,7 +258,7 @@ export function AdminCampusManager({
         body: JSON.stringify({ reactivateGuestVendors: true }),
       });
       if (res.ok) {
-        alert(`Guest vendors on ${campus.name} have been reactivated.`);
+        alert(`Non-Student vendors on ${campus.name} have been reactivated.`);
         window.location.reload();
       }
     } catch (err) {
@@ -549,7 +549,7 @@ export function AdminCampusManager({
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-md w-full space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="font-bold text-base text-white">Campus Guest Vendor Settings</h3>
+              <h3 className="font-bold text-base text-white">Campus Non-Student Vendor Settings</h3>
               <button
                 onClick={() => setEditingSettingsId(null)}
                 className="text-neutral-400 hover:text-white text-xs"
@@ -561,7 +561,7 @@ export function AdminCampusManager({
             <div className="space-y-4 text-xs">
               <label className="flex items-center justify-between p-3.5 rounded-xl bg-neutral-950 border border-neutral-800 cursor-pointer">
                 <div>
-                  <span className="font-bold text-white block">Allow Guest Vendors</span>
+                  <span className="font-bold text-white block">Allow Non-Student Vendors</span>
                   <span className="text-neutral-400 text-[11px]">
                     If disabled, this campus stays student-only.
                   </span>
@@ -576,7 +576,7 @@ export function AdminCampusManager({
 
               <div>
                 <label className="font-bold text-neutral-300 block mb-1">
-                  Active Guest Vendor Limit / Cap
+                  Active Non-Student Vendor Limit / Cap
                 </label>
                 <input
                   type="number"

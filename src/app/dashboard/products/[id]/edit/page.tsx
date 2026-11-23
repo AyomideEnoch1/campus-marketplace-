@@ -16,7 +16,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   const vendor = await prisma.vendorProfile.findUnique({
     where: { userId: session.id },
   });
-  if (!vendor) redirect("/vendor/register");
+  if (!vendor) redirect("/auth/register?role=vendor");
 
   const [product, categories] = await Promise.all([
     prisma.product.findFirst({

@@ -1,56 +1,26 @@
-import { prisma } from "@/lib/prisma";
-import { VendorRegisterClient } from "./VendorRegisterClient";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Vendor Onboarding | Student & Guest Vendor Registration | ọjà",
-  description: "Register as a student or guest vendor on ọjà Nigeria. Tiered identity verification and safe campus escrow sales.",
-};
+interface PageProps {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}
 
-export default async function VendorRegisterPage() {
-  const campuses = await prisma.campus.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-    include: {
-      settings: true,
-      safeMeetupPoints: {
-        where: { active: true },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-        },
-      },
-      _count: {
-        select: {
-          vendors: {
-            where: {
-              sellerType: "guest",
-              status: "APPROVED",
-            },
-          },
-        },
-      },
-    },
-  });
+export default function VendorRegisterPage({ searchParams }: PageProps) {
+  const query = new URLSearchParams();
+  query.set("role", "vendor");
 
-  const sanitizedCampuses = campuses.map((c) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    city: c.city,
-    settings: c.settings
-      ? {
-          guestVendorsEnabled: c.settings.guestVendorsEnabled,
-          guestVendorCap: c.settings.guestVendorCap,
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (key !== "role" && value !== undefined) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => query.append(key, v));
+        } else {
+          query.set(key, value);
         }
-      : null,
-    safeMeetupPoints: c.safeMeetupPoints,
-    _count: {
-      vendors: c._count.vendors,
-    },
-  }));
+      }
+    }
+  }
 
-  return <VendorRegisterClient campuses={sanitizedCampuses} />;
+  redirect(`/auth/register?${query.toString()}`);
 }

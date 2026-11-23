@@ -469,9 +469,7 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
                     {product.vendor.storeName}
                   </h4>
                   {product.vendor.sellerType === "guest" ? (
-                    <Badge className="bg-purple-50 text-purple-800 border-purple-200 text-[10px] font-semibold">
-                      Guest Vendor
-                    </Badge>
+                    <Badge className="bg-purple-50 text-purple-800 border-purple-200 text-[10px] font-semibold">Non-Student Vendor</Badge>
                   ) : (
                     <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-[10px] font-semibold shadow-2xs">
                       Student Vendor

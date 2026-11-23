@@ -62,7 +62,7 @@ const desktopSlides: DesktopSlide[] = [
     },
     tertiaryLink: {
       label: "Sell on Campus →",
-      href: "/vendor/register",
+      href: "/auth/register?role=vendor",
     },
     imageSrc: "/images/hero-shopping-items-transparent.png",
     imageAlt: "Curated campus gear: laptop, headphones, backpack, sneakers, and gadgets",
@@ -100,7 +100,7 @@ const desktopSlides: DesktopSlide[] = [
     },
     tertiaryLink: {
       label: "Sell on Campus →",
-      href: "/vendor/register",
+      href: "/auth/register?role=vendor",
     },
     imageSrc: "/images/hero-shopping-cart.png",
     imageAlt: "Shopping cart packed with student deals",
@@ -130,7 +130,7 @@ const desktopSlides: DesktopSlide[] = [
       "Got textbooks you no longer need, extra electronics, or looking to sell thrift clothes? Launch your verified student storefront in under 3 minutes with zero upfront fees.",
     primaryCta: {
       label: "Open Store",
-      href: "/vendor/register",
+      href: "/auth/register?role=vendor",
     },
     secondaryCta: {
       label: "Vendor Guidelines",
@@ -490,7 +490,7 @@ export function DesktopHeroSlider({
 
                 {/* Floating Circular "SELL" Badge (Strategically at Bottom-Left of Hero Visual) */}
                 <Link
-                  href="/vendor/register"
+                  href="/auth/register?role=vendor"
                   className="absolute bottom-6 left-2 xl:bottom-8 xl:left-0 z-20 w-20 h-20 xl:w-22 xl:h-22 rounded-full bg-neutral-950 text-white flex flex-col items-center justify-center shadow-2xl border-2 border-emerald-400/40 transform -rotate-12 hover:rotate-0 hover:scale-110 hover:border-emerald-400 transition-all cursor-pointer group"
                   title="Sell on Campus - Start Free"
                 >

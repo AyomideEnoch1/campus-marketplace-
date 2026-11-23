@@ -62,7 +62,7 @@ export async function POST(request: Request) {
           {
             success: true,
             needsOnboarding: true,
-            redirectUrl: "/vendor/register",
+            redirectUrl: "/auth/register?role=vendor",
             message: "Redirecting to vendor onboarding...",
           },
           { status: 200 }

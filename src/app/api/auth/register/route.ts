@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, signToken, AUTH_COOKIE_NAME } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { hashPassword, signToken, verifyToken, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { slugify, cleanPhoneNumber } from "@/lib/utils";
 import { attributeReferral } from "@/lib/referral";
 import { createAndSendVerificationEmail } from "@/lib/email-service";
@@ -11,7 +12,7 @@ import { createAndSendVerificationEmail } from "@/lib/email-service";
 const registerSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Please provide a valid email address").optional().or(z.literal("")),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   role: z.enum(["BUYER", "VENDOR"]).default("BUYER"),
   buyerType: z.enum(["student", "guest"]).optional(),
@@ -89,6 +90,21 @@ export async function POST(request: Request) {
     const cleanPhone = rawContactPhone ? cleanPhoneNumber(rawContactPhone) : null;
     const cleanWhatsapp = whatsapp?.trim() ? cleanPhoneNumber(whatsapp.trim()) : cleanPhone;
 
+    // Check if user is already authenticated via session cookie (e.g. Google OAuth continuation)
+    const cookieStore = cookies();
+    const sessionToken = cookieStore.get(AUTH_COOKIE_NAME)?.value;
+    let sessionUser: { userId: string; role: string; email: string } | null = null;
+    if (sessionToken) {
+      sessionUser = verifyToken(sessionToken);
+    }
+
+    if (!sessionUser && (!password || password.length < 6)) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters" },
+        { status: 400 }
+      );
+    }
+
     // In Student flow, mandatory student ID photo verification holding ID next to face
     if (role === "VENDOR" && sellerType === "student") {
       if (!studentIdUrl || !studentIdUrl.trim()) {
@@ -102,12 +118,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // In Guest flow, phone is required for Tier 1 OTP/Instant flow, email is optional
-    if (role === "VENDOR" && sellerType === "guest" && !cleanPhone) {
-      return NextResponse.json(
-        { error: "Phone number is required for guest vendor registration" },
-        { status: 400 }
-      );
+    // In Non-Student Vendor (guest) flow, WhatsApp phone is required, email is required
+    if (role === "VENDOR" && sellerType === "guest") {
+      if (!cleanPhone) {
+        return NextResponse.json(
+          { error: "WhatsApp number is required for Non-Student Vendor registration" },
+          { status: 400 }
+        );
+      }
+      if (!email || !email.trim()) {
+        return NextResponse.json(
+          { error: "Email address is required for Non-Student Vendor registration" },
+          { status: 400 }
+        );
+      }
     }
 
     // Determine email
@@ -130,6 +154,7 @@ export async function POST(request: Request) {
         where: {
           phone: cleanPhone,
           role,
+          ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
         },
       });
       if (existingPhone) {
@@ -149,6 +174,7 @@ export async function POST(request: Request) {
       where: {
         email: userEmail,
         role,
+        ...(sessionUser ? { id: { not: sessionUser.userId } } : {}),
       },
     });
     if (existingEmail) {
@@ -170,7 +196,7 @@ export async function POST(request: Request) {
 
       if (campusSetting && !campusSetting.guestVendorsEnabled) {
         return NextResponse.json(
-          { error: "Guest vendor registration is currently disabled for this campus. Student vendors only." },
+          { error: "Non-Student Vendor registration is currently disabled for this campus. Student vendors only." },
           { status: 403 }
         );
       }
@@ -186,14 +212,12 @@ export async function POST(request: Request) {
 
         if (activeGuestCount >= campusSetting.guestVendorCap) {
           return NextResponse.json(
-            { error: "Guest vendor capacity cap reached for this campus. Please contact campus admin." },
+            { error: "Non-Student Vendor capacity cap reached for this campus. Please contact campus admin." },
             { status: 403 }
           );
         }
       }
     }
-
-    const passwordHash = await hashPassword(password);
 
     // Initial vendor status:
     // Students with auto-approval can be approved if site setting allows,
@@ -267,19 +291,49 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create user and vendor profile in a transaction with extended timeout for cloud Supabase
+    // Check if authenticated session user already has vendor profile
+    if (sessionUser && role === "VENDOR") {
+      const existingUserWithProfile = await prisma.user.findUnique({
+        where: { id: sessionUser.userId },
+        include: { vendorProfile: true },
+      });
+      if (existingUserWithProfile?.vendorProfile) {
+        return NextResponse.json({
+          success: true,
+          user: existingUserWithProfile,
+          redirectTo: "/dashboard",
+        });
+      }
+    }
+
+    const passwordHash = password ? await hashPassword(password) : null;
+
+    // Create or update user and vendor profile in a transaction with extended timeout for cloud Supabase
     const newUser = await prisma.$transaction(
       async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            fullName,
-            email: userEmail,
-            passwordHash,
-            phone: cleanPhone || rawContactPhone || null,
-            role,
-            avatarUrl: studentIdUrl || null,
-          },
-        });
+        let user;
+        if (sessionUser) {
+          user = await tx.user.update({
+            where: { id: sessionUser.userId },
+            data: {
+              role,
+              fullName: fullName || undefined,
+              phone: cleanPhone || rawContactPhone || undefined,
+              avatarUrl: studentIdUrl || undefined,
+            },
+          });
+        } else {
+          user = await tx.user.create({
+            data: {
+              fullName,
+              email: userEmail,
+              passwordHash,
+              phone: cleanPhone || rawContactPhone || null,
+              role,
+              avatarUrl: studentIdUrl || null,
+            },
+          });
+        }
 
         if (role === "VENDOR" && finalCampusId) {
           const vendorProfile = await tx.vendorProfile.create({
@@ -351,13 +405,15 @@ export async function POST(request: Request) {
       console.error("Referral attribution error:", refErr);
     }
 
-    // Dispatch email verification OTP and email
+    // Dispatch email verification OTP and email only for new unverified accounts
     const requestUrl = new URL(request.url);
     const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
     const proto = request.headers.get("x-forwarded-proto") || (requestUrl.protocol.replace(":", "") || "http");
     const origin = `${proto}://${host}`;
 
-    if (newUser.email && !newUser.email.endsWith("@guest.campustrade.ng")) {
+    const isAlreadyVerified = Boolean(sessionUser || newUser.emailVerified);
+
+    if (!isAlreadyVerified && newUser.email && !newUser.email.endsWith("@guest.campustrade.ng")) {
       try {
         await createAndSendVerificationEmail({
           userId: newUser.id,
@@ -378,14 +434,16 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       success: true,
-      requiresVerification: true,
+      requiresVerification: !isAlreadyVerified,
       user: {
         id: newUser.id,
         email: newUser.email,
         fullName: newUser.fullName,
         role: newUser.role,
       },
-      redirectTo: `/auth/verify-email?email=${encodeURIComponent(newUser.email)}`,
+      redirectTo: isAlreadyVerified
+        ? (newUser.role === "VENDOR" ? "/dashboard" : "/shop")
+        : `/auth/verify-email?email=${encodeURIComponent(newUser.email)}`,
     });
 
     response.cookies.set(AUTH_COOKIE_NAME, token, {

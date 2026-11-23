@@ -421,7 +421,7 @@ export default async function HomePage() {
             </div>
 
             <div className="relative z-10 pt-6">
-              <Link href="/vendor/register">
+              <Link href="/auth/register?role=vendor">
                 <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-7 py-3 shadow-md rounded-full text-xs sm:text-sm">
                   Register Your Store &rarr;
                 </Button>
@@ -683,7 +683,7 @@ export default async function HomePage() {
                 </div>
 
                 <div className="relative z-10 pt-6">
-                  <Link href="/vendor/register">
+                  <Link href="/auth/register?role=vendor">
                     <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-7 py-3 shadow-md rounded-full text-xs sm:text-sm">
                       Register Your Store &rarr;
                     </Button>
