@@ -497,9 +497,7 @@ export function VendorRegisterClient({ campuses }: VendorRegisterClientProps) {
                 <Input
                   type="tel"
                   required
-                  minLength={7}
-                  maxLength={15}
-                  placeholder="e.g. 0801 234 5678"
+                  placeholder="e.g. 0801 000 0008"
                   value={phone}
                   onChange={(e) => {
                     const formatted = formatNigerianPhone(e.target.value);
