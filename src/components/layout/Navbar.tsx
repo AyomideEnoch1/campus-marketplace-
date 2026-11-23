@@ -451,7 +451,7 @@ export function Navbar({ initialUser }: NavbarProps) {
           {/* Become a Student Seller Action Button */}
           <div className="pt-2 border-t border-neutral-100">
             <Link
-              href={user?.role === "VENDOR" ? "/dashboard" : "/auth/register"}
+              href={user?.role === "VENDOR" ? "/dashboard" : "/vendor/register"}
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-amber-50 border border-emerald-200/90 text-emerald-950 font-bold text-xs shadow-xs group"
             >
