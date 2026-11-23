@@ -66,6 +66,7 @@ export default async function VendorMessagesPage({
           storeName: true,
           slug: true,
           logo: true,
+          whatsapp: true,
           userId: true,
           campus: { select: { name: true } },
         },

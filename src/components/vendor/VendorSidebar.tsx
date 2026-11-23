@@ -205,14 +205,16 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
                     Store Awaiting Approval
                   </p>
                   <p className="text-amber-700 leading-snug">
-                    You can add and edit products now. Once verified by campus
-                    admins, your items will go live!
+                    Your store is under review. Product uploading will be unlocked once your credentials are approved by campus admins.
                   </p>
                 </div>
               )}
 
               {/* Mobile Nav Links */}
-              <VendorSidebarNav onItemClick={() => setMobileOpen(false)} />
+              <VendorSidebarNav
+                onItemClick={() => setMobileOpen(false)}
+                isApproved={vendor.status === "APPROVED"}
+              />
             </div>
 
             {/* Bottom Actions */}
@@ -393,8 +395,7 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
                       Store Awaiting Approval
                     </p>
                     <p className="text-[11px] leading-snug text-amber-200">
-                      You can add and edit products now. Once verified by campus
-                      admins, your items will go live!
+                      Your store is under review. Product uploading will be unlocked once your credentials are approved by campus admins.
                     </p>
                   </div>
                 </div>
@@ -406,14 +407,16 @@ export function VendorSidebar({ vendor, session }: VendorSidebarProps) {
                   Store Awaiting Approval
                 </p>
                 <p className="text-amber-700 leading-snug">
-                  You can add and edit products now. Once verified by campus
-                  admins, your items will go live!
+                  Your store is under review. Product uploading will be unlocked once your credentials are approved by campus admins.
                 </p>
               </div>
             ))}
 
           {/* Navigation Links */}
-          <VendorSidebarNav collapsed={collapsed} />
+          <VendorSidebarNav
+            collapsed={collapsed}
+            isApproved={vendor.status === "APPROVED"}
+          />
         </div>
 
         {/* Bottom Store Link & User */}

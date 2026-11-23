@@ -11,6 +11,7 @@ export interface VendorEntitlements {
   isApproved: boolean;
   approvalStatus: VendorStatus;
   canPublish: boolean;
+  canUploadProducts: boolean;
   canAccessDashboard: boolean;
   isReadOnly: boolean;
   commissionPercent: number;
@@ -50,6 +51,8 @@ export function computeVendorEntitlements(vendor: {
   // Gate 5: Vendor can publish products to the public shop ONLY when BOTH gates pass:
   // access is active AND admin has approved.
   const canPublish = hasAccess && isApproved;
+  // Users cannot upload products until approved by the admin
+  const canUploadProducts = isApproved;
 
   // Paid and coupon entitlements are identical:
   // - 0% commission while active
@@ -81,6 +84,7 @@ export function computeVendorEntitlements(vendor: {
     isApproved,
     approvalStatus: status,
     canPublish,
+    canUploadProducts,
     canAccessDashboard: true,
     isReadOnly,
     commissionPercent,

@@ -148,11 +148,22 @@ export default async function VendorDashboardPage() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <Link href="/dashboard/products/new">
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs">
-              <PlusCircle className="w-4 h-4" /> Add Product
+          {vendor.status === "APPROVED" ? (
+            <Link href="/dashboard/products/new">
+              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs">
+                <PlusCircle className="w-4 h-4" /> Add Product
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              size="sm"
+              disabled
+              className="bg-neutral-200 text-neutral-400 cursor-not-allowed font-bold gap-2 text-xs"
+              title="Administrator approval required to upload products"
+            >
+              <Lock className="w-4 h-4" /> Add Product
             </Button>
-          </Link>
+          )}
           <Link href={`/store/${vendor.slug}`} target="_blank">
             <Button variant="outline" size="sm" className="font-semibold gap-1.5 text-xs">
               <ShoppingBag className="w-4 h-4" /> Live Store
@@ -227,7 +238,7 @@ export default async function VendorDashboardPage() {
         </div>
       )}
 
-      {entitlements.hasAccess && vendor.status === "PENDING" && (
+      {vendor.status === "PENDING" && (
         <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 text-blue-700">
             <Clock className="w-5 h-5" />
@@ -235,13 +246,13 @@ export default async function VendorDashboardPage() {
           <div>
             <h3 className="font-bold text-sm text-blue-950">Credentials Under Review</h3>
             <p className="text-xs text-blue-800 mt-0.5">
-              Your store access is active, and your credentials are being reviewed by administrators. Once approved, your products will automatically appear live on the public campus marketplace.
+              Your store application and credentials are being reviewed by administrators. Product uploading is disabled until your account has been approved. Once approved, you will be able to upload products and publish them live to the public campus marketplace.
             </p>
           </div>
         </div>
       )}
 
-      {entitlements.hasAccess && vendor.status === "REJECTED" && (
+      {vendor.status === "REJECTED" && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0 text-rose-700">
             <AlertTriangle className="w-5 h-5" />
@@ -249,7 +260,7 @@ export default async function VendorDashboardPage() {
           <div>
             <h3 className="font-bold text-sm text-rose-950">Vendor Application Rejected</h3>
             <p className="text-xs text-rose-800 mt-0.5">
-              Your vendor registration was rejected. Please contact campus support to update your verification documents.
+              Your vendor registration was rejected{vendor.rejectionReason ? `: ${vendor.rejectionReason}` : ""}. Product uploading is disabled. Please contact campus support to update your verification documents.
             </p>
           </div>
         </div>

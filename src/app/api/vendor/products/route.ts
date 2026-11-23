@@ -104,7 +104,23 @@ export async function POST(request: Request) {
     // Check vendor entitlements (access state + admin approval gate + listing limit)
     const entitlements = computeVendorEntitlements(vendor);
 
-    // 1. Check configurable product listing limit
+    // 1. GATE 1: Administrator Approval Gate
+    // Users cannot upload products until approved by the admin
+    if (!entitlements.isApproved) {
+      const statusMessage =
+        vendor.status === "PENDING"
+          ? "Your vendor account is pending administrator approval. You cannot upload products until your account has been approved."
+          : vendor.status === "REJECTED"
+          ? `Your vendor application was rejected${vendor.rejectionReason ? `: ${vendor.rejectionReason}` : ""}. You cannot upload products.`
+          : "Your vendor account has been suspended. You cannot upload products.";
+
+      return NextResponse.json(
+        { error: statusMessage },
+        { status: 403 }
+      );
+    }
+
+    // 2. Check configurable product listing limit
     const totalListings = await prisma.product.count({
       where: { vendorId: vendor.id },
     });
@@ -118,27 +134,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Gate 5: Both gates must pass to publish products to the public shop
+    // 3. Gate: Active store access required to publish products to the public shop
     let productStatus = data.status || "PUBLISHED";
-    if (productStatus === "PUBLISHED" && !entitlements.canPublish) {
-      if (!entitlements.hasAccess) {
-        return NextResponse.json(
-          {
-            error:
-              "Active vendor access required to publish products. Please activate your access via payment or founding coupon code.",
-          },
-          { status: 403 }
-        );
-      }
-      if (!entitlements.isApproved) {
-        return NextResponse.json(
-          {
-            error:
-              "Your vendor account is pending administrator approval. Products can only be published to the public shop after approval.",
-          },
-          { status: 403 }
-        );
-      }
+    if (productStatus === "PUBLISHED" && !entitlements.hasAccess) {
+      return NextResponse.json(
+        {
+          error:
+            "Active vendor access required to publish products. Please activate your access via payment or founding coupon code.",
+        },
+        { status: 403 }
+      );
     }
 
     // GUEST VENDOR SAFEGUARD: Tier 1 guest vendors capped at max 3 listings

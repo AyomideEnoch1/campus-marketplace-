@@ -40,11 +40,26 @@ export default async function VendorProductsPage() {
           </p>
         </div>
 
-        <Link href="/dashboard/products/new">
-          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs shadow-md shadow-emerald-600/20">
-            <PlusCircle className="w-4 h-4" /> Add New Product
-          </Button>
-        </Link>
+        {vendor.status === "APPROVED" ? (
+          <Link href="/dashboard/products/new">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 text-xs shadow-md shadow-emerald-600/20">
+              <PlusCircle className="w-4 h-4" /> Add New Product
+            </Button>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Button
+              disabled
+              className="bg-neutral-200 text-neutral-400 cursor-not-allowed font-bold gap-2 text-xs"
+              title="Administrator approval required to upload products"
+            >
+              <Lock className="w-4 h-4" /> Add New Product
+            </Button>
+            <span className="text-xs text-amber-700 font-medium hidden sm:inline">
+              Approval required
+            </span>
+          </div>
+        )}
       </div>
 
       {!entitlements.hasAccess && (
@@ -72,15 +87,25 @@ export default async function VendorProductsPage() {
         </div>
       )}
 
-      {entitlements.hasAccess && vendor.status !== "APPROVED" && (
-        <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 text-blue-700">
+      {vendor.status !== "APPROVED" && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
             <AlertCircle className="w-4 h-4" />
           </div>
           <div>
-            <p className="font-bold text-sm text-blue-950">Store Awaiting Admin Approval</p>
-            <p className="text-xs text-blue-800 mt-0.5">
-              Your store access is active ({products.length} / {entitlements.maxListings} slots used). New products will remain drafts until your credentials receive administrator approval.
+            <p className="font-bold text-sm text-amber-950">
+              {vendor.status === "PENDING"
+                ? "Store Awaiting Admin Approval"
+                : vendor.status === "REJECTED"
+                ? "Vendor Application Rejected"
+                : "Vendor Account Suspended"}
+            </p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              {vendor.status === "PENDING"
+                ? "Your vendor registration is currently under review by campus administrators. Product uploading is disabled until your account is approved."
+                : vendor.status === "REJECTED"
+                ? `Your vendor application was rejected${vendor.rejectionReason ? `: ${vendor.rejectionReason}` : ""}. Please contact campus administrators to update your credentials.`
+                : "Your vendor account is suspended. Product uploading and store operations are currently disabled."}
             </p>
           </div>
         </div>
