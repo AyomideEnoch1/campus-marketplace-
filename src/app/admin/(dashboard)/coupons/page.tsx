@@ -84,7 +84,7 @@ export default async function AdminCouponsPage() {
 
   const settings = await prisma.siteSetting.findMany({
     where: {
-      key: { in: ["vendor_access_fee", "vendor_access_duration_days"] },
+      key: { in: ["vendor_access_fee", "vendor_access_duration_days", "require_vendor_payment"] },
     },
   });
 
@@ -95,12 +95,14 @@ export default async function AdminCouponsPage() {
 
   const vendorAccessFee = Number(settingsMap["vendor_access_fee"]) || 15000;
   const vendorAccessDurationDays = Number(settingsMap["vendor_access_duration_days"]) || 365;
+  const requireVendorPayment = settingsMap["require_vendor_payment"] !== "false";
 
   return (
     <AdminCouponsClient
       initialCoupons={couponsWithUsage}
       initialVendorAccessFee={vendorAccessFee}
       initialVendorAccessDurationDays={vendorAccessDurationDays}
+      initialRequireVendorPayment={requireVendorPayment}
     />
   );
 }

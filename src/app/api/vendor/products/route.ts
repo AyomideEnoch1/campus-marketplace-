@@ -5,7 +5,7 @@ import { requireVendor } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { qualifyVendorReferral } from "@/lib/referral";
-import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
+import { computeVendorEntitlements, isVendorPaymentRestrictionEnabled } from "@/lib/vendor-entitlements";
 import { calculatePromoPrice } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
@@ -124,7 +124,8 @@ export async function POST(request: Request) {
     const data = parsed.data;
 
     // Check vendor entitlements (access state + admin approval gate + listing limit)
-    const entitlements = computeVendorEntitlements(vendor);
+    const paymentRestrictionEnabled = await isVendorPaymentRestrictionEnabled();
+    const entitlements = computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
 
     // 1. GATE 1: Administrator Approval Gate
     // Users cannot upload products until approved by the admin

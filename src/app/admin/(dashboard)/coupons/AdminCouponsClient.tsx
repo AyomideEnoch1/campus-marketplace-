@@ -208,10 +208,12 @@ export function AdminCouponsClient({
   initialCoupons,
   initialVendorAccessFee = 15000,
   initialVendorAccessDurationDays = 365,
+  initialRequireVendorPayment = true,
 }: {
   initialCoupons: CouponData[];
   initialVendorAccessFee?: number;
   initialVendorAccessDurationDays?: number;
+  initialRequireVendorPayment?: boolean;
 }) {
   const [coupons, setCoupons] = React.useState<CouponData[]>(initialCoupons);
   const [selectedCouponId, setSelectedCouponId] = React.useState<string>(coupons[0]?.id || "");
@@ -219,6 +221,33 @@ export function AdminCouponsClient({
   const [loadingRedemptions, setLoadingRedemptions] = React.useState<boolean>(false);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [statusFilter, setStatusFilter] = React.useState<string>("ALL");
+
+  // Payment Restriction / Paywall Toggle
+  const [requireVendorPayment, setRequireVendorPayment] = React.useState<boolean>(initialRequireVendorPayment);
+  const [togglingPayment, setTogglingPayment] = React.useState<boolean>(false);
+
+  const handleTogglePaymentRestriction = async () => {
+    setTogglingPayment(true);
+    const nextState = !requireVendorPayment;
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ require_vendor_payment: String(nextState) }),
+      });
+      if (!res.ok) throw new Error("Failed to update setting");
+      setRequireVendorPayment(nextState);
+      toast.success(
+        nextState
+          ? "Vendor payment restriction ENABLED: Vendors must pay fee or redeem coupon to publish."
+          : "Vendor payment restriction DISABLED: Approved vendors have free publishing access."
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle payment restriction");
+    } finally {
+      setTogglingPayment(false);
+    }
+  };
 
   // Standard Vendor Access Pricing Modal
   const [vendorAccessFee, setVendorAccessFee] = React.useState<number>(initialVendorAccessFee);
@@ -494,6 +523,30 @@ export function AdminCouponsClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <Button
+            type="button"
+            onClick={handleTogglePaymentRestriction}
+            disabled={togglingPayment}
+            variant="outline"
+            title={
+              requireVendorPayment
+                ? "Payment required before vendors can publish. Click to grant free access."
+                : "Free access enabled. Click to enforce payment restriction."
+            }
+            className={`font-bold text-xs rounded-xl shadow-xs gap-1.5 transition-all ${
+              requireVendorPayment
+                ? "border-emerald-700/60 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/70"
+                : "border-purple-700/60 bg-purple-950/40 text-purple-300 hover:bg-purple-950/70"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                requireVendorPayment ? "bg-emerald-400 animate-pulse" : "bg-purple-400"
+              }`}
+            />
+            <span>Paywall: {requireVendorPayment ? "Restricted (ON)" : "Free Access (OFF)"}</span>
+          </Button>
+
           <Button
             type="button"
             onClick={() => {

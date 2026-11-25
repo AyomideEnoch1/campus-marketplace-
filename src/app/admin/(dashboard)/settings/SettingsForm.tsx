@@ -19,6 +19,7 @@ export function SettingsForm({ initialSettings }: Props) {
     commission_percent: initialSettings.commission_percent || "5.0",
     vendor_access_fee: initialSettings.vendor_access_fee || "15000",
     vendor_access_duration_days: initialSettings.vendor_access_duration_days || "365",
+    require_vendor_payment: initialSettings.require_vendor_payment ?? "true",
     seo_meta_title:
       initialSettings.seo_meta_title ||
       "ọjà — Multi-Campus Student Marketplace",
@@ -214,6 +215,33 @@ export function SettingsForm({ initialSettings }: Props) {
         <p className="text-xs text-neutral-400">
           This controls the public subscription fee displayed on the vendor activation screen (<code>/dashboard/activate</code>) when vendors activate access without a free Founding Coupon.
         </p>
+
+        {/* Global Paywall Toggle */}
+        <div className="flex items-start gap-3 p-4 bg-neutral-950 rounded-xl border border-neutral-800">
+          <input
+            type="checkbox"
+            id="reqVendorPayment"
+            checked={formData.require_vendor_payment === "true"}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                require_vendor_payment: e.target.checked ? "true" : "false",
+              })
+            }
+            className="w-4 h-4 mt-1 rounded text-emerald-600 focus:ring-emerald-500 bg-neutral-900 border-neutral-700 cursor-pointer"
+          />
+          <div>
+            <label
+              htmlFor="reqVendorPayment"
+              className="text-xs font-bold text-white block cursor-pointer"
+            >
+              Enforce Vendor Storefront Payment Restriction (Paywall)
+            </label>
+            <p className="text-[11px] text-neutral-400 mt-0.5">
+              When <strong>enabled</strong>, vendors must either pay the storefront access fee or redeem a valid founding coupon before they can publish listings. When <strong>disabled</strong> (Free Access), all approved vendors can create and publish listings without paying any storefront fee.
+            </p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           <div>

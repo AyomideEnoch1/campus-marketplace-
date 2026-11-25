@@ -22,16 +22,41 @@ export interface VendorEntitlements {
   accessExpiresAt: Date | null;
   needsActivation: boolean;
   planType: "paid" | "coupon" | "none";
+  paymentRestrictionEnabled: boolean;
+}
+
+export interface ComputeEntitlementsOptions {
+  paymentRestrictionEnabled?: boolean;
 }
 
 /**
- * Single source of truth for vendor entitlements (identical for paid & coupon access)
+ * Check if the admin has enabled vendor payment restriction (paywall).
+ * Defaults to true if not explicitly set to "false".
  */
-export function computeVendorEntitlements(vendor: {
-  accessState: VendorAccessState;
-  status: VendorStatus;
-  accessExpiresAt?: Date | null;
-}): VendorEntitlements {
+export async function isVendorPaymentRestrictionEnabled(): Promise<boolean> {
+  try {
+    const setting = await prisma.siteSetting.findUnique({
+      where: { key: "require_vendor_payment" },
+    });
+    return setting?.value !== "false";
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Single source of truth for vendor entitlements (identical for paid & coupon access).
+ * When paymentRestrictionEnabled is false, vendors do not need to pay or redeem coupons to publish.
+ */
+export function computeVendorEntitlements(
+  vendor: {
+    accessState: VendorAccessState;
+    status: VendorStatus;
+    accessExpiresAt?: Date | null;
+  },
+  options?: ComputeEntitlementsOptions
+): VendorEntitlements {
+  const isPaymentRestrictionEnabled = options?.paymentRestrictionEnabled !== false;
   const now = new Date();
   const rawState = vendor.accessState || "UNPAID";
   const status = vendor.status || "PENDING";
@@ -45,18 +70,21 @@ export function computeVendorEntitlements(vendor: {
     effectiveAccessState = "EXPIRED";
   }
 
-  const hasAccess = effectiveAccessState === "ACTIVE_PAID" || effectiveAccessState === "ACTIVE_COUPON";
+  // When payment restriction is bypassed (false), any vendor has active access without paying
+  const hasAccess =
+    !isPaymentRestrictionEnabled ||
+    effectiveAccessState === "ACTIVE_PAID" ||
+    effectiveAccessState === "ACTIVE_COUPON";
   const isApproved = status === "APPROVED";
 
-  // Gate 5: Vendor can publish products to the public shop ONLY when BOTH gates pass:
-  // access is active AND admin has approved.
+  // Gate 5: Vendor can publish products to the public shop ONLY when access is active (or bypassed) AND admin has approved.
   const canPublish = hasAccess && isApproved;
   // Users cannot upload products until approved by the admin
   const canUploadProducts = isApproved;
 
   // Paid and coupon entitlements are identical:
-  // - 0% commission while active
-  // - Reverts to standard commission (2.0%) when expired or unpaid
+  // - 0% commission while active or bypassed
+  // - Reverts to standard commission (2.0%) when expired or unpaid with active restriction
   const commissionPercent = hasAccess ? ACTIVE_COMMISSION_PERCENT : STANDARD_COMMISSION_PERCENT;
 
   // Days remaining calculation
@@ -67,9 +95,9 @@ export function computeVendorEntitlements(vendor: {
   }
 
   // Dashboard access:
-  // Active vendors have full access; expired or unpaid vendors can access dashboard in read-only mode to pay/activate.
-  const isReadOnly = !hasAccess;
-  const needsActivation = !hasAccess;
+  // When payment restriction is disabled, no paywall or activation prompt is shown
+  const isReadOnly = isPaymentRestrictionEnabled && !hasAccess;
+  const needsActivation = isPaymentRestrictionEnabled && !hasAccess;
 
   const planType: "paid" | "coupon" | "none" =
     effectiveAccessState === "ACTIVE_PAID"
@@ -95,6 +123,7 @@ export function computeVendorEntitlements(vendor: {
     accessExpiresAt,
     needsActivation,
     planType,
+    paymentRestrictionEnabled: isPaymentRestrictionEnabled,
   };
 }
 
@@ -104,19 +133,22 @@ export function computeVendorEntitlements(vendor: {
 export async function getVendorEntitlements(
   vendorIdOrUserId: string
 ): Promise<VendorEntitlements | null> {
-  const vendor = await prisma.vendorProfile.findFirst({
-    where: {
-      OR: [{ id: vendorIdOrUserId }, { userId: vendorIdOrUserId }],
-    },
-    select: {
-      id: true,
-      accessState: true,
-      status: true,
-      accessExpiresAt: true,
-    },
-  });
+  const [vendor, paymentRestrictionEnabled] = await Promise.all([
+    prisma.vendorProfile.findFirst({
+      where: {
+        OR: [{ id: vendorIdOrUserId }, { userId: vendorIdOrUserId }],
+      },
+      select: {
+        id: true,
+        accessState: true,
+        status: true,
+        accessExpiresAt: true,
+      },
+    }),
+    isVendorPaymentRestrictionEnabled(),
+  ]);
 
   if (!vendor) return null;
 
-  return computeVendorEntitlements(vendor);
+  return computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
 }

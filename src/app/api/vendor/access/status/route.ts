@@ -27,12 +27,9 @@ export async function GET() {
       return NextResponse.json({ error: "Vendor profile not found" }, { status: 404 });
     }
 
-    const entitlements = computeVendorEntitlements(vendor);
-    const latestRedemption = vendor.couponRedemptions?.[0] || null;
-
     const settings = await prisma.siteSetting.findMany({
       where: {
-        key: { in: ["vendor_access_fee", "vendor_access_duration_days"] },
+        key: { in: ["vendor_access_fee", "vendor_access_duration_days", "require_vendor_payment"] },
       },
     });
     const settingsMap: Record<string, string> = {};
@@ -40,11 +37,16 @@ export async function GET() {
       settingsMap[s.key] = s.value;
     });
 
+    const paymentRestrictionEnabled = settingsMap["require_vendor_payment"] !== "false";
+    const entitlements = computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
+    const latestRedemption = vendor.couponRedemptions?.[0] || null;
+
     const vendorAccessFee = Number(settingsMap["vendor_access_fee"]) || 15000;
     const vendorAccessDurationDays = Number(settingsMap["vendor_access_duration_days"]) || 365;
 
     return NextResponse.json({
       success: true,
+      paymentRestrictionEnabled,
       vendor: {
         id: vendor.id,
         storeName: vendor.storeName,

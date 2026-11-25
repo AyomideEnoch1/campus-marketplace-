@@ -23,7 +23,11 @@ export default async function VendorProductsPage() {
 
   if (!vendor) return null;
 
-  const entitlements = computeVendorEntitlements(vendor);
+  const paymentRestrictionSetting = await prisma.siteSetting.findUnique({
+    where: { key: "require_vendor_payment" },
+  });
+  const paymentRestrictionEnabled = paymentRestrictionSetting?.value !== "false";
+  const entitlements = computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
 
   const products = await prisma.product.findMany({
     where: { vendorId: vendor.id },

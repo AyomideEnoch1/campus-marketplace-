@@ -157,20 +157,32 @@ export function VendorActivateClient({
                 </h3>
                 <div className="flex">
                   <Badge className="bg-emerald-600 text-white text-[9px] sm:text-[10px] uppercase font-bold shrink-0 py-0.5 px-2">
-                    {entitlements.planType === "coupon" ? "Founding Coupon" : "Paid Plan"}
+                    {!entitlements.paymentRestrictionEnabled
+                      ? "Free Access Active"
+                      : entitlements.planType === "coupon"
+                      ? "Founding Coupon"
+                      : "Paid Plan"}
                   </Badge>
                 </div>
               </div>
               <p className="text-xs text-neutral-600 mt-1 leading-snug">
-                Expires on{" "}
-                <strong className="text-neutral-800">
-                  {entitlements.accessExpiresAt
-                    ? new Date(entitlements.accessExpiresAt).toLocaleDateString()
-                    : "Active"}
-                </strong>{" "}
-                <span className="text-neutral-500 whitespace-nowrap">
-                  ({entitlements.daysRemaining} days remaining)
-                </span>
+                {!entitlements.paymentRestrictionEnabled ? (
+                  <span className="text-emerald-700 font-semibold">
+                    Payment restriction is disabled by admin. As an approved vendor, you can publish products and operate your store for free.
+                  </span>
+                ) : (
+                  <>
+                    Expires on{" "}
+                    <strong className="text-neutral-800">
+                      {entitlements.accessExpiresAt
+                        ? new Date(entitlements.accessExpiresAt).toLocaleDateString()
+                        : "Active"}
+                    </strong>{" "}
+                    <span className="text-neutral-500 whitespace-nowrap">
+                      ({entitlements.daysRemaining} days remaining)
+                    </span>
+                  </>
+                )}
               </p>
             </div>
           </div>

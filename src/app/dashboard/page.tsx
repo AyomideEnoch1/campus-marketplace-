@@ -110,11 +110,9 @@ export default async function VendorDashboardPage() {
   if (!data) return null;
 
   const { vendor, totalProducts, publishedProducts, totalViews, totalOrders } = data;
-  const entitlements = computeVendorEntitlements(vendor);
-
-  // Fetch dynamic platform pricing from SiteSetting in a single query
+  // Fetch dynamic platform pricing & payment restriction from SiteSetting in a single query
   const pricingSettings = await prisma.siteSetting.findMany({
-    where: { key: { in: ["vendor_access_fee", "vendor_access_duration_days"] } },
+    where: { key: { in: ["vendor_access_fee", "vendor_access_duration_days", "require_vendor_payment"] } },
     select: { key: true, value: true },
   });
   const pricingMap = new Map(pricingSettings.map((s) => [s.key, s.value]));
@@ -122,6 +120,9 @@ export default async function VendorDashboardPage() {
   const durationValue = pricingMap.get("vendor_access_duration_days");
   const vendorAccessFee = feeValue ? parseInt(feeValue, 10) || 15000 : 15000;
   const vendorAccessDurationDays = durationValue ? parseInt(durationValue, 10) || 365 : 365;
+  const paymentRestrictionEnabled = pricingMap.get("require_vendor_payment") !== "false";
+
+  const entitlements = computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
 
   const stats = [
     {

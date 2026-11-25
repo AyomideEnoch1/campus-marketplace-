@@ -20,7 +20,13 @@ export default async function NewProductPage() {
       })
     : null;
 
-  const entitlements = vendor ? computeVendorEntitlements(vendor) : null;
+  const paymentRestrictionSetting = await prisma.siteSetting.findUnique({
+    where: { key: "require_vendor_payment" },
+  });
+  const paymentRestrictionEnabled = paymentRestrictionSetting?.value !== "false";
+  const entitlements = vendor
+    ? computeVendorEntitlements(vendor, { paymentRestrictionEnabled })
+    : null;
   const isCapReached = Boolean(
     entitlements && vendor && vendor._count.products >= entitlements.maxListings
   );

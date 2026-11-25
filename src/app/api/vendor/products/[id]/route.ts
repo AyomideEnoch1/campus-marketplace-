@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireVendor } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
+import { computeVendorEntitlements, isVendorPaymentRestrictionEnabled } from "@/lib/vendor-entitlements";
 import { calculatePromoPrice } from "@/lib/promotions";
 
 export const dynamic = "force-dynamic";
@@ -107,7 +107,8 @@ export async function PUT(
 
     // Check entitlements if attempting to publish
     if (data.status === "PUBLISHED") {
-      const entitlements = computeVendorEntitlements(vendor);
+      const paymentRestrictionEnabled = await isVendorPaymentRestrictionEnabled();
+      const entitlements = computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
       if (!entitlements.canPublish) {
         if (!entitlements.hasAccess) {
           return NextResponse.json(

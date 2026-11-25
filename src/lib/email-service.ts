@@ -66,7 +66,10 @@ export async function createAndSendVerificationEmail({
 
   // Send the verification email
   const emailResult = await sendEmailVerificationEmail(normalizedEmail, {
-    userName: fullName || "Campus Member",
+    userName:
+      fullName && fullName !== "undefined" && fullName !== "null"
+        ? fullName
+        : "Campus Member",
     verificationCode: code,
     verifyUrl,
   });

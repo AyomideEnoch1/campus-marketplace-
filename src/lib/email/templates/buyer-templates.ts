@@ -15,7 +15,10 @@ export interface BuyerWelcomeProps {
 }
 
 export function renderBuyerWelcome(props: BuyerWelcomeProps): RenderedEmail {
-  const userName = props.userName || "Campus Student";
+  const userName =
+    props.userName && props.userName !== "undefined" && props.userName !== "null"
+      ? props.userName
+      : "Campus Student";
   const exploreUrl = props.exploreUrl || `${APP_BASE_URL}/shop`;
   const subject = `Welcome to ọjà, ${userName}! 🎓🛍️`;
   const preheader = `Welcome to ọjà! Safe campus trading with escrow protection, verified student vendors, and no scams.`;
@@ -63,9 +66,24 @@ export interface BuyerEmailVerificationProps {
 export function renderBuyerEmailVerification(
   props: BuyerEmailVerificationProps
 ): RenderedEmail {
-  const userName = props.userName || (props as any).fullName || "Campus Student";
-  const code = props.verificationCode || (props as any).code || "";
-  const verifyUrl = props.verifyUrl || `${APP_BASE_URL}/auth/verify-email`;
+  const rawName = props.userName || (props as any).fullName;
+  const userName =
+    rawName && rawName !== "undefined" && rawName !== "null"
+      ? rawName
+      : "Campus Student";
+
+  const rawCode = props.verificationCode || (props as any).code;
+  const code =
+    rawCode && rawCode !== "undefined" && rawCode !== "null"
+      ? String(rawCode)
+      : "";
+
+  const rawUrl = props.verifyUrl || (props as any).url;
+  const verifyUrl =
+    rawUrl && rawUrl !== "undefined" && rawUrl !== "null"
+      ? rawUrl
+      : `${APP_BASE_URL}/auth/verify-email`;
+
   const subject = `Verify your email address — ${BRAND_NAME}`;
   const preheader = code
     ? `Your 6-digit confirmation code is ${code}. Complete your account verification.`
