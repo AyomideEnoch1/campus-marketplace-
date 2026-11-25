@@ -139,7 +139,15 @@ export function DeviceNotificationPrompt({
       }, 800);
     } catch (err: any) {
       console.error("[Subscribe Error]:", err);
-      setMessage({ type: "error", text: err.message || "Failed to enable notifications" });
+      const errText = err?.message || "";
+      if (errText.includes("push service not available") || errText.includes("AbortError")) {
+        setMessage({
+          type: "error",
+          text: "Google Push Service is restricted on your device. This occurs when Android Battery Saver is active (restricting Google Play Services) or in Incognito mode. Please disable Battery Saver, plug in your phone, or switch to a normal tab and try again.",
+        });
+      } else {
+        setMessage({ type: "error", text: errText || "Failed to enable notifications" });
+      }
     } finally {
       setLoading(false);
     }
@@ -187,7 +195,15 @@ export function DeviceNotificationPrompt({
         text: "Test notification sent! Check the top drop-down banner on your device.",
       });
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Could not deliver test notification" });
+      const errText = err?.message || "";
+      if (errText.includes("push service not available") || errText.includes("AbortError")) {
+        setMessage({
+          type: "error",
+          text: "Google Push Service is restricted on your device. Please disable Battery Saver or plug in your phone to allow Google Play Services to connect.",
+        });
+      } else {
+        setMessage({ type: "error", text: errText || "Could not deliver test notification" });
+      }
     } finally {
       setTesting(false);
     }
