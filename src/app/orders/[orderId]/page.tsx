@@ -681,6 +681,18 @@ export default function OrderTrackingPage() {
               </div>
 
               <div>
+                <span className="text-neutral-400 block text-[10px] uppercase font-bold">Student Buyer School:</span>
+                <p className="font-semibold text-neutral-800 mt-0.5">
+                  {order.buyerCampus?.name || (order.vendor?.campus?.name ? order.vendor.campus.name : "Campus Student")}
+                </p>
+                {order.buyerCampus?.city && (
+                  <p className="text-[11px] text-neutral-500">
+                    {order.buyerCampus.city}
+                  </p>
+                )}
+              </div>
+
+              <div>
                 <span className="text-neutral-400 block text-[10px] uppercase font-bold">Vendor Store:</span>
                 <p className="font-semibold text-neutral-800 mt-0.5">
                   {order.vendor?.storeName || "Campus Vendor"}

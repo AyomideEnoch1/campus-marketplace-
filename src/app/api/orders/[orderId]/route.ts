@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getUserCampus } from "@/lib/user-campus";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export async function GET(
       select: {
         id: true,
         orderNumber: true,
+        buyerId: true,
         buyerName: true,
         buyerEmail: true,
         buyerPhone: true,
@@ -134,7 +136,15 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ success: true, order });
+    const buyerCampus = order.buyerId ? await getUserCampus(order.buyerId) : null;
+
+    return NextResponse.json({
+      success: true,
+      order: {
+        ...order,
+        buyerCampus,
+      },
+    });
   } catch (error: any) {
     console.error("[Get Order Error]:", error);
     return NextResponse.json({ error: error.message || "Failed to retrieve order" }, { status: 500 });

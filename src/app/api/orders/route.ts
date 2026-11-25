@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { sendOrderConfirmationEmail, sendVendorOrderNotificationEmail, notificationService } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
+import { getUserCampus } from "@/lib/user-campus";
 
 export const dynamic = "force-dynamic";
 
@@ -148,8 +149,8 @@ const orderSchema = z.object({
   buyerEmail: z.string().email("Please provide a valid email address"),
   buyerPhone: z.string().min(8, "Please enter a valid phone/WhatsApp number"),
   campusId: z.string().optional(),
-  deliveryAddress: z.string().min(3, "Please specify your pickup spot or hostel address"),
-  deliveryMethod: z.enum(["PICKUP", "CAMPUS_DELIVERY", "SAFE_MEETUP_POINT"]).default("PICKUP"),
+  deliveryAddress: z.string().min(2, "Please specify your delivery address or pickup spot"),
+  deliveryMethod: z.enum(["PICKUP", "CAMPUS_DELIVERY", "DOOR_DELIVERY", "DELIVERY", "SAFE_MEETUP_POINT"]).default("PICKUP"),
   meetupPointId: z.string().optional().nullable(),
   vendorId: z.string().min(1, "Vendor ID is required"),
   notes: z.string().optional().nullable(),
@@ -250,33 +251,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Enforce Safe Meetup Point for guest vendors
+    // 2. Safe meetup or direct delivery address resolution
     let finalMeetupPointId = meetupPointId || null;
-    let finalDeliveryAddress = deliveryAddress;
+    let finalDeliveryAddress = deliveryAddress?.trim() || "";
 
-    if (vendor.sellerType === "guest") {
-      if (!finalMeetupPointId) {
-        // Find default or first active safe meetup point on this campus
-        const firstPoint = await prisma.safeMeetupPoint.findFirst({
-          where: { campusId: vendor.campusId, active: true },
-        });
-        if (firstPoint) {
-          finalMeetupPointId = firstPoint.id;
-          finalDeliveryAddress = `${firstPoint.name} - ${firstPoint.description || ""}`.trim();
-        } else {
-          return NextResponse.json(
-            { error: "Safe campus meetup point selection is required for orders from Non-Student Vendors." },
-            { status: 400 }
-          );
-        }
-      } else {
-        const point = await prisma.safeMeetupPoint.findUnique({
-          where: { id: finalMeetupPointId },
-        });
-        if (point) {
-          finalDeliveryAddress = `${point.name} - ${point.description || ""}`.trim();
-        }
+    if (!finalDeliveryAddress && finalMeetupPointId) {
+      const point = await prisma.safeMeetupPoint.findUnique({
+        where: { id: finalMeetupPointId },
+      });
+      if (point) {
+        finalDeliveryAddress = `${point.name} - ${point.description || ""}`.trim();
       }
+    }
+
+    if (!finalDeliveryAddress) {
+      return NextResponse.json(
+        { error: "Please provide a valid delivery address or pickup location." },
+        { status: 400 }
+      );
     }
 
     // Generate unique human-readable order number e.g. ORD-202611-7391
@@ -357,6 +349,9 @@ export async function POST(request: Request) {
     );
 
     // Trigger transactional emails asynchronously (non-blocking)
+    const buyerCampus = session?.id ? await getUserCampus(session.id) : null;
+    const campusDisplayName = buyerCampus?.name || vendor.campus?.name || "Campus";
+
     if (buyerEmail) {
       sendOrderConfirmationEmail(buyerEmail, {
         buyerName,
@@ -367,7 +362,7 @@ export async function POST(request: Request) {
           price: i.unitPrice,
         })),
         totalAmount,
-        campusName: vendor.campus?.name || "Campus",
+        campusName: campusDisplayName,
         meetupPoint: finalDeliveryAddress,
       }).catch((err) => console.error("Buyer confirmation email error:", err));
     }
@@ -384,6 +379,7 @@ export async function POST(request: Request) {
           price: i.unitPrice,
         })),
         payoutAmount: totalAmount,
+        campusName: campusDisplayName,
         meetupPoint: finalDeliveryAddress,
       }).catch((err) => console.error("Vendor order notification email error:", err));
     }

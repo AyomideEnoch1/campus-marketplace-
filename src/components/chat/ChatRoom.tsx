@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { formatNGN } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { WhatsAppIcon } from "@/components/icons/WhatsAppIcon";
 
 export interface ChatMessageItem {
   id: string;
@@ -346,17 +345,6 @@ export function ChatRoom({
         "Place your order on ọjà so escrow protects us both.",
       ];
 
-  // Helper for WhatsApp link to vendor
-  const rawWhatsApp = conversation.vendor?.whatsapp;
-  const cleanPhone = rawWhatsApp ? rawWhatsApp.replace(/[^0-9]/g, "") : null;
-  const whatsappUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-        `Hello ${conversation.vendor.storeName}, I'm reaching out from ọjà marketplace regarding ${
-          conversation.product?.title || "your listings"
-        }.`
-      )}`
-    : null;
-
   // Group messages by calendar day for clean date headers
   const getMessageDateLabel = (dateStr: string | Date) => {
     const d = new Date(dateStr);
@@ -437,19 +425,11 @@ export function ChatRoom({
 
         {/* Action Pills */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Direct WhatsApp Action if available */}
-          {whatsappUrl && (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Chat on WhatsApp"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 font-bold text-xs transition-all hover:scale-[1.02]"
-            >
-              <WhatsAppIcon className="w-3.5 h-3.5 fill-[#25D366]" />
-              <span>WhatsApp</span>
-            </a>
-          )}
+          {/* Escrow Protected In-App Chat Pill */}
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-xs">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Escrow Protected Chat</span>
+          </div>
 
           {/* Storefront Link if buyer */}
           {isBuyer && conversation.vendor?.slug && (

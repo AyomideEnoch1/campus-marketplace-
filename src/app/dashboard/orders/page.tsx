@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getUserCampus } from "@/lib/user-campus";
 import { VendorOrdersClient } from "./VendorOrdersClient";
 
 export default async function VendorOrdersPage() {
@@ -74,6 +75,22 @@ export default async function VendorOrdersPage() {
     },
   });
 
+  const buyerIds = Array.from(new Set(orders.map((o) => o.buyerId).filter(Boolean))) as string[];
+  const buyerCampusMap = new Map<string, string>();
+  await Promise.all(
+    buyerIds.map(async (bid) => {
+      const camp = await getUserCampus(bid);
+      if (camp) {
+        buyerCampusMap.set(bid, camp.name);
+      }
+    })
+  );
+
+  const ordersWithBuyerCampus = orders.map((o) => ({
+    ...o,
+    buyerCampus: o.buyerId ? buyerCampusMap.get(o.buyerId) || null : null,
+  }));
+
   return (
     <div className="space-y-6">
       <div className="pb-4 border-b border-neutral-200">
@@ -85,7 +102,7 @@ export default async function VendorOrdersPage() {
         </p>
       </div>
 
-      <VendorOrdersClient initialOrders={orders as any} />
+      <VendorOrdersClient initialOrders={ordersWithBuyerCampus as any} />
     </div>
   );
 }

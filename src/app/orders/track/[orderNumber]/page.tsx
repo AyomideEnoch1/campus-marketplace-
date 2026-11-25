@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getUserCampus } from "@/lib/user-campus";
 import { OrderTrackingClient } from "./OrderTrackingClient";
 
 export const dynamic = "force-dynamic";
@@ -80,9 +81,15 @@ export default async function OrderTrackingPage({
     redirect("/orders");
   }
 
+  const buyerCampus = order.buyerId ? await getUserCampus(order.buyerId) : null;
+
   const sanitizedOrder = {
     id: order.id,
     orderNumber: order.orderNumber,
+    buyerName: order.buyerName,
+    buyerPhone: order.buyerPhone,
+    buyerEmail: order.buyerEmail,
+    buyerCampus: buyerCampus,
     totalAmount: order.totalAmount,
     status: order.status,
     deliveryMethod: order.deliveryMethod,

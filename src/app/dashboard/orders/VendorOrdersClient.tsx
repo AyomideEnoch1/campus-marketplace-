@@ -24,6 +24,7 @@ import {
   AlertCircle,
   RefreshCw,
   Zap,
+  GraduationCap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ interface OrderRecord {
   buyerName: string;
   buyerPhone: string;
   buyerEmail: string;
+  buyerCampus?: string | null;
   deliveryAddress: string;
   deliveryMethod: string;
   status: "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
@@ -499,6 +501,12 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                   <div className="space-y-1 text-neutral-600 bg-neutral-50/40 p-3 rounded-2xl border border-neutral-100">
                     <p className="font-bold text-neutral-900">Buyer Contact:</p>
                     <p className="font-semibold text-neutral-800">{order.buyerName}</p>
+                    {order.buyerCampus && (
+                      <p className="flex items-center gap-1.5 text-emerald-700 font-bold text-[11px]">
+                        <GraduationCap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{order.buyerCampus}</span>
+                      </p>
+                    )}
                     <p className="flex items-center gap-1.5 text-neutral-500">
                       <Phone className="w-3 h-3 text-neutral-400" /> {order.buyerPhone}
                     </p>

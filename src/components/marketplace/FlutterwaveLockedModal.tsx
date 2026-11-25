@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Lock,
@@ -107,32 +108,8 @@ export function FlutterwaveLockedModal({
     existingOrder?.vendorStoreName ||
     "Campus Vendor";
 
-  const rawWhatsApp =
-    checkoutData?.vendorWhatsApp || existingOrder?.vendorWhatsApp || null;
-
-  const cleanPhone = rawWhatsApp ? rawWhatsApp.replace(/[^0-9]/g, "") : null;
-
-  const whatsappMessage = checkoutData
-    ? `Hello ${vendorName}, I am placing an order for ${checkoutData.items
-        .map((i) => `${i.quantity}x ${i.title}`)
-        .join(", ")} (${formatNGN(
-        totalPayable
-      )}) on ọjà. Since live online card checkout is currently locked, I would like to arrange campus meetup inspection at: ${
-        checkoutData.deliveryAddress
-      }.`
-    : existingOrder
-    ? `Hello ${vendorName}, regarding my ọjà order #${
-        existingOrder.orderNumber
-      } (${formatNGN(
-        totalPayable
-      )}). Online card payment is locked, so let's coordinate campus handover and direct payment at: ${
-        existingOrder.deliveryAddress || "Campus Meetup Point"
-      }.`
-    : `Hello ${vendorName}, I'm reaching out regarding my ọjà purchase.`;
-
-  const whatsappUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMessage)}`
-    : null;
+  const vendorId = checkoutData?.vendorId || "";
+  const inAppChatUrl = vendorId ? `/messages?vendor=${vendorId}` : "/messages";
 
   // Handler for placing offline / pay-on-meetup order directly from modal
   const handlePlaceMeetupOrder = async () => {
@@ -291,9 +268,9 @@ export function FlutterwaveLockedModal({
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-700 shrink-0">&bull;</span>
               <span>
-                <strong>Direct Vendor Chat:</strong> Connect on WhatsApp
-                instantly to confirm product availability and finalize pickup
-                details.
+                <strong>In-App Chat Messaging:</strong> Chat directly with the
+                vendor inside the platform to confirm item availability and
+                delivery details with zero phone number leakage.
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -339,17 +316,16 @@ export function FlutterwaveLockedModal({
             </Button>
           )}
 
-          {/* Action 2: Chat with Vendor on WhatsApp */}
-          {whatsappUrl && (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
+          {/* Action 2: Chat with Vendor In-App */}
+          {inAppChatUrl && (
+            <Link
+              href={inAppChatUrl}
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-center gap-2 h-11 px-4 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>Coordinate Purchase on WhatsApp</span>
-            </a>
+              <MessageSquare className="w-4 h-4 text-emerald-400" />
+              <span>Chat with Vendor in App</span>
+            </Link>
           )}
 
           {/* Action 3: Track Existing Order (If triggered on existing order) */}

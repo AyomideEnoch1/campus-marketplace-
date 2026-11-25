@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useCurrentUser } from "@/hooks/use-auth-query";
 import {
   ShoppingBag,
   ShieldCheck,
@@ -65,6 +66,8 @@ function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const vendorIdParam = searchParams.get("vendorId");
+  const { data: authData } = useCurrentUser();
+  const user = authData?.user;
 
   const { itemsByVendor, clearVendorItems } = useCart();
 
@@ -73,7 +76,7 @@ function CheckoutForm() {
   const [buyerPhone, setBuyerPhone] = React.useState("");
   const [deliveryMethod, setDeliveryMethod] = React.useState<
     "PICKUP" | "CAMPUS_DELIVERY" | "SAFE_MEETUP_POINT"
-  >("PICKUP");
+  >("CAMPUS_DELIVERY");
   const [deliveryAddress, setDeliveryAddress] = React.useState("");
   const [selectedMeetupPointId, setSelectedMeetupPointId] =
     React.useState<string>("");
@@ -107,22 +110,35 @@ function CheckoutForm() {
   const vendorMeta = meetupData?.vendor || null;
   const meetupPoints = meetupData?.meetupPoints || [];
 
-  React.useEffect(() => {
-    if (vendorMeta?.sellerType === "guest") {
-      setDeliveryMethod("SAFE_MEETUP_POINT");
-    }
-    if (meetupPoints.length > 0 && !selectedMeetupPointId) {
-      setSelectedMeetupPointId(meetupPoints[0].id);
-      setDeliveryAddress(
-        `${meetupPoints[0].name} - ${meetupPoints[0].description || ""}`.trim(),
-      );
-    }
-  }, [vendorMeta, meetupPoints, selectedMeetupPointId]);
-
-  const isGuestSeller =
+  const isGuestBuyer = !user;
+  const isNonStudentVendor =
     vendorMeta?.sellerType === "guest" || group?.vendor?.sellerType === "guest";
+  const isGuestSeller = isNonStudentVendor;
   const verificationTier =
     vendorMeta?.verificationTier ?? group?.vendor?.verificationTier ?? 1;
+
+  // Auto-fill buyer details if logged in
+  React.useEffect(() => {
+    if (user) {
+      if (!buyerName && user.fullName) setBuyerName(user.fullName);
+      if (!buyerEmail && user.email) setBuyerEmail(user.email);
+      if (!buyerPhone && user.phone) setBuyerPhone(user.phone);
+    }
+  }, [user, buyerName, buyerEmail, buyerPhone]);
+
+  React.useEffect(() => {
+    // Only auto-suggest campus meetup point for student-to-student transactions on campus
+    if (!isNonStudentVendor && !isGuestBuyer) {
+      if (meetupPoints.length > 0 && !selectedMeetupPointId) {
+        setSelectedMeetupPointId(meetupPoints[0].id);
+        if (!deliveryAddress) {
+          setDeliveryAddress(
+            `${meetupPoints[0].name} - ${meetupPoints[0].description || ""}`.trim(),
+          );
+        }
+      }
+    }
+  }, [isNonStudentVendor, isGuestBuyer, meetupPoints, selectedMeetupPointId, deliveryAddress]);
 
   // Check Tier 1 cap
   const isTier1Capped =
@@ -205,21 +221,18 @@ function CheckoutForm() {
       return;
     }
 
-    if (!isGuestSeller && !deliveryAddress.trim()) {
-      setError("Please enter your preferred meeting point or hostel room.");
+    if (!deliveryAddress.trim()) {
+      setError(
+        isNonStudentVendor || isGuestBuyer
+          ? "Please enter your full delivery address."
+          : "Please enter your preferred meeting point or hostel room."
+      );
       return;
     }
 
     if (isTier1Capped) {
       setError(
         "Orders from Tier 1 Non-Student Vendors are capped at ₦10,000 for buyer security. Please adjust your order.",
-      );
-      return;
-    }
-
-    if (isGuestSeller && meetupPoints.length > 0 && !selectedMeetupPointId) {
-      setError(
-        "Please select a safe campus meetup point for this guest seller order.",
       );
       return;
     }
@@ -239,13 +252,9 @@ function CheckoutForm() {
         buyerName,
         buyerEmail,
         buyerPhone,
-        deliveryMethod: isGuestSeller ? "SAFE_MEETUP_POINT" : deliveryMethod,
-        deliveryAddress: isGuestSeller
-          ? deliveryAddress ||
-            (meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ??
-              "Campus Safe Point")
-          : deliveryAddress,
-        meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
+        deliveryMethod: isNonStudentVendor || isGuestBuyer ? "CAMPUS_DELIVERY" : deliveryMethod,
+        deliveryAddress: deliveryAddress.trim(),
+        meetupPointId: !isNonStudentVendor && !isGuestBuyer ? selectedMeetupPointId || null : null,
         vendorId: group.vendor.id || group.vendor.slug,
         notes,
         buyerWantsDirect,
@@ -327,13 +336,9 @@ function CheckoutForm() {
         buyerName,
         buyerEmail,
         buyerPhone,
-        deliveryMethod: isGuestSeller ? "SAFE_MEETUP_POINT" : deliveryMethod,
-        deliveryAddress: isGuestSeller
-          ? deliveryAddress ||
-            meetupPoints.find((m) => m.id === selectedMeetupPointId)?.name ||
-            "Campus Safe Meetup Point"
-          : deliveryAddress,
-        meetupPointId: isGuestSeller ? selectedMeetupPointId : null,
+        deliveryMethod: isNonStudentVendor || isGuestBuyer ? "CAMPUS_DELIVERY" : deliveryMethod,
+        deliveryAddress: deliveryAddress.trim(),
+        meetupPointId: !isNonStudentVendor && !isGuestBuyer ? selectedMeetupPointId || null : null,
         vendorId: group.vendor.id || group.vendor.slug,
         vendorName: group.vendor.storeName,
         vendorWhatsApp: group.vendor.whatsapp || null,
@@ -397,8 +402,8 @@ function CheckoutForm() {
               </div>
 
               <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-950 mt-2">
-                {isGuestSeller
-                  ? "Campus Safe Meetup & Contact Info"
+                {isNonStudentVendor
+                  ? "Non-Student Vendor Order & Delivery Details"
                   : "Student Contact & Pickup Info"}
               </h2>
               <p className="text-xs text-neutral-500 mt-0.5">
@@ -407,18 +412,15 @@ function CheckoutForm() {
               </p>
             </div>
 
-            {/* Guest Vendor Protection Banner */}
-            {isGuestSeller && (
+            {/* Non-Student Vendor Protection Banner */}
+            {isNonStudentVendor && (
               <div className="p-4 rounded-2xl bg-purple-50/80 border border-purple-200/80 space-y-1.5 text-xs text-purple-900">
                 <div className="flex items-center gap-2 font-bold text-purple-950">
                   <ShieldCheck className="w-4 h-4 text-purple-700" />
-                  Designated Campus Meetup Required
+                  Direct Buyer Delivery &bull; Escrow Protected
                 </div>
                 <p className="text-[11px] leading-relaxed text-purple-800">
-                  This vendor is an off-campus <strong>Guest Trader</strong>.
-                  For student safety and platform escrow guarantee, delivery
-                  must occur at one of the official university designated safe
-                  meetup points selected below.
+                  This vendor is an off-campus merchant. Your items will be dispatched directly to your specified delivery address. Payment remains held in secure escrow until you confirm delivery.
                 </p>
               </div>
             )}
@@ -657,60 +659,32 @@ function CheckoutForm() {
               </div>
 
               {/* Delivery / Pickup Choice */}
-              {isGuestSeller ? (
-                /* GUEST VENDOR: Safe Meetup Point Selection */
-                <div className="space-y-3 pt-2 border-t border-neutral-100">
+              {isNonStudentVendor || isGuestBuyer ? (
+                /* NON-STUDENT VENDOR or GUEST BUYER: Direct Address Delivery */
+                <div className="space-y-2 pt-2 border-t border-neutral-100">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-neutral-900 flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4 text-purple-600" />
-                      Select Campus Safe Meetup Point
+                      <MapPin className="w-4 h-4 text-emerald-600" />
+                      Buyer Delivery Address
                     </label>
-                    <span className="text-[10px] text-purple-700 font-semibold uppercase tracking-wider">
-                      Mandatory for Guests
+                    <span className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wider">
+                      Required
                     </span>
                   </div>
-
-                  {meetupPoints.length === 0 ? (
-                    <div className="p-4 rounded-xl bg-neutral-100 text-xs text-neutral-600">
-                      Standard Safe Campus Location (Main Campus Gate / Student
-                      Center)
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {meetupPoints.map((point) => (
-                        <label
-                          key={point.id}
-                          onClick={() => handleSelectMeetupPoint(point)}
-                          className={`p-3.5 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3 ${
-                            selectedMeetupPointId === point.id
-                              ? "border-purple-600 bg-purple-50/50 shadow-xs"
-                              : "border-neutral-200 hover:border-neutral-300 bg-white"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="meetupPoint"
-                            checked={selectedMeetupPointId === point.id}
-                            onChange={() => handleSelectMeetupPoint(point)}
-                            className="mt-0.5 text-purple-600 focus:ring-purple-500"
-                          />
-                          <div className="space-y-0.5 text-xs">
-                            <span className="font-bold text-neutral-950 block">
-                              {point.name}
-                            </span>
-                            {point.description && (
-                              <span className="text-neutral-500 text-[11px] block leading-tight">
-                                {point.description}
-                              </span>
-                            )}
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                  <Input
+                    required
+                    maxLength={250}
+                    placeholder="Enter your full delivery address (e.g. 15 Admiralty Way, Lekki / Apt 4B, Off Campus, Lagos)"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    className="h-11 rounded-xl text-xs bg-white border-neutral-300 focus-visible:ring-emerald-500"
+                  />
+                  <p className="text-[11px] text-neutral-500">
+                    The vendor will deliver or dispatch your order directly to this address.
+                  </p>
                 </div>
               ) : (
-                /* STUDENT VENDOR: Standard Delivery / Pickup Choice */
+                /* STUDENT VENDOR + REGISTERED STUDENT BUYER: Standard Delivery / Pickup Choice */
                 <div className="space-y-2 pt-2 border-t border-neutral-100">
                   <label className="text-xs font-bold text-neutral-700">
                     How would you like to receive your items?
@@ -810,10 +784,7 @@ function CheckoutForm() {
                     !buyerName.trim() ||
                     !buyerEmail.trim() ||
                     !buyerPhone.trim() ||
-                    (!isGuestSeller && !deliveryAddress.trim()) ||
-                    (isGuestSeller &&
-                      meetupPoints.length > 0 &&
-                      !selectedMeetupPointId)
+                    !deliveryAddress.trim()
                   }
                   className={`w-full h-12 text-white font-bold rounded-2xl shadow-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                     isGuestSeller
@@ -926,7 +897,7 @@ function CheckoutForm() {
               </div>
 
               <div className="flex items-center justify-between text-neutral-600">
-                <span>Safe Campus Meetup</span>
+                <span>{isNonStudentVendor ? "Direct Delivery" : "Campus Handover"}</span>
                 <span className="text-emerald-700 font-bold">FREE</span>
               </div>
 
@@ -1013,17 +984,15 @@ function CheckoutForm() {
           <div className="p-4 rounded-2xl bg-neutral-100/70 text-xs text-neutral-600 space-y-2">
             <p className="font-bold text-neutral-900 flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              {isGuestSeller
-                ? "Campus Safe Meetup Guarantee"
+              {isNonStudentVendor
+                ? "Escrow Buyer Protection Guarantee"
                 : "Verified Student Protection"}
             </p>
             <p className="text-[11px] leading-relaxed text-neutral-500">
-              {isGuestSeller ? (
+              {isNonStudentVendor ? (
                 <>
-                  Your order is protected under campus trade safeguards. Meet
-                  vendor <strong>{group.vendor.storeName}</strong> strictly at
-                  the selected university safe zone. You will receive an
-                  immediate confirmation link upon payment.
+                  Your order is protected under full platform Escrow safeguards. Your payment is held securely and only released to vendor{" "}
+                  <strong>{group.vendor.storeName}</strong> after you receive and confirm your order at your delivery address.
                 </>
               ) : (
                 <>

@@ -18,6 +18,7 @@ import {
   CreditCard,
   RefreshCw,
   AlertCircle,
+  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,15 @@ interface OrderTrackingClientProps {
   order: {
     id: string;
     orderNumber: string;
+    buyerName?: string;
+    buyerPhone?: string;
+    buyerEmail?: string;
+    buyerCampus?: {
+      id: string;
+      name: string;
+      city: string;
+      state?: string | null;
+    } | null;
     totalAmount: number;
     status: string;
     deliveryMethod: string;
@@ -121,11 +131,6 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
       setPaying(false);
     }
   };
-
-  const whatsappMsg = `Hi ${order.vendor.storeName}, I am tracking my ọjà order #${order.orderNumber}. Can you give me an update on delivery to: ${order.deliveryAddress}?`;
-  const whatsappUrl = order.vendor.whatsapp
-    ? `https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(whatsappMsg)}`
-    : null;
 
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-20 pt-8 sm:pt-12">
@@ -271,9 +276,9 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
           </div>
 
           {/* Quick Meta Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs">
             <div className="space-y-0.5">
-              <span className="text-neutral-400 block">Vendor Store:</span>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Vendor Store:</span>
               <strong className="text-neutral-900 font-bold text-xs sm:text-sm block truncate">
                 {order.vendor.storeName}
               </strong>
@@ -285,7 +290,20 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
             </div>
 
             <div className="space-y-0.5">
-              <span className="text-neutral-400 block">Fulfillment Method:</span>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Buyer School:</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <GraduationCap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <strong className="text-neutral-900 font-bold text-xs sm:text-sm block truncate">
+                  {order.buyerCampus?.name || (order.vendor.campus ? order.vendor.campus.name : "Campus Student")}
+                </strong>
+              </div>
+              <span className="text-[11px] text-emerald-600 font-semibold block">
+                Verified Student
+              </span>
+            </div>
+
+            <div className="space-y-0.5">
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Fulfillment Method:</span>
               <strong className="text-neutral-900 font-bold text-xs sm:text-sm block">
                 {order.deliveryMethod === "SAFE_MEETUP_POINT"
                   ? "Safe Meetup Point"
@@ -297,7 +315,7 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
             </div>
 
             <div className="space-y-0.5">
-              <span className="text-neutral-400 block">Order Placed:</span>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Order Placed:</span>
               <strong className="text-neutral-900 font-bold text-xs sm:text-sm block">
                 {formatDate(order.createdAt)}
               </strong>
@@ -305,7 +323,7 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
             </div>
 
             <div className="space-y-0.5">
-              <span className="text-neutral-400 block">Total Amount:</span>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Total Amount:</span>
               <strong className="text-emerald-600 font-black text-sm sm:text-base block">
                 {formatNGN(order.totalAmount)}
               </strong>

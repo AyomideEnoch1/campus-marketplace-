@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   CheckCircle2,
-  MessageCircle,
   MessageSquare,
   Package,
   Calendar,
@@ -12,8 +11,10 @@ import {
   Building,
   GraduationCap,
   Truck,
+  User,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getUserCampus } from "@/lib/user-campus";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN, formatDate } from "@/lib/utils";
@@ -43,12 +44,7 @@ export default async function OrderSuccessPage({
   }
 
   const isGuestSeller = order.vendor.sellerType === "guest";
-
-  const whatsappMessage = `Hi ${order.vendor.storeName}, I just submitted order request #${order.orderNumber} on ọjà for ${formatNGN(order.totalAmount)}. Let's coordinate pickup at: ${order.deliveryAddress}.`;
-
-  const whatsappUrl = order.vendor.whatsapp
-    ? `https://wa.me/${order.vendor.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(whatsappMessage)}`
-    : null;
+  const buyerCampus = order.buyerId ? await getUserCampus(order.buyerId) : null;
 
   return (
     <div className="min-h-screen bg-neutral-50/60 py-16 px-4">
@@ -63,11 +59,11 @@ export default async function OrderSuccessPage({
             Thank You, {order.buyerName.split(" ")[0]}!
           </h1>
           <p className="text-xs sm:text-sm text-neutral-500 max-w-md mx-auto">
-            Your order request has been dispatched to <strong>{order.vendor.storeName}</strong>.
+            Your order request has been dispatched to <strong>{order.vendor.storeName}</strong> under Escrow protection.
           </p>
         </div>
 
-        {/* Order Card Summary */}
+        {/* Order Card Summary & Receipt */}
         <div className="p-6 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-left space-y-4">
           <div className="flex items-center justify-between border-b border-neutral-200/60 pb-3 text-xs">
             <div>
@@ -84,9 +80,10 @@ export default async function OrderSuccessPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-600">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs text-neutral-600">
+            {/* Vendor Store */}
             <div>
-              <span className="text-neutral-400 block">Vendor:</span>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Vendor:</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <strong className="text-neutral-900">{order.vendor.storeName}</strong>
                 {isGuestSeller ? (
@@ -98,14 +95,34 @@ export default async function OrderSuccessPage({
                 )}
               </div>
               {order.vendor.campus && (
-                <span className="text-neutral-500 text-[11px]">
-                  Campus: {order.vendor.campus.name}
+                <span className="text-neutral-500 text-[11px] block mt-0.5">
+                  Vendor Campus: {order.vendor.campus.name}
                 </span>
               )}
             </div>
 
+            {/* Student Buyer School / University */}
             <div>
-              <span className="text-neutral-400 block">Fulfillment Method:</span>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Buyer School / Campus:</span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <GraduationCap className="w-4 h-4 text-emerald-600 shrink-0" />
+                <strong className="text-neutral-900 font-bold">
+                  {buyerCampus?.name || (order.vendor.campus ? order.vendor.campus.name : "Campus Student")}
+                </strong>
+                <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] px-1.5 py-0">
+                  Verified Student
+                </Badge>
+              </div>
+              {buyerCampus?.city && (
+                <span className="text-neutral-500 text-[11px] block mt-0.5">
+                  Location: {buyerCampus.city}{buyerCampus.state ? `, ${buyerCampus.state}` : ""}
+                </span>
+              )}
+            </div>
+
+            {/* Fulfillment Method */}
+            <div>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Fulfillment Method:</span>
               <p className="font-semibold text-neutral-900 mt-0.5">
                 {order.deliveryMethod === "SAFE_MEETUP_POINT"
                   ? "Campus Safe Meetup Point"
@@ -113,6 +130,17 @@ export default async function OrderSuccessPage({
               </p>
               <span className="text-neutral-500 text-[11px] line-clamp-1">
                 {order.deliveryAddress}
+              </span>
+            </div>
+
+            {/* Buyer Contact */}
+            <div>
+              <span className="text-neutral-400 block font-semibold text-[11px] uppercase tracking-wider">Buyer Name:</span>
+              <p className="font-semibold text-neutral-900 mt-0.5">
+                {order.buyerName}
+              </p>
+              <span className="text-neutral-500 text-[11px] block">
+                {order.buyerPhone} &bull; {order.buyerEmail}
               </span>
             </div>
           </div>
@@ -152,7 +180,7 @@ export default async function OrderSuccessPage({
           </div>
         </div>
 
-        {/* In-App Chat Follow-up Action */}
+        {/* In-App Chat Action: Exclusive secure communication */}
         <div className="space-y-3">
           <Link
             href={`/messages?vendor=${order.vendor.slug || order.vendor.id}${order.items[0]?.productId ? `&product=${order.items[0].productId}` : ""}`}
@@ -163,10 +191,10 @@ export default async function OrderSuccessPage({
             }`}
           >
             <MessageSquare className="w-5 h-5" />
-            Chat with Seller in App &rarr;
+            <span>Chat with Seller in App &rarr;</span>
           </Link>
-          <p className="text-[11px] text-neutral-400">
-            Open the in-app chat room to coordinate pickup or delivery details directly with {order.vendor.storeName}.
+          <p className="text-[11px] text-neutral-500">
+            🔒 All order communications and meetup coordination must be done in the secure in-app chat to protect your escrow guarantee.
           </p>
         </div>
 
