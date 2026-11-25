@@ -25,6 +25,7 @@ export async function GET() {
 
     const coupons = await prisma.coupon.findMany({
       orderBy: { createdAt: "desc" },
+      take: 50,
       include: {
         _count: {
           select: {
@@ -34,26 +35,30 @@ export async function GET() {
       },
     });
 
-    // Compute live active count per coupon
-    const couponsWithUsage = await Promise.all(
-      coupons.map(async (c) => {
-        const activeCount = await prisma.couponRedemption.count({
+    const couponIds = coupons.map((c) => c.id);
+    const activeCounts = couponIds.length
+      ? await prisma.couponRedemption.groupBy({
+          by: ["couponId"],
           where: {
-            couponId: c.id,
+            couponId: { in: couponIds },
             status: "ACTIVE",
           },
-        });
+          _count: { _all: true },
+        })
+      : [];
+    const activeCountMap = new Map(activeCounts.map((row) => [row.couponId, row._count._all]));
 
-        const remainingSlots = Math.max(0, c.maxRedemptions - activeCount);
+    const couponsWithUsage = coupons.map((c) => {
+      const activeCount = activeCountMap.get(c.id) ?? 0;
+      const remainingSlots = Math.max(0, c.maxRedemptions - activeCount);
 
-        return {
-          ...c,
-          activeRedemptions: activeCount,
-          remainingSlots,
-          totalRedemptions: c._count.redemptions,
-        };
-      })
-    );
+      return {
+        ...c,
+        activeRedemptions: activeCount,
+        remainingSlots,
+        totalRedemptions: c._count.redemptions,
+      };
+    });
 
     return NextResponse.json({ success: true, coupons: couponsWithUsage });
   } catch (err: any) {

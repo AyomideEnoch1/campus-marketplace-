@@ -15,6 +15,7 @@ export async function GET() {
     // Check if user is a vendor
     const vendorProfile = await prisma.vendorProfile.findUnique({
       where: { userId: session.id },
+      select: { id: true },
     });
 
     const isVendor = session.role === "VENDOR" || !!vendorProfile;
@@ -29,7 +30,14 @@ export async function GET() {
           }
         : { buyerId: session.id },
       orderBy: { lastMessageAt: "desc" },
-      include: {
+      take: 30,
+      select: {
+        id: true,
+        buyerId: true,
+        vendorId: true,
+        productId: true,
+        lastMessage: true,
+        lastMessageAt: true,
         buyer: {
           select: {
             id: true,
@@ -60,12 +68,19 @@ export async function GET() {
             images: {
               take: 1,
               orderBy: { position: "asc" },
+              select: { url: true },
             },
           },
         },
         messages: {
           take: 1,
           orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            content: true,
+            isRead: true,
+            createdAt: true,
+          },
         },
         _count: {
           select: {

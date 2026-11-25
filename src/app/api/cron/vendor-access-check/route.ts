@@ -14,12 +14,12 @@ export async function POST(req: NextRequest) {
 
 async function handleCron(req: NextRequest) {
   try {
-    // 1. Authorize: check Bearer token or CRON_SECRET or SuperAdmin session
+    // 1. Authorize: check Bearer token (CRON_SECRET) or SuperAdmin session
     const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET || "campustrade_cron_secret_2026";
+    const cronSecret = process.env.CRON_SECRET;
     const bearer = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
 
-    let isAuthorized = bearer === cronSecret;
+    let isAuthorized = Boolean(cronSecret && bearer === cronSecret);
 
     if (!isAuthorized) {
       const session = await getSession();

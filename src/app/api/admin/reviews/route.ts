@@ -10,12 +10,25 @@ export async function GET() {
 
     const reviews = await prisma.productReview.findMany({
       orderBy: { createdAt: "desc" },
-      include: {
+      take: 50,
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        tags: true,
+        status: true,
+        helpfulCount: true,
+        createdAt: true,
         product: { select: { id: true, title: true, slug: true } },
         buyer: { select: { fullName: true, email: true } },
         seller: { select: { storeName: true } },
         reports: {
-          include: {
+          select: {
+            id: true,
+            reason: true,
+            details: true,
+            status: true,
+            createdAt: true,
             reporter: { select: { fullName: true } },
           },
         },

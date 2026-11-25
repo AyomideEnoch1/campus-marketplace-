@@ -2,20 +2,48 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { prisma } from "@/lib/prisma";
-import { Badge } from "@/components/ui/badge";
+import { getCachedCampuses } from "@/lib/db/queries";
 import { AdminVendorTable } from "./AdminVendorTable";
+
+const ADMIN_VENDOR_LIST_SELECT = {
+  id: true,
+  storeName: true,
+  slug: true,
+  status: true,
+  sellerType: true,
+  campusId: true,
+  whatsapp: true,
+  faculty: true,
+  department: true,
+  businessCategory: true,
+  businessAddress: true,
+  governmentIdType: true,
+  cacNumber: true,
+  idDocumentPath: true,
+  selfieDocumentPath: true,
+  businessPhotoPath: true,
+  studentIdUrl: true,
+  adminNotes: true,
+  verificationTier: true,
+  payoutDelayHours: true,
+  isTrustedSeller: true,
+  isRegisteredBusiness: true,
+  rejectionReason: true,
+  logo: true,
+  createdAt: true,
+  user: { select: { fullName: true, email: true, phone: true } },
+  campus: { select: { id: true, name: true, slug: true } },
+  _count: { select: { products: true, orders: true } },
+} as const;
 
 export default async function AdminVendorsPage() {
   const [vendors, campuses] = await Promise.all([
     prisma.vendorProfile.findMany({
       orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { fullName: true, email: true, phone: true } },
-        campus: true,
-        _count: { select: { products: true, orders: true } },
-      },
+      take: 50,
+      select: ADMIN_VENDOR_LIST_SELECT,
     }),
-    prisma.campus.findMany({ where: { isActive: true } }),
+    getCachedCampuses(),
   ]);
 
   return (

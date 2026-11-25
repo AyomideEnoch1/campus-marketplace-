@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -24,9 +25,20 @@ import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
 
 export default function AdminEscrowPage() {
-  const [data, setData] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ["admin", "escrow"],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/admin/escrow", { signal });
+      if (!res.ok) throw new Error("Failed to load admin escrow console");
+      return res.json();
+    },
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const error = queryError ? (queryError as Error).message : null;
 
   // Split dispute modal
   const [splitModalOpen, setSplitModalOpen] = React.useState(false);
@@ -40,23 +52,9 @@ export default function AdminEscrowPage() {
   const [retryingPayoutId, setRetryingPayoutId] = React.useState<string | null>(null);
   const [reconciling, setReconciling] = React.useState(false);
 
-  const fetchAdminData = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/admin/escrow");
-      if (!res.ok) throw new Error("Failed to load admin escrow console");
-      const json = await res.json();
-      setData(json);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    fetchAdminData();
-  }, [fetchAdminData]);
+  const fetchAdminData = React.useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["admin", "escrow"] });
+  }, [queryClient]);
 
   const handleResolveDispute = async (
     disputeId: string,

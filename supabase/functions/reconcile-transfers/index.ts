@@ -17,7 +17,7 @@ serve(async (req) => {
     const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
     const { data: stuck } = await supabaseClient
       .from("payouts")
-      .select("*")
+      .select("id, order_id, status, reference, flw_transfer_id")
       .in("status", ["processing", "pending"])
       .lte("created_at", thirtyMinsAgo)
       .limit(25);

@@ -29,10 +29,10 @@ serve(async (req) => {
 
     const cleanCode = String(code).trim();
 
-    // Fetch delivery code
+    // Fetch delivery code (explicit columns)
     const { data: record, error: codeErr } = await supabaseClient
       .from("delivery_codes")
-      .select("*")
+      .select("locked, code_hash, attempts")
       .eq("order_id", orderId)
       .single();
 

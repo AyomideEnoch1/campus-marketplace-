@@ -29,7 +29,8 @@ function CheckoutConfirmContent() {
   const [escrowMode, setEscrowMode] = React.useState<"escrow" | "direct">("escrow");
   const [orderId, setOrderId] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [pollCount, setPollCount] = React.useState(0);
+  const pollCountRef = React.useRef(0);
+  const [manualCheckTick, setManualCheckTick] = React.useState(0);
   const [paying, setPaying] = React.useState(false);
   const [retryError, setRetryError] = React.useState<string | null>(null);
 
@@ -69,12 +70,13 @@ function CheckoutConfirmContent() {
     }
   };
 
-  // Verification routine
-  const checkStatus = React.useCallback(async () => {
+  // Verification routine (stable reference, capped at MAX_POLLS with cleanup)
+  const MAX_POLLS = 10;
+  const checkStatus = React.useCallback(async (signal?: AbortSignal): Promise<"done" | "stop" | "continue"> => {
     if (!txRef && !transactionId) {
       setLoading(false);
       setErrorMessage("No transaction reference found in payment callback.");
-      return;
+      return "stop";
     }
 
     try {
@@ -83,7 +85,7 @@ function CheckoutConfirmContent() {
       if (transactionId) query.set("transaction_id", transactionId);
       if (rawStatus) query.set("status", rawStatus);
 
-      const res = await fetch(`/api/payments/verify-payment?${query.toString()}`);
+      const res = await fetch(`/api/payments/verify-payment?${query.toString()}`, { signal });
       const data = await res.json();
 
       if (data.orderId) {
@@ -96,41 +98,62 @@ function CheckoutConfirmContent() {
       if (res.ok && (data.status === "paid_held" || data.status === "confirmed" || data.status === "delivered" || data.status === "released")) {
         setOrderStatus(data.status);
         setLoading(false);
-        return true;
-      } else if (!res.ok && data.error) {
-        // Keep polling if transaction is still processing on Flutterwave
-        if (pollCount > 10) {
-          setLoading(false);
+        return "done";
+      }
+
+      if (pollCountRef.current >= MAX_POLLS) {
+        setLoading(false);
+        if (data.message || data.error) {
           setErrorMessage(data.message || data.error);
         }
+        return "stop";
       }
     } catch (err: any) {
-      if (pollCount > 10) {
+      if (err?.name === "AbortError") return "stop";
+      if (pollCountRef.current >= MAX_POLLS) {
         setLoading(false);
         setErrorMessage(err.message || "Failed to verify transaction status.");
+        return "stop";
       }
     }
-    return false;
-  }, [txRef, transactionId, rawStatus, pollCount]);
+    return "continue";
+  }, [txRef, transactionId, rawStatus]);
 
-  // Initial check & polling interval
+  // Initial check & bounded polling with backoff (stops at MAX_POLLS or when hidden)
   React.useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let cancelled = false;
+    let timer: NodeJS.Timeout | null = null;
+    const controller = new AbortController();
 
-    checkStatus().then((isDone) => {
-      if (!isDone) {
-        interval = setInterval(async () => {
-          setPollCount((prev) => prev + 1);
-          const done = await checkStatus();
-          if (done) clearInterval(interval);
-        }, 3000);
+    const scheduleNext = () => {
+      if (cancelled || pollCountRef.current >= MAX_POLLS) return;
+      const delayMs = Math.min(30000, 3000 * Math.pow(1.4, pollCountRef.current));
+      timer = setTimeout(async () => {
+        if (cancelled) return;
+        if (typeof document !== "undefined" && document.hidden) {
+          scheduleNext();
+          return;
+        }
+        pollCountRef.current += 1;
+        const outcome = await checkStatus(controller.signal);
+        if (outcome === "continue") {
+          scheduleNext();
+        }
+      }, delayMs);
+    };
+
+    checkStatus(controller.signal).then((outcome) => {
+      if (outcome === "continue") {
+        scheduleNext();
       }
     });
 
     return () => {
-      if (interval) clearInterval(interval);
+      cancelled = true;
+      controller.abort();
+      if (timer) clearTimeout(timer);
     };
-  }, [checkStatus]);
+  }, [checkStatus, manualCheckTick]);
 
   const isSuccess =
     orderStatus === "paid_held" ||
@@ -276,8 +299,9 @@ function CheckoutConfirmContent() {
               <Button
                 onClick={() => {
                   setLoading(true);
-                  setPollCount(0);
-                  checkStatus();
+                  setErrorMessage(null);
+                  pollCountRef.current = 0;
+                  setManualCheckTick((t) => t + 1);
                 }}
                 variant="ghost"
                 className="rounded-2xl text-xs font-medium text-neutral-600 gap-1.5"

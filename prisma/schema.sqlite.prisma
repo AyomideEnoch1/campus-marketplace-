@@ -63,7 +63,6 @@ model VendorProfile {
   cacDocumentPath  String?
   isRegisteredBusiness Boolean @default(false)
   governmentIdType String?  // nin, voters_card, drivers_license, international_passport, school_work_id
-  nin              String?  // 11-digit National Identity Number (NIN)
   idDocumentPath   String?
   selfieDocumentPath String?
   vouchedBy        String?  // User/Vendor ID who vouched

@@ -8,6 +8,10 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
+  if (!cronSecret && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 500 });
+  }
+
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     const urlSecret = req.nextUrl.searchParams.get("secret");
     if (urlSecret !== cronSecret) {

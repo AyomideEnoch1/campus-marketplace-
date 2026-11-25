@@ -46,13 +46,26 @@ export async function GET(req: NextRequest) {
       take: 20,
     });
 
-    // 4. Active Disputes
+    // 4. Active Disputes (bounded, explicit select)
     const disputes = await prisma.dispute.findMany({
       where: { status: { in: ["open", "under_review"] } },
-      include: {
+      take: 30,
+      select: {
+        id: true,
+        orderId: true,
+        reason: true,
+        description: true,
+        status: true,
+        createdAt: true,
         order: {
-          include: {
-            vendor: true,
+          select: {
+            id: true,
+            orderNumber: true,
+            totalAmount: true,
+            escrow_status: true,
+            vendor: {
+              select: { id: true, storeName: true },
+            },
           },
         },
         buyer: {
@@ -67,10 +80,27 @@ export async function GET(req: NextRequest) {
       where: {
         escrow_status: { not: "pending" },
       },
-      include: {
+      select: {
+        id: true,
+        orderNumber: true,
+        buyerName: true,
+        totalAmount: true,
+        seller_amount: true,
+        commission: true,
+        escrow_status: true,
+        delivered_at: true,
+        confirmed_at: true,
+        released_at: true,
+        createdAt: true,
         vendor: { select: { storeName: true } },
-        payments: true,
-        payouts: true,
+        payments: {
+          take: 2,
+          select: { id: true, status: true, amount: true, flwTransactionId: true, txRef: true },
+        },
+        payouts: {
+          take: 2,
+          select: { id: true, status: true, amount: true, reference: true },
+        },
       },
       orderBy: { createdAt: "desc" },
       take: 25,

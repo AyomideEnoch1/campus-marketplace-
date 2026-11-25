@@ -1,33 +1,20 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getCachedCampuses } from "@/lib/db/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function GET() {
   try {
-    const campuses = await prisma.campus.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      include: {
-        settings: true,
-        safeMeetupPoints: {
-          where: { active: true },
-          orderBy: { name: "asc" },
+    const campuses = await getCachedCampuses();
+    return NextResponse.json(
+      { campuses },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
-        _count: {
-          select: {
-            vendors: {
-              where: {
-                sellerType: "guest",
-                status: "APPROVED",
-              },
-            },
-          },
-        },
-      },
-    });
-    return NextResponse.json({ campuses });
-  } catch (error: any) {
+      }
+    );
+  } catch {
     return NextResponse.json({ campuses: [] });
   }
 }

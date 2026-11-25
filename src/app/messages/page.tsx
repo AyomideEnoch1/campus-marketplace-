@@ -64,13 +64,20 @@ export default async function MessagesPage({
     }
   }
 
-  // Fetch all conversations for this user
+  // Fetch recent conversations for this user (bounded)
   const rawConversations = await prisma.conversation.findMany({
     where: {
       OR: [{ buyerId: session.id }, { vendor: { userId: session.id } }],
     },
     orderBy: { lastMessageAt: "desc" },
-    include: {
+    take: 30,
+    select: {
+      id: true,
+      buyerId: true,
+      vendorId: true,
+      productId: true,
+      lastMessage: true,
+      lastMessageAt: true,
       buyer: {
         select: { id: true, fullName: true, email: true },
       },
@@ -91,7 +98,7 @@ export default async function MessagesPage({
           title: true,
           price: true,
           slug: true,
-          images: { take: 1, orderBy: { position: "asc" } },
+          images: { take: 1, orderBy: { position: "asc" }, select: { url: true } },
         },
       },
       _count: {
@@ -134,19 +141,28 @@ export default async function MessagesPage({
   // Prefetch messages for the active conversation so history displays instantly
   let initialMessages: ChatMessageItem[] = [];
   if (targetConversationId) {
-    const rawMessages = await prisma.chatMessage.findMany({
-      where: { conversationId: targetConversationId },
-      orderBy: { createdAt: "asc" },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            fullName: true,
-            role: true,
+    const rawMessages = (
+      await prisma.chatMessage.findMany({
+        where: { conversationId: targetConversationId },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          conversationId: true,
+          senderId: true,
+          content: true,
+          isRead: true,
+          createdAt: true,
+          sender: {
+            select: {
+              id: true,
+              fullName: true,
+              role: true,
+            },
           },
         },
-      },
-    });
+      })
+    ).reverse();
 
     initialMessages = rawMessages.map((m) => ({
       id: m.id,

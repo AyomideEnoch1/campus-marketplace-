@@ -13,8 +13,11 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    // Optional bearer token check if CRON_SECRET is set
-    if (cronSecret && authHeader && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret && process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 500 });
+    }
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized cron caller" }, { status: 401 });
     }
 
@@ -30,11 +33,27 @@ export async function POST(req: NextRequest) {
           { nextRetryAt: null },
         ],
       },
-      include: {
-        order: true,
+      select: {
+        id: true,
+        orderId: true,
+        reference: true,
+        flwTransferId: true,
+        amount: true,
+        attempts: true,
         seller: {
-          include: {
-            sellerBankAccount: true,
+          select: {
+            id: true,
+            storeName: true,
+            bankCode: true,
+            bankAccountNumber: true,
+            bankAccountName: true,
+            sellerBankAccount: {
+              select: {
+                bankCode: true,
+                accountNumber: true,
+                accountName: true,
+              },
+            },
           },
         },
       },

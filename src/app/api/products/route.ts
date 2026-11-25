@@ -1,148 +1,45 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getEffectiveProductPrice } from "@/lib/promotions";
+import { queryPaginatedProducts } from "@/lib/db/queries";
+import { clampLimit, clampPage, MAX_PAGE_SIZE } from "@/lib/db/selects";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`api:products:${ip}`, 90, 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
+    const limit = clampLimit(searchParams.get("limit"), 20, MAX_PAGE_SIZE);
+    const offsetParam = searchParams.get("offset");
+    const page = clampPage(searchParams.get("page"));
 
-    const q = searchParams.get("q")?.trim() || "";
-    const category = searchParams.get("category");
-    const campus = searchParams.get("campus");
-    const condition = searchParams.get("condition");
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
-    const sort = searchParams.get("sort");
-    const vendor = searchParams.get("vendor");
-    const sellerType = searchParams.get("sellerType");
-    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10), 1), 50);
-    const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10), 0);
-
-    const where: any = {
-      status: "PUBLISHED",
-    };
-
-    if (category) {
-      const matchedCategory = await prisma.category.findUnique({
-        where: { slug: category },
-        include: { children: true },
-      });
-
-      if (matchedCategory && matchedCategory.children?.length > 0) {
-        where.category = {
-          slug: { in: [matchedCategory.slug, ...matchedCategory.children.map((c) => c.slug)] },
-        };
-      } else {
-        where.category = {
-          slug: category,
-        };
-      }
-    }
-
-    if (campus) {
-      where.vendor = {
-        campus: {
-          slug: campus,
-        },
-      };
-    }
-
-    if (vendor) {
-      where.vendor = {
-        ...(where.vendor || {}),
-        slug: vendor,
-      };
-    }
-
-    if (sellerType && (sellerType === "student" || sellerType === "guest")) {
-      where.vendor = {
-        ...(where.vendor || {}),
-        sellerType,
-      };
-    }
-
-    if (condition) {
-      where.condition = condition;
-    }
-
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price.gte = parseFloat(minPrice);
-      if (maxPrice) where.price.lte = parseFloat(maxPrice);
-    }
-
-    if (q) {
-      where.OR = [
-        { title: { contains: q, mode: "insensitive" } },
-        { description: { contains: q, mode: "insensitive" } },
-        { tags: { contains: q, mode: "insensitive" } },
-        { category: { name: { contains: q, mode: "insensitive" } } },
-        { vendor: { storeName: { contains: q, mode: "insensitive" } } },
-        { vendor: { slug: { contains: q, mode: "insensitive" } } },
-        { vendor: { user: { fullName: { contains: q, mode: "insensitive" } } } },
-      ];
-    }
-
-    // Determine sorting
-    let orderBy: any = { createdAt: "desc" };
-    if (sort === "price-asc") orderBy = { price: "asc" };
-    if (sort === "price-desc") orderBy = { price: "desc" };
-    if (sort === "popular") orderBy = { viewsCount: "desc" };
-
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        orderBy,
-        take: limit,
-        skip: offset,
-        include: {
-          images: { orderBy: { position: "asc" } },
-          category: { select: { id: true, name: true, slug: true } },
-          vendor: {
-            select: {
-              id: true,
-              storeName: true,
-              slug: true,
-              whatsapp: true,
-              sellerType: true,
-              isRegisteredBusiness: true,
-              isTrustedSeller: true,
-              verificationTier: true,
-              campus: { select: { id: true, name: true, slug: true, city: true } },
-            },
-          },
-          promotions: {
-            where: {
-              status: "ACTIVE",
-              startAt: { lte: new Date() },
-              endAt: { gt: new Date() },
-            },
-            take: 1,
-          },
-        },
-      }),
-      prisma.product.count({ where }),
-    ]);
-
-    const now = new Date();
-    const formattedProducts = products.map((prod: any) => {
-      const priceInfo = getEffectiveProductPrice(prod, now);
-      return {
-        ...prod,
-        price: priceInfo.effectivePrice,
-        originalPrice: priceInfo.originalPrice,
-        comparePrice: priceInfo.comparePrice,
-        promo: priceInfo.activePromo,
-      };
+    const result = await queryPaginatedProducts({
+      q: searchParams.get("q"),
+      category: searchParams.get("category"),
+      campus: searchParams.get("campus"),
+      condition: searchParams.get("condition"),
+      minPrice: searchParams.get("minPrice"),
+      maxPrice: searchParams.get("maxPrice"),
+      sort: searchParams.get("sort"),
+      vendor: searchParams.get("vendor"),
+      sellerType: searchParams.get("sellerType"),
+      limit,
+      page,
+      offset: offsetParam !== null ? Math.max(0, parseInt(offsetParam, 10) || 0) : undefined,
     });
 
-    return NextResponse.json({
-      products: formattedProducts,
-      total,
-      limit,
-      offset,
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
     });
   } catch (error: any) {
     console.error("GET /api/products error:", error);

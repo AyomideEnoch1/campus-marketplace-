@@ -28,10 +28,10 @@ serve(async (req) => {
       });
     }
 
-    // Fetch order with vendor bank details
+    // Fetch order with vendor bank details (explicit columns)
     const { data: order, error: orderErr } = await supabaseClient
       .from("Order")
-      .select("*, vendor:VendorProfile(*)")
+      .select("id, escrow_status, seller_amount, subtotal, commission, vendor:VendorProfile(id, storeName, bankCode, bankAccountNumber, bankAccountName)")
       .eq("id", orderId)
       .single();
 

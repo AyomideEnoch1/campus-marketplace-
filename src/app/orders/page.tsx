@@ -24,7 +24,21 @@ export default async function OrdersPage() {
       OR: [{ buyerId: session.id }, { buyerEmail: session.email }],
     },
     orderBy: { createdAt: "desc" },
-    include: {
+    take: 24,
+    select: {
+      id: true,
+      orderNumber: true,
+      totalAmount: true,
+      status: true,
+      deliveryMethod: true,
+      deliveryAddress: true,
+      notes: true,
+      paid_at: true,
+      escrow_status: true,
+      escrow_mode: true,
+      tx_ref: true,
+      createdAt: true,
+      updatedAt: true,
       meetupPoint: {
         select: {
           id: true,
@@ -33,7 +47,14 @@ export default async function OrdersPage() {
         },
       },
       vendor: {
-        include: {
+        select: {
+          id: true,
+          storeName: true,
+          slug: true,
+          whatsapp: true,
+          sellerType: true,
+          isTrustedSeller: true,
+          isRegisteredBusiness: true,
           campus: {
             select: {
               name: true,
@@ -43,7 +64,11 @@ export default async function OrdersPage() {
         },
       },
       items: {
-        include: {
+        select: {
+          id: true,
+          productId: true,
+          quantity: true,
+          unitPrice: true,
           product: {
             select: {
               id: true,

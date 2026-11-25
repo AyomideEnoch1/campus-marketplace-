@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Wallet,
   ShieldCheck,
@@ -22,12 +23,33 @@ import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
 
 export default function VendorWalletPage() {
-  const [data, setData] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["vendor", "wallet"],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/vendor/wallet", { signal });
+      if (!res.ok) throw new Error("Failed to load vendor wallet");
+      return res.json();
+    },
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: banksData } = useQuery({
+    queryKey: ["vendor", "bank-list"],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/vendor/bank/list", { signal });
+      if (!res.ok) return { banks: [] };
+      return res.json();
+    },
+    staleTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const banks: any[] = banksData?.banks || [];
 
   // Bank setup state
-  const [banks, setBanks] = React.useState<any[]>([]);
   const [selectedBankCode, setSelectedBankCode] = React.useState("");
   const [accountNumber, setAccountNumber] = React.useState("");
   const [resolvingName, setResolvingName] = React.useState(false);
@@ -43,70 +65,55 @@ export default function VendorWalletPage() {
   const [codeSuccessMsg, setCodeSuccessMsg] = React.useState<string | null>(null);
   const [codeErrorMsg, setCodeErrorMsg] = React.useState<string | null>(null);
 
-  const fetchWallet = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/vendor/wallet");
-      if (!res.ok) {
-        throw new Error("Failed to load vendor wallet");
-      }
-      const json = await res.json();
-      setData(json);
+  const fetchWallet = React.useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["vendor", "wallet"] });
+  }, [queryClient]);
 
-      if (json.bankAccount?.bankCode) {
-        setSelectedBankCode(json.bankAccount.bankCode);
-      }
-      if (json.bankAccount?.accountNumber) {
-        setAccountNumber(json.bankAccount.accountNumber);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Fetch bank list
+  // Sync bank form fields once wallet data arrives
   React.useEffect(() => {
-    fetchWallet();
-    fetch("/api/vendor/bank/list")
+    if (data?.bankAccount?.bankCode && !selectedBankCode) {
+      setSelectedBankCode(data.bankAccount.bankCode);
+    }
+    if (data?.bankAccount?.accountNumber && !accountNumber) {
+      setAccountNumber(data.bankAccount.accountNumber);
+    }
+  }, [data?.bankAccount?.bankCode, data?.bankAccount?.accountNumber]);
+
+  // Live Bank Resolution when 10 digits and bankCode chosen (with AbortController)
+  React.useEffect(() => {
+    if (accountNumber.length !== 10 || !selectedBankCode) return;
+    const controller = new AbortController();
+    setResolvingName(true);
+    setResolvedResult(null);
+
+    fetch("/api/vendor/bank/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        bankCode: selectedBankCode,
+        accountNumber,
+        save: false,
+      }),
+    })
       .then((r) => r.json())
-      .then((d) => {
-        if (d.banks) setBanks(d.banks);
+      .then((res) => {
+        if (res.success) {
+          setResolvedResult(res);
+        } else {
+          setResolvedResult({ error: res.error || "Could not resolve bank account" });
+        }
       })
-      .catch(() => {});
-  }, [fetchWallet]);
-
-  // Live Bank Resolution when 10 digits and bankCode chosen
-  React.useEffect(() => {
-    if (accountNumber.length === 10 && selectedBankCode) {
-      setResolvingName(true);
-      setResolvedResult(null);
-
-      fetch("/api/vendor/bank/resolve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bankCode: selectedBankCode,
-          accountNumber,
-          save: false,
-        }),
-      })
-        .then((r) => r.json())
-        .then((res) => {
-          if (res.success) {
-            setResolvedResult(res);
-          } else {
-            setResolvedResult({ error: res.error || "Could not resolve bank account" });
-          }
-        })
-        .catch(() => {
+      .catch((err) => {
+        if (err?.name !== "AbortError") {
           setResolvedResult({ error: "Network error resolving account details" });
-        })
-        .finally(() => {
-          setResolvingName(false);
-        });
-    }
+        }
+      })
+      .finally(() => {
+        setResolvingName(false);
+      });
+
+    return () => controller.abort();
   }, [accountNumber, selectedBankCode]);
 
   const handleSaveBank = async () => {

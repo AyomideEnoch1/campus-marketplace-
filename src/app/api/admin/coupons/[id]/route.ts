@@ -55,6 +55,7 @@ export async function GET(
     const redemptions = await prisma.couponRedemption.findMany({
       where: whereRedemptions,
       orderBy: { redeemedAt: "desc" },
+      take: 100,
       include: {
         vendor: {
           select: {
@@ -76,44 +77,50 @@ export async function GET(
       },
     });
 
-    const activeCount = await prisma.couponRedemption.count({
-      where: {
-        couponId: coupon.id,
-        status: "ACTIVE",
-      },
-    });
+    const vendorIds = redemptions.map((r) => r.vendorId);
+    const [activeCount, publishedGroups] = await Promise.all([
+      prisma.couponRedemption.count({
+        where: {
+          couponId: coupon.id,
+          status: "ACTIVE",
+        },
+      }),
+      vendorIds.length
+        ? prisma.product.groupBy({
+            by: ["vendorId"],
+            where: { vendorId: { in: vendorIds }, status: "PUBLISHED" },
+            _count: { _all: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const publishedCountMap = new Map(publishedGroups.map((g) => [g.vendorId, g._count._all]));
 
     const now = new Date();
-    const formattedRedemptions = await Promise.all(
-      redemptions.map(async (r) => {
-        const publishedCount = await prisma.product.count({
-          where: { vendorId: r.vendorId, status: "PUBLISHED" },
-        });
+    const formattedRedemptions = redemptions.map((r) => {
+      const publishedCount = publishedCountMap.get(r.vendorId) ?? 0;
+      const diffMs = new Date(r.accessExpiresAt).getTime() - now.getTime();
+      const daysUntilExpiry = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-        const diffMs = new Date(r.accessExpiresAt).getTime() - now.getTime();
-        const daysUntilExpiry = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-
-        return {
-          id: r.id,
-          vendorId: r.vendorId,
-          storeName: r.vendor.storeName,
-          vendorSlug: r.vendor.slug,
-          ownerName: r.vendor.user?.fullName,
-          ownerEmail: r.vendor.user?.email,
-          ownerPhone: r.vendor.user?.phone,
-          vendorApprovalStatus: r.vendor.status,
-          status: r.status,
-          redeemedAt: r.redeemedAt,
-          accessExpiresAt: r.accessExpiresAt,
-          releasedAt: r.releasedAt,
-          releaseReason: r.releaseReason,
-          daysUntilExpiry,
-          totalProducts: r.vendor._count.products,
-          publishedProductsCount: publishedCount,
-          hasPublishedProducts: publishedCount > 0,
-        };
-      })
-    );
+      return {
+        id: r.id,
+        vendorId: r.vendorId,
+        storeName: r.vendor.storeName,
+        vendorSlug: r.vendor.slug,
+        ownerName: r.vendor.user?.fullName,
+        ownerEmail: r.vendor.user?.email,
+        ownerPhone: r.vendor.user?.phone,
+        vendorApprovalStatus: r.vendor.status,
+        status: r.status,
+        redeemedAt: r.redeemedAt,
+        accessExpiresAt: r.accessExpiresAt,
+        releasedAt: r.releasedAt,
+        releaseReason: r.releaseReason,
+        daysUntilExpiry,
+        totalProducts: r.vendor._count.products,
+        publishedProductsCount: publishedCount,
+        hasPublishedProducts: publishedCount > 0,
+      };
+    });
 
     const formattedAuditLogs = coupon.auditLogs.map((log) => ({
       id: log.id,

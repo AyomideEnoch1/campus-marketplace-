@@ -18,7 +18,11 @@ export async function GET(
 
     const conversation = await prisma.conversation.findUnique({
       where: { id: params.id },
-      include: {
+      select: {
+        id: true,
+        buyerId: true,
+        vendorId: true,
+        productId: true,
         vendor: { select: { userId: true, storeName: true, slug: true, logo: true, whatsapp: true } },
         buyer: { select: { id: true, fullName: true, email: true } },
         product: {
@@ -27,7 +31,7 @@ export async function GET(
             title: true,
             price: true,
             slug: true,
-            images: { take: 1, orderBy: { position: "asc" } },
+            images: { take: 1, orderBy: { position: "asc" }, select: { url: true } },
           },
         },
       },
@@ -45,11 +49,18 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Fetch messages
-    const messages = await prisma.chatMessage.findMany({
+    // Fetch latest 50 messages in bounded query and return in chronological order
+    const recentMessages = await prisma.chatMessage.findMany({
       where: { conversationId: params.id },
-      orderBy: { createdAt: "asc" },
-      include: {
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        conversationId: true,
+        senderId: true,
+        content: true,
+        isRead: true,
+        createdAt: true,
         sender: {
           select: {
             id: true,
@@ -59,16 +70,19 @@ export async function GET(
         },
       },
     });
+    const messages = recentMessages.reverse();
 
-    // Mark unread messages sent by the other party as read
-    await prisma.chatMessage.updateMany({
-      where: {
-        conversationId: params.id,
-        senderId: { not: session.id },
-        isRead: false,
-      },
-      data: { isRead: true },
-    });
+    // Only issue UPDATE if unread messages from the other party exist
+    if (messages.some((m) => !m.isRead && m.senderId !== session.id)) {
+      await prisma.chatMessage.updateMany({
+        where: {
+          conversationId: params.id,
+          senderId: { not: session.id },
+          isRead: false,
+        },
+        data: { isRead: true },
+      });
+    }
 
     return NextResponse.json({ conversation, messages });
   } catch (error: any) {

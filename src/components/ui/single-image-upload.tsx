@@ -59,17 +59,11 @@ export function SingleImageUpload({
 
       onChange(data.url || (data.urls && data.urls[0]));
     } catch (err: any) {
-      console.warn("Upload endpoint issue, attempting base64 fallback...", err);
-
-      try {
-        const reader = new FileReader();
-        reader.onload = () => {
-          onChange(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      } catch (fallbackErr: any) {
-        setError(err.message || "Failed to upload photo");
-      }
+      // Never fall back to persisting multi-MB base64 strings into the database
+      setError(
+        err?.message ||
+          "Image upload failed. Please try again or paste an image link below."
+      );
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = "";

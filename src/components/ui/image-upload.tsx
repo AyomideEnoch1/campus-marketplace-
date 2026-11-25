@@ -79,24 +79,11 @@ export function ImageUpload({
         onChange([...value, data.url]);
       }
     } catch (err: any) {
-      console.warn("Upload endpoint issue, attempting base64 fallback...", err);
-
-      // Client-side fallback to base64 Data URLs so vendor is never blocked
-      try {
-        const base64Promises = fileArray.map(
-          (file) =>
-            new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            })
-        );
-        const base64Results = await Promise.all(base64Promises);
-        onChange([...value, ...base64Results]);
-      } catch (fallbackErr: any) {
-        setUploadError(err.message || "Failed to process photos");
-      }
+      // Never fall back to persisting multi-MB base64 strings into the database
+      setUploadError(
+        err?.message ||
+          "Image upload failed. Please try again or paste an image web URL below."
+      );
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

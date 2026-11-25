@@ -9,6 +9,7 @@ export default async function VendorOrdersPage() {
 
   const vendor = await prisma.vendorProfile.findUnique({
     where: { userId: session.id },
+    select: { id: true },
   });
   if (!vendor) redirect("/auth/register?role=vendor");
 
@@ -21,7 +22,29 @@ export default async function VendorOrdersPage() {
       ],
     },
     orderBy: { createdAt: "desc" },
-    include: {
+    take: 50,
+    select: {
+      id: true,
+      orderNumber: true,
+      buyerId: true,
+      status: true,
+      escrow_status: true,
+      escrow_mode: true,
+      buyerName: true,
+      buyerEmail: true,
+      buyerPhone: true,
+      deliveryAddress: true,
+      deliveryMethod: true,
+      notes: true,
+      subtotal: true,
+      commission: true,
+      seller_amount: true,
+      totalAmount: true,
+      paid_at: true,
+      delivered_at: true,
+      confirmed_at: true,
+      dispute_deadline: true,
+      createdAt: true,
       deliveryCode: {
         select: {
           attempts: true,
@@ -29,12 +52,20 @@ export default async function VendorOrdersPage() {
         },
       },
       items: {
-        include: {
+        select: {
+          id: true,
+          quantity: true,
+          unitPrice: true,
+          variantDetails: true,
           product: {
-            include: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
               images: {
                 take: 1,
                 orderBy: { position: "asc" },
+                select: { url: true },
               },
             },
           },

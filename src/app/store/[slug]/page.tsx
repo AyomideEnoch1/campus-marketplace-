@@ -1,22 +1,22 @@
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
 import { StorefrontRenderer } from "@/components/storefront/StorefrontRenderer";
+import { Button } from "@/components/ui/button";
+import { getVendorBySlug, getStorefrontData } from "@/lib/db/queries";
+import { clampPage } from "@/lib/db/selects";
+
+export const revalidate = 60;
 
 interface StorePageProps {
   params: { slug: string };
+  searchParams?: { page?: string };
 }
 
 export async function generateMetadata({
   params,
 }: StorePageProps): Promise<Metadata> {
-  const vendor = await prisma.vendorProfile.findUnique({
-    where: { slug: params.slug },
-    include: { campus: true },
-  });
+  const vendor = await getVendorBySlug(params.slug);
 
   if (!vendor) {
     return { title: "Store Not Found | ọjà" };
@@ -30,55 +30,13 @@ export async function generateMetadata({
   };
 }
 
-export default async function StorePage({ params }: StorePageProps) {
-  const session = await getSession();
-
-  const vendor = await prisma.vendorProfile.findUnique({
-    where: { slug: params.slug },
-    include: {
-      campus: true,
-    },
-  });
-
+export default async function StorePage({ params, searchParams }: StorePageProps) {
+  const vendor = await getVendorBySlug(params.slug);
   if (!vendor) notFound();
 
-  // If vendor is viewing their own live store, show all their active products; otherwise show PUBLISHED items
-  const isOwner = session?.id === vendor.userId;
-  const products = await prisma.product.findMany({
-    where: {
-      vendorId: vendor.id,
-      ...(isOwner ? { status: { not: "HIDDEN" } } : { status: "PUBLISHED" }),
-    },
-    orderBy: { createdAt: "desc" },
-    include: {
-      images: { orderBy: { position: "asc" } },
-      category: true,
-    },
-  });
-
-  if (!vendor) notFound();
-
-  // Fetch completed orders count & recent customer reviews
-  const [completedOrdersCount, recentReviews] = await Promise.all([
-    prisma.order.count({
-      where: {
-        vendorId: vendor.id,
-        status: { in: ["CONFIRMED", "DELIVERED"] },
-      },
-    }),
-    prisma.productReview.findMany({
-      where: {
-        sellerId: vendor.id,
-        status: "PUBLISHED",
-      },
-      take: 4,
-      orderBy: { createdAt: "desc" },
-      include: {
-        product: { select: { title: true, slug: true } },
-        buyer: { select: { fullName: true } },
-      },
-    }),
-  ]);
+  const currentPage = clampPage(searchParams?.page);
+  const { products, totalPages, page, completedOrdersCount, recentReviews } =
+    await getStorefrontData(vendor.id, false, currentPage);
 
   const formattedReviews = recentReviews.map((r) => {
     let displayName = "Student Buyer";
@@ -109,6 +67,27 @@ export default async function StorePage({ params }: StorePageProps) {
         products={products}
         recentReviews={formattedReviews}
       />
+      {totalPages > 1 && (
+        <div className="container mx-auto px-4 pb-12 flex items-center justify-center gap-2">
+          {page > 1 && (
+            <Link href={`/store/${vendor.slug}?page=${page - 1}`} prefetch={false}>
+              <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                &larr; Previous
+              </Button>
+            </Link>
+          )}
+          <span className="px-3 py-1.5 text-xs font-semibold text-neutral-600">
+            Page {page} of {totalPages}
+          </span>
+          {page < totalPages && (
+            <Link href={`/store/${vendor.slug}?page=${page + 1}`} prefetch={false}>
+              <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                Next &rarr;
+              </Button>
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

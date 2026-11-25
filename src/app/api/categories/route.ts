@@ -1,34 +1,19 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { getCachedCategories } from "@/lib/db/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function GET() {
   try {
-    const categories = await prisma.category.findMany({
-      where: { parentId: null, isActive: true },
-      orderBy: { sortOrder: "asc" },
-      include: {
-        children: {
-          where: { isActive: true },
-          orderBy: { sortOrder: "asc" },
-          include: {
-            _count: {
-              select: {
-                products: { where: { status: "PUBLISHED" } },
-              },
-            },
-          },
+    const categories = await getCachedCategories();
+    return NextResponse.json(
+      { categories },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
-        _count: {
-          select: {
-            products: { where: { status: "PUBLISHED" } },
-          },
-        },
-      },
-    });
-
-    return NextResponse.json({ categories });
+      }
+    );
   } catch (error: any) {
     console.error("GET /api/categories error:", error);
     return NextResponse.json(
