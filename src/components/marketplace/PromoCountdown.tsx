@@ -99,6 +99,7 @@ export function PromoCountdown({
   if (compact) {
     return (
       <span
+        suppressHydrationWarning
         className={`inline-flex items-center gap-1 font-mono font-bold text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded-md border tracking-tight transition-colors ${
           isEndsSoon
             ? "bg-rose-50 border-rose-200 text-rose-700 animate-pulse"
@@ -112,13 +113,14 @@ export function PromoCountdown({
           ) : (
             <Clock className="w-3 h-3 text-amber-600 shrink-0" />
           ))}
-        <span>{formattedTime}</span>
+        <span suppressHydrationWarning>{formattedTime}</span>
       </span>
     );
   }
 
   return (
     <div
+      suppressHydrationWarning
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold shadow-xs transition-all ${
         isEndsSoon
           ? "bg-rose-50/90 border-rose-300 text-rose-700 animate-pulse ring-1 ring-rose-200"
@@ -134,7 +136,7 @@ export function PromoCountdown({
       <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-600">
         {isEndsSoon ? "Ends soon:" : "Ends in:"}
       </span>
-      <span className="font-mono font-black text-xs tracking-tight">
+      <span suppressHydrationWarning className="font-mono font-black text-xs tracking-tight">
         {formattedTime}
       </span>
     </div>
