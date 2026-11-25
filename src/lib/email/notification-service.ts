@@ -9,6 +9,7 @@ export interface QueueEmailOptions {
   subject?: string;
   priority?: "HIGH" | "NORMAL" | "LOW";
   immediate?: boolean;
+  awaitDispatch?: boolean;
   metadata?: any;
 }
 
@@ -67,8 +68,15 @@ class NotificationService {
         },
       });
 
-      // 3. For HIGH priority or immediate requests, trigger worker asynchronously
-      if (options.immediate !== false || options.priority === "HIGH") {
+      // 3. For HIGH priority or immediate requests, trigger worker
+      // Await critical user-facing flows (like OTPs) so Vercel serverless functions don't freeze before Resend completes
+      if (options.awaitDispatch) {
+        try {
+          await processQueueItem(queueItem.id);
+        } catch (err: any) {
+          console.error(`[Queue Awaited Process Error] ID ${queueItem.id}:`, err?.message || err);
+        }
+      } else if (options.immediate !== false || options.priority === "HIGH") {
         processQueueItem(queueItem.id).catch((err) => {
           console.error(`[Queue Background Process Error] ID ${queueItem.id}:`, err?.message || err);
         });
@@ -329,6 +337,7 @@ class NotificationService {
       recipient: data.email,
       templateId: "buyer_email_verification",
       priority: "HIGH",
+      awaitDispatch: true,
       payload: data,
     });
   }
@@ -342,6 +351,7 @@ class NotificationService {
       recipient: data.email,
       templateId: "buyer_password_reset",
       priority: "HIGH",
+      awaitDispatch: true,
       payload: data,
     });
   }
