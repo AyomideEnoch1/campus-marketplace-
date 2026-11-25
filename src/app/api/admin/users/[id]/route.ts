@@ -21,7 +21,14 @@ export async function PATCH(
 
     const targetUser = await prisma.user.findUnique({
       where: { id: params.id },
-      select: { id: true, email: true, role: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        vendorProfile: {
+          select: { id: true, status: true },
+        },
+      },
     });
 
     if (!targetUser) {
@@ -46,10 +53,33 @@ export async function PATCH(
       );
     }
 
-    const updated = await prisma.user.update({
-      where: { id: params.id },
-      data: { role: role as any },
-    });
+    const shouldSuspendVendor =
+      role === "BUYER" &&
+      Boolean(targetUser.vendorProfile) &&
+      targetUser.vendorProfile!.status !== "SUSPENDED" &&
+      targetUser.vendorProfile!.status !== "REJECTED";
+
+    const updated = await prisma.$transaction(
+      async (tx) => {
+        const user = await tx.user.update({
+          where: { id: params.id },
+          data: { role: role as any },
+        });
+
+        if (shouldSuspendVendor && targetUser.vendorProfile) {
+          await tx.vendorProfile.update({
+            where: { id: targetUser.vendorProfile.id },
+            data: {
+              status: "SUSPENDED",
+              adminNotes: "Store suspended automatically when account role was changed to BUYER.",
+            },
+          });
+        }
+
+        return user;
+      },
+      { maxWait: 15000, timeout: 30000 }
+    );
 
     await prisma.activityLog.create({
       data: {
@@ -61,6 +91,7 @@ export async function PATCH(
           email: updated.email,
           previousRole: targetUser.role,
           newRole: updated.role,
+          vendorSuspended: shouldSuspendVendor,
           updatedBy: admin.email,
           updatedByRole: admin.role,
         }),

@@ -1077,5 +1077,16 @@ model EmailPreference {
   @@index([unsubscribeToken])
 }
 
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  visitorId String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@index([visitorId])
+}
+
 
 

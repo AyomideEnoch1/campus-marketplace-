@@ -15,6 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+import { TrafficPieChart, type PageTrafficItem } from "@/components/admin/TrafficPieChart";
 
 async function getAdminMetrics() {
   const [
@@ -52,6 +53,37 @@ async function getAdminMetrics() {
     prisma.siteSetting.findMany(),
   ]);
 
+  let totalViews = 0;
+  let uniqueVisitors = 0;
+  let topPages: PageTrafficItem[] = [];
+
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [viewsCount, visitorGroups, pageGroups] = await Promise.all([
+      prisma.pageView.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      prisma.pageView.groupBy({
+        by: ["visitorId"],
+        where: { createdAt: { gte: thirtyDaysAgo } },
+      }),
+      prisma.pageView.groupBy({
+        by: ["path"],
+        where: { createdAt: { gte: thirtyDaysAgo } },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+        take: 8,
+      }),
+    ]);
+
+    totalViews = viewsCount;
+    uniqueVisitors = visitorGroups.length;
+    topPages = pageGroups.map((g) => ({
+      path: g.path,
+      views: g._count.id,
+    }));
+  } catch {
+    // Gracefully fall back if PageView table has not been migrated yet
+  }
+
   return {
     totalVendors,
     pendingVendors,
@@ -61,6 +93,9 @@ async function getAdminMetrics() {
     recentVendors,
     recentProducts,
     siteSettings,
+    totalViews,
+    uniqueVisitors,
+    topPages,
   };
 }
 
@@ -74,6 +109,9 @@ export default async function AdminDashboardPage() {
     recentVendors,
     recentProducts,
     siteSettings,
+    totalViews,
+    uniqueVisitors,
+    topPages,
   } = await getAdminMetrics();
 
   const statCards = [
@@ -160,6 +198,14 @@ export default async function AdminDashboardPage() {
           );
         })}
       </div>
+
+      {/* Site Traffic & Most Visited Pages Pie Chart */}
+      <TrafficPieChart
+        totalViews={totalViews}
+        uniqueVisitors={uniqueVisitors}
+        topPages={topPages}
+        windowDays={30}
+      />
 
       {/* Two Column Section: Recent Vendors & Recent Products */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

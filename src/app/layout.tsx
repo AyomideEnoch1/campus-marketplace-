@@ -11,6 +11,7 @@ import { CartProvider } from "@/lib/cart";
 import { WishlistProvider } from "@/lib/wishlist";
 import { RouteNavigationLoader } from "@/components/common/RouteNavigationLoader";
 import { ReferralTracker } from "@/components/ambassador/ReferralTracker";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://xn--j-sfa590u.com"),
@@ -44,6 +45,7 @@ export default function RootLayout({
             <WishlistProvider>
               <Suspense fallback={null}>
                 <ReferralTracker />
+                <PageViewTracker />
               </Suspense>
               <RouteNavigationLoader />
               <AnnouncementBar />
