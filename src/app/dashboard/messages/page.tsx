@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ChatContainer, ConversationListItem } from "@/components/chat/ChatContainer";
 import { ChatMessageItem } from "@/components/chat/ChatRoom";
+import { DeviceNotificationPrompt } from "@/components/notifications/DeviceNotificationPrompt";
 
 export const dynamic = "force-dynamic";
 
@@ -158,7 +159,7 @@ export default async function VendorMessagesPage({
 
   return (
     <div className="h-full w-full flex flex-col min-h-0 overflow-hidden">
-      <div className="pb-2.5 mb-2 border-b border-neutral-200/80 flex items-center justify-between shrink-0 px-1">
+      <div className="pb-2.5 mb-2 border-b border-neutral-200/80 flex items-center justify-between shrink-0 px-1 gap-2">
         <div>
           <h1 className="text-lg sm:text-xl font-black text-neutral-950 tracking-tight flex items-center gap-2">
             <span>Customer Inquiries &amp; Chat</span>
@@ -170,6 +171,7 @@ export default async function VendorMessagesPage({
             Respond directly to student inquiries, bargain on pricing, and coordinate on-campus handoffs
           </p>
         </div>
+        <DeviceNotificationPrompt compact />
       </div>
 
       <div className="flex-1 min-h-0 w-full overflow-hidden">

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUserCampus } from "@/lib/user-campus";
 import { VendorOrdersClient } from "./VendorOrdersClient";
+import { DeviceNotificationPrompt } from "@/components/notifications/DeviceNotificationPrompt";
 
 export default async function VendorOrdersPage() {
   const session = await getSession();
@@ -101,6 +102,8 @@ export default async function VendorOrdersPage() {
           Review incoming campus orders, chat with buyers, and mark fulfillment status
         </p>
       </div>
+
+      <DeviceNotificationPrompt />
 
       <VendorOrdersClient initialOrders={ordersWithBuyerCampus as any} />
     </div>

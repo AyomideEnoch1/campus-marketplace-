@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN, formatDate } from "@/lib/utils";
 import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
+import { DeviceNotificationPrompt } from "@/components/notifications/DeviceNotificationPrompt";
 
 async function getVendorDashboardData(userId: string) {
   const vendor = await prisma.vendorProfile.findUnique({
@@ -298,6 +299,9 @@ export default async function VendorDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Device Push Notifications Banner */}
+      <DeviceNotificationPrompt />
 
       {/* Storefront Access & Pricing Plan */}
       <div className="p-4 sm:p-5 rounded-3xl bg-white border border-neutral-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
