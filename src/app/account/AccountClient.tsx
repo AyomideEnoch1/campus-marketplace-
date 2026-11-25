@@ -224,10 +224,10 @@ export function AccountClient({ initialUser, availableCampuses = [] }: AccountCl
     <div className="min-h-screen bg-neutral-50/60 pb-20 pt-8 sm:pt-12">
       <div className="container mx-auto px-4 max-w-5xl space-y-8">
         {/* User Hero Banner */}
-        <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-            <div className="flex items-center gap-4 sm:gap-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-neutral-900 border border-neutral-800 text-white font-extrabold text-xl sm:text-2xl flex items-center justify-center shadow-md shadow-neutral-950/10 shrink-0 overflow-hidden">
+        <div className="bg-white rounded-3xl border border-neutral-200/80 p-4 sm:p-7 shadow-sm overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-6">
+            <div className="flex items-start gap-3.5 sm:gap-5 min-w-0 flex-1">
+              <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-neutral-900 border border-neutral-800 text-white font-extrabold text-lg sm:text-2xl flex items-center justify-center shadow-md shadow-neutral-950/10 shrink-0 overflow-hidden">
                 {initialUser.avatarUrl ? (
                   <img
                     src={initialUser.avatarUrl}
@@ -238,38 +238,42 @@ export function AccountClient({ initialUser, availableCampuses = [] }: AccountCl
                   initials
                 )}
               </div>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+              <div className="space-y-1.5 min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
+                  <h1 className="text-lg sm:text-2xl font-black text-neutral-900 tracking-tight truncate max-w-full">
                     {initialUser.fullName}
                   </h1>
-                  <Badge variant="secondary" className="text-[11px] font-bold uppercase tracking-wider">
+                  <Badge variant="secondary" className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider shrink-0">
                     {initialUser.role === "VENDOR" ? "Campus Vendor" : initialUser.role === "SUPERADMIN" ? "Super Admin" : initialUser.role === "ADMIN" ? "Admin" : "Student Buyer"}
                   </Badge>
-                  {userCampus && (
-                    <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[11px] font-semibold gap-1">
-                      <MapPin className="w-3 h-3 text-emerald-600" />
-                      {userCampus.name}
-                    </Badge>
-                  )}
                 </div>
-                <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs sm:text-sm text-neutral-500">
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-neutral-400" />
-                    {initialUser.email}
+
+                {userCampus && (
+                  <div className="pt-0.5">
+                    <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] sm:text-[11px] font-semibold gap-1 max-w-full py-0.5 px-2.5">
+                      <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
+                      <span className="truncate">{userCampus.name}</span>
+                    </Badge>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-y-1 gap-x-4 text-xs text-neutral-500 pt-0.5">
+                  <span className="flex items-center gap-1.5 truncate max-w-full">
+                    <Mail className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                    <span className="truncate">{initialUser.email}</span>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-neutral-400" />
-                    Member since {formatDate(initialUser.createdAt)}
+                  <span className="flex items-center gap-1.5 shrink-0 text-neutral-400 text-[11px] sm:text-xs">
+                    <Calendar className="w-3.5 h-3.5 shrink-0" />
+                    <span>Member since {formatDate(initialUser.createdAt)}</span>
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-2 sm:pt-0">
+            <div className="flex items-center justify-end sm:justify-start pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-4 py-2.5 rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 rounded-xl transition-colors shrink-0"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
