@@ -177,7 +177,7 @@ export async function POST(request: Request) {
     const origin = `${proto}://${host}`;
 
     // Automatically decipher destination according to the user's account role
-    const isVendor = user.role === "VENDOR" || !!user.vendorProfile;
+    const isVendor = user.role === "VENDOR";
     const isAdmin = user.role === "ADMIN" || user.role === "SUPERADMIN";
 
     const defaultRedirect = isAdmin

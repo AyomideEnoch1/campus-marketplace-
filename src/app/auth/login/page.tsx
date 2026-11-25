@@ -94,7 +94,13 @@ function LoginForm() {
       }
 
       // Automatically route to intended destination or the deciphered account dashboard
-      const targetUrl = redirectParam || data.redirectTo || "/shop";
+      // Guard against redirect loops (e.g. BUYER redirected to /dashboard or /auth/login)
+      const userRole = data?.user?.role;
+      const isBlockedRedirect =
+        !redirectParam ||
+        redirectParam.startsWith("/auth/login") ||
+        (userRole === "BUYER" && redirectParam.startsWith("/dashboard"));
+      const targetUrl = (!isBlockedRedirect ? redirectParam : null) || data.redirectTo || "/shop";
       window.location.href = targetUrl;
     } catch (err: any) {
       console.error("Sign-in error:", err);
