@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { PrismaClient } from "@prisma/client";
+
+const require = createRequire(import.meta.url);
+const { ensureSafeDb } = require("./ensure-safe-db.js");
+ensureSafeDb("scripts/test-multiple-images.mjs");
 
 const prisma = new PrismaClient();
 

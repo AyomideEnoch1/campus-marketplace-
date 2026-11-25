@@ -1,4 +1,6 @@
 require('dotenv').config();
+const { ensureSafeDb } = require('../scripts/ensure-safe-db');
+ensureSafeDb('prisma/seed.js');
 
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');

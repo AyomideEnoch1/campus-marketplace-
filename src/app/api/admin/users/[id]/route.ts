@@ -239,7 +239,7 @@ export async function DELETE(
       await tx.user.delete({
         where: { id: userId },
       });
-    });
+    }, { maxWait: 15000, timeout: 30000 });
 
     // 5. Log complete deletion in activity logs
     await prisma.activityLog.create({

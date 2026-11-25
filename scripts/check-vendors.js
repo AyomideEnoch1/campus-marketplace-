@@ -1,3 +1,6 @@
+const { ensureSafeDb } = require('./ensure-safe-db');
+ensureSafeDb('scripts/check-vendors.js');
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 

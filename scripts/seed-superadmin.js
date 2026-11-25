@@ -12,6 +12,9 @@
  */
 
 require('dotenv').config();
+const { ensureSafeDb } = require('./ensure-safe-db');
+ensureSafeDb('scripts/seed-superadmin.js');
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');

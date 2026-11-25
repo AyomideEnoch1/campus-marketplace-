@@ -1,3 +1,6 @@
+const { ensureSafeDb } = require('./ensure-safe-db');
+ensureSafeDb('scripts/seed-missing-categories.js');
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 

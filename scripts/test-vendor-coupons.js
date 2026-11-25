@@ -4,6 +4,9 @@
  */
 
 require('dotenv').config();
+const { ensureSafeDb } = require('./ensure-safe-db');
+ensureSafeDb('scripts/test-vendor-coupons.js');
+
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
