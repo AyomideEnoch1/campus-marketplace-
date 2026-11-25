@@ -39,17 +39,27 @@ export function DeviceNotificationPrompt({
   React.useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window) {
       setIsSupported(true);
-      setPermission(Notification.permission);
+      const perm = Notification.permission;
+      setPermission(perm);
 
-      // Check if already subscribed
-      navigator.serviceWorker.ready
-        .then((reg) => reg.pushManager.getSubscription())
-        .then((sub) => {
-          if (sub) {
-            setIsSubscribed(true);
-          }
-        })
-        .catch(() => null);
+      // If already granted, ensure sw registration and sync subscription to backend
+      if (perm === "granted") {
+        navigator.serviceWorker
+          .register("/sw.js", { scope: "/" })
+          .then((reg) => reg.pushManager.getSubscription())
+          .then(async (sub) => {
+            if (sub) {
+              setIsSubscribed(true);
+              // Auto-sync subscription with current user on server
+              await fetch("/api/push/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscription: sub }),
+              }).catch(() => null);
+            }
+          })
+          .catch(() => null);
+      }
     }
   }, []);
 
@@ -82,14 +92,18 @@ export function DeviceNotificationPrompt({
       const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       await navigator.serviceWorker.ready;
 
-      // 3. Subscribe to push manager
+      // 3. Renew subscription to ensure clean match with current VAPID key
       let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
-        });
+      if (sub) {
+        try {
+          await sub.unsubscribe();
+        } catch {}
       }
+
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
+      });
 
       // 4. Save subscription to backend
       const res = await fetch("/api/push/subscribe", {
@@ -106,13 +120,23 @@ export function DeviceNotificationPrompt({
       setIsSubscribed(true);
       setMessage({
         type: "success",
-        text: "Device notifications enabled! You will receive drop-down alerts for new orders & messages.",
+        text: "Device notifications enabled! Triggering test drop-down alert...",
       });
 
-      // Automatically trigger a test drop-down alert
+      // Show immediate native device drop-down alert
+      try {
+        await reg.showNotification("🎉 Device Notification Active!", {
+          body: "You will now receive instant drop-down alerts on this device whenever an order is placed, a message arrives, or new products drop.",
+          icon: "/images/logo.png",
+          badge: "/images/logo.png",
+          tag: "oja-welcome-alert",
+        });
+      } catch {}
+
+      // Also trigger server-side test
       setTimeout(() => {
         handleSendTest();
-      }, 1000);
+      }, 800);
     } catch (err: any) {
       console.error("[Subscribe Error]:", err);
       setMessage({ type: "error", text: err.message || "Failed to enable notifications" });
@@ -125,11 +149,39 @@ export function DeviceNotificationPrompt({
     setTesting(true);
     setMessage(null);
     try {
-      const res = await fetch("/api/push/test", { method: "POST" });
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
+        });
+      }
+
+      // Show immediate native drop-down alert on the device screen
+      try {
+        await reg.showNotification("🎉 Device Notification Active!", {
+          body: "You will now receive instant drop-down alerts on this device whenever an order is placed, a message arrives, or new products drop.",
+          icon: "/images/logo.png",
+          badge: "/images/logo.png",
+          tag: "oja-test-alert",
+        });
+      } catch {}
+
+      // Deliver via backend web-push with subscription payload included
+      const res = await fetch("/api/push/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscription: sub }),
+      });
+
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to send test push notification");
       }
+
+      setIsSubscribed(true);
       setMessage({
         type: "success",
         text: "Test notification sent! Check the top drop-down banner on your device.",

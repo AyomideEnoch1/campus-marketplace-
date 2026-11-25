@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import { sendPushNotificationToUser } from "@/lib/web-push";
+import { sendPushNotificationToUser, savePushSubscription } from "@/lib/web-push";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    try {
+      const body = await request.json().catch(() => null);
+      if (body?.subscription) {
+        await savePushSubscription(session.id, body.subscription);
+      }
+    } catch {}
 
     const res = await sendPushNotificationToUser(session.id, {
       title: "🎉 Device Notification Active!",
