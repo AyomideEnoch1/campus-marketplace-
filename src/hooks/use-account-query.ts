@@ -60,8 +60,9 @@ export function useAccountProfile(initialUser?: AccountProfileUser) {
 }
 
 interface UpdateProfilePayload {
-  fullName: string;
-  phone: string;
+  fullName?: string;
+  phone?: string;
+  campusId?: string;
 }
 
 /**
@@ -103,8 +104,8 @@ export function useUpdateAccountMutation() {
           ...previousAccount,
           user: {
             ...previousAccount.user,
-            fullName: newProfile.fullName,
-            phone: newProfile.phone,
+            fullName: newProfile.fullName ?? previousAccount.user.fullName,
+            phone: newProfile.phone !== undefined ? newProfile.phone : previousAccount.user.phone,
           },
         });
       }

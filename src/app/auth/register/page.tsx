@@ -232,10 +232,11 @@ function RegisterContent() {
     cleanPhoneNumber(whatsapp).replace(/\D/g, "").length >= 10;
 
   // Step 1 Validation
+  const isCampusSelected = Boolean(campusId && campusId.trim().length > 0);
   const isStep1Valid =
     role === "VENDOR" && sellerType === "guest"
       ? isNameValid && isEmailValid && (isPhoneValid || isWhatsappValid)
-      : isNameValid && isEmailValid;
+      : isNameValid && isEmailValid && isCampusSelected;
 
   // Step 2 Validation (Google users bypass password)
   const isPasswordValid = password.length >= 6;
@@ -464,6 +465,7 @@ function RegisterContent() {
         password: password || undefined,
         phone: effectivePhone,
         role,
+        campusId: campusId || undefined,
         buyerType: role === "BUYER" ? buyerType : undefined,
         sellerType: role === "VENDOR" ? sellerType : undefined,
         referralCode: referralCode
@@ -766,7 +768,73 @@ function RegisterContent() {
                   )}
                 </div>
 
-                {/* 4. Campus Ambassador / Referral Code (Optional) */}
+                {/* 4. University / Campus Location (Required for Students) */}
+                {(role === "BUYER" || sellerType === "student") && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-emerald-600" />
+                        University / Campus <span className="text-rose-500">*</span>
+                      </span>
+                      {campuses.length > 0 && (
+                        <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          {campuses.length} Campuses Available
+                        </span>
+                      )}
+                    </label>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <select
+                        aria-label="Select University or Campus"
+                        required
+                        className="flex h-12 w-full rounded-xl border border-neutral-200 bg-neutral-50/60 pl-10 pr-4 text-sm text-neutral-900 focus-visible:outline-none focus:bg-white focus-visible:ring-2 focus-visible:ring-emerald-500/20 font-medium cursor-pointer"
+                        value={campusId}
+                        onChange={(e) => setCampusId(e.target.value)}
+                      >
+                        <option value="" disabled>-- Select Your University / Campus --</option>
+                        {campuses.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} {c.city ? `(${c.city})` : ""}
+                          </option>
+                        ))}
+                        {campuses.length === 0 && (
+                          <>
+                            <option value="clunilag001">University of Lagos (UNILAG)</option>
+                            <option value="clui002">University of Ibadan (UI)</option>
+                            <option value="cloau003">Obafemi Awolowo University (OAU)</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+                    <p className="text-[11px] text-neutral-400">
+                      Connects you with peer listings, student vendors, and safe pickup spots at your school.
+                    </p>
+                  </div>
+                )}
+
+                {/* 5. Phone / WhatsApp Number (Optional for Buyers) */}
+                {role === "BUYER" && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-bold text-neutral-700 block">
+                      Phone / WhatsApp Number <span className="text-neutral-400 font-normal">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <Input
+                        type="tel"
+                        placeholder="e.g. 08012345678"
+                        value={phone}
+                        onChange={handlePhoneChange}
+                        className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
+                      />
+                    </div>
+                    <p className="text-[11px] text-neutral-400">
+                      Used by student sellers to coordinate safe campus pickups with you.
+                    </p>
+                  </div>
+                )}
+
+                {/* 6. Campus Ambassador / Referral Code (Optional) */}
                 <div className="space-y-1.5 pt-1">
                   <label className="text-xs font-bold text-neutral-700 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">

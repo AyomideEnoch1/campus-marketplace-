@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 import { formatNGN, formatDate } from "@/lib/utils";
 import { useUpdateAccountMutation } from "@/hooks/use-account-query";
 import { useLogout } from "@/hooks/use-auth-query";
@@ -39,6 +40,13 @@ interface AccountUser {
   role: string;
   avatarUrl: string | null;
   createdAt: string | Date;
+  campus?: {
+    id: string;
+    name: string;
+    city: string;
+    slug: string;
+    state?: string | null;
+  } | null;
   vendorProfile: {
     id: string;
     storeName: string;
@@ -73,16 +81,57 @@ interface AccountUser {
   totalOrdersCount: number;
 }
 
-interface AccountClientProps {
-  initialUser: AccountUser;
+interface AvailableCampus {
+  id: string;
+  name: string;
+  city: string;
+  slug: string;
 }
 
-export function AccountClient({ initialUser }: AccountClientProps) {
+interface AccountClientProps {
+  initialUser: AccountUser;
+  availableCampuses?: AvailableCampus[];
+}
+
+export function AccountClient({ initialUser, availableCampuses = [] }: AccountClientProps) {
   const router = useRouter();
   const [fullName, setFullName] = React.useState(initialUser.fullName);
   const [phone, setPhone] = React.useState(initialUser.phone || "");
   const [saveSuccess, setSaveSuccess] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
+
+  // Campus affiliation state
+  const initialCampus = initialUser.campus || initialUser.vendorProfile?.campus || null;
+  const [userCampus, setUserCampus] = React.useState<any>(initialCampus);
+  const [selectedCampusId, setSelectedCampusId] = React.useState<string>(initialCampus?.id || "");
+  const [savingCampus, setSavingCampus] = React.useState(false);
+  const [campusError, setCampusError] = React.useState<string | null>(null);
+
+  const handleSaveCampus = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!selectedCampusId) {
+      setCampusError("Please select your university or campus.");
+      return;
+    }
+    setSavingCampus(true);
+    setCampusError(null);
+    try {
+      const res = await fetch("/api/account", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campusId: selectedCampusId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save university affiliation");
+      setUserCampus(data.user?.campus || null);
+      toast.success("University affiliation saved successfully!");
+    } catch (err: any) {
+      setCampusError(err.message || "Failed to save university affiliation");
+      toast.error(err.message || "Failed to save university affiliation");
+    } finally {
+      setSavingCampus(false);
+    }
+  };
 
   const updateAccountMutation = useUpdateAccountMutation();
   const logoutMutation = useLogout();
@@ -196,6 +245,12 @@ export function AccountClient({ initialUser }: AccountClientProps) {
                   <Badge variant="secondary" className="text-[11px] font-bold uppercase tracking-wider">
                     {initialUser.role === "VENDOR" ? "Campus Vendor" : initialUser.role === "SUPERADMIN" ? "Super Admin" : initialUser.role === "ADMIN" ? "Admin" : "Student Buyer"}
                   </Badge>
+                  {userCampus && (
+                    <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[11px] font-semibold gap-1">
+                      <MapPin className="w-3 h-3 text-emerald-600" />
+                      {userCampus.name}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs sm:text-sm text-neutral-500">
                   <span className="flex items-center gap-1.5">
@@ -221,6 +276,78 @@ export function AccountClient({ initialUser }: AccountClientProps) {
             </div>
           </div>
         </div>
+
+        {/* One-Time University Affiliation Setup Banner (For Students without a Campus) */}
+        {!userCampus && (
+          <div className="bg-gradient-to-br from-emerald-950 via-neutral-900 to-neutral-950 border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="bg-emerald-500 text-neutral-950 font-black text-xs px-2.5 py-0.5">
+                  Action Required
+                </Badge>
+                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Select Your University Campus
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  Choose Your University / Campus
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-300 max-w-2xl leading-relaxed">
+                  Connect your account to your university to browse campus peer listings, coordinate safe in-person pickups, and trade directly with verified students at your school.
+                </p>
+              </div>
+
+              <form
+                onSubmit={handleSaveCampus}
+                className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-xl"
+              >
+                <div className="relative flex-1">
+                  <MapPin className="w-4 h-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={selectedCampusId}
+                    onChange={(e) => setSelectedCampusId(e.target.value)}
+                    className="flex h-12 w-full rounded-2xl border border-neutral-700 bg-neutral-900/90 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 font-medium"
+                    required
+                  >
+                    <option value="" disabled className="text-neutral-500">
+                      -- Select Your University / Campus --
+                    </option>
+                    {(availableCampuses || []).map((c) => (
+                      <option key={c.id} value={c.id} className="text-neutral-900 bg-white">
+                        {c.name} {c.city ? `(${c.city})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={savingCampus || !selectedCampusId}
+                  className="h-12 px-6 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-extrabold rounded-2xl text-xs sm:text-sm shadow-md shrink-0 transition-all gap-2"
+                >
+                  {savingCampus ? (
+                    "Saving..."
+                  ) : (
+                    <>
+                      <span>Confirm University</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {campusError && (
+                <p className="text-xs font-semibold text-rose-400 bg-rose-950/40 border border-rose-800/60 p-2.5 rounded-xl">
+                  {campusError}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -470,20 +597,59 @@ export function AccountClient({ initialUser }: AccountClientProps) {
             </div>
 
             {/* Campus Affiliation */}
-            {initialUser.vendorProfile?.campus && (
-              <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 shadow-sm space-y-2">
-                <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
-                  Campus Affiliation
-                </span>
-                <div className="flex items-center gap-2.5">
-                  <MapPin className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm font-extrabold text-neutral-900">
-                    {initialUser.vendorProfile.campus.name}
+            {userCampus && (
+              <div className="bg-white rounded-3xl border border-neutral-200/80 p-5 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
+                    Campus Affiliation
                   </span>
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold">
+                    Active Student
+                  </Badge>
                 </div>
-                <p className="text-xs text-neutral-500">
-                  {initialUser.vendorProfile.campus.city}
-                </p>
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <div>
+                    <span className="text-sm font-extrabold text-neutral-900 block leading-tight">
+                      {userCampus.name}
+                    </span>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      {userCampus.city}{userCampus.state ? `, ${userCampus.state}` : ""}
+                    </p>
+                  </div>
+                </div>
+
+                {availableCampuses.length > 0 && (
+                  <div className="pt-2 border-t border-neutral-100">
+                    <details className="group">
+                      <summary className="text-[11px] font-bold text-neutral-500 hover:text-neutral-800 cursor-pointer list-none flex items-center justify-between">
+                        <span>Change Campus</span>
+                        <ChevronRight className="w-3 h-3 group-open:rotate-90 transition-transform" />
+                      </summary>
+                      <form onSubmit={handleSaveCampus} className="mt-2.5 space-y-2">
+                        <select
+                          value={selectedCampusId}
+                          onChange={(e) => setSelectedCampusId(e.target.value)}
+                          className="h-9 w-full rounded-xl border border-neutral-200 bg-neutral-50 pl-2.5 pr-2 text-xs text-neutral-900 focus:outline-none focus:border-emerald-500"
+                        >
+                          {availableCampuses.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={savingCampus || selectedCampusId === userCampus.id}
+                          className="w-full h-8 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
+                        >
+                          {savingCampus ? "Updating..." : "Update Campus"}
+                        </Button>
+                      </form>
+                    </details>
+                  </div>
+                )}
               </div>
             )}
           </div>

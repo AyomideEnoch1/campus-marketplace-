@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getUserCampus } from "@/lib/user-campus";
 import { AccountClient } from "./AccountClient";
 
 export const dynamic = "force-dynamic";
@@ -17,47 +18,60 @@ export default async function AccountPage() {
     redirect("/auth/login?redirect=/account");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.id },
-    include: {
-      vendorProfile: {
-        include: {
-          campus: true,
-        },
-      },
-      orders: {
-        orderBy: { createdAt: "desc" },
-        take: 3,
-        include: {
-          vendor: {
-            select: {
-              storeName: true,
-            },
+  const [user, userCampus, availableCampuses] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.id },
+      include: {
+        vendorProfile: {
+          include: {
+            campus: true,
           },
-          items: {
-            include: {
-              product: {
-                select: {
-                  title: true,
-                  images: {
-                    take: 1,
-                    select: { url: true },
+        },
+        orders: {
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          include: {
+            vendor: {
+              select: {
+                storeName: true,
+              },
+            },
+            items: {
+              include: {
+                product: {
+                  select: {
+                    title: true,
+                    images: {
+                      take: 1,
+                      select: { url: true },
+                    },
                   },
                 },
               },
             },
           },
         },
-      },
-      _count: {
-        select: {
-          orders: true,
-          favorites: true,
-          productReviews: true,
+        _count: {
+          select: {
+            orders: true,
+            favorites: true,
+            productReviews: true,
+          },
         },
       },
-    },
-  });
+    }),
+    getUserCampus(session.id),
+    prisma.campus.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        city: true,
+        slug: true,
+      },
+    }),
+  ]);
 
   if (!user) {
     redirect("/auth/login");
@@ -71,6 +85,7 @@ export default async function AccountPage() {
     role: user.role,
     avatarUrl: user.avatarUrl,
     createdAt: user.createdAt,
+    campus: userCampus,
     vendorProfile: user.vendorProfile
       ? {
           id: user.vendorProfile.id,
@@ -109,5 +124,10 @@ export default async function AccountPage() {
     totalOrdersCount: user._count.orders,
   };
 
-  return <AccountClient initialUser={sanitizedUser} />;
+  return (
+    <AccountClient
+      initialUser={sanitizedUser}
+      availableCampuses={availableCampuses}
+    />
+  );
 }

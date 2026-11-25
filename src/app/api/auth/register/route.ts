@@ -265,6 +265,14 @@ export async function POST(request: Request) {
     let uniqueSlug = "";
     let finalWhatsapp = "";
 
+    // Resolve target campus if provided (for both student buyers and vendors)
+    if (campusId) {
+      const targetCampus = await prisma.campus.findUnique({ where: { id: campusId } });
+      if (targetCampus) {
+        finalCampusId = targetCampus.id;
+      }
+    }
+
     if (role === "VENDOR") {
       finalStoreName = storeName?.trim() || businessName?.trim() || `${fullName}'s Store`;
       finalWhatsapp = cleanWhatsapp || cleanPhone || "";
@@ -276,25 +284,21 @@ export async function POST(request: Request) {
         );
       }
 
-      // Validate campusId against database before opening transaction
-      let targetCampus = campusId
-        ? await prisma.campus.findUnique({ where: { id: campusId } })
-        : null;
-
-      if (!targetCampus) {
-        targetCampus = await prisma.campus.findFirst({
+      // If vendor didn't provide campus or invalid, fallback to first active campus
+      if (!finalCampusId) {
+        const targetCampus = await prisma.campus.findFirst({
           where: { isActive: true },
           orderBy: { name: "asc" },
         });
-      }
 
-      if (!targetCampus) {
-        return NextResponse.json(
-          { error: "No active campus found in the system" },
-          { status: 400 }
-        );
+        if (!targetCampus) {
+          return NextResponse.json(
+            { error: "No active campus found in the system" },
+            { status: 400 }
+          );
+        }
+        finalCampusId = targetCampus.id;
       }
-      finalCampusId = targetCampus.id;
 
       // Compute unique slug in one fast query before transaction
       const baseSlug = slugify(finalStoreName);
@@ -363,6 +367,15 @@ export async function POST(request: Request) {
               role,
               avatarUrl: studentIdUrl || null,
             },
+          });
+        }
+
+        // Save campus affiliation for user
+        if (finalCampusId) {
+          await tx.siteSetting.upsert({
+            where: { key: `user_campus:${user.id}` },
+            create: { key: `user_campus:${user.id}`, value: finalCampusId },
+            update: { value: finalCampusId },
           });
         }
 
