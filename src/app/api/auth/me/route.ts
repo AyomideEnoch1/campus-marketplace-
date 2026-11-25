@@ -10,7 +10,13 @@ export async function GET() {
       { user: null },
       { status: 401, headers: { "Cache-Control": "no-store" } }
     );
-    res.cookies.delete(AUTH_COOKIE_NAME);
+    res.cookies.set(AUTH_COOKIE_NAME, "", {
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+      httpOnly: true,
+      sameSite: "lax",
+    });
     return res;
   }
   return NextResponse.json(

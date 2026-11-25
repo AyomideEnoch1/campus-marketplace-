@@ -51,9 +51,9 @@ export function useCurrentUser(initialUser?: AuthUser | null) {
     queryKey: queryKeys.auth.me(),
     queryFn: fetchCurrentUser,
     initialData: initialUser !== undefined ? { user: initialUser } : undefined,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    staleTime: 15 * 1000, // 15 seconds
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
 

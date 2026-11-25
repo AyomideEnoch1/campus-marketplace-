@@ -42,24 +42,10 @@ export function middleware(request: NextRequest) {
   }
 
   // 2. Role: VENDOR routing rules
-  if (role === "VENDOR") {
-    if (pathname === "/auth/login" || pathname === "/auth/register") {
-      const targetRole = searchParams.get("role");
-      const onboarding = searchParams.get("onboarding");
-      if (targetRole !== "buyer" && onboarding !== "vendor") {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-    }
-  }
+  // Vendors have full access to browse the site and dashboard.
 
   // 3. Role: BUYER routing rules
   if (role === "BUYER") {
-    if (pathname === "/auth/login" || pathname === "/auth/register") {
-      const targetRole = searchParams.get("role");
-      if (targetRole !== "vendor") {
-        return NextResponse.redirect(new URL("/shop", request.url));
-      }
-    }
     if (pathname.startsWith("/dashboard")) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("role", "vendor");
