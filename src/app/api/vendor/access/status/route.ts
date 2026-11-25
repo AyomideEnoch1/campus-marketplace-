@@ -29,7 +29,15 @@ export async function GET() {
 
     const settings = await prisma.siteSetting.findMany({
       where: {
-        key: { in: ["vendor_access_fee", "vendor_access_duration_days", "require_vendor_payment"] },
+        key: {
+          in: [
+            "vendor_access_fee",
+            "vendor_access_duration_days",
+            "require_vendor_payment",
+            "enable_standard_vendor_access",
+            "enable_founding_vendor_coupon",
+          ],
+        },
       },
     });
     const settingsMap: Record<string, string> = {};
@@ -38,7 +46,14 @@ export async function GET() {
     });
 
     const paymentRestrictionEnabled = settingsMap["require_vendor_payment"] !== "false";
-    const entitlements = computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
+    const standardVendorAccessEnabled = settingsMap["enable_standard_vendor_access"] !== "false";
+    const foundingVendorCouponEnabled = settingsMap["enable_founding_vendor_coupon"] !== "false";
+
+    const entitlements = computeVendorEntitlements(vendor, {
+      paymentRestrictionEnabled,
+      standardVendorAccessEnabled,
+      foundingVendorCouponEnabled,
+    });
     const latestRedemption = vendor.couponRedemptions?.[0] || null;
 
     const vendorAccessFee = Number(settingsMap["vendor_access_fee"]) || 15000;
@@ -47,6 +62,8 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       paymentRestrictionEnabled,
+      standardVendorAccessEnabled,
+      foundingVendorCouponEnabled,
       vendor: {
         id: vendor.id,
         storeName: vendor.storeName,

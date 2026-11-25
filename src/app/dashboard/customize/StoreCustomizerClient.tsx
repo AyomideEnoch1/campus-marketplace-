@@ -447,6 +447,7 @@ export function StoreCustomizerClient({
                 <Input
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
+                  maxLength={50}
                   className="text-xs font-bold"
                 />
               </div>

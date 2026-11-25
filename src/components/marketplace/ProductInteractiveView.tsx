@@ -540,63 +540,74 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
         </div>
 
         {/* Vendor Identity Card */}
-        <div className="p-5 rounded-3xl bg-neutral-50 border border-neutral-200/70 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <div className="p-4 sm:p-5 rounded-3xl bg-neutral-50 border border-neutral-200/70 space-y-3 overflow-hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-12 h-12 rounded-2xl bg-white border border-neutral-200 overflow-hidden shadow-xs shrink-0">
                 {product.vendor.logo ? (
-                  <img src={product.vendor.logo} alt="" className="w-full h-full object-cover" />
+                  <img src={product.vendor.logo} alt={product.vendor.storeName} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-neutral-100 text-emerald-700 flex items-center justify-center font-bold text-lg">
                     {product.vendor.storeName[0]}
                   </div>
                 )}
               </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <h4 className="font-bold text-sm text-neutral-900">
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center min-w-0">
+                  <h4
+                    className="font-bold text-sm text-neutral-900 truncate"
+                    title={product.vendor.storeName}
+                  >
                     {product.vendor.storeName}
                   </h4>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
                   {product.vendor.sellerType === "guest" ? (
-                    <Badge className="bg-purple-50 text-purple-800 border-purple-200 text-[10px] font-semibold">Non-Student Vendor</Badge>
+                    <Badge className="bg-purple-50 text-purple-800 border-purple-200 text-[10px] font-semibold shrink-0">
+                      Non-Student Vendor
+                    </Badge>
                   ) : (
-                    <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-[10px] font-semibold shadow-2xs">
+                    <Badge className="bg-neutral-100 text-neutral-800 border-neutral-200/80 text-[10px] font-semibold shadow-2xs shrink-0">
                       Student Vendor
                     </Badge>
                   )}
                   {product.vendor.isRegisteredBusiness && (
-                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold">
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] font-bold shrink-0">
                       Registered Business
                     </Badge>
                   )}
                   {product.vendor.isTrustedSeller && (
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold">
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px] font-bold shrink-0">
                       ★ Trusted Seller
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-neutral-500 flex items-center gap-1 mt-0.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  {product.vendor.sellerType === "guest"
-                    ? "Verified Off-Campus Merchant &bull; Safe Meetup Point Fulfillment"
-                    : "Verified University Student Vendor"}
+                <p className="text-xs text-neutral-500 flex items-center gap-1 min-w-0">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="truncate">
+                    {product.vendor.sellerType === "guest"
+                      ? "Verified Off-Campus Merchant • Safe Meetup Point Fulfillment"
+                      : "Verified University Student Vendor"}
+                  </span>
                 </p>
               </div>
             </div>
 
-            <Link href={`/store/${product.vendor.slug}`}>
-              <Button variant="outline" size="sm" className="text-xs font-semibold rounded-xl">
-                Storefront
-              </Button>
-            </Link>
+            <div className="shrink-0">
+              <Link href={`/store/${product.vendor.slug}`}>
+                <Button variant="outline" size="sm" className="text-xs font-semibold rounded-xl whitespace-nowrap shadow-xs hover:bg-neutral-100">
+                  Storefront
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-neutral-200/60 text-[11px] text-neutral-500">
-            <span className="flex items-center gap-1">
-              <Truck className="w-3 h-3 text-emerald-600" /> Campus pickup point
+            <span className="flex items-center gap-1 min-w-0 truncate">
+              <Truck className="w-3 h-3 text-emerald-600 shrink-0" /> <span className="truncate">Campus pickup point</span>
             </span>
-            <span className="flex items-center gap-1">
-              <RotateCcw className="w-3 h-3 text-emerald-600" /> Inspect before payment
+            <span className="flex items-center gap-1 min-w-0 truncate">
+              <RotateCcw className="w-3 h-3 text-emerald-600 shrink-0" /> <span className="truncate">Inspect before payment</span>
             </span>
           </div>
         </div>

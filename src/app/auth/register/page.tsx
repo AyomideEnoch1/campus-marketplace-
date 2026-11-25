@@ -1120,6 +1120,7 @@ function RegisterContent() {
                           placeholder="e.g. Lagos Drip Corner or Adebayo Provisions"
                           value={storeName}
                           onChange={(e) => setStoreName(e.target.value)}
+                          maxLength={50}
                           className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
                         />
                       </div>
@@ -1195,6 +1196,7 @@ function RegisterContent() {
                             placeholder="e.g. Unilag Drip Corner"
                             value={storeName}
                             onChange={(e) => setStoreName(e.target.value)}
+                            maxLength={50}
                             className="pl-10 h-12 rounded-xl text-sm bg-neutral-50/60 border-neutral-200 focus:bg-white text-neutral-900"
                           />
                         </div>

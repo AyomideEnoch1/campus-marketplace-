@@ -6,7 +6,7 @@ import { requireVendor } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 const profileSchema = z.object({
-  storeName: z.string().min(2, "Store name must be at least 2 characters"),
+  storeName: z.string().trim().min(2, "Store name must be at least 2 characters").max(50, "Store name cannot exceed 50 characters"),
   storeDescription: z.string().optional(),
   whatsapp: z.string().min(8, "WhatsApp number is required"),
   faculty: z.string().optional().nullable(),

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireVendor } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { activatePaidVendorAccess } from "@/lib/coupons";
-import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
+import { computeVendorEntitlements, isStandardVendorAccessEnabled } from "@/lib/vendor-entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,15 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const session = await requireVendor();
+
+    const isPaidAccessEnabled = await isStandardVendorAccessEnabled();
+    if (!isPaidAccessEnabled) {
+      return NextResponse.json(
+        { error: "Standard vendor paid access activation is currently disabled by university administration." },
+        { status: 403 }
+      );
+    }
+
     const vendor = await prisma.vendorProfile.findUnique({
       where: { userId: session.id },
       select: { id: true, accessState: true, status: true },

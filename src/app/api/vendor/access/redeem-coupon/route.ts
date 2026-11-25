@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireVendor } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redeemCouponAtomic } from "@/lib/coupons";
-import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
+import { computeVendorEntitlements, isFoundingVendorCouponEnabled } from "@/lib/vendor-entitlements";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
     const session = await requireVendor();
+
+    const isCouponEnabled = await isFoundingVendorCouponEnabled();
+    if (!isCouponEnabled) {
+      return NextResponse.json(
+        { error: "Founding vendor coupon redemption is currently disabled by university administration." },
+        { status: 403 }
+      );
+    }
+
     const vendor = await prisma.vendorProfile.findUnique({
       where: { userId: session.id },
       select: { id: true, accessState: true, status: true },

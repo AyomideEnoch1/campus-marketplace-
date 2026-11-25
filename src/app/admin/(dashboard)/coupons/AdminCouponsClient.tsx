@@ -209,11 +209,15 @@ export function AdminCouponsClient({
   initialVendorAccessFee = 15000,
   initialVendorAccessDurationDays = 365,
   initialRequireVendorPayment = true,
+  initialEnableStandardVendorAccess = true,
+  initialEnableFoundingVendorCoupon = true,
 }: {
   initialCoupons: CouponData[];
   initialVendorAccessFee?: number;
   initialVendorAccessDurationDays?: number;
   initialRequireVendorPayment?: boolean;
+  initialEnableStandardVendorAccess?: boolean;
+  initialEnableFoundingVendorCoupon?: boolean;
 }) {
   const [coupons, setCoupons] = React.useState<CouponData[]>(initialCoupons);
   const [selectedCouponId, setSelectedCouponId] = React.useState<string>(coupons[0]?.id || "");
@@ -225,6 +229,13 @@ export function AdminCouponsClient({
   // Payment Restriction / Paywall Toggle
   const [requireVendorPayment, setRequireVendorPayment] = React.useState<boolean>(initialRequireVendorPayment);
   const [togglingPayment, setTogglingPayment] = React.useState<boolean>(false);
+
+  // Standard Vendor Access & Founding Vendor Coupon Toggles
+  const [enableStandardVendorAccess, setEnableStandardVendorAccess] = React.useState<boolean>(initialEnableStandardVendorAccess);
+  const [togglingStandardAccess, setTogglingStandardAccess] = React.useState<boolean>(false);
+
+  const [enableFoundingVendorCoupon, setEnableFoundingVendorCoupon] = React.useState<boolean>(initialEnableFoundingVendorCoupon);
+  const [togglingFoundingCoupon, setTogglingFoundingCoupon] = React.useState<boolean>(false);
 
   const handleTogglePaymentRestriction = async () => {
     setTogglingPayment(true);
@@ -246,6 +257,52 @@ export function AdminCouponsClient({
       toast.error(err.message || "Failed to toggle payment restriction");
     } finally {
       setTogglingPayment(false);
+    }
+  };
+
+  const handleToggleStandardAccess = async () => {
+    setTogglingStandardAccess(true);
+    const nextState = !enableStandardVendorAccess;
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enable_standard_vendor_access: String(nextState) }),
+      });
+      if (!res.ok) throw new Error("Failed to update setting");
+      setEnableStandardVendorAccess(nextState);
+      toast.success(
+        nextState
+          ? "Standard Vendor Access ENABLED: Vendors can activate paid access."
+          : "Standard Vendor Access DISABLED: Paid activation option is hidden."
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle standard vendor access");
+    } finally {
+      setTogglingStandardAccess(false);
+    }
+  };
+
+  const handleToggleFoundingCoupon = async () => {
+    setTogglingFoundingCoupon(true);
+    const nextState = !enableFoundingVendorCoupon;
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enable_founding_vendor_coupon: String(nextState) }),
+      });
+      if (!res.ok) throw new Error("Failed to update setting");
+      setEnableFoundingVendorCoupon(nextState);
+      toast.success(
+        nextState
+          ? "Founding Vendor Coupons ENABLED: Vendors can redeem coupons on /dashboard/activate."
+          : "Founding Vendor Coupons DISABLED: Coupon input and redemption is disabled."
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle founding vendor coupons");
+    } finally {
+      setTogglingFoundingCoupon(false);
     }
   };
 
@@ -545,6 +602,54 @@ export function AdminCouponsClient({
               }`}
             />
             <span>Paywall: {requireVendorPayment ? "Restricted (ON)" : "Free Access (OFF)"}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleToggleStandardAccess}
+            disabled={togglingStandardAccess}
+            variant="outline"
+            title={
+              enableStandardVendorAccess
+                ? "Standard vendor paid access is active on /dashboard/activate. Click to disable."
+                : "Standard vendor paid access is disabled. Click to enable."
+            }
+            className={`font-bold text-xs rounded-xl shadow-xs gap-1.5 transition-all ${
+              enableStandardVendorAccess
+                ? "border-emerald-700/60 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/70"
+                : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:bg-neutral-800"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                enableStandardVendorAccess ? "bg-emerald-400" : "bg-neutral-500"
+              }`}
+            />
+            <span>Paid Plan: {enableStandardVendorAccess ? "ON" : "OFF"}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleToggleFoundingCoupon}
+            disabled={togglingFoundingCoupon}
+            variant="outline"
+            title={
+              enableFoundingVendorCoupon
+                ? "Founding Vendor Coupon redemption is active on /dashboard/activate. Click to disable."
+                : "Founding Vendor Coupon redemption is disabled. Click to enable."
+            }
+            className={`font-bold text-xs rounded-xl shadow-xs gap-1.5 transition-all ${
+              enableFoundingVendorCoupon
+                ? "border-emerald-700/60 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/70"
+                : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:bg-neutral-800"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                enableFoundingVendorCoupon ? "bg-emerald-400" : "bg-neutral-500"
+              }`}
+            />
+            <span>Coupons: {enableFoundingVendorCoupon ? "ON" : "OFF"}</span>
           </Button>
 
           <Button

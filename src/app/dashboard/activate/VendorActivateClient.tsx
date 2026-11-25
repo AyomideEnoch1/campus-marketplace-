@@ -37,6 +37,8 @@ interface VendorActivateClientProps {
   entitlements: VendorEntitlements;
   vendorAccessFee?: number;
   vendorAccessDurationDays?: number;
+  enableStandardVendorAccess?: boolean;
+  enableFoundingVendorCoupon?: boolean;
   latestRedemption: {
     code: string;
     status: string;
@@ -52,6 +54,8 @@ export function VendorActivateClient({
   entitlements: initialEntitlements,
   vendorAccessFee = 15000,
   vendorAccessDurationDays = 365,
+  enableStandardVendorAccess = true,
+  enableFoundingVendorCoupon = true,
   latestRedemption,
 }: VendorActivateClientProps) {
   const router = useRouter();
@@ -210,13 +214,19 @@ export function VendorActivateClient({
             </div>
           </div>
 
-          <Button
-            onClick={handlePayActivation}
-            disabled={loadingPayment}
-            className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md shrink-0 h-10"
-          >
-            {loadingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pay to Restore Access"}
-          </Button>
+          {enableStandardVendorAccess ? (
+            <Button
+              onClick={handlePayActivation}
+              disabled={loadingPayment}
+              className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md shrink-0 h-10"
+            >
+              {loadingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : "Pay to Restore Access"}
+            </Button>
+          ) : (
+            <Badge className="bg-neutral-800 text-neutral-300 border-neutral-700 text-xs py-1.5 px-3">
+              Paid activation currently paused
+            </Badge>
+          )}
         </div>
       ) : null}
 
@@ -273,138 +283,164 @@ export function VendorActivateClient({
 
       {/* ACTIVATION OPTIONS (Payment option stays visible until valid code applied) */}
       {!hasActiveAccess && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* OPTION 1: FOUNDING VENDOR COUPON CODE */}
-          <div className="bg-white rounded-3xl border-2 border-emerald-500/80 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-black uppercase px-4 py-1 rounded-bl-2xl tracking-wider">
-              Free Access
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
-                  <Ticket className="w-5 h-5" />
+        enableFoundingVendorCoupon || enableStandardVendorAccess ? (
+          <div className={`grid grid-cols-1 ${enableFoundingVendorCoupon && enableStandardVendorAccess ? "md:grid-cols-2" : "max-w-xl mx-auto"} gap-6`}>
+            {/* OPTION 1: FOUNDING VENDOR COUPON CODE */}
+            {enableFoundingVendorCoupon && (
+              <div className="bg-white rounded-3xl border-2 border-emerald-500/80 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-black uppercase px-4 py-1 rounded-bl-2xl tracking-wider">
+                  Free Access
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-neutral-900">
-                    Founding Vendor Coupon
-                  </h3>
-                  <p className="text-xs text-neutral-500">
-                    180 days free access &bull; 0% commission
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
+                      <Ticket className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-base text-neutral-900">
+                        Founding Vendor Coupon
+                      </h3>
+                      <p className="text-xs text-neutral-500">
+                        180 days free access &bull; 0% commission
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-neutral-600 leading-relaxed">
+                    If you were granted a Founding Vendor coupon code by university administration or an ambassador, enter it below to claim an active slot.
                   </p>
+
+                  <form onSubmit={handleRedeemCoupon} className="space-y-3">
+                    <div>
+                      <label className="text-xs font-bold text-neutral-700">Coupon Code</label>
+                      <Input
+                        placeholder="e.g. FOUNDING50"
+                        value={couponCode}
+                        onChange={(e) => {
+                          setCouponCode(e.target.value.toUpperCase().replace(/\s+/g, ""));
+                          setCouponError(null);
+                        }}
+                        className="rounded-xl text-xs font-mono font-bold uppercase mt-1 h-11 border-neutral-300 text-neutral-900 bg-white placeholder:text-neutral-400"
+                      />
+                    </div>
+
+                    {couponError && (
+                      <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                        {couponError}
+                      </div>
+                    )}
+
+                    <Button
+                      type="submit"
+                      disabled={loadingCoupon || !couponCode.trim()}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl h-11 shadow-md shadow-emerald-600/20"
+                    >
+                      {loadingCoupon ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...
+                        </span>
+                      ) : (
+                        "Apply Coupon Code"
+                      )}
+                    </Button>
+                  </form>
+                </div>
+
+                <div className="pt-3 border-t border-neutral-100 text-[11px] text-neutral-400">
+                  Slots are capped per code. A coupon slot will be released if no product is listed within 60 days of approval.
                 </div>
               </div>
+            )}
 
-              <p className="text-xs text-neutral-600 leading-relaxed">
-                If you were granted a Founding Vendor coupon code by university administration or an ambassador, enter it below to claim an active slot.
-              </p>
-
-              <form onSubmit={handleRedeemCoupon} className="space-y-3">
-                <div>
-                  <label className="text-xs font-bold text-neutral-700">Coupon Code</label>
-                  <Input
-                    placeholder="e.g. FOUNDING50"
-                    value={couponCode}
-                    onChange={(e) => {
-                      setCouponCode(e.target.value.toUpperCase().replace(/\s+/g, ""));
-                      setCouponError(null);
-                    }}
-                    className="rounded-xl text-xs font-mono font-bold uppercase mt-1 h-11 border-neutral-300 text-neutral-900 bg-white placeholder:text-neutral-400"
-                  />
-                </div>
-
-                {couponError && (
-                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
-                    {couponError}
+            {/* OPTION 2: STANDARD VENDOR PAYMENT PLAN */}
+            {enableStandardVendorAccess && (
+              <div className="bg-white rounded-3xl border border-neutral-200/90 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-neutral-100 border border-neutral-200 text-neutral-700 flex items-center justify-center">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-base text-neutral-900">
+                        Standard Vendor Access
+                      </h3>
+                      <p className="text-xs text-neutral-500">
+                        Annual storefront access
+                      </p>
+                    </div>
                   </div>
-                )}
+
+                  <div className="space-y-1">
+                    <div className="text-2xl sm:text-3xl font-black text-neutral-900">
+                      {formatNGN(vendorAccessFee)}{" "}
+                      <span className="text-xs font-normal text-neutral-500">
+                        / {vendorAccessDurationDays === 365 ? "1 Year" : `${vendorAccessDurationDays} Days`} Access
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-500">
+                      Instant activation via card, bank transfer, or USSD.
+                    </p>
+                  </div>
+
+                  <ul className="space-y-2 text-xs text-neutral-600">
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>{vendorAccessDurationDays} days continuous campus selling</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>0% commission on all completed campus orders</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Up to 50 active listing slots</span>
+                    </li>
+                  </ul>
+                </div>
 
                 <Button
-                  type="submit"
-                  disabled={loadingCoupon || !couponCode.trim()}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl h-11 shadow-md shadow-emerald-600/20"
+                  type="button"
+                  onClick={handlePayActivation}
+                  disabled={loadingPayment}
+                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl h-11 shadow-sm"
                 >
-                  {loadingCoupon ? (
+                  {loadingPayment ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying Code...
+                      <Loader2 className="w-4 h-4 animate-spin" /> Processing Activation...
                     </span>
                   ) : (
-                    "Apply Coupon Code"
+                    `Pay ${formatNGN(vendorAccessFee)} & Activate Now`
                   )}
                 </Button>
-              </form>
-            </div>
 
-            <div className="pt-3 border-t border-neutral-100 text-[11px] text-neutral-400">
-              Slots are capped per code. A coupon slot will be released if no product is listed within 60 days of approval.
-            </div>
-          </div>
-
-          {/* OPTION 2: STANDARD VENDOR PAYMENT PLAN */}
-          <div className="bg-white rounded-3xl border border-neutral-200/90 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-neutral-100 border border-neutral-200 text-neutral-700 flex items-center justify-center">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-neutral-900">
-                    Standard Vendor Access
-                  </h3>
-                  <p className="text-xs text-neutral-500">
-                    Annual storefront access
-                  </p>
+                <div className="pt-3 border-t border-neutral-100 text-[11px] text-neutral-400">
+                  Payment remains visible until a valid coupon code is applied or access is activated.
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <div className="text-2xl sm:text-3xl font-black text-neutral-900">
-                  {formatNGN(vendorAccessFee)}{" "}
-                  <span className="text-xs font-normal text-neutral-500">
-                    / {vendorAccessDurationDays === 365 ? "1 Year" : `${vendorAccessDurationDays} Days`} Access
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-500">
-                  Instant activation via card, bank transfer, or USSD.
-                </p>
-              </div>
-
-              <ul className="space-y-2 text-xs text-neutral-600">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>{vendorAccessDurationDays} days continuous campus selling</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>0% commission on all completed campus orders</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Up to 50 active listing slots</span>
-                </li>
-              </ul>
+            )}
+          </div>
+        ) : (
+          <div className="bg-emerald-50 border-2 border-emerald-200/90 rounded-3xl p-6 sm:p-8 text-center space-y-3 max-w-xl mx-auto shadow-sm">
+            <div className="w-12 h-12 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md shadow-emerald-600/20">
+              <Sparkles className="w-6 h-6" />
             </div>
-
-            <Button
-              type="button"
-              onClick={handlePayActivation}
-              disabled={loadingPayment}
-              className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs rounded-xl h-11 shadow-sm"
-            >
-              {loadingPayment ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Processing Activation...
-                </span>
-              ) : (
-                `Pay ${formatNGN(vendorAccessFee)} & Activate Now`
-              )}
-            </Button>
-
-            <div className="pt-3 border-t border-neutral-100 text-[11px] text-neutral-400">
-              Payment remains visible until a valid coupon code is applied or access is activated.
+            <h3 className="text-base sm:text-lg font-black text-neutral-900">
+              Storefront Access is Open
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-600 max-w-md mx-auto leading-relaxed">
+              Paid vendor access and coupon requirements are currently waived by university administration. All approved vendors enjoy free, unrestricted selling privileges!
+            </p>
+            <div className="pt-2">
+              <Button
+                onClick={() => router.push("/dashboard")}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl h-10 px-5 shadow-sm"
+              >
+                Go to Vendor Dashboard
+              </Button>
             </div>
           </div>
-        </div>
+        )
       )}
 
       {/* ACTIVE VENDOR STOREFRONT PRICING & RENEWAL CARD */}

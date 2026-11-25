@@ -183,10 +183,10 @@ export function StorefrontRenderer({
           </div>
 
           {/* Store Details Section: Cleanly rendered on the page below the banner */}
-          <div className="space-y-2 pt-1">
+          <div className="space-y-2 pt-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <h1
-                className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight transition-colors"
+                className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight transition-colors break-words [overflow-wrap:anywhere]"
                 style={{ color: brandColor }}
               >
                 {vendor.storeName}

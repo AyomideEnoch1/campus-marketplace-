@@ -19,7 +19,7 @@ const registerSchema = z.object({
   buyerType: z.enum(["student", "guest"]).optional(),
   // Vendor specific fields
   sellerType: z.enum(["student", "guest"]).default("student"),
-  storeName: z.string().optional(),
+  storeName: z.string().trim().max(50, "Store name cannot exceed 50 characters").optional(),
   campusId: z.string().optional(),
   whatsapp: z.string().optional(),
   storeDescription: z.string().optional(),

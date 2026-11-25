@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sliders, ShieldCheck, Percent, Phone, Globe, Check, CreditCard, Banknote } from "lucide-react";
+import { Sliders, ShieldCheck, Percent, Phone, Globe, Check, CreditCard, Banknote, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNGN } from "@/lib/utils";
 
@@ -20,6 +20,8 @@ export function SettingsForm({ initialSettings }: Props) {
     vendor_access_fee: initialSettings.vendor_access_fee || "15000",
     vendor_access_duration_days: initialSettings.vendor_access_duration_days || "365",
     require_vendor_payment: initialSettings.require_vendor_payment ?? "true",
+    enable_standard_vendor_access: initialSettings.enable_standard_vendor_access ?? "true",
+    enable_founding_vendor_coupon: initialSettings.enable_founding_vendor_coupon ?? "true",
     seo_meta_title:
       initialSettings.seo_meta_title ||
       "ọjà — Multi-Campus Student Marketplace",
@@ -240,6 +242,65 @@ export function SettingsForm({ initialSettings }: Props) {
             <p className="text-[11px] text-neutral-400 mt-0.5">
               When <strong>enabled</strong>, vendors must either pay the storefront access fee or redeem a valid founding coupon before they can publish listings. When <strong>disabled</strong> (Free Access), all approved vendors can create and publish listings without paying any storefront fee.
             </p>
+          </div>
+        </div>
+
+        {/* Activation Method Feature Toggles */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Standard Vendor Access (Paid) Toggle */}
+          <div className="flex items-start gap-3 p-4 bg-neutral-950 rounded-xl border border-neutral-800">
+            <input
+              type="checkbox"
+              id="enableStandardAccess"
+              checked={formData.enable_standard_vendor_access === "true"}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  enable_standard_vendor_access: e.target.checked ? "true" : "false",
+                })
+              }
+              className="w-4 h-4 mt-1 rounded text-emerald-600 focus:ring-emerald-500 bg-neutral-900 border-neutral-700 cursor-pointer"
+            />
+            <div>
+              <label
+                htmlFor="enableStandardAccess"
+                className="text-xs font-bold text-white block cursor-pointer flex items-center gap-1.5"
+              >
+                <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+                Standard Vendor Access (Paid Plan)
+              </label>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                When <strong>enabled</strong>, vendors can pay the storefront access fee via card, bank transfer, or USSD on <code>/dashboard/activate</code>. When <strong>disabled</strong>, the paid card is hidden and payment activation is blocked.
+              </p>
+            </div>
+          </div>
+
+          {/* Founding Vendor Coupon Toggle */}
+          <div className="flex items-start gap-3 p-4 bg-neutral-950 rounded-xl border border-neutral-800">
+            <input
+              type="checkbox"
+              id="enableFoundingCoupon"
+              checked={formData.enable_founding_vendor_coupon === "true"}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  enable_founding_vendor_coupon: e.target.checked ? "true" : "false",
+                })
+              }
+              className="w-4 h-4 mt-1 rounded text-emerald-600 focus:ring-emerald-500 bg-neutral-900 border-neutral-700 cursor-pointer"
+            />
+            <div>
+              <label
+                htmlFor="enableFoundingCoupon"
+                className="text-xs font-bold text-white block cursor-pointer flex items-center gap-1.5"
+              >
+                <Ticket className="w-3.5 h-3.5 text-purple-400" />
+                Founding Vendor Coupon Codes
+              </label>
+              <p className="text-[11px] text-neutral-400 mt-0.5">
+                When <strong>enabled</strong>, vendors can apply promotional Founding Vendor coupon codes for free access on <code>/dashboard/activate</code>. When <strong>disabled</strong>, coupon input is hidden and code redemption is rejected.
+              </p>
+            </div>
           </div>
         </div>
 

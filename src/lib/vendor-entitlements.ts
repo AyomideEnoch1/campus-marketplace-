@@ -27,6 +27,8 @@ export interface VendorEntitlements {
 
 export interface ComputeEntitlementsOptions {
   paymentRestrictionEnabled?: boolean;
+  standardVendorAccessEnabled?: boolean;
+  foundingVendorCouponEnabled?: boolean;
 }
 
 /**
@@ -45,8 +47,38 @@ export async function isVendorPaymentRestrictionEnabled(): Promise<boolean> {
 }
 
 /**
+ * Check if Standard Vendor Access (Paid Access) is enabled.
+ * Defaults to true if not explicitly set to "false".
+ */
+export async function isStandardVendorAccessEnabled(): Promise<boolean> {
+  try {
+    const setting = await prisma.siteSetting.findUnique({
+      where: { key: "enable_standard_vendor_access" },
+    });
+    return setting?.value !== "false";
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Check if Founding Vendor Coupon redemption is enabled.
+ * Defaults to true if not explicitly set to "false".
+ */
+export async function isFoundingVendorCouponEnabled(): Promise<boolean> {
+  try {
+    const setting = await prisma.siteSetting.findUnique({
+      where: { key: "enable_founding_vendor_coupon" },
+    });
+    return setting?.value !== "false";
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Single source of truth for vendor entitlements (identical for paid & coupon access).
- * When paymentRestrictionEnabled is false, vendors do not need to pay or redeem coupons to publish.
+ * When paymentRestrictionEnabled is false or both access options are disabled, vendors do not need to pay or redeem coupons to publish.
  */
 export function computeVendorEntitlements(
   vendor: {
@@ -57,6 +89,13 @@ export function computeVendorEntitlements(
   options?: ComputeEntitlementsOptions
 ): VendorEntitlements {
   const isPaymentRestrictionEnabled = options?.paymentRestrictionEnabled !== false;
+  const isStandardAccessEnabled = options?.standardVendorAccessEnabled !== false;
+  const isCouponEnabled = options?.foundingVendorCouponEnabled !== false;
+
+  // When payment restriction is bypassed (false) OR when both standard access and coupon are disabled by admin,
+  // any vendor has active access without needing to pay or redeem coupons.
+  const isBypassed = !isPaymentRestrictionEnabled || (!isStandardAccessEnabled && !isCouponEnabled);
+
   const now = new Date();
   const rawState = vendor.accessState || "UNPAID";
   const status = vendor.status || "PENDING";
@@ -70,9 +109,9 @@ export function computeVendorEntitlements(
     effectiveAccessState = "EXPIRED";
   }
 
-  // When payment restriction is bypassed (false), any vendor has active access without paying
+  // When bypassed, any vendor has active access without paying
   const hasAccess =
-    !isPaymentRestrictionEnabled ||
+    isBypassed ||
     effectiveAccessState === "ACTIVE_PAID" ||
     effectiveAccessState === "ACTIVE_COUPON";
   const isApproved = status === "APPROVED";
@@ -95,9 +134,9 @@ export function computeVendorEntitlements(
   }
 
   // Dashboard access:
-  // When payment restriction is disabled, no paywall or activation prompt is shown
-  const isReadOnly = isPaymentRestrictionEnabled && !hasAccess;
-  const needsActivation = isPaymentRestrictionEnabled && !hasAccess;
+  // When payment restriction is disabled/bypassed, no paywall or activation prompt is shown
+  const isReadOnly = !isBypassed && !hasAccess;
+  const needsActivation = !isBypassed && !hasAccess;
 
   const planType: "paid" | "coupon" | "none" =
     effectiveAccessState === "ACTIVE_PAID"
@@ -133,7 +172,7 @@ export function computeVendorEntitlements(
 export async function getVendorEntitlements(
   vendorIdOrUserId: string
 ): Promise<VendorEntitlements | null> {
-  const [vendor, paymentRestrictionEnabled] = await Promise.all([
+  const [vendor, settings] = await Promise.all([
     prisma.vendorProfile.findFirst({
       where: {
         OR: [{ id: vendorIdOrUserId }, { userId: vendorIdOrUserId }],
@@ -145,10 +184,29 @@ export async function getVendorEntitlements(
         accessExpiresAt: true,
       },
     }),
-    isVendorPaymentRestrictionEnabled(),
+    prisma.siteSetting.findMany({
+      where: {
+        key: {
+          in: ["require_vendor_payment", "enable_standard_vendor_access", "enable_founding_vendor_coupon"],
+        },
+      },
+    }),
   ]);
 
   if (!vendor) return null;
 
-  return computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
+  const settingsMap: Record<string, string> = {};
+  settings.forEach((s) => {
+    settingsMap[s.key] = s.value;
+  });
+
+  const paymentRestrictionEnabled = settingsMap["require_vendor_payment"] !== "false";
+  const standardVendorAccessEnabled = settingsMap["enable_standard_vendor_access"] !== "false";
+  const foundingVendorCouponEnabled = settingsMap["enable_founding_vendor_coupon"] !== "false";
+
+  return computeVendorEntitlements(vendor, {
+    paymentRestrictionEnabled,
+    standardVendorAccessEnabled,
+    foundingVendorCouponEnabled,
+  });
 }

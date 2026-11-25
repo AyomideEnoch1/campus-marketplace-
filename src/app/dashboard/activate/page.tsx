@@ -41,7 +41,15 @@ export default async function VendorActivatePage() {
   // Retrieve dynamic vendor access fee, duration, and restriction gate configured by admin
   const settings = await prisma.siteSetting.findMany({
     where: {
-      key: { in: ["vendor_access_fee", "vendor_access_duration_days", "require_vendor_payment"] },
+      key: {
+        in: [
+          "vendor_access_fee",
+          "vendor_access_duration_days",
+          "require_vendor_payment",
+          "enable_standard_vendor_access",
+          "enable_founding_vendor_coupon",
+        ],
+      },
     },
   });
 
@@ -51,7 +59,14 @@ export default async function VendorActivatePage() {
   });
 
   const paymentRestrictionEnabled = settingsMap["require_vendor_payment"] !== "false";
-  const entitlements = computeVendorEntitlements(vendor, { paymentRestrictionEnabled });
+  const standardVendorAccessEnabled = settingsMap["enable_standard_vendor_access"] !== "false";
+  const foundingVendorCouponEnabled = settingsMap["enable_founding_vendor_coupon"] !== "false";
+
+  const entitlements = computeVendorEntitlements(vendor, {
+    paymentRestrictionEnabled,
+    standardVendorAccessEnabled,
+    foundingVendorCouponEnabled,
+  });
   const latestRedemption = vendor.couponRedemptions?.[0] || null;
 
   const vendorAccessFee = Number(settingsMap["vendor_access_fee"]) || 15000;
@@ -70,6 +85,8 @@ export default async function VendorActivatePage() {
       entitlements={entitlements}
       vendorAccessFee={vendorAccessFee}
       vendorAccessDurationDays={vendorAccessDurationDays}
+      enableStandardVendorAccess={standardVendorAccessEnabled}
+      enableFoundingVendorCoupon={foundingVendorCouponEnabled}
       latestRedemption={
         latestRedemption
           ? {
