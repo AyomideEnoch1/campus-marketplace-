@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { processQueueItem } from "@/lib/email/queue-processor";
+import { createAndSendVerificationEmail } from "@/lib/email-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,12 +24,52 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Log record not found" }, { status: 404 });
       }
 
+      // If resending a verification email from logs, generate a fresh OTP & link with the user's real details
+      if (log.templateId === "buyer_email_verification") {
+        const targetUser = await prisma.user.findFirst({
+          where: { email: log.recipient.toLowerCase().trim() },
+          select: { id: true, email: true, fullName: true },
+        });
+
+        if (targetUser) {
+          const verificationRes = await createAndSendVerificationEmail({
+            userId: targetUser.id,
+            email: targetUser.email,
+            fullName: targetUser.fullName,
+            origin: req.nextUrl.origin,
+          });
+
+          await prisma.activityLog.create({
+            data: {
+              userId: admin.id,
+              action: "EMAIL_MANUALLY_RESENT",
+              entityType: "EmailLog",
+              entityId: log.id,
+              metadataJson: JSON.stringify({ templateId: log.templateId, recipient: log.recipient }),
+            },
+          });
+
+          return NextResponse.json({ success: true, result: verificationRes.emailResult });
+        }
+      }
+
+      // Recover original payloadJson from the most recent matching EmailQueue item
+      const originalQueue = await prisma.emailQueue.findFirst({
+        where: {
+          recipient: log.recipient,
+          templateId: log.templateId,
+        },
+        orderBy: { createdAt: "desc" },
+        select: { payloadJson: true, metadataJson: true },
+      });
+
       const newQueue = await prisma.emailQueue.create({
         data: {
           recipient: log.recipient,
           subject: log.subject,
           templateId: log.templateId,
-          payloadJson: log.metadataJson || "{}",
+          payloadJson: originalQueue?.payloadJson || log.metadataJson || "{}",
+          metadataJson: originalQueue?.metadataJson || log.metadataJson || null,
           priority: "HIGH",
           status: "PENDING",
         },
