@@ -259,10 +259,9 @@ export function FlutterwaveLockedModal({
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-700 shrink-0">&bull;</span>
               <span>
-                <strong>Campus Safe Pay-on-Inspection:</strong> Place this order
-                with <strong>₦0 upfront card charges</strong>. Meet the student
-                seller safely at your campus point, inspect your items, and pay
-                directly via instant transfer or cash!
+                <strong>Pay-on-Inspection / Delivery:</strong> Place this order
+                with <strong>₦0 upfront card charges</strong>. Receive or inspect
+                your items safely, and pay directly via instant transfer or cash!
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -303,13 +302,13 @@ export function FlutterwaveLockedModal({
               {submitting ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Submitting Campus Order...</span>
+                  <span>Submitting Order...</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
                   <span>
-                    Place Order via Campus Meetup ({formatNGN(totalPayable)}) &rarr;
+                    Confirm & Place Order ({formatNGN(totalPayable)}) &rarr;
                   </span>
                 </>
               )}
