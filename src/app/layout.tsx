@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-inter",
+});
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Navbar } from "@/components/layout/Navbar";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -37,8 +45,23 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const supabaseOrigin =
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder") &&
+    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("your-dev-project")
+      ? process.env.NEXT_PUBLIC_SUPABASE_URL
+      : null;
+
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className={`scroll-smooth ${inter.variable}`}>
+      <head>
+        {supabaseOrigin && (
+          <>
+            <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={supabaseOrigin} />
+          </>
+        )}
+      </head>
       <body className="min-h-screen flex flex-col font-sans antialiased bg-white text-neutral-900">
         <QueryProvider>
           <CartProvider>

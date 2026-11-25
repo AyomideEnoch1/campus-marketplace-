@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { compressImageFile } from "@/lib/image-compress";
 
 interface SingleImageUploadProps {
   value?: string;
@@ -28,7 +29,7 @@ export function SingleImageUpload({
   aspectRatio = "square",
   folder = "stores",
   label = "Upload Image",
-  hint = "PNG, JPG, WEBP up to 10MB",
+  hint = "PNG, JPG, WEBP up to 5MB",
 }: SingleImageUploadProps) {
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -43,9 +44,12 @@ export function SingleImageUpload({
     setUploading(true);
 
     try {
+      const maxWidth = folder === "stores" && aspectRatio === "square" ? 400 : 1200;
+      const compressed = await compressImageFile(file, { maxWidth, quality: 0.8 });
+
       const formData = new FormData();
       formData.append("folder", folder);
-      formData.append("file", file);
+      formData.append("file", compressed);
 
       const res = await fetch("/api/upload", {
         method: "POST",

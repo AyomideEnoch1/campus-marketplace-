@@ -13,8 +13,7 @@ export function Footer() {
     !pathname ||
     pathname.startsWith("/messages") ||
     pathname.startsWith("/dashboard/messages") ||
-    pathname.startsWith("/admin") ||
-    (typeof window !== "undefined" && window.location.pathname.startsWith("/admin"))
+    pathname.startsWith("/admin")
   ) {
     return null;
   }

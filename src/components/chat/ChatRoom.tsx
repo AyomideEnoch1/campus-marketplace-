@@ -188,7 +188,10 @@ export function ChatRoom({
       }
     };
 
-    const interval = setInterval(pollMessages, 45000);
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      pollMessages();
+    }, 45000);
 
     const handleVisibility = () => {
       if (!document.hidden) {

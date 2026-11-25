@@ -95,7 +95,14 @@ function NavigationLoaderInner() {
 
   if (!isNavigating) return null;
 
-  return <Loader isModal={true} />;
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed top-0 left-0 right-0 z-[100] h-1 bg-emerald-500/20 overflow-hidden"
+    >
+      <div className="h-full w-1/2 bg-emerald-500 animate-pulse rounded-r-full" />
+    </div>
+  );
 }
 
 export function RouteNavigationLoader() {

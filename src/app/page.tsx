@@ -217,7 +217,15 @@ export default async function HomePage() {
                     <div className="flex items-center justify-between">
                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white border border-neutral-200/80 overflow-hidden shadow-2xs flex items-center justify-center font-bold text-emerald-700 text-sm sm:text-base shrink-0">
                         {v.logo ? (
-                          <img src={v.logo} alt={v.storeName} className="w-full h-full object-cover" />
+                          <Image
+                            src={v.logo}
+                            alt={v.storeName}
+                            width={48}
+                            height={48}
+                            sizes="48px"
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <span className="bg-gradient-to-br from-emerald-500 to-teal-700 text-white w-full h-full flex items-center justify-center text-xs sm:text-sm font-bold">
                             {v.storeName[0]}
@@ -663,9 +671,13 @@ export default async function HomePage() {
                       <div className="-mt-7 mb-2 relative">
                         <div className="w-14 h-14 rounded-2xl border-2 border-white overflow-hidden shadow-md bg-white">
                           {v.logo ? (
-                            <img
+                            <Image
                               src={v.logo}
                               alt={v.storeName}
+                              width={56}
+                              height={56}
+                              sizes="56px"
+                              loading="lazy"
                               className="w-full h-full object-cover"
                             />
                           ) : (

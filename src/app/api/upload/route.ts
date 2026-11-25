@@ -18,7 +18,7 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
   "image/svg+xml": ".svg",
 };
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 async function checkProductUploadAuthorization(session: any) {
   if (!session) return false;
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
       for (const file of files) {
         if (file.size > MAX_FILE_SIZE) {
           return NextResponse.json(
-            { error: `File "${file.name}" exceeds 10MB limit` },
+            { error: `File "${file.name}" exceeds 5MB limit` },
             { status: 400 }
           );
         }

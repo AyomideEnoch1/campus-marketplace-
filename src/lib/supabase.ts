@@ -19,6 +19,7 @@ export async function uploadToSupabase(
   try {
     const { data, error } = await supabaseAdmin.storage.from(bucket).upload(path, file, {
       contentType: contentType || "image/jpeg",
+      cacheControl: "31536000",
       upsert: true,
     });
 

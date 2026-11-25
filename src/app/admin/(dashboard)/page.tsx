@@ -1,4 +1,5 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Users,
   Package,
@@ -15,7 +16,16 @@ import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
-import { TrafficPieChart, type PageTrafficItem } from "@/components/admin/TrafficPieChart";
+import type { PageTrafficItem } from "@/components/admin/TrafficPieChart";
+
+const TrafficPieChart = dynamic(
+  () => import("@/components/admin/TrafficPieChart").then((m) => m.TrafficPieChart),
+  {
+    loading: () => (
+      <div className="h-72 rounded-2xl bg-neutral-900 border border-neutral-800 animate-pulse" />
+    ),
+  }
+);
 
 async function getAdminMetrics() {
   const [

@@ -83,8 +83,7 @@ export function MobileNav({ initialUser = null }: MobileNavProps) {
     !pathname ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/dashboard/messages") ||
-    pathname.startsWith("/messages") ||
-    (typeof window !== "undefined" && window.location.pathname.startsWith("/admin"))
+    pathname.startsWith("/messages")
   ) {
     return null;
   }

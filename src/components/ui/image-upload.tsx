@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { compressImageFile } from "@/lib/image-compress";
 
 interface ImageUploadProps {
   value: string[];
@@ -32,7 +33,7 @@ export function ImageUpload({
   maxFiles = 8,
   folder = "products",
   title = "Product Images",
-  description = "Upload high quality photos of your item (PNG, JPG, WEBP up to 10MB)",
+  description = "Upload high quality photos of your item (PNG, JPG, WEBP up to 5MB)",
 }: ImageUploadProps) {
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -56,9 +57,18 @@ export function ImageUpload({
     setUploading(true);
 
     try {
+      const compressedFiles = await Promise.all(
+        fileArray.map((file) =>
+          compressImageFile(file, {
+            maxWidth: folder === "stores" ? 800 : 1200,
+            quality: 0.8,
+          })
+        )
+      );
+
       const formData = new FormData();
       formData.append("folder", folder);
-      fileArray.forEach((file) => {
+      compressedFiles.forEach((file) => {
         formData.append("files", file);
       });
 
