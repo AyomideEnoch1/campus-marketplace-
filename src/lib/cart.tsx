@@ -54,7 +54,7 @@ export interface CartProviderProps {
   initialUser?: any;
 }
 
-export function CartProvider({ children, initialUser = null }: CartProviderProps) {
+export function CartProvider({ children, initialUser }: CartProviderProps) {
   const [items, setItems] = React.useState<CartItem[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [snackbar, setSnackbar] = React.useState<SnackbarData | null>(null);

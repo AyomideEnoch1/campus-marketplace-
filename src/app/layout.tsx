@@ -20,6 +20,7 @@ import { WishlistProvider } from "@/lib/wishlist";
 import { RouteNavigationLoader } from "@/components/common/RouteNavigationLoader";
 import { ReferralTracker } from "@/components/ambassador/ReferralTracker";
 import { PageViewTracker } from "@/components/analytics/PageViewTracker";
+import { getSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://xn--j-sfa590u.com"),
@@ -40,11 +41,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const sessionUser = await getSession();
+
   const supabaseOrigin =
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder") &&
@@ -64,7 +67,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col font-sans antialiased bg-white text-neutral-900">
         <QueryProvider>
-          <CartProvider>
+          <CartProvider initialUser={sessionUser}>
             <WishlistProvider>
               <Suspense fallback={null}>
                 <ReferralTracker />
@@ -72,9 +75,9 @@ export default function RootLayout({
               </Suspense>
               <RouteNavigationLoader />
               <AnnouncementBar />
-              <Navbar />
+              <Navbar initialUser={sessionUser} />
               <AppMainContent>{children}</AppMainContent>
-              <MobileNav />
+              <MobileNav initialUser={sessionUser} />
               <Footer />
             </WishlistProvider>
           </CartProvider>

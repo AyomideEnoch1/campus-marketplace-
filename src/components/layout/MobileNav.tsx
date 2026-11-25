@@ -21,7 +21,7 @@ interface MobileNavProps {
   initialUser?: any;
 }
 
-export function MobileNav({ initialUser = null }: MobileNavProps) {
+export function MobileNav({ initialUser }: MobileNavProps) {
   const pathname = usePathname();
   const { savedCount } = useWishlist();
   const { totalCount } = useCart();

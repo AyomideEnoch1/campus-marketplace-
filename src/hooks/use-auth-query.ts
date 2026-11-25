@@ -50,7 +50,7 @@ export function useCurrentUser(initialUser?: AuthUser | null) {
   return useQuery({
     queryKey: queryKeys.auth.me(),
     queryFn: fetchCurrentUser,
-    initialData: initialUser !== undefined ? { user: initialUser } : undefined,
+    initialData: initialUser ? { user: initialUser } : undefined,
     staleTime: 15 * 1000, // 15 seconds
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
