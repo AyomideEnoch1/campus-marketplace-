@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadToSupabase } from "@/lib/supabase";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
@@ -33,21 +34,17 @@ async function checkProductUploadAuthorization(session: any) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getSession();
-    const contentType = request.headers.get("content-type") || "";
-
-    // Allow unauthenticated uploads strictly for verification documents during onboarding/registration
-    // Otherwise require authentication
-    const isVerificationUpload =
-      request.url.includes("folder=verification") ||
-      request.headers.get("x-upload-purpose") === "verification";
-
-    if (!session && !isVerificationUpload && !contentType.includes("verification")) {
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`upload:${ip}`, 30, 60 * 1000);
+    if (!rl.allowed) {
       return NextResponse.json(
-        { error: "Authentication required to upload files" },
-        { status: 401 }
+        { error: "Too many upload requests. Please wait a moment and try again." },
+        { status: 429 }
       );
     }
+
+    const session = await getSession();
+    const contentType = request.headers.get("content-type") || "";
 
     // 1. Handle JSON base64 upload
     if (contentType.includes("application/json")) {

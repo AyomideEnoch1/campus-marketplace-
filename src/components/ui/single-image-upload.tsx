@@ -17,7 +17,7 @@ interface SingleImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
   aspectRatio?: "square" | "banner";
-  folder?: "stores" | "products";
+  folder?: "stores" | "products" | "verification";
   label?: string;
   hint?: string;
 }
