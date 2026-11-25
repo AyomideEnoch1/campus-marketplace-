@@ -15,8 +15,9 @@ export interface BuyerWelcomeProps {
 }
 
 export function renderBuyerWelcome(props: BuyerWelcomeProps): RenderedEmail {
+  const userName = props.userName || "Campus Student";
   const exploreUrl = props.exploreUrl || `${APP_BASE_URL}/shop`;
-  const subject = `Welcome to ọjà, ${props.userName || "Campus Student"}! 🎓🛍️`;
+  const subject = `Welcome to ọjà, ${userName}! 🎓🛍️`;
   const preheader = `Welcome to ọjà! Safe campus trading with escrow protection, verified student vendors, and no scams.`;
 
   const contentHtml = `
@@ -25,7 +26,7 @@ export function renderBuyerWelcome(props: BuyerWelcomeProps): RenderedEmail {
     </h1>
 
     <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 22px; color: #334155;">
-      Hello <strong>${props.userName}</strong>,
+      Hello <strong>${userName}</strong>,
     </p>
 
     <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 22px; color: #334155;">
@@ -49,7 +50,7 @@ export function renderBuyerWelcome(props: BuyerWelcomeProps): RenderedEmail {
   `;
 
   const html = baseEmailWrapper({ title: subject, preheader, contentHtml });
-  const text = `${subject}\n\nHello ${props.userName},\nWelcome to ${BRAND_NAME}! Shop safe on campus: ${exploreUrl}`;
+  const text = `${subject}\n\nHello ${userName},\nWelcome to ${BRAND_NAME}! Shop safe on campus: ${exploreUrl}`;
   return { subject, html, text };
 }
 
@@ -62,8 +63,13 @@ export interface BuyerEmailVerificationProps {
 export function renderBuyerEmailVerification(
   props: BuyerEmailVerificationProps
 ): RenderedEmail {
+  const userName = props.userName || (props as any).fullName || "Campus Student";
+  const code = props.verificationCode || (props as any).code || "";
+  const verifyUrl = props.verifyUrl || `${APP_BASE_URL}/auth/verify-email`;
   const subject = `Verify your email address — ${BRAND_NAME}`;
-  const preheader = `Your 6-digit confirmation code is ${props.verificationCode}. Complete your account verification.`;
+  const preheader = code
+    ? `Your 6-digit confirmation code is ${code}. Complete your account verification.`
+    : `Complete your account verification on ${BRAND_NAME}.`;
 
   const contentHtml = `
     <h1 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 800; color: #0f172a;">
@@ -71,27 +77,33 @@ export function renderBuyerEmailVerification(
     </h1>
 
     <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 22px; color: #334155;">
-      Hello <strong>${props.userName}</strong>,
+      Hello <strong>${userName}</strong>,
     </p>
 
     <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 22px; color: #334155;">
       Please confirm your email to activate all features of your ${BRAND_NAME} student account:
     </p>
 
+    ${
+      code
+        ? `
     <div style="margin: 24px 0; padding: 20px; background-color: #f0fdf4; border: 2px dashed #10b981; border-radius: 12px; text-align: center;">
       <div style="font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase; letter-spacing: 1px;">
         Your 6-Digit Code
       </div>
       <div style="font-size: 36px; font-weight: 900; letter-spacing: 6px; color: #065f46; font-family: monospace; margin: 8px 0;">
-        ${props.verificationCode}
+        ${code}
       </div>
       <div style="font-size: 12px; color: #059669;">
         Valid for 24 hours. Enter this on the verification screen.
       </div>
     </div>
+    `
+        : ""
+    }
 
     <div style="text-align: center; margin: 24px 0;">
-      <a href="${props.verifyUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700;">
+      <a href="${verifyUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 14px; font-weight: 700;">
         Click to Verify Automatically &rarr;
       </a>
     </div>
@@ -102,7 +114,7 @@ export function renderBuyerEmailVerification(
   `;
 
   const html = baseEmailWrapper({ title: subject, preheader, contentHtml });
-  const text = `${subject}\n\nYour code: ${props.verificationCode}\nOr click: ${props.verifyUrl}`;
+  const text = `${subject}\n\n${code ? `Your code: ${code}\n` : ""}Click to verify: ${verifyUrl}`;
   return { subject, html, text };
 }
 

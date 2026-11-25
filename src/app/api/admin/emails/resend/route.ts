@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       // If resending a verification email from logs, generate a fresh OTP & link with the user's real details
       if (log.templateId === "buyer_email_verification") {
         const targetUser = await prisma.user.findFirst({
-          where: { email: log.recipient.toLowerCase().trim() },
+          where: { email: { equals: log.recipient.toLowerCase().trim(), mode: "insensitive" } },
           select: { id: true, email: true, fullName: true },
         });
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
           const verificationRes = await createAndSendVerificationEmail({
             userId: targetUser.id,
             email: targetUser.email,
-            fullName: targetUser.fullName,
+            fullName: targetUser.fullName || undefined,
             origin: req.nextUrl.origin,
           });
 
