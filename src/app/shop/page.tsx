@@ -20,7 +20,6 @@ import {
   ShoppingBag,
   ArrowRight,
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { getCategoryImage } from "@/lib/category-images";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { HorizontalProductRow } from "@/components/marketplace/HorizontalProductRow";
@@ -30,6 +29,15 @@ import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
 import { ShopHeroBanner } from "@/components/marketplace/ShopHeroBanner";
+import {
+  getCachedCampuses,
+  getCachedCategories,
+  getCachedShopSidebarVendors,
+  queryPaginatedProducts,
+} from "@/lib/db/queries";
+import { DEFAULT_PAGE_SIZE, clampPage } from "@/lib/db/selects";
+
+export const revalidate = 60;
 
 interface ShopPageProps {
   searchParams: {
@@ -42,6 +50,7 @@ interface ShopPageProps {
     q?: string;
     vendor?: string;
     sellerType?: string;
+    page?: string;
   };
 }
 
@@ -61,137 +70,48 @@ function getCategoryIcon(slug?: string, name?: string) {
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const { campus, category, condition, minPrice, maxPrice, sort, q, vendor, sellerType } = searchParams;
-
-  // Build Prisma where filter
-  const where: any = {
-    status: "PUBLISHED",
-  };
-
-  if (category) {
-    const matchedCategory = await prisma.category.findUnique({
-      where: { slug: category },
-      include: { children: true },
-    });
-
-    if (matchedCategory && matchedCategory.children?.length > 0) {
-      where.category = {
-        slug: { in: [matchedCategory.slug, ...matchedCategory.children.map((c) => c.slug)] },
-      };
-    } else {
-      where.category = {
-        slug: category,
-      };
-    }
-  }
-
-  if (campus) {
-    where.vendor = {
-      campus: {
-        slug: campus,
-      },
-    };
-  }
-
-  if (vendor) {
-    where.vendor = {
-      ...(where.vendor || {}),
-      slug: vendor,
-    };
-  }
-
-  if (sellerType && (sellerType === "student" || sellerType === "guest")) {
-    where.vendor = {
-      ...(where.vendor || {}),
-      sellerType,
-    };
-  }
-
-  if (condition) {
-    where.condition = condition;
-  }
-
-  if (minPrice || maxPrice) {
-    where.price = {};
-    if (minPrice) where.price.gte = parseFloat(minPrice);
-    if (maxPrice) where.price.lte = parseFloat(maxPrice);
-  }
-
+  const currentPage = clampPage(searchParams.page);
   const rawQ = q?.trim() || "";
-  if (rawQ) {
-    where.OR = [
-      { title: { contains: rawQ, mode: "insensitive" } },
-      { description: { contains: rawQ, mode: "insensitive" } },
-      { tags: { contains: rawQ, mode: "insensitive" } },
-      { category: { name: { contains: rawQ, mode: "insensitive" } } },
-      { vendor: { storeName: { contains: rawQ, mode: "insensitive" } } },
-      { vendor: { slug: { contains: rawQ, mode: "insensitive" } } },
-      { vendor: { user: { fullName: { contains: rawQ, mode: "insensitive" } } } },
-    ];
-  }
 
-  // Determine sorting
-  let orderBy: any = { createdAt: "desc" };
-  if (sort === "price-asc") orderBy = { price: "asc" };
-  if (sort === "price-desc") orderBy = { price: "desc" };
-  if (sort === "popular") orderBy = { viewsCount: "desc" };
-
-  // Fetch products, categories, campuses, and vendors
-  const [products, categories, campuses, vendors] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      orderBy,
-      include: {
-        images: { orderBy: { position: "asc" } },
-        category: { select: { name: true, slug: true } },
-        vendor: {
-          select: {
-            id: true,
-            storeName: true,
-            slug: true,
-            whatsapp: true,
-            sellerType: true,
-            isRegisteredBusiness: true,
-            isTrustedSeller: true,
-            campus: { select: { name: true, slug: true } },
-          },
-        },
-      },
+  const [productResult, categories, campuses, vendors] = await Promise.all([
+    queryPaginatedProducts({
+      campus,
+      category,
+      condition,
+      minPrice,
+      maxPrice,
+      sort,
+      q: rawQ,
+      vendor,
+      sellerType,
+      page: currentPage,
+      limit: DEFAULT_PAGE_SIZE,
     }),
-    prisma.category.findMany({
-      where: { parentId: null, isActive: true },
-      include: {
-        children: {
-          include: {
-            _count: {
-              select: {
-                products: { where: { status: "PUBLISHED" } },
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            products: { where: { status: "PUBLISHED" } },
-          },
-        },
-      },
-      orderBy: { sortOrder: "asc" },
-    }),
-    prisma.campus.findMany({
-      where: { isActive: true },
-    }),
-    prisma.vendorProfile.findMany({
-      where: { status: "APPROVED" },
-      select: {
-        id: true,
-        storeName: true,
-        slug: true,
-        campus: { select: { name: true, slug: true } },
-        _count: { select: { products: true } },
-      },
-      orderBy: { storeName: "asc" },
-    }),
+    getCachedCategories(),
+    getCachedCampuses(),
+    getCachedShopSidebarVendors(),
   ]);
+
+  const { products, total, totalPages, page } = productResult;
+
+  const buildShopHref = (overrides: Record<string, string | undefined>) => {
+    const base: Record<string, string> = {};
+    if (campus) base.campus = campus;
+    if (category) base.category = category;
+    if (condition) base.condition = condition;
+    if (minPrice) base.minPrice = minPrice;
+    if (maxPrice) base.maxPrice = maxPrice;
+    if (sort) base.sort = sort;
+    if (rawQ) base.q = rawQ;
+    if (vendor) base.vendor = vendor;
+    if (sellerType) base.sellerType = sellerType;
+    Object.entries(overrides).forEach(([k, v]) => {
+      if (!v) delete base[k];
+      else base[k] = v;
+    });
+    const qs = new URLSearchParams(base).toString();
+    return qs ? `/shop?${qs}` : "/shop";
+  };
 
   const activeFiltersCount = [campus, category, condition, minPrice, maxPrice, q, vendor, sellerType].filter(
     Boolean
@@ -238,7 +158,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         <div className="w-full px-4 sm:px-6 lg:px-8 space-y-2">
           {/* Category Chips */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-            <Link
+            <Link prefetch={false}
               href="/shop"
               className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !category
@@ -253,7 +173,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </span>
-              <span>All Items ({products.length})</span>
+              <span>All Items ({total})</span>
             </Link>
             {categories.map((cat: any) => {
               const isSelected = category === cat.slug;
@@ -262,6 +182,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <Link
                   key={cat.id}
                   href={`/shop?category=${cat.slug}${campus ? `&campus=${campus}` : ""}`}
+                  prefetch={false}
                   className={`inline-flex items-center gap-1.5 pl-2 sm:pl-2.5 pr-3.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
                     isSelected
                       ? "bg-emerald-500 text-white shadow-xs"
@@ -301,7 +222,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <MobileShopFilters
             campuses={campuses}
             vendors={vendors}
-            totalProductsCount={products.length}
+            totalProductsCount={total}
           />
         </div>
       </div>
@@ -319,7 +240,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
                 </span>
                 {activeFiltersCount > 0 && (
-                  <Link
+                  <Link prefetch={false}
                     href="/shop"
                     className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
                   >
@@ -335,7 +256,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   Campus Location
                 </label>
                 <div className="space-y-1 text-xs">
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(category ? { category } : {}),
                       ...(condition ? { condition } : {}),
@@ -352,7 +273,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   {campuses.map((c) => {
                     const isSelected = campus === c.slug;
                     return (
-                      <Link
+                      <Link prefetch={false}
                         key={c.id}
                         href={`/shop?${new URLSearchParams({
                           campus: c.slug,
@@ -380,7 +301,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   <span className="text-[10px] text-neutral-400 font-normal">({vendors.length})</span>
                 </label>
                 <div className="space-y-1 max-h-48 overflow-y-auto text-xs">
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -400,7 +321,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   {vendors.map((v) => {
                     const isSelected = vendor === v.slug;
                     return (
-                      <Link
+                      <Link prefetch={false}
                         key={v.id}
                         href={`/shop?${new URLSearchParams({
                           ...(campus ? { campus } : {}),
@@ -443,7 +364,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       category === c.slug || c.children?.some((ch: any) => ch.slug === category);
                     return (
                       <div key={c.id} className="space-y-0.5">
-                        <Link
+                        <Link prefetch={false}
                           href={`/shop?${new URLSearchParams({
                             category: c.slug,
                             ...(campus ? { campus } : {}),
@@ -480,7 +401,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                             {c.children.map((sub: any) => {
                               const isSubSelected = category === sub.slug;
                               return (
-                                <Link
+                                <Link prefetch={false}
                                   key={sub.id}
                                   href={`/shop?${new URLSearchParams({
                                     category: sub.slug,
@@ -522,7 +443,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   ].map((st) => {
                     const isSelected = (sellerType || "") === st.value;
                     return (
-                      <Link
+                      <Link prefetch={false}
                         key={st.value}
                         href={`/shop?${new URLSearchParams({
                           ...(campus ? { campus } : {}),
@@ -560,7 +481,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   ].map((cond) => {
                     const isSelected = condition === cond.value;
                     return (
-                      <Link
+                      <Link prefetch={false}
                         key={cond.value}
                         href={`/shop?${new URLSearchParams({
                           ...(campus ? { campus } : {}),
@@ -587,7 +508,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   Price Filter (₦)
                 </label>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -597,7 +518,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   >
                     Under ₦10k
                   </Link>
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -608,7 +529,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   >
                     ₦10k - ₦30k
                   </Link>
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -619,7 +540,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   >
                     ₦30k - ₦100k
                   </Link>
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -647,7 +568,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     : "All Campus Items"}
                 </h2>
                 <p className="text-xs text-neutral-500 mt-0.5">
-                  Found: <span className="font-bold text-neutral-800">{products.length}</span>{" "}
+                  Found: <span className="font-bold text-neutral-800">{total}</span>{" "}
                   active listings
                   {campus && ` at ${campuses.find((c) => c.slug === campus)?.name || campus}`}
                 </p>
@@ -657,7 +578,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <div className="flex items-center gap-2 self-start sm:self-auto text-xs">
                 <span className="text-neutral-500 font-medium hidden sm:inline">Sort by:</span>
                 <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-full">
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -672,7 +593,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   >
                     Newest
                   </Link>
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -687,7 +608,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   >
                     Price Low-High
                   </Link>
-                  <Link
+                  <Link prefetch={false}
                     href={`/shop?${new URLSearchParams({
                       ...(campus ? { campus } : {}),
                       ...(category ? { category } : {}),
@@ -713,7 +634,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 {campus && (
                   <Badge variant="campus" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs shrink-0 max-w-full">
                     <span className="truncate">Campus: {campuses.find((c) => c.slug === campus)?.slug.toUpperCase() || campus.toUpperCase()}</span>
-                    <Link
+                    <Link prefetch={false}
                       href={`/shop?${new URLSearchParams({
                         ...(category ? { category } : {}),
                         ...(condition ? { condition } : {}),
@@ -728,7 +649,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 {vendor && (
                   <Badge variant="secondary" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs font-bold shrink-0 max-w-full">
                     <span className="truncate max-w-[150px] sm:max-w-[200px]">Vendor: {vendors.find((v) => v.slug === vendor)?.storeName || vendor}</span>
-                    <Link
+                    <Link prefetch={false}
                       href={`/shop?${new URLSearchParams({
                         ...(campus ? { campus } : {}),
                         ...(category ? { category } : {}),
@@ -749,7 +670,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                         category
                       }
                     </span>
-                    <Link
+                    <Link prefetch={false}
                       href={`/shop?${new URLSearchParams({
                         ...(campus ? { campus } : {}),
                         ...(condition ? { condition } : {}),
@@ -764,7 +685,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 {condition && (
                   <Badge variant="secondary" className="gap-1 py-1 px-2.5 text-[11px] sm:text-xs shrink-0 max-w-full">
                     <span className="truncate">Condition: {condition}</span>
-                    <Link
+                    <Link prefetch={false}
                       href={`/shop?${new URLSearchParams({
                         ...(campus ? { campus } : {}),
                         ...(category ? { category } : {}),
@@ -776,7 +697,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     </Link>
                   </Badge>
                 )}
-                <Link
+                <Link prefetch={false}
                   href="/shop"
                   className="text-xs font-semibold text-rose-600 hover:underline ml-2"
                 >
@@ -794,7 +715,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {matchingVendors.map((v) => (
-                    <Link
+                    <Link prefetch={false}
                       key={v.id}
                       href={`/store/${v.slug}`}
                       className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-neutral-200/90 hover:border-emerald-500 hover:shadow-xs transition-all group"
@@ -849,18 +770,42 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     ? "Try checking your spelling, using more generic keywords (e.g. 'shoes', 'iphone', 'textbook'), or clearing your search."
                     : "Try broadening your search, resetting active filters, or switching campus locations."}
                 </p>
-                <Link href="/shop">
+                <Link prefetch={false} href="/shop">
                   <Button variant="default" size="sm" className="mt-2 rounded-full">
                     {rawQ ? "Clear Search & View All" : "Reset All Filters"}
                   </Button>
                 </Link>
               </div>
             ) : (
-              <div className="w-full max-w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5">
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product as any} />
-                ))}
-              </div>
+              <>
+                <div className="w-full max-w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3.5">
+                  {products.map((product: any) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="pt-8 flex items-center justify-center gap-2">
+                    {page > 1 && (
+                      <Link href={buildShopHref({ page: String(page - 1) })} prefetch={false}>
+                        <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                          &larr; Previous
+                        </Button>
+                      </Link>
+                    )}
+                    <span className="px-3 py-1.5 text-xs font-semibold text-neutral-600">
+                      Page {page} of {totalPages} ({total} items)
+                    </span>
+                    {page < totalPages && (
+                      <Link href={buildShopHref({ page: String(page + 1) })} prefetch={false}>
+                        <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                          Next &rarr;
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </main>
         </div>

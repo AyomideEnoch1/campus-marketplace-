@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { GraduationCap, MapPin, Users, Package, ArrowRight, ShieldCheck } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getCachedCampusesPageData } from "@/lib/db/queries";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export const metadata = {
   title: "Campus Locations | ọjà",
@@ -35,24 +35,11 @@ interface CampusesPageProps {
 export default async function CampusesPage({ searchParams }: CampusesPageProps) {
   const selectedSlug = searchParams.campus;
 
-  const where: any = { isActive: true };
-  if (selectedSlug && selectedSlug !== "all") {
-    where.slug = selectedSlug;
-  }
-
-  const campuses = await prisma.campus.findMany({
-    where,
-    include: {
-      vendors: {
-        where: { status: "APPROVED" },
-        include: {
-          _count: { select: { products: true } },
-        },
-      },
-    },
-  });
-
-  const allCampuses = await prisma.campus.findMany({ where: { isActive: true } });
+  const allCampuses = await getCachedCampusesPageData();
+  const campuses =
+    selectedSlug && selectedSlug !== "all"
+      ? allCampuses.filter((c) => c.slug === selectedSlug)
+      : allCampuses;
 
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-20">
@@ -72,7 +59,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
       <div className="border-b border-neutral-100 bg-white sticky top-16 md:top-20 z-20 py-3 shadow-xs">
         <div className="container mx-auto px-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Link
+            <Link prefetch={false}
               href="/campuses"
               className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors shrink-0 ${
                 !selectedSlug || selectedSlug === "all"
@@ -85,7 +72,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
             {allCampuses.map((c) => {
               const isSelected = selectedSlug === c.slug;
               return (
-                <Link
+                <Link prefetch={false}
                   key={c.id}
                   href={`/campuses?campus=${c.slug}`}
                   className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 ${
@@ -182,7 +169,7 @@ export default async function CampusesPage({ searchParams }: CampusesPageProps) 
 
                 {/* Footer Action */}
                 <div className="p-6 pt-0">
-                  <Link href={`/shop?campus=${c.slug}`} className="block">
+                  <Link prefetch={false} href={`/shop?campus=${c.slug}`} className="block">
                     <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 rounded-xl text-xs h-11 shadow-sm">
                       Browse {meta.acronym} Marketplace <ArrowRight className="w-4 h-4" />
                     </Button>

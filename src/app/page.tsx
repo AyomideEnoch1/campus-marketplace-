@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -22,151 +20,15 @@ import { ProductCard } from "@/components/marketplace/ProductCard";
 import { MobileHeroSlider } from "@/components/marketplace/MobileHeroSlider";
 import { DesktopHeroSlider } from "@/components/marketplace/DesktopHeroSlider";
 import { SearchBar } from "@/components/marketplace/SearchBar";
-import { prisma } from "@/lib/prisma";
 import { formatNGN } from "@/lib/utils";
 import { getCategoryImage, CATEGORY_IMAGES } from "@/lib/category-images";
+import { getCachedHomepageData } from "@/lib/db/queries";
 
-// Fetch dynamic data from database
-async function getHomepageData() {
-  try {
-    const [categories, campuses, newArrivals, allProducts, featuredProducts, vendors, siteSettings, totalProductCount] = await Promise.all([
-      prisma.category.findMany({
-        where: { parentId: null, isActive: true },
-        take: 8,
-        include: {
-          children: {
-            include: {
-              _count: {
-                select: {
-                  products: { where: { status: "PUBLISHED" } },
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              products: { where: { status: "PUBLISHED" } },
-            },
-          },
-        },
-        orderBy: { sortOrder: "asc" },
-      }),
-      prisma.campus.findMany({
-        where: { isActive: true },
-      }),
-      prisma.product.findMany({
-        where: { status: "PUBLISHED" },
-        take: 8,
-        orderBy: { createdAt: "desc" },
-        include: {
-          images: { orderBy: { position: "asc" } },
-          category: { select: { name: true, slug: true } },
-          vendor: {
-            select: {
-              id: true,
-              storeName: true,
-              slug: true,
-              whatsapp: true,
-              campus: { select: { name: true, slug: true } },
-            },
-          },
-        },
-      }),
-      prisma.product.findMany({
-        where: { status: "PUBLISHED" },
-        take: 36,
-        orderBy: { createdAt: "desc" },
-        include: {
-          images: { orderBy: { position: "asc" } },
-          category: { select: { name: true, slug: true } },
-          vendor: {
-            select: {
-              id: true,
-              storeName: true,
-              slug: true,
-              whatsapp: true,
-              campus: { select: { name: true, slug: true } },
-              sellerType: true,
-              verificationTier: true,
-              isTrustedSeller: true,
-              isRegisteredBusiness: true,
-            },
-          },
-        },
-      }),
-      prisma.product.findMany({
-        where: { status: "PUBLISHED", isFeatured: true },
-        take: 6,
-        include: {
-          images: { orderBy: { position: "asc" } },
-          category: { select: { name: true, slug: true } },
-          vendor: {
-            select: {
-              id: true,
-              storeName: true,
-              slug: true,
-              whatsapp: true,
-              campus: { select: { name: true, slug: true } },
-              sellerType: true,
-              verificationTier: true,
-              isTrustedSeller: true,
-              isRegisteredBusiness: true,
-            },
-          },
-        },
-      }),
-      prisma.vendorProfile.findMany({
-        where: { status: "APPROVED" },
-        take: 6,
-        include: {
-          campus: true,
-          _count: { select: { products: true } },
-        },
-      }),
-      prisma.siteSetting.findMany({
-        where: {
-          key: {
-            in: [
-              "hero_badge",
-              "hero_title",
-              "hero_subtitle",
-              "hero_cta_text",
-              "flash_sale_badge",
-              "flash_sale_title",
-              "flash_sale_subtitle",
-              "seller_promo_title",
-              "seller_promo_subtitle",
-            ],
-          },
-        },
-      }),
-      prisma.product.count({ where: { status: "PUBLISHED" } }),
-    ]);
-
-    const cmsSettings: Record<string, string> = {};
-    (siteSettings || []).forEach((s) => {
-      cmsSettings[s.key] = s.value;
-    });
-
-    return { categories, campuses, newArrivals, allProducts, featuredProducts, vendors, cmsSettings, totalProductCount };
-  } catch (error) {
-    console.error("Error loading homepage data:", error);
-    return {
-      categories: [],
-      campuses: [],
-      newArrivals: [],
-      allProducts: [],
-      featuredProducts: [],
-      vendors: [],
-      cmsSettings: {},
-      totalProductCount: 0,
-    };
-  }
-}
+export const revalidate = 60;
 
 export default async function HomePage() {
-  const { categories, campuses, newArrivals, allProducts, featuredProducts, vendors, cmsSettings = {}, totalProductCount = 20 } =
-    await getHomepageData();
+  const { categories, newArrivals, vendors, cmsSettings = {} } =
+    await getCachedHomepageData();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -347,6 +209,7 @@ export default async function HomePage() {
                 <Link
                   key={v.id}
                   href={`/store/${v.slug}`}
+                  prefetch={false}
                   className="w-[185px] sm:w-[220px] md:w-[240px] shrink-0 bg-neutral-50/70 hover:bg-emerald-50/30 rounded-2xl p-3 sm:p-4 border border-neutral-200/70 hover:border-emerald-300 transition-all flex flex-col justify-between group active:scale-[0.98] shadow-2xs"
                 >
                   <div className="space-y-2.5 sm:space-y-3">
@@ -777,6 +640,7 @@ export default async function HomePage() {
                 <Link
                   key={v.id}
                   href={`/store/${v.slug}`}
+                  prefetch={false}
                   className="group rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all flex flex-col"
                 >
                   {/* Banner */}

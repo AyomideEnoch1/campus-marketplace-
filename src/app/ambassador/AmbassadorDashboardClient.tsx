@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { QRCodeCanvas } from "qrcode.react";
 import {
   Share2,
@@ -115,13 +116,37 @@ export function AmbassadorDashboardClient({
   rewardConfig?: ReferralRewardRates;
 }) {
   const [ambassador, setAmbassador] = React.useState<AmbassadorData>(initialAmbassador);
-  const [referrals, setReferrals] = React.useState<ReferralItem[]>([]);
-  const [loadingReferrals, setLoadingReferrals] = React.useState(true);
   const [copiedLink, setCopiedLink] = React.useState(false);
   const [copiedCode, setCopiedCode] = React.useState(false);
 
+  const { data: referralsData, isLoading: loadingReferrals } = useQuery({
+    queryKey: ["ambassador", "referrals", initialAmbassador.id],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/ambassador/referrals", { signal });
+      if (!res.ok) throw new Error("Failed to load referrals");
+      const data = await res.json();
+      return (data.referrals || []) as ReferralItem[];
+    },
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: banksData } = useQuery({
+    queryKey: ["ambassador", "banks"],
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/ambassador/banks", { signal });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.banks || []) as BankItem[];
+    },
+    staleTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const referrals = referralsData || [];
+  const banks = banksData || [];
+
   // Bank Form State
-  const [banks, setBanks] = React.useState<BankItem[]>([]);
   const [selectedBankCode, setSelectedBankCode] = React.useState(ambassador.bankCode || "");
   const [selectedBankName, setSelectedBankName] = React.useState(ambassador.bankName || "");
   const [accountNumber, setAccountNumber] = React.useState(ambassador.bankAccountNumber || "");
@@ -158,39 +183,6 @@ export function AmbassadorDashboardClient({
   const referralUrl = `${origin}/auth/register?ref=${ambassador.referralCode}`;
   const vendorReferralUrl = `${origin}/auth/register?role=vendor&ref=${ambassador.referralCode}`;
   const shopReferralUrl = `${origin}/shop?ref=${ambassador.referralCode}`;
-
-  // Fetch referrals and banks on mount
-  React.useEffect(() => {
-    fetchReferrals();
-    fetchBanks();
-  }, []);
-
-  async function fetchReferrals() {
-    try {
-      setLoadingReferrals(true);
-      const res = await fetch("/api/ambassador/referrals");
-      if (res.ok) {
-        const data = await res.json();
-        setReferrals(data.referrals || []);
-      }
-    } catch (err) {
-      console.error("Failed to load referrals:", err);
-    } finally {
-      setLoadingReferrals(false);
-    }
-  }
-
-  async function fetchBanks() {
-    try {
-      const res = await fetch("/api/ambassador/banks");
-      if (res.ok) {
-        const data = await res.json();
-        setBanks(data.banks || []);
-      }
-    } catch (err) {
-      console.error("Failed to load banks:", err);
-    }
-  }
 
   function handleCopy(text: string, type: "link" | "code") {
     navigator.clipboard.writeText(text);

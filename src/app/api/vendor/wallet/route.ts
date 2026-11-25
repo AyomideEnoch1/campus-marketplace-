@@ -18,8 +18,28 @@ export async function GET(req: NextRequest) {
           { user: { email: session.email } },
         ],
       },
-      include: {
-        sellerBankAccount: true,
+      select: {
+        id: true,
+        storeName: true,
+        sellerType: true,
+        isTrustedSeller: true,
+        payoutDelayHours: true,
+        strikesCount: true,
+        bankCode: true,
+        bankName: true,
+        bankAccountNumber: true,
+        bankAccountName: true,
+        bankResolvedName: true,
+        bankVerified: true,
+        sellerBankAccount: {
+          select: {
+            bankCode: true,
+            bankName: true,
+            accountNumber: true,
+            accountName: true,
+            verified: true,
+          },
+        },
       },
     });
 
@@ -27,64 +47,81 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "No vendor profile found" }, { status: 404 });
     }
 
-    // 1. Calculate Wallet Balances from database & ledger
-    // A. Pending in Escrow: Orders paid_held or delivered
-    const pendingOrders = await prisma.order.findMany({
-      where: {
-        vendorId: seller.id,
-        escrow_status: { in: ["paid_held", "delivered"] },
-      },
-      select: { seller_amount: true, subtotal: true, commission: true },
-    });
+    // 1. Calculate Wallet Balances from database via SQL aggregates
+    const [pendingAgg, confirmedAgg, payoutAgg] = await Promise.all([
+      prisma.order.aggregate({
+        where: {
+          vendorId: seller.id,
+          escrow_status: { in: ["paid_held", "delivered"] },
+        },
+        _sum: { seller_amount: true, subtotal: true, commission: true },
+      }),
+      prisma.order.aggregate({
+        where: {
+          vendorId: seller.id,
+          escrow_status: "confirmed",
+        },
+        _sum: { seller_amount: true, subtotal: true, commission: true },
+        _count: { _all: true },
+      }),
+      prisma.payout.aggregate({
+        where: {
+          sellerId: seller.id,
+          status: "successful",
+        },
+        _sum: { amount: true },
+      }),
+    ]);
 
-    const pendingEscrow = pendingOrders.reduce(
-      (sum, o) => sum + (o.seller_amount || o.subtotal - o.commission),
-      0
+    const pendingEscrow = Number(
+      pendingAgg._sum.seller_amount ??
+        Math.max(
+          0,
+          Number(pendingAgg._sum.subtotal ?? 0) -
+            Number(pendingAgg._sum.commission ?? 0)
+        )
     );
 
-    // B. Available for Payout: Orders confirmed
-    const confirmedOrders = await prisma.order.findMany({
-      where: {
-        vendorId: seller.id,
-        escrow_status: "confirmed",
-      },
-      select: { id: true, seller_amount: true, subtotal: true, commission: true },
-    });
-
-    const availablePayout = confirmedOrders.reduce(
-      (sum, o) => sum + (o.seller_amount || o.subtotal - o.commission),
-      0
+    const availablePayout = Number(
+      confirmedAgg._sum.seller_amount ??
+        Math.max(
+          0,
+          Number(confirmedAgg._sum.subtotal ?? 0) -
+            Number(confirmedAgg._sum.commission ?? 0)
+        )
     );
 
-    // C. Total Paid Out: Payouts with status 'successful'
-    const successfulPayouts = await prisma.payout.findMany({
-      where: {
-        sellerId: seller.id,
-        status: "successful",
-      },
-      select: { amount: true },
-    });
+    const totalPaidOut = Number(payoutAgg._sum.amount ?? 0);
 
-    const totalPaidOut = successfulPayouts.reduce((sum, p) => sum + p.amount, 0);
-
-    // 2. Fetch Payout History
+    // 2. Fetch Payout History (explicit columns, bounded)
     const payouts = await prisma.payout.findMany({
       where: { sellerId: seller.id },
       orderBy: { createdAt: "desc" },
       take: 20,
+      select: {
+        id: true,
+        amount: true,
+        status: true,
+        reference: true,
+        failureReason: true,
+        createdAt: true,
+        completedAt: true,
+      },
     });
 
-    // 3. Fetch Escrow Ledger Entries for Seller's Orders
-    const sellerOrders = await prisma.order.findMany({
-      where: { vendorId: seller.id },
-      select: { id: true },
-    });
-    const sellerOrderIds = sellerOrders.map((o) => o.id);
-
+    // 3. Fetch Escrow Ledger Entries for Seller's Orders via relation filter
     const ledgerEntries = await prisma.escrowLedger.findMany({
-      where: { orderId: { in: sellerOrderIds } },
+      where: { order: { vendorId: seller.id } },
       orderBy: { createdAt: "desc" },
       take: 30,
+      select: {
+        id: true,
+        orderId: true,
+        type: true,
+        amount: true,
+        description: true,
+        createdAt: true,
+      },
     });
 
     return NextResponse.json({
@@ -93,7 +130,7 @@ export async function GET(req: NextRequest) {
         pendingEscrow,
         availablePayout,
         totalPaidOut,
-        eligibleOrdersCount: confirmedOrders.length,
+        eligibleOrdersCount: confirmedAgg._count._all,
       },
       bankAccount: seller.sellerBankAccount || {
         bankCode: seller.bankCode,

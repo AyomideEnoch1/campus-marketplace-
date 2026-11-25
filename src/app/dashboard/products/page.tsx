@@ -12,6 +12,13 @@ export default async function VendorProductsPage() {
 
   const vendor = await prisma.vendorProfile.findUnique({
     where: { userId: session.id },
+    select: {
+      id: true,
+      status: true,
+      rejectionReason: true,
+      accessState: true,
+      accessExpiresAt: true,
+    },
   });
 
   if (!vendor) return null;
@@ -21,9 +28,19 @@ export default async function VendorProductsPage() {
   const products = await prisma.product.findMany({
     where: { vendorId: vendor.id },
     orderBy: { createdAt: "desc" },
-    include: {
-      images: { orderBy: { position: "asc" } },
-      category: true,
+    take: 50,
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      price: true,
+      comparePrice: true,
+      stock: true,
+      status: true,
+      viewsCount: true,
+      createdAt: true,
+      images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+      category: { select: { name: true } },
       _count: { select: { orderItems: true } },
     },
   });

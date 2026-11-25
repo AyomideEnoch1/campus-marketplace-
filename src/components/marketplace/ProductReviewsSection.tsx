@@ -21,6 +21,7 @@ import { formatDate } from "@/lib/utils";
 import { Loader } from "@/components/ui/Loader";
 import { ReviewSkeleton } from "@/components/ui/skeleton";
 import { useProductReviews, useHelpfulVoteMutation } from "@/hooks/use-reviews-query";
+import { useCurrentUser } from "@/hooks/use-auth-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/react-query/query-keys";
 
@@ -51,8 +52,9 @@ interface ProductReviewsSectionProps {
   productTitle: string;
   productImage?: string;
   sellerId: string;
+  sellerUserId?: string;
   sellerStoreName: string;
-  isSeller: boolean;
+  isSeller?: boolean;
 }
 
 export function ProductReviewsSection({
@@ -60,10 +62,15 @@ export function ProductReviewsSection({
   productTitle,
   productImage,
   sellerId,
+  sellerUserId,
   sellerStoreName,
-  isSeller,
+  isSeller: isSellerProp,
 }: ProductReviewsSectionProps) {
   const queryClient = useQueryClient();
+  const { data: authData } = useCurrentUser();
+  const isSeller = Boolean(
+    isSellerProp ?? (authData?.user?.id && sellerUserId && authData.user.id === sellerUserId)
+  );
 
   // Filters & Sorting
   const [starFilter, setStarFilter] = React.useState<string>("ALL");

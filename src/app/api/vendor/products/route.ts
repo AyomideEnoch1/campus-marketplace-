@@ -51,6 +51,7 @@ export async function GET() {
     const session = await requireVendor();
     const vendor = await prisma.vendorProfile.findUnique({
       where: { userId: session.id },
+      select: { id: true },
     });
 
     if (!vendor) {
@@ -60,13 +61,34 @@ export async function GET() {
     const products = await prisma.product.findMany({
       where: { vendorId: vendor.id },
       orderBy: { createdAt: "desc" },
-      include: {
-        images: { orderBy: { position: "asc" } },
-        category: true,
-        variants: true,
+      take: 50,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        price: true,
+        comparePrice: true,
+        stock: true,
+        status: true,
+        condition: true,
+        viewsCount: true,
+        createdAt: true,
+        images: { orderBy: { position: "asc" }, take: 1, select: { id: true, url: true } },
+        category: { select: { id: true, name: true, slug: true } },
+        variants: {
+          select: { id: true, name: true, value: true, priceAdjustment: true, stock: true },
+        },
         promotions: {
           orderBy: { createdAt: "desc" },
           take: 1,
+          select: {
+            id: true,
+            discountType: true,
+            discountValue: true,
+            startAt: true,
+            endAt: true,
+            label: true,
+          },
         },
         _count: { select: { orderItems: true, productReviews: true } },
       },

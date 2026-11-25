@@ -52,13 +52,28 @@ export async function GET(request: Request) {
       ? await prisma.safeMeetupPoint.findMany({
           where: { campusId: targetCampusId, active: true },
           orderBy: { name: "asc" },
+          take: 50,
+          select: {
+            id: true,
+            campusId: true,
+            name: true,
+            description: true,
+            active: true,
+          },
         })
       : [];
 
-    return NextResponse.json({
-      vendor: vendorData,
-      meetupPoints,
-    });
+    return NextResponse.json(
+      {
+        vendor: vendorData,
+        meetupPoints,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { error: error?.message || "Failed to fetch safe meetup points" },

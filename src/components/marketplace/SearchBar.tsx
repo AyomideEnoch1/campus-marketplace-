@@ -212,7 +212,7 @@ function SearchBarContent({
           {searchResults.length > 0 ? (
             <div className="divide-y divide-neutral-50 max-h-72 overflow-y-auto">
               {searchResults.map((prod) => (
-                <Link
+                <Link prefetch={false}
                   key={prod.id}
                   href={`/product/${prod.slug}`}
                   onClick={() => setIsDropdownOpen(false)}

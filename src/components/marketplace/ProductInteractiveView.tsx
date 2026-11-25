@@ -99,6 +99,17 @@ export function ProductInteractiveView({ product }: ProductInteractiveViewProps)
     setActivePromo(product.promo || (product as any).activePromo || null);
   }, [product.promo, (product as any).activePromo]);
 
+  // Record product view once per browser session (excludes bots & RSC prefetches)
+  React.useEffect(() => {
+    if (!product.id || typeof window === "undefined") return;
+    const key = `viewed_product_${product.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {}
+    fetch(`/api/products/${product.id}/view`, { method: "POST", keepalive: true }).catch(() => {});
+  }, [product.id]);
+
   const maxStock = Math.max(1, product.stock);
 
   const handleQuantityChange = (val: number) => {

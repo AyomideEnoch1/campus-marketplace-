@@ -17,10 +17,22 @@ export default async function VendorDashboardLayout({
     redirect("/auth/login?redirect=/dashboard");
   }
 
-  // Fetch full vendor profile
+  // Fetch minimal vendor profile fields needed by the sidebar
   const vendor = await prisma.vendorProfile.findUnique({
     where: { userId: session.id },
-    include: { campus: true },
+    select: {
+      id: true,
+      storeName: true,
+      slug: true,
+      status: true,
+      logo: true,
+      brandColor: true,
+      campus: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
 
   if (!vendor) {

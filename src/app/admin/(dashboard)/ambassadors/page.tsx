@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { getCachedCampuses } from "@/lib/db/queries";
 import {
   getReferralRewardConfig,
   getAmbassadorPayoutLockStatus,
@@ -16,7 +17,22 @@ export default async function AdminAmbassadorsPage() {
       getSession(),
       prisma.ambassadorProfile.findMany({
         orderBy: { createdAt: "desc" },
-        include: {
+        take: 50,
+        select: {
+          id: true,
+          userId: true,
+          referralCode: true,
+          status: true,
+          campusId: true,
+          totalClicks: true,
+          pendingEarnings: true,
+          paidEarnings: true,
+          totalEarnings: true,
+          bankAccountName: true,
+          bankAccountNumber: true,
+          bankName: true,
+          bankVerified: true,
+          createdAt: true,
           user: { select: { id: true, fullName: true, email: true, phone: true } },
           campus: { select: { id: true, name: true, city: true } },
           _count: { select: { referrals: true, payouts: true } },
@@ -31,11 +47,7 @@ export default async function AdminAmbassadorsPage() {
           },
         },
       }),
-      prisma.campus.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      }),
+      getCachedCampuses(),
       getReferralRewardConfig(),
       getAmbassadorPayoutLockStatus(),
       getAmbassadorDashboardBanner(),

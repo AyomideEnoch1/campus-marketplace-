@@ -20,6 +20,7 @@ export default async function AdminCouponsPage() {
 
   const coupons = await prisma.coupon.findMany({
     orderBy: { createdAt: "desc" },
+    take: 50,
     include: {
       _count: {
         select: {
@@ -38,42 +39,48 @@ export default async function AdminCouponsPage() {
     },
   });
 
-  const couponsWithUsage = await Promise.all(
-    coupons.map(async (c) => {
-      const activeCount = await prisma.couponRedemption.count({
+  const couponIds = coupons.map((c) => c.id);
+  const activeCounts = couponIds.length
+    ? await prisma.couponRedemption.groupBy({
+        by: ["couponId"],
         where: {
-          couponId: c.id,
+          couponId: { in: couponIds },
           status: "ACTIVE",
         },
-      });
+        _count: { _all: true },
+      })
+    : [];
+  const activeCountMap = new Map(activeCounts.map((row) => [row.couponId, row._count._all]));
 
-      return {
-        id: c.id,
-        code: c.code,
-        type: c.type,
-        maxRedemptions: c.maxRedemptions,
-        activeRedemptions: activeCount,
-        remainingSlots: Math.max(0, c.maxRedemptions - activeCount),
-        freePeriodDays: c.freePeriodDays,
-        inactivityDays: c.inactivityDays,
-        isActive: c.isActive,
-        expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
-        createdAt: c.createdAt.toISOString(),
-        updatedAt: c.updatedAt.toISOString(),
-        totalRedemptions: c._count.redemptions,
-        auditLogs: c.auditLogs.map((log) => ({
-          id: log.id,
-          action: log.action,
-          oldValue: log.oldValue,
-          newValue: log.newValue,
-          metadata: log.metadata,
-          actorName: log.actor?.fullName || "Super Admin",
-          actorEmail: log.actor?.email,
-          createdAt: log.createdAt.toISOString(),
-        })),
-      };
-    })
-  );
+  const couponsWithUsage = coupons.map((c) => {
+    const activeCount = activeCountMap.get(c.id) ?? 0;
+
+    return {
+      id: c.id,
+      code: c.code,
+      type: c.type,
+      maxRedemptions: c.maxRedemptions,
+      activeRedemptions: activeCount,
+      remainingSlots: Math.max(0, c.maxRedemptions - activeCount),
+      freePeriodDays: c.freePeriodDays,
+      inactivityDays: c.inactivityDays,
+      isActive: c.isActive,
+      expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+      totalRedemptions: c._count.redemptions,
+      auditLogs: c.auditLogs.map((log) => ({
+        id: log.id,
+        action: log.action,
+        oldValue: log.oldValue,
+        newValue: log.newValue,
+        metadata: log.metadata,
+        actorName: log.actor?.fullName || "Super Admin",
+        actorEmail: log.actor?.email,
+        createdAt: log.createdAt.toISOString(),
+      })),
+    };
+  });
 
   const settings = await prisma.siteSetting.findMany({
     where: {

@@ -170,7 +170,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="group relative flex flex-col w-full max-w-full rounded-2xl bg-white border border-neutral-100 overflow-hidden shadow-xs hover:shadow-md hover:border-neutral-200 transition-all duration-300">
         {/* Product Image Box */}
         <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
-          <Link
+          <Link prefetch={false}
             href={`/product/${product.slug}`}
             className="block relative w-full h-full"
           >
@@ -270,7 +270,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <span>View Item Image</span>
             </button>
             {(product.vendor?.slug || product.vendor?.id) && (
-              <Link
+              <Link prefetch={false}
                 href={`/messages?vendor=${product.vendor.slug || product.vendor.id}&product=${product.id}`}
                 className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md hover:bg-emerald-700 transition-colors shrink-0"
                 title="Chat with Seller"
@@ -295,7 +295,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {/* Vendor & Campus Meta */}
             {product.vendor && (
               <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-neutral-500 gap-1">
-                <Link
+                <Link prefetch={false}
                   href={`/store/${product.vendor.slug}`}
                   className="hover:text-emerald-700 hover:underline truncate flex-1 min-w-0 font-medium"
                 >
@@ -311,7 +311,7 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
 
             {/* Title - Consistent 2-line height prevents uneven card heights */}
-            <Link href={`/product/${product.slug}`} className="block">
+            <Link prefetch={false} href={`/product/${product.slug}`} className="block">
               <h3 className="font-bold text-neutral-900 text-xs sm:text-[13px] line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors h-8 sm:h-9">
                 {product.title}
               </h3>

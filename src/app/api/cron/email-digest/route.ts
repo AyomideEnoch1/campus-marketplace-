@@ -8,6 +8,10 @@ export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
+  if (!cronSecret && process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 500 });
+  }
+
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     const urlSecret = req.nextUrl.searchParams.get("secret");
     if (urlSecret !== cronSecret) {
@@ -17,14 +21,15 @@ export async function GET(req: NextRequest) {
 
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  // 1. Total Orders & Volume in last 24h
-  const orders = await prisma.order.findMany({
+  // 1. Total Orders & Volume in last 24h (SQL aggregate instead of loading rows)
+  const orderAgg = await prisma.order.aggregate({
     where: { createdAt: { gte: twentyFourHoursAgo } },
-    select: { totalAmount: true },
+    _count: { _all: true },
+    _sum: { totalAmount: true },
   });
 
-  const totalOrders = orders.length;
-  const totalVolume = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  const totalOrders = orderAgg._count._all;
+  const totalVolume = Number(orderAgg._sum.totalAmount ?? 0);
 
   // 2. New Users in last 24h
   const newUsersCount = await prisma.user.count({

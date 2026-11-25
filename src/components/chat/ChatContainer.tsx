@@ -100,9 +100,7 @@ export function ChatContainer({
   useEffect(() => {
     if (!activeConversationId) return;
 
-    let isMounted = true;
-
-    // If initialMessages already belongs to this conversation on first render, don't re-fetch immediately
+    // If messages already belong to this conversation, avoid redundant refetch
     if (
       messages.length > 0 &&
       messages[0].conversationId === activeConversationId
@@ -110,9 +108,13 @@ export function ChatContainer({
       return;
     }
 
+    const controller = new AbortController();
+    let isMounted = true;
     setLoadingMessages(true);
 
-    fetch(`/api/conversations/${activeConversationId}/messages`)
+    fetch(`/api/conversations/${activeConversationId}/messages`, {
+      signal: controller.signal,
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (isMounted && data?.messages) {
@@ -120,7 +122,9 @@ export function ChatContainer({
         }
       })
       .catch((err) => {
-        console.error("Failed to load messages for conversation:", err);
+        if (err?.name !== "AbortError") {
+          console.error("Failed to load messages for conversation:", err);
+        }
       })
       .finally(() => {
         if (isMounted) {
@@ -130,11 +134,15 @@ export function ChatContainer({
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [activeConversationId]);
 
-  // Handle selecting a conversation
-  const handleSelectConversation = async (conv: ConversationListItem) => {
+  // Handle selecting a conversation (useEffect loads messages once)
+  const handleSelectConversation = (conv: ConversationListItem) => {
+    if (conv.id !== activeConversationId) {
+      setMessages([]);
+    }
     setActiveConversationId(conv.id);
     setActiveConversation(conv as unknown as ConversationDetails);
     setShowMobileChat(true);
@@ -145,19 +153,6 @@ export function ChatContainer({
         c.id === conv.id ? { ...c, _count: { messages: 0 } } : c
       )
     );
-
-    setLoadingMessages(true);
-    try {
-      const res = await fetch(`/api/conversations/${conv.id}/messages`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.messages || []);
-      }
-    } catch (e) {
-      console.error("Failed to load messages:", e);
-    } finally {
-      setLoadingMessages(false);
-    }
   };
 
   // Callback when a new message is successfully sent

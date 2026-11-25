@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { recordReferralClick } from "@/lib/referral";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const rl = checkRateLimit(`ref:track:${ip}`, 20, 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json({ success: true, throttled: true });
+    }
+
     const { code } = await request.json().catch(() => ({}));
     if (code && typeof code === "string") {
       await recordReferralClick(code);
@@ -17,6 +24,12 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit(`ref:track:${ip}`, 20, 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json({ success: true, throttled: true });
+  }
+
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code") || searchParams.get("ref");
   if (code) {

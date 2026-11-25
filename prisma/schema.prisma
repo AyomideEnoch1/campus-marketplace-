@@ -167,7 +167,6 @@ model VendorProfile {
   cacDocumentPath  String?
   isRegisteredBusiness Boolean   @default(false)
   governmentIdType String?      // nin, voters_card, drivers_license, international_passport, school_work_id
-  nin              String?      // 11-digit National Identity Number (NIN)
   idDocumentPath   String?
   selfieDocumentPath String?
   vouchedBy        String?      // User/Vendor ID who vouched
@@ -294,6 +293,10 @@ model Product {
   @@index([categoryId])
   @@index([status])
   @@index([price])
+  @@index([status, createdAt])
+  @@index([status, categoryId])
+  @@index([status, vendorId])
+  @@index([status, isFeatured])
 }
 
 model ProductImage {
@@ -377,6 +380,8 @@ model Order {
   @@index([vendorId])
   @@index([buyerId])
   @@index([status])
+  @@index([vendorId, createdAt])
+  @@index([buyerId, createdAt])
 }
 
 model OrderItem {
@@ -424,6 +429,7 @@ model ProductReview {
   @@index([buyerId])
   @@index([status])
   @@index([createdAt])
+  @@index([productId, status, createdAt])
 }
 
 model SellerRating {
@@ -847,6 +853,7 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+  @@index([userId, isRead, createdAt])
 }
 
 model AmbassadorProfile {

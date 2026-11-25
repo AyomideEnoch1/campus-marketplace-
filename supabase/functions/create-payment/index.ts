@@ -94,7 +94,7 @@ serve(async (req) => {
         currency: "NGN",
         tx_ref: txRef,
       })
-      .select()
+      .select("id, orderNumber")
       .single();
 
     if (orderErr) {

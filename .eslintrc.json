@@ -1,0 +1,24 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "CallExpression[callee.property.name='select'][arguments.length=0]",
+        "message": "Avoid calling .select() with no arguments; specify explicit columns or shared selectors from @/lib/db/selects."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='select'] > Literal[value='*']",
+        "message": "Avoid .select('*'); specify explicit columns to prevent Supabase egress bloat."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='findMany'][arguments.length=0]",
+        "message": "Avoid unbounded .findMany() calls; add take/skip pagination and explicit select."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='findMany'] > ObjectExpression:not(:has(Property[key.name='take']))",
+        "message": "Always bound Prisma .findMany() with 'take' (and explicit 'select') or use shared helpers from @/lib/db/queries."
+      }
+    ]
+  }
+}

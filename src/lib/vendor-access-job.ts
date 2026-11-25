@@ -36,9 +36,12 @@ export async function runVendorAccessCheck(): Promise<JobExecutionStats> {
         accessState: { in: ["ACTIVE_COUPON", "ACTIVE_PAID"] },
         accessExpiresAt: { lte: now },
       },
-      include: {
-        user: { select: { id: true, email: true, fullName: true } },
+      select: {
+        id: true,
+        userId: true,
+        storeName: true,
       },
+      take: 100,
     });
 
     for (const v of expiredVendors) {
@@ -100,12 +103,15 @@ export async function runVendorAccessCheck(): Promise<JobExecutionStats> {
   // Vendors approved with 0 products after inactivityDays lose their slot
   // =========================================================================
   try {
-    // Fetch active coupon redemptions for approved vendors
+    // Fetch active coupon redemptions for approved vendors (bounded)
     const activeRedemptions = await prisma.couponRedemption.findMany({
       where: {
         status: "ACTIVE",
       },
-      include: {
+      take: 100,
+      select: {
+        id: true,
+        inactivityWarningSentAt: true,
         coupon: {
           select: { inactivityDays: true, code: true },
         },
@@ -117,7 +123,6 @@ export async function runVendorAccessCheck(): Promise<JobExecutionStats> {
             status: true,
             approvedAt: true,
             createdAt: true,
-            user: { select: { email: true, fullName: true } },
             _count: {
               select: {
                 products: {
@@ -217,9 +222,12 @@ export async function runVendorAccessCheck(): Promise<JobExecutionStats> {
         accessState: { in: ["ACTIVE_COUPON", "ACTIVE_PAID"] },
         accessExpiresAt: { gt: now },
       },
-      include: {
-        user: { select: { id: true, email: true, fullName: true } },
+      select: {
+        id: true,
+        userId: true,
+        accessExpiresAt: true,
       },
+      take: 100,
     });
 
     for (const v of activeVendors) {

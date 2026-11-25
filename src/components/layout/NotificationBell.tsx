@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   MessageSquare,
@@ -32,35 +33,34 @@ interface NotificationBellProps {
 }
 
 export function NotificationBell({ currentUserId }: NotificationBellProps) {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const queryKey = ["notifications", currentUserId] as const;
 
-  // Load initial notifications
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/notifications");
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications || []);
-        setUnreadCount(data.unreadCount || 0);
-      }
-    } catch (e) {
-      console.error("Failed to load notifications:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: notifData } = useQuery<{
+    notifications: NotificationItem[];
+    unreadCount: number;
+  }>({
+    queryKey,
+    queryFn: async ({ signal }) => {
+      const res = await fetch("/api/notifications", { signal });
+      if (!res.ok) throw new Error("Failed to load notifications");
+      const data = await res.json();
+      return {
+        notifications: data.notifications || [],
+        unreadCount: data.unreadCount || 0,
+      };
+    },
+    enabled: !!currentUserId,
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
-  useEffect(() => {
-    if (currentUserId) {
-      fetchNotifications();
-    }
-  }, [currentUserId]);
+  const notifications = notifData?.notifications || [];
+  const unreadCount = notifData?.unreadCount || 0;
 
   // Subscribe to real-time notification inserts
   useEffect(() => {
@@ -79,7 +79,6 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
         (payload: any) => {
           const newNotif = payload.new as NotificationItem;
 
-          // Sound/Toast feedback
           toast(newNotif.title, {
             description: newNotif.message,
             action: newNotif.link
@@ -90,9 +89,13 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
               : undefined,
           });
 
-          // Prepend and increment unread
-          setNotifications((prev) => [newNotif, ...prev]);
-          setUnreadCount((c) => c + 1);
+          queryClient.setQueryData<{
+            notifications: NotificationItem[];
+            unreadCount: number;
+          }>(queryKey, (old) => ({
+            notifications: [newNotif, ...(old?.notifications || [])],
+            unreadCount: (old?.unreadCount || 0) + 1,
+          }));
         }
       )
       .subscribe();
@@ -100,7 +103,7 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUserId, router]);
+  }, [currentUserId, router, queryClient]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -119,8 +122,13 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
   const handleMarkAllRead = async () => {
     try {
       await fetch("/api/notifications", { method: "PATCH" });
-      setUnreadCount(0);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      queryClient.setQueryData<{
+        notifications: NotificationItem[];
+        unreadCount: number;
+      }>(queryKey, (old) => ({
+        notifications: (old?.notifications || []).map((n) => ({ ...n, isRead: true })),
+        unreadCount: 0,
+      }));
     } catch (e) {
       console.error("Failed to mark all as read:", e);
     }
@@ -130,10 +138,15 @@ export function NotificationBell({ currentUserId }: NotificationBellProps) {
     if (!notif.isRead) {
       try {
         fetch(`/api/notifications/${notif.id}`, { method: "PATCH" });
-        setUnreadCount((c) => Math.max(0, c - 1));
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
-        );
+        queryClient.setQueryData<{
+          notifications: NotificationItem[];
+          unreadCount: number;
+        }>(queryKey, (old) => ({
+          notifications: (old?.notifications || []).map((n) =>
+            n.id === notif.id ? { ...n, isRead: true } : n
+          ),
+          unreadCount: Math.max(0, (old?.unreadCount || 0) - 1),
+        }));
       } catch (e) {}
     }
 

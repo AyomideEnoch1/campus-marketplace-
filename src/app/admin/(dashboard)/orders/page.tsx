@@ -9,7 +9,18 @@ export default async function AdminOrdersPage() {
     await Promise.all([
       prisma.order.findMany({
         orderBy: { createdAt: "desc" },
-        include: {
+        take: 50,
+        select: {
+          id: true,
+          orderNumber: true,
+          buyerName: true,
+          buyerEmail: true,
+          buyerPhone: true,
+          totalAmount: true,
+          status: true,
+          escrow_status: true,
+          deliveryMethod: true,
+          createdAt: true,
           vendor: {
             select: {
               storeName: true,
@@ -17,7 +28,10 @@ export default async function AdminOrdersPage() {
             },
           },
           items: {
-            include: {
+            select: {
+              id: true,
+              quantity: true,
+              unitPrice: true,
               product: {
                 select: {
                   title: true,

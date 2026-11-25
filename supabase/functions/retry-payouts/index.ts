@@ -17,7 +17,7 @@ serve(async (req) => {
     const now = new Date().toISOString();
     const { data: eligible } = await supabaseClient
       .from("payouts")
-      .select("*, seller:VendorProfile(*)")
+      .select("id, order_id, amount, reference, attempts, seller:VendorProfile(bankCode, bankAccountNumber, bankAccountName)")
       .eq("status", "failed")
       .lt("attempts", 5)
       .or(`next_retry_at.lte.${now},next_retry_at.is.null`)

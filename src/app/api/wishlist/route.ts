@@ -14,10 +14,23 @@ export async function GET() {
     const favorites = await prisma.favorite.findMany({
       where: { userId: session.id },
       orderBy: { createdAt: "desc" },
-      include: {
+      take: 24,
+      select: {
+        id: true,
         product: {
-          include: {
-            images: { orderBy: { position: "asc" } },
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            price: true,
+            comparePrice: true,
+            condition: true,
+            status: true,
+            images: {
+              orderBy: { position: "asc" },
+              take: 1,
+              select: { url: true },
+            },
             category: { select: { name: true, slug: true } },
             vendor: {
               select: {

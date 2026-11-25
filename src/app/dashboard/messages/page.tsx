@@ -18,6 +18,7 @@ export default async function VendorMessagesPage({
 
   const vendor = await prisma.vendorProfile.findUnique({
     where: { userId: session.id },
+    select: { id: true },
   });
 
   if (!vendor) {
@@ -56,7 +57,14 @@ export default async function VendorMessagesPage({
   const rawConversations = await prisma.conversation.findMany({
     where: { vendorId: vendor.id },
     orderBy: { lastMessageAt: "desc" },
-    include: {
+    take: 30,
+    select: {
+      id: true,
+      buyerId: true,
+      vendorId: true,
+      productId: true,
+      lastMessage: true,
+      lastMessageAt: true,
       buyer: {
         select: { id: true, fullName: true, email: true },
       },
@@ -77,7 +85,7 @@ export default async function VendorMessagesPage({
           title: true,
           price: true,
           slug: true,
-          images: { take: 1, orderBy: { position: "asc" } },
+          images: { take: 1, orderBy: { position: "asc" }, select: { url: true } },
         },
       },
       _count: {
@@ -114,19 +122,28 @@ export default async function VendorMessagesPage({
     if (found) targetConvId = found.id;
   }
   if (targetConvId) {
-    const rawMessages = await prisma.chatMessage.findMany({
-      where: { conversationId: targetConvId },
-      orderBy: { createdAt: "asc" },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            fullName: true,
-            role: true,
+    const rawMessages = (
+      await prisma.chatMessage.findMany({
+        where: { conversationId: targetConvId },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          conversationId: true,
+          senderId: true,
+          content: true,
+          isRead: true,
+          createdAt: true,
+          sender: {
+            select: {
+              id: true,
+              fullName: true,
+              role: true,
+            },
           },
         },
-      },
-    });
+      })
+    ).reverse();
 
     initialMessages = rawMessages.map((m) => ({
       id: m.id,

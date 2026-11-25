@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import { Role, SessionUser } from "./types";
@@ -63,7 +64,7 @@ export function verifyEmailVerificationToken(token: string): { userId: string; e
   }
 }
 
-export async function getSession(): Promise<SessionUser | null> {
+export const getSession = cache(async (): Promise<SessionUser | null> => {
   try {
     const cookieStore = cookies();
     const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
@@ -75,7 +76,12 @@ export async function getSession(): Promise<SessionUser | null> {
     try {
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          role: true,
+          avatarUrl: true,
           vendorProfile: {
             select: {
               id: true,
@@ -159,7 +165,7 @@ export async function getSession(): Promise<SessionUser | null> {
     console.error("Error retrieving session:", error);
     return null;
   }
-}
+});
 
 export async function requireAuth(): Promise<SessionUser> {
   const user = await getSession();

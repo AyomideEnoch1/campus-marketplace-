@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getSession } from "@/lib/auth";
+import { getCachedCampuses } from "@/lib/db/queries";
 import {
   getReferralRewardConfig,
   getAmbassadorPayoutLockStatus,
@@ -16,7 +17,22 @@ export async function GET() {
     const [ambassadors, campuses] = await Promise.all([
       prisma.ambassadorProfile.findMany({
         orderBy: { createdAt: "desc" },
-        include: {
+        take: 50,
+        select: {
+          id: true,
+          userId: true,
+          referralCode: true,
+          status: true,
+          campusId: true,
+          totalClicks: true,
+          pendingEarnings: true,
+          paidEarnings: true,
+          totalEarnings: true,
+          bankAccountName: true,
+          bankAccountNumber: true,
+          bankName: true,
+          bankVerified: true,
+          createdAt: true,
           user: {
             select: { id: true, fullName: true, email: true, phone: true },
           },
@@ -37,11 +53,7 @@ export async function GET() {
           },
         },
       }),
-      prisma.campus.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      }),
+      getCachedCampuses(),
     ]);
 
     const formatted = ambassadors.map((a) => {

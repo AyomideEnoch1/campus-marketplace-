@@ -28,21 +28,52 @@ import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
 async function getVendorDashboardData(userId: string) {
   const vendor = await prisma.vendorProfile.findUnique({
     where: { userId },
-    include: {
-      campus: true,
+    select: {
+      id: true,
+      storeName: true,
+      slug: true,
+      status: true,
+      rejectionReason: true,
+      layout: true,
+      brandColor: true,
+      accessState: true,
+      accessExpiresAt: true,
+      campus: { select: { id: true, name: true, slug: true } },
       products: {
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: {
-          images: { orderBy: { position: "asc" } },
-          category: true,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          price: true,
+          status: true,
+          stock: true,
+          viewsCount: true,
+          createdAt: true,
+          images: { orderBy: { position: "asc" }, take: 1, select: { url: true } },
+          category: { select: { name: true } },
         },
       },
       orders: {
         orderBy: { createdAt: "desc" },
         take: 5,
-        include: {
-          items: { include: { product: true } },
+        select: {
+          id: true,
+          orderNumber: true,
+          buyerName: true,
+          totalAmount: true,
+          status: true,
+          escrow_status: true,
+          paid_at: true,
+          createdAt: true,
+          items: {
+            select: {
+              id: true,
+              quantity: true,
+              product: { select: { id: true, title: true } },
+            },
+          },
         },
       },
     },
@@ -50,17 +81,17 @@ async function getVendorDashboardData(userId: string) {
 
   if (!vendor) return null;
 
-  // Aggregate stats
-  const totalProducts = await prisma.product.count({ where: { vendorId: vendor.id } });
-  const publishedProducts = await prisma.product.count({
-    where: { vendorId: vendor.id, status: "PUBLISHED" },
-  });
-  const viewsAggregation = await prisma.product.aggregate({
-    where: { vendorId: vendor.id },
-    _sum: { viewsCount: true },
-  });
+  // Aggregate stats in parallel instead of sequentially
+  const [totalProducts, publishedProducts, viewsAggregation, totalOrders] = await Promise.all([
+    prisma.product.count({ where: { vendorId: vendor.id } }),
+    prisma.product.count({ where: { vendorId: vendor.id, status: "PUBLISHED" } }),
+    prisma.product.aggregate({
+      where: { vendorId: vendor.id },
+      _sum: { viewsCount: true },
+    }),
+    prisma.order.count({ where: { vendorId: vendor.id } }),
+  ]);
   const totalViews = viewsAggregation._sum.viewsCount || 0;
-  const totalOrders = await prisma.order.count({ where: { vendorId: vendor.id } });
 
   return {
     vendor,
@@ -81,15 +112,16 @@ export default async function VendorDashboardPage() {
   const { vendor, totalProducts, publishedProducts, totalViews, totalOrders } = data;
   const entitlements = computeVendorEntitlements(vendor);
 
-  // Fetch dynamic platform pricing from SiteSetting
-  const feeSetting = await prisma.siteSetting.findUnique({
-    where: { key: "vendor_access_fee" },
+  // Fetch dynamic platform pricing from SiteSetting in a single query
+  const pricingSettings = await prisma.siteSetting.findMany({
+    where: { key: { in: ["vendor_access_fee", "vendor_access_duration_days"] } },
+    select: { key: true, value: true },
   });
-  const durationSetting = await prisma.siteSetting.findUnique({
-    where: { key: "vendor_access_duration_days" },
-  });
-  const vendorAccessFee = feeSetting ? parseInt(feeSetting.value, 10) || 15000 : 15000;
-  const vendorAccessDurationDays = durationSetting ? parseInt(durationSetting.value, 10) || 365 : 365;
+  const pricingMap = new Map(pricingSettings.map((s) => [s.key, s.value]));
+  const feeValue = pricingMap.get("vendor_access_fee");
+  const durationValue = pricingMap.get("vendor_access_duration_days");
+  const vendorAccessFee = feeValue ? parseInt(feeValue, 10) || 15000 : 15000;
+  const vendorAccessDurationDays = durationValue ? parseInt(durationValue, 10) || 365 : 365;
 
   const stats = [
     {

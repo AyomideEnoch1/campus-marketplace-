@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export const dynamic = "force-dynamic";
-
 function getSessionRole(token: string): string | null {
   try {
     const parts = token.split(".");
@@ -29,7 +27,6 @@ export function middleware(request: NextRequest) {
 
   // 1. Role: ADMIN routing rules
   if (isAdmin) {
-    // If already signed in as admin and visiting admin login, redirect to admin dashboard
     if (pathname === "/admin/login") {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
@@ -46,7 +43,6 @@ export function middleware(request: NextRequest) {
 
   // 2. Role: VENDOR routing rules
   if (role === "VENDOR") {
-    // If navigating to sign-in/sign-up without explicit buyer intent, redirect to dashboard
     if (pathname === "/auth/login" || pathname === "/auth/register") {
       const targetRole = searchParams.get("role");
       const onboarding = searchParams.get("onboarding");
@@ -58,14 +54,12 @@ export function middleware(request: NextRequest) {
 
   // 3. Role: BUYER routing rules
   if (role === "BUYER") {
-    // If already signed in as buyer and navigating to sign-in/sign-up, redirect to shop
     if (pathname === "/auth/login" || pathname === "/auth/register") {
       const targetRole = searchParams.get("role");
       if (targetRole !== "vendor") {
         return NextResponse.redirect(new URL("/shop", request.url));
       }
     }
-    // Buyers should not view vendor dashboard
     if (pathname.startsWith("/dashboard")) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("role", "vendor");
@@ -81,19 +75,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Attach pathname to request headers for Server Components
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", pathname);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|woff|woff2|ttf)$).*)",
   ],
 };

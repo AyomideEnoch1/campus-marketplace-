@@ -58,13 +58,13 @@ export function ShowcaseLayout({ vendor, products }: LayoutProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link href={`/product/${featured.slug}`}>
+              <Link prefetch={false} href={`/product/${featured.slug}`}>
                 <Button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2 text-xs">
                   View Full Item <ArrowRight className="w-3.5 h-3.5" />
                 </Button>
               </Link>
 
-              <Link
+              <Link prefetch={false}
                 href={`/messages?vendor=${vendor.slug || vendor.id}&product=${featured.id}`}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold text-neutral-900 bg-white hover:bg-neutral-100 transition-colors shadow-sm"
               >

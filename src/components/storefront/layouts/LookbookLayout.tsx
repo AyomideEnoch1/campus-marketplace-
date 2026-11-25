@@ -64,7 +64,7 @@ export function LookbookLayout({ vendor, products }: LayoutProps) {
                 </div>
 
                 {/* In-app Chat Button */}
-                <Link
+                <Link prefetch={false}
                   href={`/messages?vendor=${vendor.slug || vendor.id}&product=${p.id}`}
                   className="absolute top-4 right-4 w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform z-10"
                   title="Chat with Vendor"
@@ -74,7 +74,7 @@ export function LookbookLayout({ vendor, products }: LayoutProps) {
 
                 {/* Editorial Caption on Photo */}
                 <div className="absolute bottom-5 left-5 right-5 text-white z-10 space-y-2">
-                  <Link href={`/product/${p.slug}`}>
+                  <Link prefetch={false} href={`/product/${p.slug}`}>
                     <h4 className="text-xl sm:text-2xl font-extrabold tracking-tight group-hover:underline flex items-center justify-between">
                       <span>{p.title}</span>
                       <ArrowUpRight className="w-5 h-5 text-emerald-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />

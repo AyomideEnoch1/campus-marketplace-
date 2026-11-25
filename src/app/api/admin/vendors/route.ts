@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { getCachedCampuses } from "@/lib/db/queries";
 
 export async function GET() {
   try {
@@ -11,13 +12,39 @@ export async function GET() {
     const [vendors, campuses] = await Promise.all([
       prisma.vendorProfile.findMany({
         orderBy: { createdAt: "desc" },
-        include: {
+        take: 50,
+        select: {
+          id: true,
+          storeName: true,
+          slug: true,
+          status: true,
+          sellerType: true,
+          campusId: true,
+          whatsapp: true,
+          faculty: true,
+          department: true,
+          businessCategory: true,
+          businessAddress: true,
+          governmentIdType: true,
+          cacNumber: true,
+          idDocumentPath: true,
+          selfieDocumentPath: true,
+          businessPhotoPath: true,
+          studentIdUrl: true,
+          adminNotes: true,
+          verificationTier: true,
+          payoutDelayHours: true,
+          isTrustedSeller: true,
+          isRegisteredBusiness: true,
+          rejectionReason: true,
+          logo: true,
+          createdAt: true,
           user: { select: { fullName: true, email: true, phone: true } },
-          campus: true,
+          campus: { select: { id: true, name: true, slug: true } },
           _count: { select: { products: true, orders: true } },
         },
       }),
-      prisma.campus.findMany({ where: { isActive: true } }),
+      getCachedCampuses(),
     ]);
 
     return NextResponse.json({

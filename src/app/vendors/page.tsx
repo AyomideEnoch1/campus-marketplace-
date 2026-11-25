@@ -8,11 +8,12 @@ import {
   MessageCircle,
   MessageSquare,
 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getCachedVendorsPageData } from "@/lib/db/queries";
+import { clampPage } from "@/lib/db/selects";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 export const metadata = {
   title: "Student Vendors Directory | ọjà",
@@ -23,31 +24,19 @@ export const metadata = {
 interface VendorsPageProps {
   searchParams: {
     campus?: string;
+    page?: string;
   };
 }
 
 export default async function VendorsPage({ searchParams }: VendorsPageProps) {
   const { campus } = searchParams;
+  const currentPage = clampPage(searchParams.page);
 
-  const where: any = {
-    status: "APPROVED",
-  };
-
-  if (campus) {
-    where.campus = { slug: campus };
-  }
-
-  const [vendors, campuses] = await Promise.all([
-    prisma.vendorProfile.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        campus: true,
-        _count: { select: { products: true } },
-      },
-    }),
-    prisma.campus.findMany({ where: { isActive: true } }),
-  ]);
+  const { vendors, totalVendors, totalPages, page } = await getCachedVendorsPageData(
+    campus,
+    currentPage,
+    18
+  );
 
   return (
     <div className="min-h-screen bg-neutral-50/60 pb-20">
@@ -69,7 +58,7 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
         <div className="container mx-auto px-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs font-bold text-neutral-800">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>{vendors.length} Verified Student Stores Active</span>
+            <span>{totalVendors} Verified Student Stores Active</span>
           </div>
 
           <Link href="/auth/register?role=vendor">
@@ -173,7 +162,7 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
 
               {/* View Store Button */}
               <div className="p-6 pt-0">
-                <Link href={`/store/${v.slug}`} className="block">
+                <Link href={`/store/${v.slug}`} prefetch={false} className="block">
                   <Button
                     variant="outline"
                     className="w-full border-neutral-200 hover:border-emerald-600 hover:bg-emerald-50 text-neutral-900 hover:text-emerald-800 font-bold text-xs h-10 rounded-xl justify-between group/btn"
@@ -186,6 +175,40 @@ export default async function VendorsPage({ searchParams }: VendorsPageProps) {
             </div>
           ))}
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-10 flex items-center justify-center gap-2">
+            {page > 1 && (
+              <Link
+                href={`/vendors?${new URLSearchParams({
+                  ...(campus ? { campus } : {}),
+                  page: String(page - 1),
+                }).toString()}`}
+                prefetch={false}
+              >
+                <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                  &larr; Previous
+                </Button>
+              </Link>
+            )}
+            <span className="px-3 py-1.5 text-xs font-semibold text-neutral-600">
+              Page {page} of {totalPages}
+            </span>
+            {page < totalPages && (
+              <Link
+                href={`/vendors?${new URLSearchParams({
+                  ...(campus ? { campus } : {}),
+                  page: String(page + 1),
+                }).toString()}`}
+                prefetch={false}
+              >
+                <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold">
+                  Next &rarr;
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

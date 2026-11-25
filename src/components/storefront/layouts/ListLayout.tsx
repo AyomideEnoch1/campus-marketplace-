@@ -60,7 +60,7 @@ export function ListLayout({ vendor, products }: LayoutProps) {
                     </span>
                   </div>
 
-                  <Link href={`/product/${p.slug}`}>
+                  <Link prefetch={false} href={`/product/${p.slug}`}>
                     <h4 className="font-bold text-sm sm:text-base text-neutral-950 group-hover:text-emerald-700 transition-colors line-clamp-1">
                       {p.title}
                     </h4>
@@ -93,13 +93,13 @@ export function ListLayout({ vendor, products }: LayoutProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Link href={`/product/${p.slug}`}>
+                  <Link prefetch={false} href={`/product/${p.slug}`}>
                     <Button variant="outline" size="sm" className="text-xs font-semibold">
                       Details
                     </Button>
                   </Link>
 
-                  <Link
+                  <Link prefetch={false}
                     href={`/messages?vendor=${vendor.slug || vendor.id}&product=${p.id}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm"
                   >

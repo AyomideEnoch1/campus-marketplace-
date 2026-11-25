@@ -154,12 +154,20 @@ export function ChatRoom({
     };
   }, [conversation.id]);
 
-  // Periodic polling fallback (every 4 seconds) to ensure real-time consistency
+  // Throttled fallback polling (45s, paused when tab is hidden) with AbortController
   useEffect(() => {
-    const interval = setInterval(async () => {
+    let isCancelled = false;
+    let activeController: AbortController | null = null;
+
+    const pollMessages = async () => {
+      if (isCancelled || (typeof document !== "undefined" && document.hidden)) return;
+      activeController?.abort();
+      activeController = new AbortController();
       try {
-        const res = await fetch(`/api/conversations/${conversation.id}/messages`);
-        if (res.ok) {
+        const res = await fetch(`/api/conversations/${conversation.id}/messages`, {
+          signal: activeController.signal,
+        });
+        if (res.ok && !isCancelled) {
           const data = await res.json();
           if (data.messages && Array.isArray(data.messages)) {
             setMessages((prev) => {
@@ -178,9 +186,23 @@ export function ChatRoom({
       } catch {
         // Silent polling fallback
       }
-    }, 4000);
+    };
 
-    return () => clearInterval(interval);
+    const interval = setInterval(pollMessages, 45000);
+
+    const handleVisibility = () => {
+      if (!document.hidden) {
+        pollMessages();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      isCancelled = true;
+      activeController?.abort();
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [conversation.id]);
 
   // Subscribe to Supabase Realtime for instant updates

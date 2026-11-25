@@ -10,7 +10,11 @@ export const dynamic = "force-dynamic";
  * Validates the CRON_SECRET from Authorization header or x-cron-secret header.
  */
 function verifyCronAuth(req: NextRequest): boolean {
-  const cronSecret = process.env.CRON_SECRET || "campustrade_cron_secret_2026";
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    return process.env.NODE_ENV !== "production";
+  }
+
   const authHeader = req.headers.get("authorization");
   const xCronSecret = req.headers.get("x-cron-secret");
 
@@ -23,7 +27,6 @@ function verifyCronAuth(req: NextRequest): boolean {
     return true;
   }
 
-  // Allow admin session fallback in development/internal tests
   return false;
 }
 

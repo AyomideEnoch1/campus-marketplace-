@@ -1,14 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ChevronRight, ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { ChevronRight } from "lucide-react";
 import { ProductInteractiveView } from "@/components/marketplace/ProductInteractiveView";
 import { ProductReviewsSection } from "@/components/marketplace/ProductReviewsSection";
 import { ProductCard } from "@/components/marketplace/ProductCard";
 import { TrustBar } from "@/components/marketplace/TrustBar";
-import { getSession } from "@/lib/auth";
 import { getEffectiveProductPrice } from "@/lib/promotions";
+import { getProductBySlug, getCachedRelatedProducts } from "@/lib/db/queries";
+
+export const revalidate = 120;
 
 interface ProductPageProps {
   params: { slug: string };
@@ -17,15 +18,9 @@ interface ProductPageProps {
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
-  const product = await prisma.product.findUnique({
-    where: { slug: params.slug },
-    include: {
-      images: { orderBy: { position: "asc" }, take: 1 },
-      vendor: { include: { campus: true } },
-    },
-  });
+  const product = await getProductBySlug(params.slug);
 
-  if (!product) {
+  if (!product || product.status !== "PUBLISHED") {
     return { title: "Product Not Found | ọjà" };
   }
 
@@ -41,30 +36,12 @@ export async function generateMetadata({
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
-  const session = await getSession();
-  const product = await prisma.product.findUnique({
-    where: { slug: params.slug },
-    include: {
-      images: { orderBy: { position: "asc" } },
-      category: true,
-      variants: true,
-      promotions: {
-        where: { status: { in: ["ACTIVE", "SCHEDULED"] } },
-        orderBy: { createdAt: "desc" },
-      },
-      vendor: {
-        include: {
-          campus: true,
-        },
-      },
-    },
-  });
+  const product = await getProductBySlug(params.slug);
 
   if (!product || product.status !== "PUBLISHED") {
     notFound();
   }
 
-  // Server time for promotional calculations
   const serverNow = new Date();
   const productPriceInfo = getEffectiveProductPrice(product, serverNow);
   const enrichedProduct = {
@@ -74,42 +51,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     activePromo: productPriceInfo.activePromo,
   };
 
-  // Increment views count asynchronously
-  try {
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { viewsCount: { increment: 1 } },
-    });
-  } catch (err) {
-    // Non-blocking
-  }
-
-  // Fetch related products
-  const relatedRaw = await prisma.product.findMany({
-    where: {
-      categoryId: product.categoryId,
-      id: { not: product.id },
-      status: "PUBLISHED",
-    },
-    take: 4,
-    include: {
-      images: { orderBy: { position: "asc" } },
-      category: true,
-      promotions: {
-        where: { status: { in: ["ACTIVE", "SCHEDULED"] } },
-        orderBy: { createdAt: "desc" },
-      },
-      vendor: {
-        select: {
-          id: true,
-          storeName: true,
-          slug: true,
-          whatsapp: true,
-          campus: { select: { name: true, slug: true } },
-        },
-      },
-    },
-  });
+  const relatedRaw = await getCachedRelatedProducts(product.categoryId, product.id);
 
   const relatedProducts = relatedRaw.map((p) => {
     const pPriceInfo = getEffectiveProductPrice(p, serverNow);
@@ -136,6 +78,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
           <Link
             href={`/shop?category=${product.category.slug}`}
+            prefetch={false}
             className="hover:text-neutral-900 transition-colors"
           >
             {product.category.name}
@@ -150,15 +93,15 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       {/* Main Interactive Product View */}
       <div className="container mx-auto px-4 py-8 md:py-12 space-y-12">
         <ProductInteractiveView product={enrichedProduct as any} />
-        
+
         {/* Customer Reviews Section */}
         <ProductReviewsSection
           productId={product.id}
           productTitle={product.title}
           productImage={product.images[0]?.url}
           sellerId={product.vendor.id}
+          sellerUserId={product.vendor.userId}
           sellerStoreName={product.vendor.storeName}
-          isSeller={Boolean(session && session.userId === product.vendor.userId)}
         />
       </div>
 
@@ -177,6 +120,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               </div>
               <Link
                 href={`/shop?category=${product.category.slug}`}
+                prefetch={false}
                 className="text-xs font-bold text-emerald-600 hover:underline"
               >
                 View all in category &rarr;

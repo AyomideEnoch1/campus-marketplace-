@@ -21,7 +21,7 @@ serve(async (req) => {
 
     const { data: dispute } = await supabaseClient
       .from("disputes")
-      .select("*, order:Order(*, vendor:VendorProfile(*))")
+      .select("id, order:Order(id, orderNumber, flw_transaction_id, subtotal, seller_amount, vendor:VendorProfile(bankCode, bankAccountNumber))")
       .eq("id", disputeId)
       .single();
 

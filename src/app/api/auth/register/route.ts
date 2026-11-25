@@ -38,7 +38,6 @@ const registerSchema = z.object({
   cacDocumentPath: z.string().optional(),
   governmentIdType: z.enum(["nin", "voters_card", "drivers_license", "international_passport", "school_work_id"]).optional(),
   governmentIdNumber: z.string().optional(), // Raw number will be hashed with SHA-256 and never stored in plain text
-  nin: z.string().optional(), // 11-digit National Identity Number
   idDocumentPath: z.string().optional(),
   selfieDocumentPath: z.string().optional(),
   vouchedBy: z.string().optional(),
@@ -81,7 +80,6 @@ export async function POST(request: Request) {
       cacDocumentPath,
       governmentIdType,
       governmentIdNumber,
-      nin,
       idDocumentPath,
       selfieDocumentPath,
       vouchedBy,
