@@ -29,6 +29,7 @@ import {
   FlutterwaveLockedModal,
   ExistingOrderPayload,
 } from "@/components/marketplace/FlutterwaveLockedModal";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 function InspectionCountdown({ deadline }: { deadline: string | Date }) {
   const [timeLeft, setTimeLeft] = React.useState<{
@@ -101,10 +102,9 @@ export default function OrderTrackingPage() {
   const [paying, setPaying] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
 
-  // Flutterwave Live Locked & Modal State
+  // Flutterwave Live Locked & Modal State (Dynamic Admin Controlled)
   const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
-  const isFlutterwaveLocked =
-    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+  const { isFlutterwaveLocked } = usePlatformSettings();
 
   const handleCompletePayment = async () => {
     if (!order) return;

@@ -39,6 +39,7 @@ import {
   FlutterwaveLockedModal,
   CheckoutDataPayload,
 } from "@/components/marketplace/FlutterwaveLockedModal";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 export const dynamic = "force-dynamic";
 
@@ -91,10 +92,9 @@ function CheckoutForm() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  // Flutterwave Live Locked & Modal State
+  // Flutterwave Live Locked & Modal State (Dynamic Admin Controlled)
   const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
-  const isFlutterwaveLocked =
-    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+  const { isFlutterwaveLocked } = usePlatformSettings();
 
   // Target vendor group
   const vendorIds = Object.keys(itemsByVendor);

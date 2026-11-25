@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatNGN, formatDate } from "@/lib/utils";
 import { OrderMilestoneTracker } from "@/components/orders/OrderMilestoneTracker";
 import { FlutterwaveLockedModal } from "@/components/marketplace/FlutterwaveLockedModal";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 interface OrderTrackingClientProps {
   order: {
@@ -92,10 +93,9 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
   const [paying, setPaying] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
 
-  // Flutterwave Live Locked & Modal State
+  // Flutterwave Live Locked & Modal State (Dynamic Admin Controlled)
   const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
-  const isFlutterwaveLocked =
-    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+  const { isFlutterwaveLocked } = usePlatformSettings();
 
   const handleCompletePayment = async () => {
     if (isFlutterwaveLocked) {

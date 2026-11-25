@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
@@ -42,6 +44,19 @@ export async function POST(request: Request) {
         metadataJson: JSON.stringify(body),
       },
     });
+
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/dashboard/activate");
+      revalidatePath("/dashboard");
+      revalidatePath("/admin/settings");
+      revalidatePath("/admin/coupons");
+      revalidatePath("/admin/escrow");
+      revalidatePath("/checkout");
+      revalidatePath("/orders");
+    } catch (revalErr) {
+      console.warn("[Admin Settings] Revalidation warning:", revalErr);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

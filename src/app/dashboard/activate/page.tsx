@@ -5,6 +5,8 @@ import { computeVendorEntitlements } from "@/lib/vendor-entitlements";
 import { VendorActivateClient } from "./VendorActivateClient";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export const metadata = {
   title: "Storefront Pricing & Access Plans | Vendor Dashboard | ọjà",

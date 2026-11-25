@@ -60,10 +60,46 @@ export function VendorActivateClient({
 }: VendorActivateClientProps) {
   const router = useRouter();
   const [entitlements, setEntitlements] = React.useState<VendorEntitlements>(initialEntitlements);
+  const [standardAccessEnabled, setStandardAccessEnabled] = React.useState<boolean>(enableStandardVendorAccess);
+  const [foundingCouponEnabled, setFoundingCouponEnabled] = React.useState<boolean>(enableFoundingVendorCoupon);
   const [couponCode, setCouponCode] = React.useState<string>("");
   const [loadingCoupon, setLoadingCoupon] = React.useState<boolean>(false);
   const [loadingPayment, setLoadingPayment] = React.useState<boolean>(false);
   const [couponError, setCouponError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const syncStatus = async () => {
+      try {
+        const res = await fetch("/api/vendor/access/status", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.standardVendorAccessEnabled === "boolean") {
+            setStandardAccessEnabled(data.standardVendorAccessEnabled);
+          }
+          if (typeof data.foundingVendorCouponEnabled === "boolean") {
+            setFoundingCouponEnabled(data.foundingVendorCouponEnabled);
+          }
+          if (data.entitlements) {
+            setEntitlements(data.entitlements);
+          }
+        }
+      } catch (e) {
+        console.warn("[Activate Page Sync Warning]:", e);
+      }
+    };
+
+    syncStatus();
+    window.addEventListener("focus", syncStatus);
+    const handleVis = () => {
+      if (document.visibilityState === "visible") syncStatus();
+    };
+    document.addEventListener("visibilitychange", handleVis);
+
+    return () => {
+      window.removeEventListener("focus", syncStatus);
+      document.removeEventListener("visibilitychange", handleVis);
+    };
+  }, []);
 
   const hasActiveAccess = entitlements.hasAccess;
   const isExpired = entitlements.accessState === "EXPIRED";
@@ -214,7 +250,7 @@ export function VendorActivateClient({
             </div>
           </div>
 
-          {enableStandardVendorAccess ? (
+          {standardAccessEnabled ? (
             <Button
               onClick={handlePayActivation}
               disabled={loadingPayment}
@@ -283,10 +319,10 @@ export function VendorActivateClient({
 
       {/* ACTIVATION OPTIONS (Payment option stays visible until valid code applied) */}
       {!hasActiveAccess && (
-        enableFoundingVendorCoupon || enableStandardVendorAccess ? (
-          <div className={`grid grid-cols-1 ${enableFoundingVendorCoupon && enableStandardVendorAccess ? "md:grid-cols-2" : "max-w-xl mx-auto"} gap-6`}>
+        foundingCouponEnabled || standardAccessEnabled ? (
+          <div className={`grid grid-cols-1 ${foundingCouponEnabled && standardAccessEnabled ? "md:grid-cols-2" : "max-w-xl mx-auto"} gap-6`}>
             {/* OPTION 1: FOUNDING VENDOR COUPON CODE */}
-            {enableFoundingVendorCoupon && (
+            {foundingCouponEnabled && (
               <div className="bg-white rounded-3xl border-2 border-emerald-500/80 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-black uppercase px-4 py-1 rounded-bl-2xl tracking-wider">
                   Free Access
@@ -354,7 +390,7 @@ export function VendorActivateClient({
             )}
 
             {/* OPTION 2: STANDARD VENDOR PAYMENT PLAN */}
-            {enableStandardVendorAccess && (
+            {standardAccessEnabled && (
               <div className="bg-white rounded-3xl border border-neutral-200/90 p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">

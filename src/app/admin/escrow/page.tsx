@@ -18,11 +18,15 @@ import {
   Split,
   User,
   AlertCircle,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
+import { toast } from "sonner";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 export default function AdminEscrowPage() {
   const queryClient = useQueryClient();
@@ -51,6 +55,36 @@ export default function AdminEscrowPage() {
   // Payout retry state
   const [retryingPayoutId, setRetryingPayoutId] = React.useState<string | null>(null);
   const [reconciling, setReconciling] = React.useState(false);
+
+  // Flutterwave Checkout Restriction Toggle
+  const { isFlutterwaveLocked, refetch: refetchSettings } = usePlatformSettings();
+  const [togglingFlutterwave, setTogglingFlutterwave] = React.useState(false);
+
+  const handleToggleFlutterwave = async () => {
+    setTogglingFlutterwave(true);
+    const nextState = isFlutterwaveLocked; // true = unlock, false = lock
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enable_flutterwave_checkout: String(nextState) }),
+      });
+      if (res.ok) {
+        await refetchSettings();
+        toast.success(
+          nextState
+            ? "Flutterwave Live Checkout UNLOCKED: Customers can pay online with cards/transfer."
+            : "Flutterwave Live Checkout RESTRICTED: Locked modal enabled."
+        );
+      } else {
+        toast.error("Failed to update Flutterwave restriction setting");
+      }
+    } catch {
+      toast.error("Network error updating Flutterwave setting");
+    } finally {
+      setTogglingFlutterwave(false);
+    }
+  };
 
   const fetchAdminData = React.useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["admin", "escrow"] });
@@ -153,7 +187,36 @@ export default function AdminEscrowPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              onClick={handleToggleFlutterwave}
+              disabled={togglingFlutterwave}
+              variant="outline"
+              title={
+                !isFlutterwaveLocked
+                  ? "Live Flutterwave checkout is active across the shop. Click to restrict."
+                  : "Flutterwave checkout is restricted (compliance modal active). Click to unlock live checkout."
+              }
+              className={`rounded-2xl font-bold text-xs gap-1.5 shadow-sm transition-all ${
+                !isFlutterwaveLocked
+                  ? "border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  : "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  !isFlutterwaveLocked ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                }`}
+              />
+              {!isFlutterwaveLocked ? (
+                <Unlock className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-amber-600" />
+              )}
+              <span>Live Checkout: {!isFlutterwaveLocked ? "ACTIVE (LIVE)" : "LOCKED (ONBOARDING)"}</span>
+            </Button>
+
             <Button
               onClick={handleRunReconciliation}
               disabled={reconciling}

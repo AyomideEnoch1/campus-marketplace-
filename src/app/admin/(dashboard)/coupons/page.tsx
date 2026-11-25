@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { AdminCouponsClient } from "./AdminCouponsClient";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export const metadata = {
   title: "Founding Vendor Coupons & Access Control | Super Admin | ọjà",
@@ -91,6 +93,7 @@ export default async function AdminCouponsPage() {
           "require_vendor_payment",
           "enable_standard_vendor_access",
           "enable_founding_vendor_coupon",
+          "enable_flutterwave_checkout",
         ],
       },
     },
@@ -106,6 +109,10 @@ export default async function AdminCouponsPage() {
   const requireVendorPayment = settingsMap["require_vendor_payment"] !== "false";
   const enableStandardVendorAccess = settingsMap["enable_standard_vendor_access"] !== "false";
   const enableFoundingVendorCoupon = settingsMap["enable_founding_vendor_coupon"] !== "false";
+  const enableFlutterwaveCheckout =
+    settingsMap["enable_flutterwave_checkout"] !== undefined
+      ? settingsMap["enable_flutterwave_checkout"] === "true"
+      : process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED === "false";
 
   return (
     <AdminCouponsClient
@@ -115,6 +122,7 @@ export default async function AdminCouponsPage() {
       initialRequireVendorPayment={requireVendorPayment}
       initialEnableStandardVendorAccess={enableStandardVendorAccess}
       initialEnableFoundingVendorCoupon={enableFoundingVendorCoupon}
+      initialEnableFlutterwaveCheckout={enableFlutterwaveCheckout}
     />
   );
 }

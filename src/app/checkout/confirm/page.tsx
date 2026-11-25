@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FlutterwaveLockedModal } from "@/components/marketplace/FlutterwaveLockedModal";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 function CheckoutConfirmContent() {
   const searchParams = useSearchParams();
@@ -34,10 +35,9 @@ function CheckoutConfirmContent() {
   const [paying, setPaying] = React.useState(false);
   const [retryError, setRetryError] = React.useState<string | null>(null);
 
-  // Flutterwave Live Locked & Modal State
+  // Flutterwave Live Locked & Modal State (Dynamic Admin Controlled)
   const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
-  const isFlutterwaveLocked =
-    process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED !== "false";
+  const { isFlutterwaveLocked } = usePlatformSettings();
 
   const handleRetryPayment = async () => {
     if (isFlutterwaveLocked) {

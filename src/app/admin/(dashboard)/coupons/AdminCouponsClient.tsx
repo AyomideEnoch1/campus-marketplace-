@@ -21,6 +21,7 @@ import {
   Layers,
   History,
   Lock,
+  Unlock,
   CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -211,6 +212,7 @@ export function AdminCouponsClient({
   initialRequireVendorPayment = true,
   initialEnableStandardVendorAccess = true,
   initialEnableFoundingVendorCoupon = true,
+  initialEnableFlutterwaveCheckout = false,
 }: {
   initialCoupons: CouponData[];
   initialVendorAccessFee?: number;
@@ -218,6 +220,7 @@ export function AdminCouponsClient({
   initialRequireVendorPayment?: boolean;
   initialEnableStandardVendorAccess?: boolean;
   initialEnableFoundingVendorCoupon?: boolean;
+  initialEnableFlutterwaveCheckout?: boolean;
 }) {
   const [coupons, setCoupons] = React.useState<CouponData[]>(initialCoupons);
   const [selectedCouponId, setSelectedCouponId] = React.useState<string>(coupons[0]?.id || "");
@@ -236,6 +239,10 @@ export function AdminCouponsClient({
 
   const [enableFoundingVendorCoupon, setEnableFoundingVendorCoupon] = React.useState<boolean>(initialEnableFoundingVendorCoupon);
   const [togglingFoundingCoupon, setTogglingFoundingCoupon] = React.useState<boolean>(false);
+
+  // Flutterwave Checkout Restriction Toggle
+  const [enableFlutterwaveCheckout, setEnableFlutterwaveCheckout] = React.useState<boolean>(initialEnableFlutterwaveCheckout);
+  const [togglingFlutterwave, setTogglingFlutterwave] = React.useState<boolean>(false);
 
   const handleTogglePaymentRestriction = async () => {
     setTogglingPayment(true);
@@ -303,6 +310,29 @@ export function AdminCouponsClient({
       toast.error(err.message || "Failed to toggle founding vendor coupons");
     } finally {
       setTogglingFoundingCoupon(false);
+    }
+  };
+
+  const handleToggleFlutterwave = async () => {
+    setTogglingFlutterwave(true);
+    const nextState = !enableFlutterwaveCheckout;
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enable_flutterwave_checkout: String(nextState) }),
+      });
+      if (!res.ok) throw new Error("Failed to update setting");
+      setEnableFlutterwaveCheckout(nextState);
+      toast.success(
+        nextState
+          ? "Flutterwave Live Checkout ENABLED: Online card & transfer payments are now active!"
+          : "Flutterwave Live Checkout RESTRICTED: Onboarding locked modal is active."
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle Flutterwave checkout");
+    } finally {
+      setTogglingFlutterwave(false);
     }
   };
 
@@ -650,6 +680,35 @@ export function AdminCouponsClient({
               }`}
             />
             <span>Coupons: {enableFoundingVendorCoupon ? "ON" : "OFF"}</span>
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleToggleFlutterwave}
+            disabled={togglingFlutterwave}
+            variant="outline"
+            title={
+              enableFlutterwaveCheckout
+                ? "Flutterwave live automated checkout is UNLOCKED across the app. Click to restrict."
+                : "Flutterwave checkout is restricted (showing compliance onboarding modal). Click to unlock live payments."
+            }
+            className={`font-bold text-xs rounded-xl shadow-xs gap-1.5 transition-all ${
+              enableFlutterwaveCheckout
+                ? "border-emerald-700/60 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/70"
+                : "border-amber-700/60 bg-amber-950/40 text-amber-300 hover:bg-amber-950/70"
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                enableFlutterwaveCheckout ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+              }`}
+            />
+            {enableFlutterwaveCheckout ? (
+              <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+            ) : (
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+            )}
+            <span>Live Checkout: {enableFlutterwaveCheckout ? "LIVE" : "LOCKED"}</span>
           </Button>
 
           <Button

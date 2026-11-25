@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Sliders, ShieldCheck, Percent, Phone, Globe, Check, CreditCard, Banknote, Ticket } from "lucide-react";
+import { Sliders, ShieldCheck, Percent, Phone, Globe, Check, CreditCard, Banknote, Ticket, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatNGN } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Props {
   initialSettings: Record<string, string>;
@@ -22,6 +23,9 @@ export function SettingsForm({ initialSettings }: Props) {
     require_vendor_payment: initialSettings.require_vendor_payment ?? "true",
     enable_standard_vendor_access: initialSettings.enable_standard_vendor_access ?? "true",
     enable_founding_vendor_coupon: initialSettings.enable_founding_vendor_coupon ?? "true",
+    enable_flutterwave_checkout:
+      initialSettings.enable_flutterwave_checkout ??
+      (process.env.NEXT_PUBLIC_FLUTTERWAVE_LOCKED === "false" ? "true" : "false"),
     seo_meta_title:
       initialSettings.seo_meta_title ||
       "ọjà — Multi-Campus Student Marketplace",
@@ -46,12 +50,34 @@ export function SettingsForm({ initialSettings }: Props) {
       });
       if (res.ok) {
         setSuccess(true);
+        toast.success("Platform settings saved successfully!");
         setTimeout(() => setSuccess(false), 3000);
+      } else {
+        toast.error("Failed to save settings.");
       }
     } catch (err) {
       console.error(err);
+      toast.error("Network error saving settings.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleQuickToggle = async (key: string, nextValue: string, label: string) => {
+    setFormData((prev) => ({ ...prev, [key]: nextValue }));
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [key]: nextValue }),
+      });
+      if (res.ok) {
+        toast.success(`${label} updated: ${nextValue === "true" ? "ACTIVE / ON" : "PAUSED / OFF"}`);
+      } else {
+        toast.error(`Failed to update ${label}`);
+      }
+    } catch {
+      toast.error(`Network error updating ${label}`);
     }
   };
 
@@ -203,6 +229,55 @@ export function SettingsForm({ initialSettings }: Props) {
         </div>
       </div>
 
+      {/* Flutterwave Live Payment Gateway & Checkout Restriction */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="font-bold text-sm text-white flex items-center gap-2">
+            <Lock className="w-4 h-4 text-amber-400" />
+            Flutterwave Live Checkout &amp; Transaction Restrictions
+          </h3>
+          <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${
+            formData.enable_flutterwave_checkout === "true"
+              ? "text-emerald-400 bg-emerald-950/80 border-emerald-800"
+              : "text-amber-400 bg-amber-950/80 border-amber-800"
+          }`}>
+            {formData.enable_flutterwave_checkout === "true" ? "Live Gateway Active" : "Locked (Onboarding Mode)"}
+          </span>
+        </div>
+        <p className="text-xs text-neutral-400">
+          Controls whether buyers can make automated live payments (debit card, bank transfer, USSD) via Flutterwave or if the onboarding locked modal is displayed.
+        </p>
+
+        <div className="flex items-start gap-3 p-4 bg-neutral-950 rounded-xl border border-neutral-800">
+          <input
+            type="checkbox"
+            id="enableFlutterwaveCheckout"
+            checked={formData.enable_flutterwave_checkout === "true"}
+            onChange={(e) => {
+              const nextVal = e.target.checked ? "true" : "false";
+              handleQuickToggle("enable_flutterwave_checkout", nextVal, "Flutterwave Live Checkout");
+            }}
+            className="w-4 h-4 mt-1 rounded text-emerald-600 focus:ring-emerald-500 bg-neutral-900 border-neutral-700 cursor-pointer"
+          />
+          <div>
+            <label
+              htmlFor="enableFlutterwaveCheckout"
+              className="text-xs font-bold text-white block cursor-pointer flex items-center gap-1.5"
+            >
+              {formData.enable_flutterwave_checkout === "true" ? (
+                <Unlock className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+              )}
+              Unlock Live Online Checkout via Flutterwave
+            </label>
+            <p className="text-[11px] text-neutral-400 mt-0.5">
+              When <strong>enabled (Checked)</strong>, buyers can seamlessly pay with debit cards and bank transfers via Flutterwave with automated escrow holding. When <strong>disabled (Unchecked)</strong>, the compliance onboarding modal is displayed encouraging buyers to use Pay-on-Delivery or in-app chat.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Vendor Storefront Access & Subscription Pricing */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -224,12 +299,10 @@ export function SettingsForm({ initialSettings }: Props) {
             type="checkbox"
             id="reqVendorPayment"
             checked={formData.require_vendor_payment === "true"}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                require_vendor_payment: e.target.checked ? "true" : "false",
-              })
-            }
+            onChange={(e) => {
+              const nextVal = e.target.checked ? "true" : "false";
+              handleQuickToggle("require_vendor_payment", nextVal, "Vendor Payment Paywall");
+            }}
             className="w-4 h-4 mt-1 rounded text-emerald-600 focus:ring-emerald-500 bg-neutral-900 border-neutral-700 cursor-pointer"
           />
           <div>
@@ -253,12 +326,10 @@ export function SettingsForm({ initialSettings }: Props) {
               type="checkbox"
               id="enableStandardAccess"
               checked={formData.enable_standard_vendor_access === "true"}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  enable_standard_vendor_access: e.target.checked ? "true" : "false",
-                })
-              }
+              onChange={(e) => {
+                const nextVal = e.target.checked ? "true" : "false";
+                handleQuickToggle("enable_standard_vendor_access", nextVal, "Standard Vendor Access (Paid Plan)");
+              }}
               className="w-4 h-4 mt-1 rounded text-emerald-600 focus:ring-emerald-500 bg-neutral-900 border-neutral-700 cursor-pointer"
             />
             <div>
@@ -281,12 +352,10 @@ export function SettingsForm({ initialSettings }: Props) {
               type="checkbox"
               id="enableFoundingCoupon"
               checked={formData.enable_founding_vendor_coupon === "true"}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  enable_founding_vendor_coupon: e.target.checked ? "true" : "false",
-                })
-              }
+              onChange={(e) => {
+                const nextVal = e.target.checked ? "true" : "false";
+                handleQuickToggle("enable_founding_vendor_coupon", nextVal, "Founding Vendor Coupons");
+              }}
               className="w-4 h-4 mt-1 rounded text-emerald-600 focus:ring-emerald-500 bg-neutral-900 border-neutral-700 cursor-pointer"
             />
             <div>

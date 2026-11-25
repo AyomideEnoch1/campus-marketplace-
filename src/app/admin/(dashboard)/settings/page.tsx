@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "./SettingsForm";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 export default async function AdminSettingsPage() {
   const settings = await prisma.siteSetting.findMany();
