@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ChatContainer, ConversationListItem } from "@/components/chat/ChatContainer";
 import { ChatMessageItem } from "@/components/chat/ChatRoom";
+import { DeviceNotificationPrompt } from "@/components/notifications/DeviceNotificationPrompt";
 
 export const dynamic = "force-dynamic";
 
@@ -176,14 +177,23 @@ export default async function MessagesPage({
   }
 
   return (
-    <div className="h-[calc(100dvh-64px)] md:h-[calc(100dvh-113px)] flex flex-col p-2 sm:p-4 max-w-7xl mx-auto w-full overflow-hidden -mb-16 md:mb-0">
-      <ChatContainer
-        initialConversations={conversations}
-        currentUserId={session.id}
-        isVendorPortal={false}
-        initialMessages={initialMessages}
-        initialActiveConversationId={targetConversationId}
-      />
+    <div className="h-[calc(100dvh-64px)] md:h-[calc(100dvh-113px)] flex flex-col p-2 sm:p-4 max-w-7xl mx-auto w-full overflow-hidden -mb-16 md:mb-0 gap-1.5">
+      <div className="flex items-center justify-between pb-1.5 px-1 shrink-0">
+        <h1 className="text-sm sm:text-base font-black text-neutral-900 tracking-tight">
+          In-App Messages
+        </h1>
+        <DeviceNotificationPrompt compact mode="user" />
+      </div>
+
+      <div className="flex-1 min-h-0 w-full overflow-hidden">
+        <ChatContainer
+          initialConversations={conversations}
+          currentUserId={session.id}
+          isVendorPortal={false}
+          initialMessages={initialMessages}
+          initialActiveConversationId={targetConversationId}
+        />
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { qualifyVendorReferral } from "@/lib/referral";
 import { computeVendorEntitlements, isVendorPaymentRestrictionEnabled } from "@/lib/vendor-entitlements";
 import { calculatePromoPrice } from "@/lib/promotions";
+import { notifyUsersOfNewArrival } from "@/lib/web-push";
 
 export const dynamic = "force-dynamic";
 
@@ -320,6 +321,21 @@ export async function POST(request: Request) {
       await qualifyVendorReferral(session.id);
     } catch (qErr) {
       console.error("Qualify referral error:", qErr);
+    }
+
+    // Broadcast New Arrival push notification to buyers when published
+    if (newProduct.status === "PUBLISHED") {
+      notifyUsersOfNewArrival({
+        id: newProduct.id,
+        title: newProduct.title,
+        price: newProduct.price,
+        slug: newProduct.slug,
+        storeName: vendor.storeName,
+        sellerUserId: session.id,
+        campusId: vendor.campusId,
+      }).catch((pErr) => {
+        console.warn("[New Arrival Notification Error]:", pErr?.message || pErr);
+      });
     }
 
     return NextResponse.json({ success: true, product: newProduct });

@@ -22,9 +22,11 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export function DeviceNotificationPrompt({
   compact = false,
+  mode = "vendor",
   className = "",
 }: {
   compact?: boolean;
+  mode?: "vendor" | "user";
   className?: string;
 }) {
   const [isSupported, setIsSupported] = React.useState<boolean>(false);
@@ -205,6 +207,8 @@ export function DeviceNotificationPrompt({
               <h4 className="text-sm font-bold text-neutral-900">
                 {isSubscribed && permission === "granted"
                   ? "Device Drop-Down Notifications: Active"
+                  : mode === "user"
+                  ? "Get Instant Chat & New Arrival Alerts on Your Device"
                   : "Get Instant Drop-Down Alerts on Your Device"}
               </h4>
               {isSubscribed && permission === "granted" && (
@@ -215,7 +219,11 @@ export function DeviceNotificationPrompt({
             </div>
             <p className="text-xs text-neutral-600 max-w-xl leading-relaxed">
               {isSubscribed && permission === "granted"
-                ? "Your phone or computer will drop down a notification the moment a student places an order or sends an in-app message, even when ọjà is closed."
+                ? mode === "user"
+                  ? "Your phone or computer will drop down an instant notification whenever a vendor replies to you or new products arrive on campus, even when ọjà is closed."
+                  : "Your phone or computer will drop down a notification the moment a student places an order or sends an in-app message, even when ọjà is closed."
+                : mode === "user"
+                ? "Never miss a seller reply or hot new arrival! Receive real-time push banners outside the browser on your phone lock screen or desktop whenever a vendor chats with you or new items drop."
                 : "Never miss a sale or inquiry! Receive real-time push banners outside the browser on your phone lock screen or desktop whenever an order or message arrives."}
             </p>
           </div>

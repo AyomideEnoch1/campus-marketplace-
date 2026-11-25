@@ -31,6 +31,7 @@ import { formatNGN, formatDate } from "@/lib/utils";
 import { useUpdateAccountMutation } from "@/hooks/use-account-query";
 import { useLogout } from "@/hooks/use-auth-query";
 import { SignoutModal } from "@/components/ui/SignoutModal";
+import { DeviceNotificationPrompt } from "@/components/notifications/DeviceNotificationPrompt";
 
 interface AccountUser {
   id: string;
@@ -348,6 +349,9 @@ export function AccountClient({ initialUser, availableCampuses = [] }: AccountCl
             </div>
           </div>
         )}
+
+        {/* Device Push Notifications Banner for User */}
+        <DeviceNotificationPrompt mode="user" />
 
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

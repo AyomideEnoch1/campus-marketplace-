@@ -29,6 +29,7 @@ import { MobileShopFilters } from "@/components/marketplace/MobileShopFilters";
 import { SearchBar } from "@/components/marketplace/SearchBar";
 import { SmartBackButton } from "@/components/layout/SmartBackButton";
 import { ShopHeroBanner } from "@/components/marketplace/ShopHeroBanner";
+import { DeviceNotificationPrompt } from "@/components/notifications/DeviceNotificationPrompt";
 import {
   getCachedCampuses,
   getCachedCategories,
@@ -557,6 +558,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
           {/* Right Product Grid Area */}
           <main className="w-full max-w-full flex-1 min-w-0 space-y-6">
+            {/* Device Push Notifications for Users / Buyers */}
+            <DeviceNotificationPrompt mode="user" />
+
             {/* Header: Found count + Sorting dropdown */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
               <div>

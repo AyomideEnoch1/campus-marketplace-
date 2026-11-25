@@ -185,3 +185,110 @@ export async function sendPushNotificationToUser(
     return { sent: 0, failed: 0 };
   }
 }
+
+export interface NewArrivalPayload {
+  id: string;
+  title: string;
+  price: number;
+  slug: string;
+  storeName: string;
+  sellerUserId?: string;
+  campusId?: string | null;
+}
+
+/**
+ * Broadcast native OS drop-down push notification to registered buyers
+ * when a new product is published to the marketplace.
+ */
+export async function notifyUsersOfNewArrival(
+  product: NewArrivalPayload
+): Promise<{ sent: number; totalUsers: number }> {
+  try {
+    const records = await prisma.siteSetting.findMany({
+      where: {
+        key: { startsWith: "push_sub:" },
+      },
+      select: {
+        id: true,
+        key: true,
+        value: true,
+      },
+    });
+
+    if (records.length === 0) {
+      return { sent: 0, totalUsers: 0 };
+    }
+
+    const userSubscriptions = new Map<string, { id: string; subscription: PushSubscriptionPayload }[]>();
+
+    for (const record of records) {
+      try {
+        const parts = record.key.split(":");
+        const userId = parts[1];
+        if (!userId || (product.sellerUserId && userId === product.sellerUserId)) {
+          continue;
+        }
+        const subscription: PushSubscriptionPayload = JSON.parse(record.value);
+        if (subscription?.endpoint) {
+          const list = userSubscriptions.get(userId) || [];
+          list.push({ id: record.id, subscription });
+          userSubscriptions.set(userId, list);
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    const uniqueUserIds = Array.from(userSubscriptions.keys());
+    if (uniqueUserIds.length === 0) {
+      return { sent: 0, totalUsers: 0 };
+    }
+
+    const notificationPayload = JSON.stringify({
+      title: "✨ New Arrival on Campus!",
+      body: `${product.storeName} just listed "${product.title}" for ₦${product.price.toLocaleString()}!`,
+      url: `/products/${product.slug}`,
+      tag: `new-arrival-${product.id}`,
+      icon: "/images/logo.png",
+      badge: "/images/logo.png",
+    });
+
+    let totalSent = 0;
+
+    await Promise.allSettled(
+      uniqueUserIds.map(async (userId) => {
+        // Create in-app notification record
+        prisma.notification.create({
+          data: {
+            userId,
+            type: "SYSTEM",
+            title: `✨ New Arrival: ${product.title}`,
+            message: `${product.storeName} just listed a new item for ₦${product.price.toLocaleString()}`,
+            link: `/products/${product.slug}`,
+          },
+        }).catch(() => null);
+
+        const subs = userSubscriptions.get(userId) || [];
+        for (const { id: recordId, subscription } of subs) {
+          try {
+            await webpush.sendNotification(subscription as any, notificationPayload, {
+              TTL: 60 * 60 * 24,
+              urgency: "normal",
+            });
+            totalSent++;
+          } catch (pushErr: any) {
+            const statusCode = pushErr.statusCode;
+            if (statusCode === 404 || statusCode === 410) {
+              await prisma.siteSetting.delete({ where: { id: recordId } }).catch(() => null);
+            }
+          }
+        }
+      })
+    );
+
+    return { sent: totalSent, totalUsers: uniqueUserIds.length };
+  } catch (err) {
+    console.error("[New Arrival Broadcast Error]:", err);
+    return { sent: 0, totalUsers: 0 };
+  }
+}
