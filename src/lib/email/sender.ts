@@ -1,8 +1,18 @@
 import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const primaryFromEmail =
-  process.env.EMAIL_FROM || '"ọjà." <notifications@xn--j-sfa590u.com>';
+
+function resolveSenderFromEmail(): string {
+  const envFrom = process.env.EMAIL_FROM?.trim();
+  // Only accept custom EMAIL_FROM if it explicitly uses the verified domain xn--j-sfa590u.com
+  if (envFrom && envFrom.includes("@xn--j-sfa590u.com")) {
+    return envFrom;
+  }
+  // Standard RFC 5322 compliant ASCII sender matching Resend's verified domain
+  return "Oja Campus <notifications@xn--j-sfa590u.com>";
+}
+
+const primaryFromEmail = resolveSenderFromEmail();
 const fallbackFromEmail = "notifications@xn--j-sfa590u.com";
 const replyToEmail = process.env.EMAIL_REPLY_TO || "support@xn--j-sfa590u.com";
 
