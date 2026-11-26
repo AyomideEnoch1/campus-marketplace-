@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getUserCampus } from "@/lib/user-campus";
+import { decryptCode } from "@/lib/crypto";
 import { OrderTrackingClient } from "./OrderTrackingClient";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export default async function OrderTrackingPage({
   const order = await prisma.order.findUnique({
     where: { orderNumber: params.orderNumber },
     include: {
+      deliveryCode: true,
       meetupPoint: {
         select: {
           id: true,
@@ -81,11 +83,21 @@ export default async function OrderTrackingPage({
     redirect("/orders");
   }
 
+  // Only decrypt deliveryCode if the caller is the buyer or admin (NEVER for vendor!)
+  let buyerDeliveryCode: string | null = null;
+  if ((isBuyer || isAdmin) && order.deliveryCode?.codeHash) {
+    const parts = order.deliveryCode.codeHash.split("|");
+    if (parts.length > 1) {
+      buyerDeliveryCode = decryptCode(parts[1]);
+    }
+  }
+
   const buyerCampus = order.buyerId ? await getUserCampus(order.buyerId) : null;
 
   const sanitizedOrder = {
     id: order.id,
     orderNumber: order.orderNumber,
+    deliveryCode: buyerDeliveryCode,
     buyerName: order.buyerName,
     buyerPhone: order.buyerPhone,
     buyerEmail: order.buyerEmail,

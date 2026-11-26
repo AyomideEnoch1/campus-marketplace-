@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getUserCampus } from "@/lib/user-campus";
+import { decryptCode } from "@/lib/crypto";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN, formatDate } from "@/lib/utils";
@@ -29,6 +30,7 @@ export default async function OrderSuccessPage({
   const order = await prisma.order.findUnique({
     where: { orderNumber: params.orderNumber },
     include: {
+      deliveryCode: true,
       vendor: {
         include: { campus: true },
       },
@@ -41,6 +43,14 @@ export default async function OrderSuccessPage({
 
   if (!order) {
     notFound();
+  }
+
+  let deliveryCode: string | null = null;
+  if (order.deliveryCode?.codeHash) {
+    const parts = order.deliveryCode.codeHash.split("|");
+    if (parts.length > 1) {
+      deliveryCode = decryptCode(parts[1]);
+    }
   }
 
   const isGuestSeller = order.vendor.sellerType === "guest";
@@ -62,6 +72,21 @@ export default async function OrderSuccessPage({
             Your order request has been dispatched to <strong>{order.vendor.storeName}</strong> under Escrow protection.
           </p>
         </div>
+
+        {/* In-Person Handover Delivery Code (Buyer Receipt) */}
+        {deliveryCode && order.escrow_status !== "delivered" && order.escrow_status !== "released" && (
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-500 shadow-sm text-center space-y-3">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-full">
+              Your 6-Digit In-Person Handover Code
+            </span>
+            <div className="font-mono text-4xl sm:text-5xl font-black tracking-widest text-emerald-700 py-1">
+              {deliveryCode}
+            </div>
+            <p className="text-xs text-emerald-800/90 font-medium leading-relaxed max-w-md mx-auto">
+              🛑 <strong>Fraud Protection:</strong> Keep this code safe. Only give this code to the vendor in person <strong>AFTER</strong> you meet and inspect your item on campus.
+            </p>
+          </div>
+        )}
 
         {/* Order Card Summary & Receipt */}
         <div className="p-6 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-left space-y-4">

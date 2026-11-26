@@ -12,6 +12,7 @@ import {
   Package,
   RefreshCw,
   CreditCard,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FlutterwaveLockedModal } from "@/components/marketplace/FlutterwaveLockedModal";
@@ -30,6 +31,8 @@ function CheckoutConfirmContent() {
   const [escrowMode, setEscrowMode] = React.useState<"escrow" | "direct">("escrow");
   const [orderId, setOrderId] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [deliveryCode, setDeliveryCode] = React.useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = React.useState(false);
   const pollCountRef = React.useRef(0);
   const [manualCheckTick, setManualCheckTick] = React.useState(0);
   const [paying, setPaying] = React.useState(false);
@@ -93,6 +96,9 @@ function CheckoutConfirmContent() {
       }
       if (data.escrow_mode) {
         setEscrowMode(data.escrow_mode);
+      }
+      if (data.deliveryCode) {
+        setDeliveryCode(data.deliveryCode);
       }
 
       if (res.ok && (data.status === "paid_held" || data.status === "confirmed" || data.status === "delivered" || data.status === "released")) {
@@ -203,6 +209,35 @@ function CheckoutConfirmContent() {
                 )}
               </p>
             </div>
+
+            {/* 6-Digit Delivery Code Box */}
+            {escrowMode === "escrow" && deliveryCode && (
+              <div className="p-5 rounded-3xl bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-500 shadow-sm text-center space-y-2.5 animate-in fade-in zoom-in-95">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-full">
+                  Your In-Person Handover Code
+                </span>
+                <div className="flex items-center justify-center gap-3">
+                  <span className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-emerald-700">
+                    {deliveryCode}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(deliveryCode);
+                      setCodeCopied(true);
+                      setTimeout(() => setCodeCopied(false), 2000);
+                    }}
+                    className="p-2 rounded-xl bg-emerald-100/60 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer"
+                    title="Copy Code"
+                  >
+                    {codeCopied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-emerald-800/90 font-medium leading-relaxed max-w-xs mx-auto">
+                  🛑 <strong>Only give this code to the vendor in person AFTER you inspect your item on campus.</strong>
+                </p>
+              </div>
+            )}
 
             {txRef && (
               <div className="p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/80 text-left space-y-1 text-xs">

@@ -32,6 +32,7 @@ export interface VerifyOrderPaymentResult {
   status?: string;
   alreadyProcessed?: boolean;
   order?: any;
+  deliveryCode?: string | null;
 }
 
 export async function verifyOrderPayment(
@@ -97,6 +98,15 @@ export async function verifyOrderPayment(
     order.escrow_status === "payout_pending" ||
     order.escrow_status === "released"
   ) {
+    let existingCode: string | undefined = undefined;
+    if (order.deliveryCode?.codeHash) {
+      const parts = order.deliveryCode.codeHash.split("|");
+      if (parts.length > 1) {
+        const { decryptCode } = await import("@/lib/crypto");
+        existingCode = decryptCode(parts[1]) || undefined;
+      }
+    }
+
     return {
       success: true,
       message: "Order already verified and held in escrow",
@@ -105,6 +115,7 @@ export async function verifyOrderPayment(
       status: order.escrow_status,
       alreadyProcessed: true,
       order,
+      deliveryCode: existingCode,
     };
   }
 
@@ -289,5 +300,6 @@ export async function verifyOrderPayment(
     orderId: order.id,
     txRef,
     status: "paid_held",
+    deliveryCode: rawDeliveryCode,
   };
 }

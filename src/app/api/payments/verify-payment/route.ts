@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
         txRef: result.txRef,
         status: result.status,
         escrow_mode: result.order?.escrow_mode || "escrow",
+        deliveryCode: result.deliveryCode || null,
       });
     }
 
@@ -46,14 +47,8 @@ export async function GET(req: NextRequest) {
       where: {
         OR: [{ tx_ref: txRef! }, { orderNumber: txRef! }],
       },
-      select: {
-        id: true,
-        orderNumber: true,
-        tx_ref: true,
-        escrow_status: true,
-        escrow_mode: true,
-        totalAmount: true,
-        flw_transaction_id: true,
+      include: {
+        deliveryCode: true,
       },
     });
 
@@ -70,7 +65,17 @@ export async function GET(req: NextRequest) {
         txRef: order.tx_ref,
         status: result.status || order.escrow_status,
         escrow_mode: order.escrow_mode,
+        deliveryCode: result.deliveryCode || null,
       });
+    }
+
+    let existingCode: string | null = null;
+    if (order.deliveryCode?.codeHash) {
+      const parts = order.deliveryCode.codeHash.split("|");
+      if (parts.length > 1) {
+        const { decryptCode } = await import("@/lib/crypto");
+        existingCode = decryptCode(parts[1]);
+      }
     }
 
     return NextResponse.json({
@@ -79,6 +84,7 @@ export async function GET(req: NextRequest) {
       txRef: order.tx_ref,
       status: order.escrow_status,
       escrow_mode: order.escrow_mode,
+      deliveryCode: existingCode,
     });
   } catch (error: any) {
     console.error("[Verify Payment Error]:", error);

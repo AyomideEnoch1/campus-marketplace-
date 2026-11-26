@@ -19,6 +19,8 @@ import {
   RefreshCw,
   AlertCircle,
   GraduationCap,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ interface OrderTrackingClientProps {
   order: {
     id: string;
     orderNumber: string;
+    deliveryCode?: string | null;
     buyerName?: string;
     buyerPhone?: string;
     buyerEmail?: string;
@@ -92,6 +95,7 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
 
   const [paying, setPaying] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = React.useState(false);
 
   // Flutterwave Live Locked & Modal State (Dynamic Admin Controlled)
   const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
@@ -242,6 +246,35 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
                 </>
               )}
             </Button>
+          </div>
+        )}
+
+        {/* Handover Code Card (Shown only to the buyer when paid in escrow) */}
+        {order.deliveryCode && order.status !== "DELIVERED" && (
+          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-emerald-50 via-white to-teal-50 border-2 border-emerald-500 shadow-sm text-center space-y-3">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-full">
+              Your 6-Digit In-Person Handover Code
+            </span>
+            <div className="flex items-center justify-center gap-3">
+              <span className="font-mono text-3xl sm:text-4xl font-black tracking-widest text-emerald-700">
+                {order.deliveryCode}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(order.deliveryCode || "");
+                  setCodeCopied(true);
+                  setTimeout(() => setCodeCopied(false), 2000);
+                }}
+                className="p-2 rounded-xl bg-emerald-100/60 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer"
+                title="Copy Code"
+              >
+                {codeCopied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-xs text-emerald-800/90 font-medium leading-relaxed max-w-md mx-auto">
+              🛑 <strong>Fraud Protection:</strong> Keep this code safe. Only give this code to the vendor in person <strong>AFTER</strong> you meet and inspect your item on campus.
+            </p>
           </div>
         )}
 
