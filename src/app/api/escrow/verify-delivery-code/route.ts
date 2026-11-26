@@ -15,19 +15,25 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { orderId, code } = body;
+    const targetOrderId = (body.orderId || body.id || body.orderNumber)?.trim();
+    const rawCode = body.code || body.deliveryCode || body.verificationCode;
 
-    if (!orderId || !code) {
+    if (!targetOrderId || !rawCode) {
       return NextResponse.json({ error: "orderId and 6-digit code are required" }, { status: 400 });
     }
 
-    const cleanCode = String(code).trim();
+    const cleanCode = String(rawCode).trim();
     if (cleanCode.length !== 6 || !/^\d{6}$/.test(cleanCode)) {
       return NextResponse.json({ error: "Code must be exactly 6 digits" }, { status: 400 });
     }
 
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: targetOrderId },
+          { orderNumber: targetOrderId },
+        ],
+      },
       include: {
         deliveryCode: true,
         vendor: {

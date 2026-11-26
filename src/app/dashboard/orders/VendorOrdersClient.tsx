@@ -113,6 +113,7 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: verifyingOrder.id,
+          code: codeDigits.trim(),
           deliveryCode: codeDigits.trim(),
         }),
       });

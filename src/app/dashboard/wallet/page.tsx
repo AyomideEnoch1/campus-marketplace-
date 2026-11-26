@@ -182,6 +182,7 @@ export default function VendorWalletPage() {
         body: JSON.stringify({
           orderId: orderIdToVerify.trim(),
           code: enteredCode.trim(),
+          deliveryCode: enteredCode.trim(),
         }),
       });
 
