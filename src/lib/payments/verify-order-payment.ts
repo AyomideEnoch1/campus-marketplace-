@@ -66,8 +66,16 @@ export async function verifyOrderPayment(
       ],
     },
     include: {
-      items: true,
-      vendor: true,
+      items: {
+        include: {
+          product: { select: { title: true } },
+        },
+      },
+      vendor: {
+        include: {
+          user: { select: { email: true } },
+        },
+      },
       deliveryCode: true,
       payments: true,
     },
@@ -230,6 +238,50 @@ export async function verifyOrderPayment(
       }).catch((e) => console.warn(`Could not decrement stock for product ${item.productId}`, e));
     }
   });
+
+  // Dispatch confirmation notifications with the 6-digit delivery code
+  try {
+    const { notificationService } = await import("@/lib/email/notification-service");
+
+    if (order.buyerEmail) {
+      notificationService
+        .notifyBuyerOrderConfirmed({
+          email: order.buyerEmail,
+          orderNumber: order.orderNumber,
+          buyerName: order.buyerName || "Student",
+          items: order.items.map((it: any) => ({
+            title: it.product?.title || it.variantDetails || "Campus Item",
+            quantity: it.quantity,
+            price: Number(it.unitPrice),
+          })),
+          totalAmount: Number(order.totalAmount || order.subtotal),
+          deliveryCode: rawDeliveryCode,
+          meetupPoint: order.deliveryAddress || "Campus Meetup Zone",
+        })
+        .catch((e) => console.warn("[VerifyOrderPayment] Buyer confirmation email error:", e));
+    }
+
+    const vendorEmail = (order.vendor as any)?.user?.email;
+    if (vendorEmail) {
+      notificationService
+        .notifyVendorNewOrder({
+          email: vendorEmail,
+          orderNumber: order.orderNumber,
+          storeName: order.vendor.storeName,
+          buyerName: order.buyerName || "Student",
+          items: order.items.map((it: any) => ({
+            title: it.product?.title || it.variantDetails || "Campus Item",
+            quantity: it.quantity,
+            price: Number(it.unitPrice),
+          })),
+          payoutAmount: Number(order.seller_amount || order.subtotal),
+          meetupPoint: order.deliveryAddress || "Campus Meetup Zone",
+        })
+        .catch((e) => console.warn("[VerifyOrderPayment] Vendor new order email error:", e));
+    }
+  } catch (emailErr) {
+    console.warn("[VerifyOrderPayment] Notification dispatch error:", emailErr);
+  }
 
   return {
     success: true,
