@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Bell, BellRing, CheckCircle2, ShieldCheck, AlertCircle, RefreshCw, Smartphone } from "lucide-react";
+import Link from "next/link";
+import { Bell, BellRing, CheckCircle2, ShieldCheck, AlertCircle, RefreshCw, Smartphone, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const VAPID_PUBLIC_KEY =
@@ -50,11 +51,12 @@ export function DeviceNotificationPrompt({
           .then(async (sub) => {
             if (sub) {
               setIsSubscribed(true);
+              const subJson = typeof sub.toJSON === "function" ? sub.toJSON() : sub;
               // Auto-sync subscription with current user on server
               await fetch("/api/push/subscribe", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ subscription: sub }),
+                body: JSON.stringify({ subscription: subJson }),
               }).catch(() => null);
             }
           })
@@ -105,15 +107,20 @@ export function DeviceNotificationPrompt({
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as unknown as BufferSource,
       });
 
+      const subJson = typeof sub.toJSON === "function" ? sub.toJSON() : sub;
+
       // 4. Save subscription to backend
       const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: sub }),
+        body: JSON.stringify({ subscription: subJson }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
+        if (res.status === 401 || data.error?.toLowerCase().includes("unauthorized")) {
+          throw new Error("You must be logged in to enable device notifications. Please sign in to your account first.");
+        }
         throw new Error(data.error || "Failed to register device subscription on server");
       }
 
@@ -177,15 +184,20 @@ export function DeviceNotificationPrompt({
         });
       } catch {}
 
+      const subJson = typeof sub.toJSON === "function" ? sub.toJSON() : sub;
+
       // Deliver via backend web-push with subscription payload included
       const res = await fetch("/api/push/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: sub }),
+        body: JSON.stringify({ subscription: subJson }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
+        if (res.status === 401 || data.error?.toLowerCase().includes("unauthorized")) {
+          throw new Error("You must be logged in to test device notifications. Please sign in to your account first.");
+        }
         throw new Error(data.error || "Failed to send test push notification");
       }
 
@@ -327,7 +339,7 @@ export function DeviceNotificationPrompt({
 
       {message && (
         <div
-          className={`mt-3 p-3 rounded-xl text-xs font-medium flex items-center gap-2 ${
+          className={`mt-3 p-3 rounded-xl text-xs font-medium flex items-center justify-between gap-3 ${
             message.type === "success"
               ? "bg-emerald-100/80 text-emerald-900 border border-emerald-200"
               : message.type === "error"
@@ -335,12 +347,24 @@ export function DeviceNotificationPrompt({
               : "bg-blue-100/80 text-blue-900 border border-blue-200"
           }`}
         >
-          {message.type === "success" ? (
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-          )}
-          <span>{message.text}</span>
+          <div className="flex items-center gap-2">
+            {message.type === "success" ? (
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            )}
+            <span>{message.text}</span>
+          </div>
+
+          {message.text.toLowerCase().includes("sign in") || message.text.toLowerCase().includes("logged in") ? (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0 transition-colors shadow-2xs"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Log In</span>
+            </Link>
+          ) : null}
         </div>
       )}
     </div>

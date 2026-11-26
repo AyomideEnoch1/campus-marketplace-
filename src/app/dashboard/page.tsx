@@ -17,6 +17,7 @@ import {
   Lock,
   ArrowRight,
   CreditCard,
+  Wallet,
 } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -401,7 +402,7 @@ export default async function VendorDashboardPage() {
       </div>
 
       {/* Quick Action Shortcuts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           href="/dashboard/products/new"
           className="p-4 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 hover:scale-[1.01] transition-transform"
@@ -410,6 +411,17 @@ export default async function VendorDashboardPage() {
           <h4 className="font-bold text-sm">Add New Product</h4>
           <p className="text-xs text-emerald-100 mt-0.5">
             Upload pictures, set price in ₦, tags, and condition
+          </p>
+        </Link>
+
+        <Link
+          href="/dashboard/wallet"
+          className="p-4 rounded-2xl bg-gradient-to-tr from-emerald-700 to-emerald-900 text-white shadow-md hover:scale-[1.01] transition-transform"
+        >
+          <Wallet className="w-6 h-6 mb-2 text-emerald-300" />
+          <h4 className="font-bold text-sm">Payout Bank & Wallet</h4>
+          <p className="text-xs text-emerald-200/90 mt-0.5">
+            Set and verify your bank account to receive escrow earnings
           </p>
         </Link>
 

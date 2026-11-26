@@ -8,7 +8,10 @@ export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "You must be signed in to enable device notifications. Please log in to your account first." },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();

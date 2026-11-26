@@ -8,13 +8,17 @@ export async function POST(request: Request) {
   try {
     const session = await getSession();
     if (!session?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "You must be signed in to test device notifications. Please log in to your account first." },
+        { status: 401 }
+      );
     }
 
+    let saved = false;
     try {
       const body = await request.json().catch(() => null);
       if (body?.subscription) {
-        await savePushSubscription(session.id, body.subscription);
+        saved = await savePushSubscription(session.id, body.subscription);
       }
     } catch {}
 
@@ -26,6 +30,16 @@ export async function POST(request: Request) {
     });
 
     if (res.sent === 0) {
+      if (res.failed > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Push service failed to deliver to this device. Please ensure your browser allows notifications, incognito mode is disabled, and battery saver is off.",
+          },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
         {
           success: false,

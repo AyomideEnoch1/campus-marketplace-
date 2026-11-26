@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Resolve Account Name with Flutterwave
-    const resolved = await resolveBankAccount(bankCode, cleanAccount);
+    const resolved = await resolveBankAccount(bankCode, cleanAccount, session.fullName);
 
     if (!resolved.success || !resolved.accountName) {
       return NextResponse.json(

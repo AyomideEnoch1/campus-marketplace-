@@ -14,16 +14,18 @@ import {
   Settings,
   ShieldCheck,
   Lock,
+  Wallet,
 } from "lucide-react";
 
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { label: "Products", href: "/dashboard/products", icon: Package },
   { label: "Add Product", href: "/dashboard/products/new", icon: PlusCircle },
+  { label: "Wallet & Payouts", href: "/dashboard/wallet", icon: Wallet },
+  { label: "Orders", href: "/dashboard/orders", icon: ShoppingBag },
   { label: "Pricing & Access", href: "/dashboard/activate", icon: ShieldCheck },
   { label: "Promotions", href: "/dashboard/promotions", icon: Timer },
   { label: "Store Customizer", href: "/dashboard/customize", icon: Palette },
-  { label: "Orders", href: "/dashboard/orders", icon: ShoppingBag },
   { label: "Customer Chat", href: "/dashboard/messages", icon: MessageSquare },
   { label: "Store Settings", href: "/dashboard/settings", icon: Settings },
 ];

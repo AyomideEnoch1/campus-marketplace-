@@ -137,7 +137,8 @@ export interface MerchantBalanceOutput {
 async function flwRequest<T = any>(
   endpoint: string,
   method: "GET" | "POST" | "PUT" = "GET",
-  body?: any
+  body?: any,
+  timeoutMs = 10000
 ): Promise<T> {
   const secretKey = getSecretKey();
   const url = `${FLW_BASE_URL}${endpoint}`;
@@ -147,27 +148,35 @@ async function flwRequest<T = any>(
     return handleMockRequest<T>(endpoint, method, body);
   }
 
-  const res = await fetch(url, {
-    method,
-    headers: {
-      Authorization: `Bearer ${secretKey}`,
-      "Content-Type": "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  const data = await res.json().catch(() => ({ status: "error", message: "Invalid JSON from Flutterwave" }));
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+      signal: controller.signal,
+    });
 
-  if (!res.ok && data?.status !== "success") {
-    const errorMsg = data?.message || `Flutterwave API error (${res.status})`;
-    const error: any = new Error(errorMsg);
-    error.status = res.status;
-    error.response = data;
-    throw error;
+    const data = await res.json().catch(() => ({ status: "error", message: "Invalid JSON from Flutterwave" }));
+
+    if (!res.ok && data?.status !== "success") {
+      const errorMsg = data?.message || `Flutterwave API error (${res.status})`;
+      const error: any = new Error(errorMsg);
+      error.status = res.status;
+      error.response = data;
+      throw error;
+    }
+
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return data;
 }
 
 // ------------------------------------------------------------------------------
@@ -386,33 +395,95 @@ export async function refund(
 }
 
 // ------------------------------------------------------------------------------
-// 7. resolveBankAccount(bankCode, accountNumber)
+// Deterministic Simulated Names for Test/Sandbox Mode
+// ------------------------------------------------------------------------------
+
+const SIMULATED_FIRST_NAMES = [
+  "CHUKWUDI", "EMMANUEL", "OLUWASEUN", "IBRAHIM", "BLESSING",
+  "CHINONSO", "BABATUNDE", "ZAINAB", "NGOZI", "FATIMA",
+  "KELECHI", "FOLASHADE", "ABUBAKAR", "TEMITOPE", "SOMTOCHUKWU",
+  "ADESANYA", "AISHA", "CHIDIEBERE", "AYOMIDE", "DAMILOLA"
+];
+
+const SIMULATED_LAST_NAMES = [
+  "OKONKWO", "ADEYEMI", "DANJUMA", "NWOSU", "BELLO",
+  "BALOGUN", "EZE", "OLANIYAN", "MOHAMMED", "IGWE",
+  "OGUNLEYE", "SULEIMAN", "CHUKWU", "FASHOLA", "YUSUF",
+  "ALABI", "OKAFOR", "GARBA", "OSHINOWO", "BAKARE"
+];
+
+export function getSimulatedAccountName(accountNumber: string, bankCode: string): string {
+  let hash = 0;
+  const str = `${accountNumber.trim()}_${bankCode.trim()}`;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const absHash = Math.abs(hash);
+  const firstName = SIMULATED_FIRST_NAMES[absHash % SIMULATED_FIRST_NAMES.length];
+  const middleName = SIMULATED_FIRST_NAMES[(absHash >> 3) % SIMULATED_FIRST_NAMES.length];
+  const lastName = SIMULATED_LAST_NAMES[(absHash >> 6) % SIMULATED_LAST_NAMES.length];
+  return `${firstName} ${middleName} ${lastName}`;
+}
+
+// ------------------------------------------------------------------------------
+// 7. resolveBankAccount(bankCode, accountNumber, fallbackName?)
 // ------------------------------------------------------------------------------
 
 /**
  * Resolves an account number against a Nigerian bank code using POST /accounts/resolve.
- * Returns the legal account name.
+ * In Live Mode (FLWSECK-...), queries Flutterwave's live NIBSS bank interface.
+ * In Test Mode (FLWSECK_TEST-...), Flutterwave's sandbox cannot query NIBSS; resolves
+ * dynamically in real-time based on the 10 digits without hanging or repeating static names.
  */
 export async function resolveBankAccount(
   bankCode: string,
-  accountNumber: string
+  accountNumber: string,
+  fallbackName?: string
 ): Promise<BankAccountResolveOutput> {
-  const payload = {
-    account_number: accountNumber.trim(),
-    account_bank: bankCode.trim(),
-  };
+  const cleanAccount = accountNumber.trim();
+  const cleanBank = bankCode.trim();
+  const secretKey = getSecretKey();
+  const isTestMode =
+    secretKey.includes("FLWSECK_TEST") ||
+    secretKey === "FLWSECK_TEST-mock-key" ||
+    process.env.MOCK_FLUTTERWAVE === "true";
 
-  const response = await flwRequest("/accounts/resolve", "POST", payload);
+  // In Live mode, call Flutterwave live API to resolve real NIBSS account details
+  if (!isTestMode) {
+    const payload: Record<string, any> = {
+      account_number: cleanAccount,
+      account_bank: cleanBank,
+    };
 
-  if (response.status !== "success" || !response.data) {
-    throw new Error(response.message || "Could not resolve bank account details with Flutterwave");
+    try {
+      const response = await flwRequest("/accounts/resolve", "POST", payload, 6000);
+
+      if (response?.status === "success" && response?.data?.account_name) {
+        return {
+          success: true,
+          accountName: String(response.data.account_name).toUpperCase(),
+          accountNumber: response.data.account_number || cleanAccount,
+          rawResponse: response,
+        };
+      }
+
+      throw new Error(response?.message || "Could not resolve bank account details with Flutterwave");
+    } catch (err: any) {
+      throw new Error(err.message || "Failed to resolve bank account. Please check the account number and bank.");
+    }
   }
+
+  // In Test/Sandbox Mode:
+  // Flutterwave sandbox rejects live NIBSS queries with 503 / "An error occurred".
+  // Instantly return a real-time deterministic Nigerian name unique to this account number and bank.
+  const dynamicName = getSimulatedAccountName(cleanAccount, cleanBank);
 
   return {
     success: true,
-    accountName: response.data.account_name,
-    accountNumber: response.data.account_number,
-    rawResponse: response,
+    accountName: dynamicName,
+    accountNumber: cleanAccount,
+    rawResponse: { simulated: true, isTestMode: true },
   };
 }
 
@@ -420,22 +491,73 @@ export async function resolveBankAccount(
 // 8. listBanks()
 // ------------------------------------------------------------------------------
 
+export const DEFAULT_NIGERIAN_BANKS: BankItem[] = [
+  { id: 1, code: "044", name: "Access Bank" },
+  { id: 2, code: "023", name: "Citibank" },
+  { id: 3, code: "050", name: "Ecobank Nigeria" },
+  { id: 4, code: "070", name: "Fidelity Bank" },
+  { id: 5, code: "011", name: "First Bank of Nigeria" },
+  { id: 6, code: "214", name: "First City Monument Bank (FCMB)" },
+  { id: 7, code: "058", name: "Guaranty Trust Bank (GTBank)" },
+  { id: 8, code: "030", name: "Heritage Bank" },
+  { id: 9, code: "301", name: "Jaiz Bank" },
+  { id: 10, code: "082", name: "Keystone Bank" },
+  { id: 11, code: "50211", name: "Kuda Bank" },
+  { id: 12, code: "999991", name: "OPay Digital Services" },
+  { id: 13, code: "999992", name: "PalmPay" },
+  { id: 14, code: "101", name: "Providus Bank" },
+  { id: 15, code: "221", name: "Stanbic IBTC Bank" },
+  { id: 16, code: "068", name: "Standard Chartered Bank" },
+  { id: 17, code: "232", name: "Sterling Bank" },
+  { id: 18, code: "100", name: "Suntrust Bank" },
+  { id: 19, code: "032", name: "Union Bank of Nigeria" },
+  { id: 20, code: "033", name: "United Bank for Africa (UBA)" },
+  { id: 21, code: "215", name: "Unity Bank" },
+  { id: 22, code: "035", name: "Wema Bank" },
+  { id: 23, code: "057", name: "Zenith Bank" },
+];
+
+let cachedBanksList: BankItem[] = DEFAULT_NIGERIAN_BANKS;
+let lastBanksCacheTime = 0;
+const BANKS_CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
+
 /**
  * Returns the list of supported Nigerian commercial & digital banks from GET /banks/NG.
+ * Automatically falls back to DEFAULT_NIGERIAN_BANKS on timeout, error, or slow network so the UI is NEVER blank.
  */
 export async function listBanks(): Promise<BankItem[]> {
-  const response = await flwRequest("/banks/NG", "GET");
-
-  if (response.status !== "success" || !Array.isArray(response.data)) {
-    // Fallback list of top Nigerian banks if offline/mock
-    return DEFAULT_NIGERIAN_BANKS;
+  const now = Date.now();
+  if (cachedBanksList && cachedBanksList.length > 0 && now - lastBanksCacheTime < BANKS_CACHE_DURATION_MS) {
+    return cachedBanksList;
   }
 
-  return response.data.map((b: any) => ({
-    id: b.id,
-    code: b.code,
-    name: b.name,
-  }));
+  try {
+    const secretKey = getSecretKey();
+    if (secretKey === "FLWSECK_TEST-mock-key" || process.env.MOCK_FLUTTERWAVE === "true") {
+      cachedBanksList = DEFAULT_NIGERIAN_BANKS;
+      lastBanksCacheTime = now;
+      return cachedBanksList;
+    }
+
+    const response = await flwRequest("/banks/NG", "GET", undefined, 3500);
+
+    if (response?.status === "success" && Array.isArray(response?.data) && response.data.length > 0) {
+      cachedBanksList = response.data.map((b: any) => ({
+        id: b.id,
+        code: b.code,
+        name: b.name,
+      }));
+      lastBanksCacheTime = now;
+      return cachedBanksList;
+    }
+  } catch (err) {
+    console.warn("[Flutterwave] listBanks fetch timed out or failed; falling back to default Nigerian banks list");
+  }
+
+  // Graceful fallback to comprehensive Nigerian banks list
+  cachedBanksList = DEFAULT_NIGERIAN_BANKS;
+  lastBanksCacheTime = now;
+  return DEFAULT_NIGERIAN_BANKS;
 }
 
 // ------------------------------------------------------------------------------
@@ -474,32 +596,6 @@ export async function getMerchantBalance(currency = "NGN"): Promise<MerchantBala
 // ------------------------------------------------------------------------------
 // Development / Mock Handlers
 // ------------------------------------------------------------------------------
-
-const DEFAULT_NIGERIAN_BANKS: BankItem[] = [
-  { id: 1, code: "044", name: "Access Bank" },
-  { id: 2, code: "023", name: "Citibank" },
-  { id: 3, code: "050", name: "Ecobank Nigeria" },
-  { id: 4, code: "070", name: "Fidelity Bank" },
-  { id: 5, code: "011", name: "First Bank of Nigeria" },
-  { id: 6, code: "214", name: "First City Monument Bank (FCMB)" },
-  { id: 7, code: "058", name: "Guaranty Trust Bank (GTBank)" },
-  { id: 8, code: "030", name: "Heritage Bank" },
-  { id: 9, code: "301", name: "Jaiz Bank" },
-  { id: 10, code: "082", name: "Keystone Bank" },
-  { id: 11, code: "50211", name: "Kuda Bank" },
-  { id: 12, code: "999991", name: "OPay Digital Services" },
-  { id: 13, code: "999992", name: "PalmPay" },
-  { id: 14, code: "101", name: "Providus Bank" },
-  { id: 15, code: "221", name: "Stanbic IBTC Bank" },
-  { id: 16, code: "068", name: "Standard Chartered Bank" },
-  { id: 17, code: "232", name: "Sterling Bank" },
-  { id: 18, code: "100", name: "Suntrust Bank" },
-  { id: 19, code: "032", name: "Union Bank of Nigeria" },
-  { id: 20, code: "033", name: "United Bank for Africa (UBA)" },
-  { id: 21, code: "215", name: "Unity Bank" },
-  { id: 22, code: "035", name: "Wema Bank" },
-  { id: 23, code: "057", name: "Zenith Bank" },
-];
 
 function handleMockRequest<T>(endpoint: string, method: string, body?: any): T {
   if (endpoint.startsWith("/payments")) {
@@ -583,7 +679,7 @@ function handleMockRequest<T>(endpoint: string, method: string, body?: any): T {
       message: "Account details resolved (Mock)",
       data: {
         account_number: body?.account_number,
-        account_name: "AYOMIDE ENOCH OLABISI",
+        account_name: body?.fallback_name ? String(body.fallback_name).toUpperCase() : "VERIFIED ACCOUNT HOLDER",
       },
     } as any;
   }

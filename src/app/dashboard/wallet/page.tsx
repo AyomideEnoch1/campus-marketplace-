@@ -22,6 +22,32 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatNGN } from "@/lib/utils";
 
+const DEFAULT_BANKS = [
+  { id: 1, code: "044", name: "Access Bank" },
+  { id: 2, code: "023", name: "Citibank" },
+  { id: 3, code: "050", name: "Ecobank Nigeria" },
+  { id: 4, code: "070", name: "Fidelity Bank" },
+  { id: 5, code: "011", name: "First Bank of Nigeria" },
+  { id: 6, code: "214", name: "First City Monument Bank (FCMB)" },
+  { id: 7, code: "058", name: "Guaranty Trust Bank (GTBank)" },
+  { id: 8, code: "030", name: "Heritage Bank" },
+  { id: 9, code: "301", name: "Jaiz Bank" },
+  { id: 10, code: "082", name: "Keystone Bank" },
+  { id: 11, code: "50211", name: "Kuda Bank" },
+  { id: 12, code: "999991", name: "OPay Digital Services" },
+  { id: 13, code: "999992", name: "PalmPay" },
+  { id: 14, code: "101", name: "Providus Bank" },
+  { id: 15, code: "221", name: "Stanbic IBTC Bank" },
+  { id: 16, code: "068", name: "Standard Chartered Bank" },
+  { id: 17, code: "232", name: "Sterling Bank" },
+  { id: 18, code: "100", name: "Suntrust Bank" },
+  { id: 19, code: "032", name: "Union Bank of Nigeria" },
+  { id: 20, code: "033", name: "United Bank for Africa (UBA)" },
+  { id: 21, code: "215", name: "Unity Bank" },
+  { id: 22, code: "035", name: "Wema Bank" },
+  { id: 23, code: "057", name: "Zenith Bank" },
+];
+
 export default function VendorWalletPage() {
   const queryClient = useQueryClient();
 
@@ -40,14 +66,14 @@ export default function VendorWalletPage() {
     queryKey: ["vendor", "bank-list"],
     queryFn: async ({ signal }) => {
       const res = await fetch("/api/vendor/bank/list", { signal });
-      if (!res.ok) return { banks: [] };
+      if (!res.ok) return { banks: DEFAULT_BANKS };
       return res.json();
     },
     staleTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  const banks: any[] = banksData?.banks || [];
+  const banks: any[] = (banksData?.banks && banksData.banks.length > 0) ? banksData.banks : DEFAULT_BANKS;
 
   // Bank setup state
   const [selectedBankCode, setSelectedBankCode] = React.useState("");

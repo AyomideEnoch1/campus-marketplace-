@@ -108,6 +108,32 @@ export interface ReferralRewardRates {
   qualifiedVendorBonus: number;
 }
 
+const DEFAULT_BANKS: BankItem[] = [
+  { id: 1, code: "044", name: "Access Bank" },
+  { id: 2, code: "023", name: "Citibank" },
+  { id: 3, code: "050", name: "Ecobank Nigeria" },
+  { id: 4, code: "070", name: "Fidelity Bank" },
+  { id: 5, code: "011", name: "First Bank of Nigeria" },
+  { id: 6, code: "214", name: "First City Monument Bank (FCMB)" },
+  { id: 7, code: "058", name: "Guaranty Trust Bank (GTBank)" },
+  { id: 8, code: "030", name: "Heritage Bank" },
+  { id: 9, code: "301", name: "Jaiz Bank" },
+  { id: 10, code: "082", name: "Keystone Bank" },
+  { id: 11, code: "50211", name: "Kuda Bank" },
+  { id: 12, code: "999991", name: "OPay Digital Services" },
+  { id: 13, code: "999992", name: "PalmPay" },
+  { id: 14, code: "101", name: "Providus Bank" },
+  { id: 15, code: "221", name: "Stanbic IBTC Bank" },
+  { id: 16, code: "068", name: "Standard Chartered Bank" },
+  { id: 17, code: "232", name: "Sterling Bank" },
+  { id: 18, code: "100", name: "Suntrust Bank" },
+  { id: 19, code: "032", name: "Union Bank of Nigeria" },
+  { id: 20, code: "033", name: "United Bank for Africa (UBA)" },
+  { id: 21, code: "215", name: "Unity Bank" },
+  { id: 22, code: "035", name: "Wema Bank" },
+  { id: 23, code: "057", name: "Zenith Bank" },
+];
+
 export function AmbassadorDashboardClient({
   initialAmbassador,
   rewardConfig = { vendorBonus: 500, buyerBonus: 100, qualifiedVendorBonus: 1000 },
@@ -144,7 +170,7 @@ export function AmbassadorDashboardClient({
   });
 
   const referrals = referralsData || [];
-  const banks = banksData || [];
+  const banks = banksData && banksData.length > 0 ? banksData : DEFAULT_BANKS;
 
   // Bank Form State
   const [selectedBankCode, setSelectedBankCode] = React.useState(ambassador.bankCode || "");
@@ -153,6 +179,75 @@ export function AmbassadorDashboardClient({
   const [resolvedAccountName, setResolvedAccountName] = React.useState(ambassador.bankAccountName || "");
   const [resolvingBank, setResolvingBank] = React.useState(false);
   const [savingBank, setSavingBank] = React.useState(false);
+  const [resolveError, setResolveError] = React.useState<string | null>(null);
+  const [isLiveBank, setIsLiveBank] = React.useState(false);
+
+  // Automatic real-time bank account verification effect
+  React.useEffect(() => {
+    const cleanNum = accountNumber.trim();
+    if (!selectedBankCode || cleanNum.length !== 10) {
+      setResolvedAccountName(ambassador.bankAccountNumber === cleanNum ? (ambassador.bankAccountName || "") : "");
+      setResolveError(null);
+      setResolvingBank(false);
+      return;
+    }
+
+    // If it already matches the saved and verified ambassador account, keep it
+    if (
+      ambassador.bankVerified &&
+      ambassador.bankAccountNumber === cleanNum &&
+      ambassador.bankCode === selectedBankCode &&
+      ambassador.bankAccountName
+    ) {
+      setResolvedAccountName(ambassador.bankAccountName);
+      setResolveError(null);
+      setResolvingBank(false);
+      return;
+    }
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const timer = setTimeout(async () => {
+      setResolvingBank(true);
+      setResolveError(null);
+
+      try {
+        const res = await fetch("/api/ambassador/banks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({ bankCode: selectedBankCode, accountNumber: cleanNum }),
+        });
+        const data = await res.json();
+        if (!isMounted) return;
+
+        if (res.ok && data.success && data.accountName) {
+          setResolvedAccountName(data.accountName);
+          setIsLiveBank(Boolean(data.isLive));
+          setResolveError(null);
+        } else {
+          setResolvedAccountName("");
+          setResolveError(data.error || "Could not resolve bank account with selected bank.");
+        }
+      } catch (err: any) {
+        if (err.name !== "AbortError" && isMounted) {
+          setResolvedAccountName("");
+          setResolveError("Network error while resolving bank details.");
+        }
+      } finally {
+        if (isMounted) {
+          setResolvingBank(false);
+        }
+      }
+    }, 400);
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [accountNumber, selectedBankCode, ambassador.bankAccountNumber, ambassador.bankCode, ambassador.bankAccountName, ambassador.bankVerified]);
 
   // Earning Payout Request State (Super Admin Lockable)
   const [payoutRequestsLocked, setPayoutRequestsLocked] = React.useState<boolean>(
@@ -971,7 +1066,7 @@ export function AmbassadorDashboardClient({
                   setSelectedBankCode(code);
                   const found = banks.find((b) => b.code === code);
                   if (found) setSelectedBankName(found.name);
-                  setResolvedAccountName("");
+                  setResolveError(null);
                 }}
                 className="w-full h-10 px-3 rounded-lg border border-neutral-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
@@ -988,27 +1083,21 @@ export function AmbassadorDashboardClient({
               <label className="text-xs font-bold uppercase tracking-wider text-neutral-700 block mb-1.5">
                 10-Digit Account Number
               </label>
-              <div className="flex gap-2">
+              <div className="relative">
                 <Input
                   type="text"
                   maxLength={10}
-                  placeholder="0123456789"
+                  placeholder="e.g. 0123456789"
                   value={accountNumber}
                   onChange={(e) => {
                     setAccountNumber(e.target.value.replace(/\D/g, ""));
-                    setResolvedAccountName("");
+                    setResolveError(null);
                   }}
-                  className="font-mono text-sm"
+                  className="font-mono text-sm pr-9"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleResolveBank}
-                  disabled={resolvingBank || accountNumber.length !== 10 || !selectedBankCode}
-                  className="shrink-0 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                >
-                  {resolvingBank ? "Verifying..." : "Verify"}
-                </Button>
+                {resolvingBank && (
+                  <Loader2 className="w-4 h-4 text-emerald-600 animate-spin absolute right-3 top-3 pointer-events-none" />
+                )}
               </div>
             </div>
 
@@ -1016,19 +1105,60 @@ export function AmbassadorDashboardClient({
               <label className="text-xs font-bold uppercase tracking-wider text-neutral-700 block mb-1.5">
                 Account Holder Name
               </label>
-              <Input
-                readOnly
-                placeholder="Click Verify above"
-                value={resolvedAccountName}
-                className="bg-neutral-50 font-semibold text-sm text-neutral-800"
-              />
+              <div className="relative">
+                <Input
+                  readOnly
+                  placeholder={
+                    resolvingBank
+                      ? "Verifying legal name with bank..."
+                      : accountNumber.length === 10 && selectedBankCode
+                      ? resolveError ? "Could not resolve name" : "Account name from bank"
+                      : "Auto-verifies upon 10 digits"
+                  }
+                  value={resolvedAccountName}
+                  className={`text-sm font-semibold transition-colors pr-9 ${
+                    resolvedAccountName
+                      ? "bg-emerald-50/80 border-emerald-300 text-emerald-950"
+                      : resolveError
+                      ? "bg-rose-50/80 border-rose-300 text-rose-800"
+                      : "bg-neutral-50 text-neutral-600"
+                  }`}
+                />
+                {resolvedAccountName && !resolvingBank && (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 absolute right-3 top-3 pointer-events-none" />
+                )}
+              </div>
             </div>
+
+            {/* Real-time Status or Feedback banner */}
+            {(resolveError || (resolvedAccountName && !resolveError)) && (
+              <div className="sm:col-span-3">
+                {resolveError ? (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                    <span>{resolveError}</span>
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="flex items-center gap-2 font-medium">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                      <span>Account Holder: <strong className="font-mono text-sm tracking-wide text-emerald-950 uppercase">{resolvedAccountName}</strong></span>
+                    </span>
+                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider self-start sm:self-center ${
+                      isLiveBank ? "bg-emerald-200 text-emerald-900" : "bg-emerald-100 text-emerald-800"
+                    }`}>
+                      {isLiveBank ? "Verified by NIBSS ✓" : "Real-time Verified ✓"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="sm:col-span-3 flex justify-end pt-2">
               <Button
                 type="submit"
-                disabled={savingBank || !resolvedAccountName}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm"
+                disabled={savingBank || resolvingBank || !resolvedAccountName}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm disabled:opacity-50"
               >
                 {savingBank ? "Saving..." : "Save Bank Account"}
               </Button>
