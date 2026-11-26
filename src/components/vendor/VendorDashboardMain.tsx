@@ -20,7 +20,7 @@ export function VendorDashboardMain({
   }
 
   return (
-    <main className="flex-1 min-w-0 p-6 md:p-10 overflow-y-auto max-w-6xl">
+    <main className="flex-1 min-w-0 p-3.5 sm:p-6 md:p-8 lg:p-10 pb-28 md:pb-12 overflow-y-auto overflow-x-hidden max-w-6xl">
       {children}
     </main>
   );

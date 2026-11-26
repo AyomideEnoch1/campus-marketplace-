@@ -450,15 +450,15 @@ export default async function VendorDashboardPage() {
       </div>
 
       {/* Recent Products Section */}
-      <div className="p-6 rounded-2xl bg-white border border-neutral-200/80 shadow-xs space-y-4">
+      <div className="p-4 sm:p-6 rounded-3xl bg-white border border-neutral-200/80 shadow-xs space-y-4 overflow-hidden">
         <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
           <div>
-            <h3 className="font-bold text-base text-neutral-900">Recent Products</h3>
+            <h3 className="font-bold text-sm sm:text-base text-neutral-900">Recent Products</h3>
             <p className="text-xs text-neutral-500">Your latest uploaded inventory</p>
           </div>
           <Link
             href="/dashboard/products"
-            className="text-xs font-bold text-emerald-600 hover:underline"
+            className="text-xs font-bold text-emerald-600 hover:underline shrink-0"
           >
             Manage all ({totalProducts}) &rarr;
           </Link>
@@ -477,10 +477,10 @@ export default async function VendorDashboardPage() {
             {vendor.products.map((prod) => (
               <div
                 key={prod.id}
-                className="py-3 flex items-center justify-between gap-4 hover:bg-neutral-50/60 px-2 rounded-xl transition-colors"
+                className="py-3 px-2 sm:px-3 flex items-center justify-between gap-3 sm:gap-4 hover:bg-neutral-50/70 rounded-2xl transition-colors"
               >
-                <div className="flex items-center gap-3 truncate">
-                  <div className="w-12 h-12 rounded-xl bg-neutral-100 border border-neutral-200 overflow-hidden shrink-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-neutral-100 border border-neutral-200 overflow-hidden shrink-0">
                     {prod.images[0] ? (
                       <img
                         src={prod.images[0].url}
@@ -493,31 +493,31 @@ export default async function VendorDashboardPage() {
                       </div>
                     )}
                   </div>
-                  <div className="truncate">
-                    <p className="font-bold text-sm text-neutral-900 truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-xs sm:text-sm text-neutral-900 truncate" title={prod.title}>
                       {prod.title}
                     </p>
-                    <p className="text-xs text-neutral-500">
+                    <p className="text-[11px] sm:text-xs text-neutral-500 truncate mt-0.5">
                       {prod.category.name} &bull; Stock: {prod.stock}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 shrink-0 text-right">
-                  <div>
-                    <span className="font-extrabold text-sm text-neutral-900 block">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                  <div className="text-right">
+                    <span className="font-extrabold text-xs sm:text-sm text-neutral-900 block whitespace-nowrap">
                       {formatNGN(prod.price)}
                     </span>
                     <Badge
                       variant={prod.status === "PUBLISHED" ? "default" : "secondary"}
-                      className="text-[10px] uppercase font-bold"
+                      className="text-[9px] sm:text-[10px] uppercase font-bold px-1.5 py-0 mt-0.5"
                     >
                       {prod.status}
                     </Badge>
                   </div>
                   <Link
                     href={`/dashboard/products/${prod.id}/edit`}
-                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 px-3 py-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-100"
+                    className="text-xs font-bold text-neutral-700 hover:text-neutral-950 bg-white hover:bg-neutral-100 px-3 py-1.5 rounded-xl border border-neutral-200 transition-colors shrink-0 shadow-2xs"
                   >
                     Edit
                   </Link>
@@ -529,15 +529,15 @@ export default async function VendorDashboardPage() {
       </div>
 
       {/* Recent Order Requests Section */}
-      <div className="p-6 rounded-2xl bg-white border border-neutral-200/80 shadow-xs space-y-4">
+      <div className="p-4 sm:p-6 rounded-3xl bg-white border border-neutral-200/80 shadow-xs space-y-4 overflow-hidden">
         <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
           <div>
-            <h3 className="font-bold text-base text-neutral-900">Recent Order Requests</h3>
+            <h3 className="font-bold text-sm sm:text-base text-neutral-900">Recent Order Requests</h3>
             <p className="text-xs text-neutral-500">Incoming buyer orders and escrow payment status</p>
           </div>
           <Link
             href="/dashboard/orders"
-            className="text-xs font-bold text-emerald-600 hover:underline"
+            className="text-xs font-bold text-emerald-600 hover:underline shrink-0"
           >
             View all ({totalOrders}) &rarr;
           </Link>
@@ -561,68 +561,73 @@ export default async function VendorDashboardPage() {
               return (
                 <div
                   key={ord.id}
-                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-50/60 px-2 rounded-xl transition-colors text-xs"
+                  className="py-3.5 px-2 sm:px-3 hover:bg-neutral-50/70 rounded-2xl transition-colors space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4 text-xs"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0 text-neutral-700 font-bold">
-                      <ShoppingBag className="w-5 h-5 text-neutral-600" />
+                  {/* Top / Left: Icon + Order Ref + Buyer + Timestamp */}
+                  <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-100 border border-neutral-200/80 flex items-center justify-center shrink-0 text-neutral-700">
+                      <ShoppingBag className="w-4 h-4 text-neutral-600" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-neutral-900">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="font-extrabold text-neutral-900 font-mono tracking-tight text-xs sm:text-sm whitespace-nowrap shrink-0">
                           #{ord.orderNumber}
                         </span>
-                        <span className="text-neutral-500">
-                          by <strong className="text-neutral-800">{ord.buyerName}</strong>
+                        <span className="text-neutral-500 text-xs truncate max-w-[170px] sm:max-w-none">
+                          by <strong className="text-neutral-800 font-semibold">{ord.buyerName}</strong>
                         </span>
                       </div>
                       <p className="text-[11px] text-neutral-400 mt-0.5">
-                        {formatDate(ord.createdAt)} &bull; {ord.items.length} item(s)
+                        {formatDate(ord.createdAt)} &bull; {ord.items.length} item{ord.items.length === 1 ? "" : "s"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                    {/* Payment Status Badge */}
-                    {isPaid ? (
-                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-[10px] font-bold flex items-center gap-1 py-0.5 px-2">
-                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                        <span>Paid &bull; Escrow</span>
+                  {/* Bottom / Right: Badges + Amount + Manage Button */}
+                  <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-3 pt-2 sm:pt-0 border-t border-neutral-100 sm:border-0 shrink-0">
+                    {/* Status Badges */}
+                    <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                      {isPaid ? (
+                        <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] font-bold flex items-center gap-1 py-0.5 px-2 shrink-0">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          <span>Paid &bull; Escrow</span>
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-amber-50 text-amber-900 border-amber-200 text-[10px] font-bold flex items-center gap-1 py-0.5 px-2 shrink-0">
+                          <Clock className="w-3 h-3 text-amber-700" />
+                          <span>Unpaid</span>
+                        </Badge>
+                      )}
+
+                      <Badge
+                        variant={
+                          ord.status === "DELIVERED"
+                            ? "default"
+                            : ord.status === "CONFIRMED"
+                            ? "campus"
+                            : ord.status === "PENDING"
+                            ? "warning"
+                            : "destructive"
+                        }
+                        className="text-[10px] uppercase font-bold py-0.5 px-2 shrink-0"
+                      >
+                        {ord.status}
                       </Badge>
-                    ) : (
-                      <Badge className="bg-amber-100 text-amber-900 border-amber-300 text-[10px] font-bold flex items-center gap-1 py-0.5 px-2">
-                        <Clock className="w-3 h-3 text-amber-700" />
-                        <span>Unpaid</span>
-                      </Badge>
-                    )}
+                    </div>
 
-                    {/* Order Fulfillment Badge */}
-                    <Badge
-                      variant={
-                        ord.status === "DELIVERED"
-                          ? "default"
-                          : ord.status === "CONFIRMED"
-                          ? "campus"
-                          : ord.status === "PENDING"
-                          ? "warning"
-                          : "destructive"
-                      }
-                      className="text-[10px] uppercase font-bold"
-                    >
-                      {ord.status}
-                    </Badge>
+                    {/* Amount & Manage Button */}
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <span className="font-extrabold text-xs sm:text-sm text-neutral-900 text-right whitespace-nowrap">
+                        {formatNGN(ord.totalAmount)}
+                      </span>
 
-                    {/* Order Amount */}
-                    <span className="font-extrabold text-sm text-neutral-900 min-w-[70px] text-right">
-                      {formatNGN(ord.totalAmount)}
-                    </span>
-
-                    <Link
-                      href="/dashboard/orders"
-                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 px-2.5 py-1 rounded-lg border border-neutral-200 hover:bg-neutral-100"
-                    >
-                      Manage
-                    </Link>
+                      <Link
+                        href="/dashboard/orders"
+                        className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 px-3 py-1.5 rounded-xl border border-emerald-200 transition-colors shrink-0 shadow-2xs"
+                      >
+                        Manage
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );
