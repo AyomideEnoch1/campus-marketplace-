@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Truck,
@@ -21,6 +22,7 @@ import {
   GraduationCap,
   Copy,
   Check,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,14 +90,36 @@ interface OrderTrackingClientProps {
 }
 
 export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
+  const router = useRouter();
   const isUnpaid =
     !order.paid_at &&
     order.escrow_status === "pending" &&
     order.status !== "CANCELLED";
 
   const [paying, setPaying] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [paymentError, setPaymentError] = React.useState<string | null>(null);
   const [codeCopied, setCodeCopied] = React.useState(false);
+
+  const handleDeleteOrder = async () => {
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/orders/${order.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete order");
+      }
+      router.push("/orders");
+    } catch (err: any) {
+      console.error("Delete order error:", err);
+      alert(err.message || "Failed to delete order. Please try again.");
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   // Flutterwave Live Locked & Modal State (Dynamic Admin Controlled)
   const [lockedModalOpen, setLockedModalOpen] = React.useState(false);
@@ -229,23 +253,85 @@ export function OrderTrackingClient({ order }: OrderTrackingClientProps) {
               </div>
             </div>
 
-            <Button
-              onClick={handleCompletePayment}
-              disabled={paying}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl h-11 px-5 shadow-lg shadow-emerald-600/30 shrink-0 w-full sm:w-auto gap-2"
-            >
-              {paying ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Connecting to Flutterwave...</span>
-                </>
-              ) : (
-                <>
-                  <CreditCard className="w-4 h-4" />
-                  <span>Complete Order &amp; Pay Now &rarr;</span>
-                </>
-              )}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={paying || deleting}
+                className="border-rose-300 text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-bold text-xs rounded-2xl h-11 px-4 gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Cancel &amp; Delete</span>
+              </Button>
+
+              <Button
+                onClick={handleCompletePayment}
+                disabled={paying || deleting}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-2xl h-11 px-5 shadow-lg shadow-emerald-600/30 flex-1 sm:flex-initial gap-2"
+              >
+                {paying ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Connecting to Flutterwave...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Complete Order &amp; Pay Now &rarr;</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-neutral-200 space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-bold text-neutral-900">
+                  Delete Unpaid Order #{order.orderNumber}?
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  This order has not been paid for ({formatNGN(order.totalAmount)}). Deleting it will release the vendor&apos;s product inventory and remove the order from your account.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                  className="rounded-xl text-xs font-bold"
+                >
+                  Keep Order
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleDeleteOrder}
+                  disabled={deleting}
+                  className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm shadow-rose-600/30"
+                >
+                  {deleting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Yes, Delete Order</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 

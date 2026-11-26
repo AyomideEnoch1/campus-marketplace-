@@ -150,3 +150,99 @@ export async function GET(
     return NextResponse.json({ error: error.message || "Failed to retrieve order" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { orderId: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized. Please log in." }, { status: 401 });
+    }
+
+    const orderId = params.orderId;
+    if (!orderId) {
+      return NextResponse.json({ error: "Missing order ID" }, { status: 400 });
+    }
+
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [{ id: orderId }, { orderNumber: orderId }, { tx_ref: orderId }],
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Must be the buyer or an admin
+    const isBuyer = order.buyerId === session.id || order.buyerEmail === session.email;
+    const isAdmin = (session as any).role === "ADMIN" || (session as any).role === "SUPERADMIN";
+
+    if (!isBuyer && !isAdmin) {
+      return NextResponse.json(
+        { error: "You are not authorized to delete this order." },
+        { status: 403 }
+      );
+    }
+
+    // Safety check: Cannot delete paid orders or orders with active escrow
+    if (order.paid_at || ["paid_held", "held", "confirmed", "delivered", "released"].includes(order.escrow_status)) {
+      return NextResponse.json(
+        { error: "Cannot delete paid or escrow-protected orders. Please file a dispute or contact support if you need a refund." },
+        { status: 400 }
+      );
+    }
+
+    // Perform deletion and stock restoration in transaction
+    await prisma.$transaction(async (tx) => {
+      // 1. Restore product stock for each ordered item
+      for (const item of order.items) {
+        if (item.productId && item.quantity > 0) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity,
+              },
+            },
+          }).catch((err) => {
+            console.warn(`[Delete Order]: Could not restore stock for product ${item.productId}:`, err);
+          });
+        }
+      }
+
+      // 2. Delete the order (cascading deletes will handle items, deliveryCode, payments, etc.)
+      await tx.order.delete({
+        where: { id: order.id },
+      });
+
+      // 3. Log activity
+      await tx.activityLog.create({
+        data: {
+          userId: session.id,
+          action: "ORDER_DELETED",
+          entityType: "ORDER",
+          entityId: order.id,
+          metadataJson: JSON.stringify({
+            orderNumber: order.orderNumber,
+            deletedBy: session.id,
+            reason: "Buyer deleted unpaid order",
+          }),
+        },
+      }).catch(() => {});
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Order #${order.orderNumber} deleted successfully.`,
+    });
+  } catch (error: any) {
+    console.error("[Delete Order Error]:", error);
+    return NextResponse.json({ error: error.message || "Failed to delete order" }, { status: 500 });
+  }
+}

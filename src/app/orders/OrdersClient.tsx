@@ -23,6 +23,7 @@ import {
   Truck,
   CreditCard,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -163,6 +164,31 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       );
     } finally {
       setPayingOrderId(null);
+    }
+  };
+
+  // Delete unpaid order state & handler
+  const [deletingOrderId, setDeletingOrderId] = React.useState<string | null>(null);
+  const [confirmDeleteOrder, setConfirmDeleteOrder] = React.useState<OrderData | null>(null);
+
+  const handleDeleteOrder = async (orderId: string) => {
+    setDeletingOrderId(orderId);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to delete order");
+      }
+      setLocalOrders((prev) => prev.filter((o) => o.id !== orderId));
+      invalidateOrders();
+      setConfirmDeleteOrder(null);
+    } catch (err: any) {
+      console.error("Delete order error:", err);
+      alert(err.message || "Could not delete order. Please try again.");
+    } finally {
+      setDeletingOrderId(null);
     }
   };
 
@@ -546,6 +572,21 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Button>
                       </Link>
+
+                      {/* Delete Unpaid Order Button */}
+                      {isUnpaid && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setConfirmDeleteOrder(order)}
+                          disabled={deletingOrderId === order.id}
+                          className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 text-xs font-bold rounded-xl gap-1 border border-rose-200/70"
+                          title="Delete this unpaid order"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -574,26 +615,39 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        onClick={() => handleCompletePayment(order.id)}
-                        disabled={payingOrderId === order.id}
-                        size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md gap-1.5 shrink-0 w-full sm:w-auto h-9 px-4"
-                      >
-                        {payingOrderId === order.id ? (
-                          <>
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            <span>Opening Checkout...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>
-                              Pay {formatNGN(order.totalAmount)} Now &rarr;
-                            </span>
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <Button
+                          onClick={() => setConfirmDeleteOrder(order)}
+                          disabled={deletingOrderId === order.id}
+                          variant="ghost"
+                          size="sm"
+                          className="text-rose-600 hover:text-rose-700 hover:bg-rose-100/70 text-xs font-bold rounded-xl gap-1.5 h-9 px-3 border border-rose-200"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Cancel &amp; Delete</span>
+                        </Button>
+
+                        <Button
+                          onClick={() => handleCompletePayment(order.id)}
+                          disabled={payingOrderId === order.id}
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md gap-1.5 flex-1 sm:flex-initial h-9 px-4"
+                        >
+                          {payingOrderId === order.id ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Opening Checkout...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="w-3.5 h-3.5" />
+                              <span>
+                                Pay {formatNGN(order.totalAmount)} Now &rarr;
+                              </span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -746,6 +800,56 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           onClose={() => setReviewModalData(null)}
           onSuccess={handleReviewSuccess}
         />
+      )}
+
+      {/* Delete Unpaid Order Confirmation Modal */}
+      {confirmDeleteOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-neutral-200 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="text-base font-bold text-neutral-900">
+                Delete Unpaid Order #{confirmDeleteOrder.orderNumber}?
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                This order was never paid for ({formatNGN(confirmDeleteOrder.totalAmount)}). Deleting it will restore the vendor&apos;s product inventory and permanently remove it from your orders history.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmDeleteOrder(null)}
+                disabled={Boolean(deletingOrderId)}
+                className="rounded-xl text-xs font-bold"
+              >
+                Keep Order
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleDeleteOrder(confirmDeleteOrder.id)}
+                disabled={Boolean(deletingOrderId)}
+                className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm shadow-rose-600/30"
+              >
+                {deletingOrderId === confirmDeleteOrder.id ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Yes, Delete Order</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Improvised Professional Modal when Flutterwave is clicked / locked */}
