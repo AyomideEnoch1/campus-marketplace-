@@ -26,6 +26,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^18.0.10",
     "flutterwave-react-v3": "^1.3.3",
+    "https-proxy-agent": "^9.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.460.0",
     "next": "^14.2.18",

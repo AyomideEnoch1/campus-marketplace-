@@ -18,6 +18,9 @@
  * ==============================================================================
  */
 
+import https from "node:https";
+import { HttpsProxyAgent } from "https-proxy-agent";
+
 const FLW_BASE_URL = "https://api.flutterwave.com/v3";
 
 function getSecretKey(): string {
@@ -134,11 +137,81 @@ export interface MerchantBalanceOutput {
 // Internal Helper for Flutterwave Fetch
 // ------------------------------------------------------------------------------
 
+async function makeProxiedRequest<T = any>(
+  urlStr: string,
+  method: string,
+  headers: Record<string, string>,
+  bodyStr?: string,
+  timeoutMs = 15000,
+  proxyUrl?: string
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const url = new URL(urlStr);
+    const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+
+    const options: https.RequestOptions = {
+      protocol: url.protocol,
+      hostname: url.hostname,
+      port: url.port || 443,
+      path: url.pathname + url.search,
+      method,
+      headers: {
+        ...headers,
+        ...(bodyStr ? { "Content-Length": String(Buffer.byteLength(bodyStr)) } : {}),
+      },
+      agent,
+      timeout: timeoutMs,
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+      res.on("end", () => {
+        let parsed: any;
+        try {
+          parsed = JSON.parse(data);
+        } catch {
+          parsed = { status: "error", message: data || "Invalid response from Flutterwave" };
+        }
+
+        const isSuccess =
+          (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) ||
+          parsed?.status === "success";
+        if (!isSuccess) {
+          const err: any = new Error(parsed?.message || `Flutterwave API error (${res.statusCode})`);
+          err.status = res.statusCode;
+          err.response = parsed;
+          return reject(err);
+        }
+
+        resolve(parsed as T);
+      });
+    });
+
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error(`Flutterwave API request timed out after ${timeoutMs}ms`));
+    });
+
+    req.on("error", (err) => {
+      reject(err);
+    });
+
+    if (bodyStr) {
+      req.write(bodyStr);
+    }
+    req.end();
+  });
+}
+
 async function flwRequest<T = any>(
   endpoint: string,
   method: "GET" | "POST" | "PUT" = "GET",
   body?: any,
-  timeoutMs = 10000
+  timeoutMs = 15000
 ): Promise<T> {
   const secretKey = getSecretKey();
   const url = `${FLW_BASE_URL}${endpoint}`;
@@ -146,6 +219,22 @@ async function flwRequest<T = any>(
   // If secret key is mock or in offline mode, handle with mock responses
   if (secretKey === "FLWSECK_TEST-mock-key" || process.env.MOCK_FLUTTERWAVE === "true") {
     return handleMockRequest<T>(endpoint, method, body);
+  }
+
+  // If FIXIE_URL (or HTTP_PROXY / HTTPS_PROXY) is configured, route via static proxy for IP whitelisting
+  const proxyUrl = process.env.FIXIE_URL || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+  if (proxyUrl) {
+    return makeProxiedRequest<T>(
+      url,
+      method,
+      {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/json",
+      },
+      body ? JSON.stringify(body) : undefined,
+      timeoutMs,
+      proxyUrl
+    );
   }
 
   const controller = new AbortController();
