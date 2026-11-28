@@ -739,12 +739,12 @@ export default function OrderTrackingPage() {
               <p className="text-neutral-500 text-[11px] leading-relaxed max-w-md">
                 If the item has defects or issues, open a dispute before the timer expires to freeze payment release.
               </p>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setDisputeModalOpen(true)}
-                  className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl shrink-0 cursor-pointer"
+                  className="w-full sm:w-auto text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl cursor-pointer justify-center"
                 >
                   Open Dispute / Report Issue
                 </Button>
@@ -754,7 +754,7 @@ export default function OrderTrackingPage() {
                     setReleaseError(null);
                     setShowReleaseConfirm(true);
                   }}
-                  className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5"
+                  className="w-full sm:w-auto text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>I&apos;m Satisfied • Release Payment</span>
@@ -950,13 +950,13 @@ export default function OrderTrackingPage() {
       {/* Early Release Confirmation Modal */}
       {showReleaseConfirm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-50">
-          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-5">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-7 h-7" />
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full p-5 sm:p-7 space-y-4 sm:space-y-5">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
 
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-black text-neutral-950">
+            <div className="text-center space-y-1.5 sm:space-y-2">
+              <h3 className="text-base sm:text-lg font-black text-neutral-950">
                 Release Payment to Vendor?
               </h3>
               <p className="text-xs text-neutral-600 leading-relaxed">
@@ -968,11 +968,11 @@ export default function OrderTrackingPage() {
             {releaseError && (
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{releaseError}</span>
+                <span className="leading-snug break-words">{releaseError}</span>
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-neutral-100">
               <Button
                 variant="outline"
                 size="sm"
@@ -981,7 +981,7 @@ export default function OrderTrackingPage() {
                   setReleaseError(null);
                 }}
                 disabled={isReleasing}
-                className="rounded-xl text-xs font-bold"
+                className="w-full sm:w-auto rounded-xl text-xs font-bold py-2.5 justify-center"
               >
                 Cancel / Keep Inspecting
               </Button>
@@ -989,7 +989,7 @@ export default function OrderTrackingPage() {
                 size="sm"
                 onClick={handleReleaseFunds}
                 disabled={isReleasing}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm shadow-emerald-600/30 cursor-pointer"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm shadow-emerald-600/30 cursor-pointer py-2.5 justify-center"
               >
                 {isReleasing ? (
                   <>
