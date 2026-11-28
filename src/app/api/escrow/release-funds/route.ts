@@ -331,6 +331,26 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      if (isBuyer) {
+        // Buyer has successfully confirmed satisfaction.
+        // Even if Flutterwave transfer encounters a temporary gateway / IP restriction,
+        // we keep escrow_status as "payout_pending" so the buyer is done,
+        // and the retry queue / admin can process the payout.
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            escrow_status: "payout_pending",
+          },
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: "Thank you! You've confirmed satisfaction with your order. Payout has been approved and is queued for transfer to the vendor.",
+          status: "payout_pending",
+          queued: true,
+        });
+      }
+
       // Rollback order escrow_status so it can be retried
       await prisma.order.update({
         where: { id: order.id },
