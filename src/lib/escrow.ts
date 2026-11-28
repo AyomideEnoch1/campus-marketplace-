@@ -7,35 +7,34 @@ export interface PayoutDelayConfig {
 
 /**
  * Determines payout delay hours based on seller type.
- * - Guest Sellers: 72 hours
- * - Student Sellers: 48 hours
+ * - Guest Sellers: 48 hours
+ * - Student Sellers: 24 hours
  * 
- * Note: Under platform safety rules, the buyer's 48-hour inspection period is strictly inviolable.
- * Even for trusted sellers, release cannot occur before the full 48-hour inspection window.
+ * Note: The buyer's standard inspection period is 24 hours (or instantly if the buyer confirms early).
  */
 export function getPayoutDelayConfig(vendor: {
   sellerType?: string | null;
   payoutDelayHours?: number | null;
 }): PayoutDelayConfig {
-  if (vendor.payoutDelayHours && vendor.payoutDelayHours >= 48) {
+  if (vendor.payoutDelayHours && vendor.payoutDelayHours >= 24) {
     return {
       delayHours: vendor.payoutDelayHours,
       reason: "Custom profile configured delay",
     };
   }
 
-  // Guest Seller: 72 hours safeguard from verified handover
+  // Guest Seller: 48 hours safeguard from verified handover
   if (vendor.sellerType === "guest") {
     return {
-      delayHours: 72,
-      reason: "72-hour escrow hold for guest / off-campus vendor protection",
+      delayHours: 48,
+      reason: "48-hour escrow hold for guest / off-campus vendor protection",
     };
   }
 
-  // Student Seller (Default): 48 hours from verified handover
+  // Student Seller (Default): 24 hours from verified handover
   return {
-    delayHours: 48,
-    reason: "Standard 48-hour escrow hold for campus student vendor",
+    delayHours: 24,
+    reason: "Standard 24-hour escrow hold for campus student vendor",
   };
 }
 
@@ -56,11 +55,11 @@ export interface PayoutEligibilityResult {
  * 
  * Rules:
  * 1. Clocks start ONLY from verified handover (delivered_at).
- * 2. Buyer inspection period: strictly 48 hours.
- * 3. Seller payout delay: 48 hours for student vendors, 72 hours for guest vendors.
+ * 2. Buyer inspection period: 24 hours (or waived upon early buyer satisfaction approval).
+ * 3. Seller payout delay: 24 hours for student vendors, 48 hours for guest vendors.
  * 4. Effective eligibility time: the LATER of inspection deadline and seller payout delay.
- *    - Student Vendor: max(48h, 48h) = 48h from verified handover.
- *    - Guest Vendor:   max(48h, 72h) = 72h from verified handover.
+ *    - Student Vendor: max(24h, 24h) = 24h from verified handover.
+ *    - Guest Vendor:   max(24h, 48h) = 48h from verified handover.
  * 5. Active dispute: strictly freezes payout, preventing release regardless of elapsed time.
  */
 export function calculateEffectivePayoutEligibility(
@@ -80,13 +79,13 @@ export function calculateEffectivePayoutEligibility(
   ) || order.escrow_status === "disputed";
 
   if (!order.delivered_at) {
-    const sellerDelayHours = vendor.sellerType === "guest" ? 72 : 48;
+    const sellerDelayHours = vendor.sellerType === "guest" ? 48 : 24;
     return {
-      eligibleDate: new Date(Date.now() + 48 * 60 * 60 * 1000),
+      eligibleDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
       isEligible: false,
-      remainingHours: 48,
+      remainingHours: 24,
       sellerDelayHours,
-      inspectionHours: 48,
+      inspectionHours: 24,
       effectiveDelayHours: sellerDelayHours,
       reason: "Item handover has not been verified yet with the 6-digit delivery code.",
       disputeBlocked,
@@ -95,8 +94,8 @@ export function calculateEffectivePayoutEligibility(
   }
 
   const handoverTime = new Date(order.delivered_at).getTime();
-  const inspectionHours = 48;
-  const sellerDelayHours = vendor.sellerType === "guest" ? 72 : 48;
+  const inspectionHours = 24;
+  const sellerDelayHours = vendor.sellerType === "guest" ? 48 : 24;
   const effectiveDelayHours = Math.max(inspectionHours, sellerDelayHours);
   const eligibleDate = new Date(handoverTime + effectiveDelayHours * 60 * 60 * 1000);
 
@@ -112,10 +111,10 @@ export function calculateEffectivePayoutEligibility(
     reason = "Payout is frozen due to an active dispute on this order.";
   } else if (!isTimeReached) {
     reason = vendor.sellerType === "guest"
-      ? `72-hour guest vendor payout delay active. Payout eligible in approximately ${remainingHours} hour(s).`
-      : `48-hour buyer inspection period active. Payout eligible in approximately ${remainingHours} hour(s).`;
+      ? `48-hour guest vendor payout delay active. Payout eligible in approximately ${remainingHours} hour(s).`
+      : `24-hour buyer inspection period active. Payout eligible in approximately ${remainingHours} hour(s).`;
   } else {
-    reason = "Order has cleared the full inspection and payout delay windows with no active dispute.";
+    reason = "Order has cleared the inspection and payout delay windows with no active dispute.";
   }
 
   return {

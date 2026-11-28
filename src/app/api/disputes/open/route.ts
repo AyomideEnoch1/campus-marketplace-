@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // 48-hour dispute window verification from handover (delivered_at)
+      // Inspection & dispute window verification from handover (delivered_at)
       if (!order.delivered_at) {
         return NextResponse.json(
           { error: "Cannot dispute item condition for an order that has not been confirmed as handed over." },
@@ -90,11 +90,13 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const deliveredTime = new Date(order.delivered_at).getTime();
-      const fortyEightHoursMs = 48 * 60 * 60 * 1000;
-      if (Date.now() > deliveredTime + fortyEightHoursMs && !isAdmin) {
+      const disputeDeadlineMs = order.dispute_deadline
+        ? new Date(order.dispute_deadline).getTime()
+        : new Date(order.delivered_at).getTime() + 24 * 60 * 60 * 1000;
+
+      if (Date.now() > disputeDeadlineMs && !isAdmin) {
         return NextResponse.json(
-          { error: "The 48-hour inspection and dispute window following item handover has expired." },
+          { error: "The inspection and dispute window following item handover has expired." },
           { status: 400 }
         );
       }

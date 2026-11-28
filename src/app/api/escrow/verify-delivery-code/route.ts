@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     // MATCH: Valid code
     if (submittedHash === storedHash) {
       const now = new Date();
-      const disputeDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48-hour dispute window
+      const disputeDeadline = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24-hour dispute window
 
       await prisma.$transaction([
         // Update Order: mark delivered, then confirmed
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
           userId: order.buyerId,
           type: "ORDER_STATUS",
           title: "Item Handover Confirmed",
-          message: `The vendor verified your handover code for Order #${order.orderNumber}. Your 48-hour buyer inspection period is now active.`,
+          message: `The vendor verified your handover code for Order #${order.orderNumber}. Your buyer inspection period is now active. Please inspect your item and release payment if satisfied.`,
           link: `/orders/${order.id}`,
         }).catch(() => {});
       }

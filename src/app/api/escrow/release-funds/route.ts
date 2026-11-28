@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
     const body = await req.json();
-    const { orderId, forceAdminRelease } = body;
+    const { orderId, forceAdminRelease, buyerConfirmed } = body;
 
     if (!orderId) {
       return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
@@ -35,6 +35,19 @@ export async function POST(req: NextRequest) {
 
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    const isBuyer = Boolean(
+      (session?.id && (order.buyerId === session.id || order.buyerEmail === session.email)) ||
+      (session?.email && order.buyerEmail === session.email) ||
+      (!order.buyerId && buyerConfirmed)
+    );
+
+    if (!isAdmin && !isBuyer && !forceAdminRelease) {
+      return NextResponse.json(
+        { error: "Only the buyer or an administrator can release escrow funds." },
+        { status: 403 }
+      );
     }
 
     const seller = order.vendor;
@@ -104,10 +117,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Calculate Effective Payout Eligibility (Strict 48h Inspection & 48h/72h Seller Delays)
+    // 6. Calculate Effective Payout Eligibility
     const eligibility = calculateEffectivePayoutEligibility(order, seller);
 
-    if (!eligibility.isEligible && !isAdmin && !forceAdminRelease) {
+    // If buyer confirms satisfaction early, they waive the remaining inspection countdown
+    if (!eligibility.isEligible && !isAdmin && !forceAdminRelease && !isBuyer) {
       return NextResponse.json(
         {
           error: eligibility.reason,
@@ -127,6 +141,29 @@ export async function POST(req: NextRequest) {
     const isVerified = bankAccount?.verified || seller.bankVerified;
 
     if (!bankCode || !accountNumber || !isVerified) {
+      if (isBuyer) {
+        // Buyer confirmed satisfaction. Clear the order's inspection period and notify seller to provide bank info.
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { escrow_status: "payout_pending" },
+        });
+
+        const sellerAmountNotice = Number(order.seller_amount || (order.subtotal - order.commission));
+        await createNotification({
+          userId: seller.userId,
+          type: "ESCROW_RELEASED",
+          title: "Buyer Approved Your Order!",
+          message: `The buyer confirmed satisfaction with Order #${order.orderNumber}! Please add your verified bank details in your wallet so ₦${sellerAmountNotice.toLocaleString()} can be disbursed.`,
+          link: "/dashboard/wallet",
+        }).catch(() => {});
+
+        return NextResponse.json({
+          success: true,
+          message: "Satisfaction confirmed! The order is approved and funds will disburse once the seller's bank details are verified.",
+          status: "payout_pending",
+        });
+      }
+
       return NextResponse.json(
         { error: "Seller does not have a verified bank account on file. Payout paused until bank details are verified." },
         { status: 400 }
@@ -234,9 +271,26 @@ export async function POST(req: NextRequest) {
         await createNotification({
           userId: seller.userId,
           type: "ESCROW_RELEASED",
-          title: "Payout Completed",
-          message: `Payout of ₦${sellerAmount.toLocaleString()} for Order #${order.orderNumber} has been transferred to your bank account.`,
+          title: isBuyer ? "Buyer Approved Payout!" : "Payout Completed",
+          message: isBuyer
+            ? `The buyer confirmed satisfaction with Order #${order.orderNumber}! Payout of ₦${sellerAmount.toLocaleString()} has been sent to your bank account.`
+            : `Payout of ₦${sellerAmount.toLocaleString()} for Order #${order.orderNumber} has been transferred to your bank account.`,
           link: "/dashboard/wallet",
+        }).catch(() => {});
+
+        // Audit log
+        await prisma.activityLog.create({
+          data: {
+            userId: session?.id || null,
+            action: isBuyer ? "BUYER_SATISFACTION_RELEASE" : "ESCROW_PAYOUT_RELEASED",
+            entityType: "ORDER",
+            entityId: order.id,
+            metadataJson: JSON.stringify({
+              orderNumber: order.orderNumber,
+              releasedBy: isBuyer ? `Buyer:${session?.id || 'guest'}` : (isAdmin ? `Admin:${session?.id}` : "System"),
+              amount: sellerAmount,
+            }),
+          },
         }).catch(() => {});
 
         return NextResponse.json({

@@ -166,6 +166,40 @@ export default function OrderTrackingPage() {
     }
   };
 
+  // Early release state
+  const [showReleaseConfirm, setShowReleaseConfirm] = React.useState(false);
+  const [isReleasing, setIsReleasing] = React.useState(false);
+  const [releaseError, setReleaseError] = React.useState<string | null>(null);
+
+  const handleReleaseFunds = async () => {
+    if (!order) return;
+    try {
+      setIsReleasing(true);
+      setReleaseError(null);
+      const res = await fetch("/api/escrow/release-funds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          buyerConfirmed: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to release funds");
+      }
+
+      setShowReleaseConfirm(false);
+      await fetchOrder();
+    } catch (err: any) {
+      console.error("Release funds error:", err);
+      setReleaseError(err.message || "Failed to release funds. Please try again.");
+    } finally {
+      setIsReleasing(false);
+    }
+  };
+
   // Dispute modal state
   const [disputeModalOpen, setDisputeModalOpen] = React.useState(false);
   const [disputeReason, setDisputeReason] = React.useState("ITEM_NOT_AS_DESCRIBED");
@@ -319,7 +353,7 @@ export default function OrderTrackingPage() {
               )}
               {isDelivered && !isDisputed && !isReleased && (
                 <Badge className="bg-blue-100 text-blue-900 border-blue-200 text-xs font-bold">
-                  Handover Verified • 48h Inspection
+                  Handover Verified • Inspection Active
                 </Badge>
               )}
               {isDisputed && (
@@ -679,7 +713,7 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
-        {/* 3. 48-Hour Inspection Window Card (Shown once handover code is verified) */}
+        {/* 3. Inspection Window Card (Shown once handover code is verified) */}
         {isEscrow && isDelivered && !isDisputed && !isReleased && effectiveDeadline && (
           <div className="bg-gradient-to-br from-blue-50 via-white to-sky-50 rounded-3xl border-2 border-blue-400 p-6 sm:p-8 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -690,10 +724,10 @@ export default function OrderTrackingPage() {
                   </span>
                 </div>
                 <h3 className="text-xl font-black text-neutral-950">
-                  48-Hour Buyer Inspection Period
+                  Buyer Inspection Period
                 </h3>
                 <p className="text-xs text-neutral-600 leading-relaxed max-w-xl">
-                  Your delivery code was verified. You have a full 48-hour inspection period starting from handover to test your item and ensure it matches the description.
+                  Your delivery code was verified. Inspect your items to ensure they match the description. If you are satisfied now, you can release payment directly to the seller, or it will auto-release when the timer reaches zero.
                 </p>
               </div>
 
@@ -701,18 +735,31 @@ export default function OrderTrackingPage() {
               <InspectionCountdown deadline={effectiveDeadline} />
             </div>
 
-            <div className="pt-2 border-t border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-              <p className="text-neutral-500 text-[11px]">
+            <div className="pt-3 border-t border-blue-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
+              <p className="text-neutral-500 text-[11px] leading-relaxed max-w-md">
                 If the item has defects or issues, open a dispute before the timer expires to freeze payment release.
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDisputeModalOpen(true)}
-                className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl shrink-0 cursor-pointer"
-              >
-                Open Dispute / Report Issue
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDisputeModalOpen(true)}
+                  className="text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl shrink-0 cursor-pointer"
+                >
+                  Open Dispute / Report Issue
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setReleaseError(null);
+                    setShowReleaseConfirm(true);
+                  }}
+                  className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-xs shrink-0 cursor-pointer flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>I&apos;m Satisfied • Release Payment</span>
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -896,6 +943,67 @@ export default function OrderTrackingPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Early Release Confirmation Modal */}
+      {showReleaseConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-50">
+          <div className="bg-white rounded-3xl border border-neutral-200 shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-5">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-7 h-7" />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-black text-neutral-950">
+                Release Payment to Vendor?
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                By confirming, you verify that you have received and inspected your item(s) and are satisfied. 
+                Funds of <span className="font-bold text-neutral-900">{formatNGN(order?.totalAmount || 0)}</span> will be released immediately to <span className="font-bold text-neutral-900">{order?.vendor?.storeName || "the seller"}</span>.
+              </p>
+            </div>
+
+            {releaseError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{releaseError}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-neutral-100">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowReleaseConfirm(false);
+                  setReleaseError(null);
+                }}
+                disabled={isReleasing}
+                className="rounded-xl text-xs font-bold"
+              >
+                Cancel / Keep Inspecting
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleReleaseFunds}
+                disabled={isReleasing}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 shadow-sm shadow-emerald-600/30 cursor-pointer"
+              >
+                {isReleasing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Releasing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Yes, Release Payment</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       )}

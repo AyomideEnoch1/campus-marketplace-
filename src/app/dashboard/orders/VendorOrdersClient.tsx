@@ -418,13 +418,13 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                     <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="font-bold text-blue-950 flex items-center gap-1.5">
-                        <span>Handover Verified • 48-Hour Inspection Window Active</span>
+                        <span>Handover Verified • Inspection Window Active</span>
                         <span className="text-[10px] font-semibold bg-blue-200/80 text-blue-900 px-2 py-0.5 rounded-full">
                           Inspection Running
                         </span>
                       </p>
                       <p className="text-[11px] text-blue-900/90 mt-0.5 leading-relaxed">
-                        The buyer provided the 6-digit delivery code. Funds are held during the mandatory 48-hour buyer inspection window. If no dispute is filed, your payout will release automatically.
+                        The buyer provided the 6-digit delivery code. Payout releases as soon as the buyer confirms satisfaction, or automatically once the inspection countdown completes with no dispute.
                       </p>
                     </div>
                   </div>
@@ -684,7 +684,7 @@ export function VendorOrdersClient({ initialOrders }: VendorOrdersClientProps) {
                   Handover Verified Successfully!
                 </h4>
                 <p className="text-xs text-neutral-600 max-w-xs mx-auto">
-                  The order is now marked as delivered and the 48-hour buyer inspection window has begun.
+                  The order is now marked as delivered and the buyer inspection window has begun. Payout will release once the buyer confirms or the timer completes.
                 </p>
               </div>
             ) : (
